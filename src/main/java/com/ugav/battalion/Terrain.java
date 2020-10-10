@@ -1,8 +1,8 @@
 package com.ugav.battalion;
 
-public class Surface {
+public class Terrain {
 
-    static class Land extends Surface {
+    static class Land extends Terrain {
 
     }
 
@@ -14,7 +14,7 @@ public class Surface {
 
     }
 
-    static class ClearWater extends Surface {
+    static class ClearWater extends Terrain {
 
     }
 

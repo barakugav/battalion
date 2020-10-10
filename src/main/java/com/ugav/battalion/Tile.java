@@ -1,21 +1,22 @@
 package com.ugav.battalion;
 
+
 import java.util.Objects;
 
 public class Tile {
 
-    private final Surface surface;
+    private final Terrain terrain;
     private final Building building;
     private Unit unit;
 
-    private Tile(Surface surface, Building building, Unit unit) {
-	this.surface = Objects.requireNonNull(surface);
+    Tile(Terrain terrain, Building building, Unit unit) {
+	this.terrain = Objects.requireNonNull(terrain);
 	this.building = building;
 	this.unit = unit;
     }
 
-    public Surface getSurface() {
-	return surface;
+    public Terrain getTerrain() {
+	return terrain;
     }
 
     public Building getBuilding() {
@@ -46,10 +47,10 @@ public class Tile {
     }
 
     public Tile deepCopy() {
-	Surface surfaceCopy = surface; /* No need to deep copy */
+	Terrain terrainCopy = terrain; /* No need to deep copy */
 	Building buildingCopy = building != null ? building.deepCopy() : null;
 	Unit unitCopy = unit != null ? unit.deepCopy() : null;
-	return new Tile(surfaceCopy, buildingCopy, unitCopy);
+	return new Tile(terrainCopy, buildingCopy, unitCopy);
     }
 
 }
