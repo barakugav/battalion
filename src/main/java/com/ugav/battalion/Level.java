@@ -6,11 +6,9 @@ public class Level {
     private final int yLen;
     private final Tile[][] tiles;
 
-    Level(int xLen, int yLen, Tile[][] tiles) {
-	if (xLen <= 0 || yLen <= 0)
-	    throw new IllegalArgumentException();
-	this.xLen = xLen;
-	this.yLen = yLen;
+    Level(Tile[][] tiles) {
+	this.xLen = tiles.length;
+	this.yLen = tiles[0].length;
 	this.tiles = new Tile[xLen][yLen];
 	for (int x = 0; x < xLen; x++)
 	    for (int y = 0; y < yLen; y++)
