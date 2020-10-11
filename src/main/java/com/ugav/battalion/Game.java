@@ -26,6 +26,10 @@ public class Game {
 	return map.at(x, y);
     }
 
+    void start() {
+	turnBegin();
+    }
+
     void turnBegin() {
 	map.forEach(tile -> {
 	    if (tile.hasBuilding()) {
