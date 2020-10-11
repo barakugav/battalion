@@ -5,9 +5,7 @@ import java.util.Objects;
 
 import javax.swing.JPanel;
 
-import com.ugav.battalion.Building.Factory;
-import com.ugav.battalion.Building.OilRefinery;
-import com.ugav.battalion.Unit.Soldier;
+import com.ugav.battalion.level.HardcodedLevel1;
 
 public class MainMenuPanel extends JPanel {
 
@@ -47,17 +45,7 @@ public class MainMenuPanel extends JPanel {
 	}
 
 	private void loadLevels() {
-	    LevelBuilder builder = new LevelBuilder(3, 3);
-	    builder.setTile(0, 0, Terrain.FLAT_LAND, null, new Soldier(Team.Blue));
-	    builder.setTile(0, 1, Terrain.MOUNTAIN, null, null);
-	    builder.setTile(0, 2, Terrain.FLAT_LAND, new Factory(Team.Blue), new Soldier(Team.Blue));
-	    builder.setTile(1, 0, Terrain.FLAT_LAND, new OilRefinery(Team.Blue), null);
-	    builder.setTile(1, 1, Terrain.FLAT_LAND, new OilRefinery(Team.Blue), new Soldier(Team.Blue));
-	    builder.setTile(1, 2, Terrain.FLAT_LAND, new Factory(Team.Blue), null);
-	    builder.setTile(2, 0, Terrain.FLAT_LAND, null, null);
-	    builder.setTile(2, 1, Terrain.CLEAR_WATER, null, null);
-	    builder.setTile(2, 2, Terrain.CLEAR_WATER, null, null);
-	    levels[0] = builder.buildLevel();
+	    levels[0] = HardcodedLevel1.getLevel();
 	}
 
     }
