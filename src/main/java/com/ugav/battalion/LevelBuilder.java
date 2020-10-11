@@ -17,22 +17,26 @@ public class LevelBuilder {
 		tiles[x][y] = new Tile(Terrain.FLAT_LAND, null, null);
     }
 
-    public void setTile(int x, int y, Tile tile) {
+    public LevelBuilder setTile(int x, int y, Tile tile) {
 	tiles[x][y] = tile.deepCopy();
+	return this;
     }
 
-    public void setTile(int x, int y, Terrain terrain, Building building, Unit unit) {
+    public LevelBuilder setTile(int x, int y, Terrain terrain, Building building, Unit unit) {
 	setTile(x, y, new Tile(terrain, building, unit));
+	return this;
     }
 
-    public void setBuilding(int x, int y, Building building) {
+    public LevelBuilder setBuilding(int x, int y, Building building) {
 	Tile tile = tiles[x][y];
 	tiles[x][y] = new Tile(tile.getTerrain(), building, tile.hasUnit() ? tile.getUnit() : null);
+	return this;
     }
 
-    public void setUnit(int x, int y, Unit unit) {
+    public LevelBuilder setUnit(int x, int y, Unit unit) {
 	Tile tile = tiles[x][y];
 	tiles[x][y] = new Tile(tile.getTerrain(), tile.hasBuilding() ? tile.getBuilding() : null, unit);
+	return this;
     }
 
     public Level buildLevel() {
