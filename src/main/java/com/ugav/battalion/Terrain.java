@@ -1,6 +1,6 @@
 package com.ugav.battalion;
 
-public class Terrain {
+public class Terrain implements Drawable {
 
     static final FlatLand FLAT_LAND = new FlatLand();
     static final ClearWater CLEAR_WATER = new ClearWater();

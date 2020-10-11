@@ -1,6 +1,6 @@
 package com.ugav.battalion;
 
-public interface Entity {
+public interface Entity extends Drawable {
 
     Team getTeam();
 
