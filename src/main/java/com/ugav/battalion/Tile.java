@@ -1,6 +1,5 @@
 package com.ugav.battalion;
 
-
 import java.util.Objects;
 
 public class Tile {
@@ -20,6 +19,8 @@ public class Tile {
     }
 
     public Building getBuilding() {
+	if (!hasBuilding())
+	    throw new IllegalStateException();
 	return building;
     }
 
@@ -28,6 +29,8 @@ public class Tile {
     }
 
     public Unit getUnit() {
+	if (!hasUnit())
+	    throw new IllegalStateException();
 	return unit;
     }
 
