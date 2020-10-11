@@ -13,6 +13,7 @@ public class GameFrame extends JFrame {
     private static final int FRAME_WIDTH = 500;
     private static final int FRAME_HEIGHT = 500;
 
+    private final MainMenuPanel mainMenuPanel;
     private final Collection<Component> windows;
 
     GameFrame() {
@@ -23,6 +24,14 @@ public class GameFrame extends JFrame {
 	setSize(FRAME_WIDTH, FRAME_HEIGHT);
 
 	windows = new ArrayList<>();
+	windows.add(mainMenuPanel = new MainMenuPanel(this));
+
+	/* By default display main menu */
+	displayMainMenu();
+    }
+
+    void displayMainMenu() {
+	displayWindow(mainMenuPanel);
     }
 
     private void displayWindow(Component window) {
