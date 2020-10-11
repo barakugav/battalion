@@ -14,6 +14,7 @@ public class GameFrame extends JFrame {
     private static final int FRAME_HEIGHT = 500;
 
     private final MainMenuPanel mainMenuPanel;
+    private final LevelPanel gamePanel;
     private final Collection<Component> windows;
 
     GameFrame() {
@@ -25,6 +26,7 @@ public class GameFrame extends JFrame {
 
 	windows = new ArrayList<>();
 	windows.add(mainMenuPanel = new MainMenuPanel(this));
+	windows.add(gamePanel = new LevelPanel(this));
 
 	/* By default display main menu */
 	displayMainMenu();
@@ -34,11 +36,19 @@ public class GameFrame extends JFrame {
 	displayWindow(mainMenuPanel);
     }
 
+    void displayGame() {
+	displayWindow(gamePanel);
+    }
+
     private void displayWindow(Component window) {
 	if (!windows.contains(Objects.requireNonNull(window)))
 	    throw new IllegalArgumentException();
 	removeAllWindows();
 	add(window);
+    }
+
+    LevelPanel getGamePlane() {
+	return gamePanel;
     }
 
     private void removeAllWindows() {
