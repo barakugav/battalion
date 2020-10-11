@@ -2,16 +2,16 @@ package com.ugav.battalion;
 
 public abstract class Building extends AbstractEntity {
 
-    Building(Team team) {
+    public Building(Team team) {
 	super(team);
     }
 
     @Override
     public abstract Building deepCopy();
 
-    static class OilRefinery extends Building {
+    public static class OilRefinery extends Building {
 
-	OilRefinery(Team team) {
+	public OilRefinery(Team team) {
 	    super(team);
 	}
 
@@ -22,9 +22,9 @@ public abstract class Building extends AbstractEntity {
 
     }
 
-    static class Factory extends Building {
+    public static class Factory extends Building {
 
-	Factory(Team team) {
+	public Factory(Team team) {
 	    super(team);
 	}
 

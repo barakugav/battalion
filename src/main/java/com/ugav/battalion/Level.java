@@ -6,7 +6,7 @@ public class Level {
     private final int yLen;
     private final Tile[][] tiles;
 
-    Level(Tile[][] tiles) {
+    public Level(Tile[][] tiles) {
 	this.xLen = tiles.length;
 	this.yLen = tiles[0].length;
 	this.tiles = new Tile[xLen][yLen];

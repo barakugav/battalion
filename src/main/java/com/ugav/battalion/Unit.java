@@ -112,9 +112,9 @@ public interface Unit extends Entity {
 	return new ExpolredMap(moveableMap, touchableMap, attackableMap);
     }
 
-    static class Soldier extends AbstractUnit implements CloseRangeUnit {
+    public static class Soldier extends AbstractUnit implements CloseRangeUnit {
 
-	Soldier(Team team) {
+	public Soldier(Team team) {
 	    super(team);
 	}
 
@@ -140,9 +140,9 @@ public interface Unit extends Entity {
 
     }
 
-    static class Tank extends AbstractUnit implements CloseRangeUnit {
+    public static class Tank extends AbstractUnit implements CloseRangeUnit {
 
-	Tank(Team team) {
+	public Tank(Team team) {
 	    super(team);
 	}
 

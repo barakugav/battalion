@@ -2,9 +2,9 @@ package com.ugav.battalion;
 
 public class Terrain implements Drawable {
 
-    static final FlatLand FLAT_LAND = new FlatLand();
-    static final ClearWater CLEAR_WATER = new ClearWater();
-    static final Mountain MOUNTAIN = new Mountain();
+    public static final FlatLand FLAT_LAND = new FlatLand();
+    public static final ClearWater CLEAR_WATER = new ClearWater();
+    public static final Mountain MOUNTAIN = new Mountain();
 
     static class Land extends Terrain {
 
