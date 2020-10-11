@@ -11,8 +11,8 @@ public class Tile {
 
     Tile(Terrain terrain, Building building, Unit unit) {
 	this.terrain = Objects.requireNonNull(terrain);
-	this.building = building;
-	this.unit = unit;
+	this.building = building != null ? building.deepCopy() : null;
+	this.unit = unit != null ? unit.deepCopy() : null;
     }
 
     public Terrain getTerrain() {
