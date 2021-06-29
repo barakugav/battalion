@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
 
 public class GameFrame extends JFrame {
@@ -45,6 +46,8 @@ public class GameFrame extends JFrame {
 	    throw new IllegalArgumentException();
 	removeAllWindows();
 	add(window);
+	invalidate();
+	repaint();
     }
 
     LevelPanel getGamePlane() {

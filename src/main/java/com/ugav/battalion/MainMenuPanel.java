@@ -20,7 +20,7 @@ public class MainMenuPanel extends JPanel {
 	int levelCount = data.getLevelCount();
 	setLayout(new GridLayout(levelCount, 1));
 
-	for (int levelIdx = 0; levelIdx < data.getLevelCount(); levelCount++)
+	for (int levelIdx = 0; levelIdx < data.getLevelCount(); levelIdx++)
 	    add(new LevelButton(levelIdx));
     }
 
