@@ -1,13 +1,31 @@
 package com.ugav.battalion;
 
-interface Entity extends Drawable {
+import java.util.Objects;
 
-	Team getTeam();
+abstract class Entity implements Drawable {
 
-	void setTeam(Team team);
+	private Team team;
+	private boolean active;
 
-	boolean isActive();
+	Entity(Team team) {
+		this.team = Objects.requireNonNull(team);
+		active = false;
+	}
 
-	void setActive(boolean active);
+	public Team getTeam() {
+		return team;
+	}
+
+	public void setTeam(Team team) {
+		this.team = Objects.requireNonNull(team);
+	}
+
+	public boolean isActive() {
+		return active;
+	}
+
+	public void setActive(boolean active) {
+		this.active = active;
+	}
 
 }

@@ -5,7 +5,7 @@ import java.util.Arrays;
 import com.ugav.battalion.Map.Neighbor;
 import com.ugav.battalion.Map.Position;
 
-abstract class Unit extends EntityAbstract {
+abstract class Unit extends Entity {
 
 	final Type type;
 	private int health;

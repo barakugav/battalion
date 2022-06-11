@@ -1,6 +1,6 @@
 package com.ugav.battalion;
 
-abstract class Building extends EntityAbstract {
+abstract class Building extends Entity {
 
 	enum Type {
 		OilRefinery, Factory
