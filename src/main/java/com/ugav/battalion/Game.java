@@ -1,5 +1,8 @@
 package com.ugav.battalion;
 
+import com.ugav.battalion.Map.Neighbor;
+import com.ugav.battalion.Map.Position;
+
 class Game {
 
 	private final Map map;
@@ -122,10 +125,8 @@ class Game {
 			throw new IllegalStateException();
 
 		boolean moveNearTarget = false;
-		for (int neighbor = 0; neighbor < Map.neighbors.length; neighbor++) {
-			int x2 = targetX + Map.neighbors[neighbor][0];
-			int y2 = targetY + Map.neighbors[neighbor][1];
-			if (map.isInMap(x2, y2) && x2 == moveToX && y2 == moveToY) {
+		for (Position neighbor : Neighbor.of(targetX, targetY)) {
+			if (map.isInMap(neighbor) && neighbor.x == moveToX && neighbor.y == moveToY) {
 				moveNearTarget = true;
 				break;
 			}

@@ -1,5 +1,10 @@
 package com.ugav.battalion;
 
+import java.util.Arrays;
+
+import com.ugav.battalion.Map.Neighbor;
+import com.ugav.battalion.Map.Position;
+
 interface Unit extends Entity {
 
 	int getMaxHealth();
@@ -76,27 +81,17 @@ interface Unit extends Entity {
 			return map;
 		}
 
-	}
-
-	static abstract class CloseRangeUnitAbstract extends UnitAbstract implements CloseRangeUnit {
-
-		CloseRangeUnitAbstract(Team team) {
-			super(team);
-		}
-
-		private boolean[][] calcMovableMap() {
+		boolean[][] getMovableMap() {
 			final int xFrom = getX(), yFrom = getY();
 			Map map = getMap();
 			int xLen = map.getXLen(), yLen = map.getYLen();
-
 			boolean[][] moveableMap = new boolean[xLen][yLen];
 
-			/* Moveable map */
 			int[][] moveableMap0 = new int[xLen][yLen];
 			for (int x = 0; x < xLen; x++)
-				for (int y = 0; y < yLen; y++)
-					moveableMap0[x][y] = -1;
+				Arrays.fill(moveableMap0[x], -1);
 			moveableMap0[xFrom][yFrom] = 0;
+
 			int maxMove = getMaxMove();
 			for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
 				for (int x = 0; x < xLen; x++) {
@@ -110,10 +105,8 @@ interface Unit extends Entity {
 						/* TODO, check surface */
 						/* Check if we reached any near tiles last moveLen */
 						boolean nearMoveable = false;
-						for (int neighbor = 0; neighbor < Map.neighbors.length; neighbor++) {
-							int x2 = x + Map.neighbors[neighbor][0];
-							int y2 = y + Map.neighbors[neighbor][1];
-							if (map.isInMap(x2, y2) && moveableMap0[x2][y2] != moveLen - 1) {
+						for (Position neighbor : Neighbor.of(x, y)) {
+							if (map.isInMap(neighbor) && moveableMap0[neighbor.x][neighbor.y] != moveLen - 1) {
 								nearMoveable = true;
 								break;
 							}
@@ -132,32 +125,35 @@ interface Unit extends Entity {
 			return moveableMap;
 		}
 
+	}
+
+	static abstract class CloseRangeUnitAbstract extends UnitAbstract implements CloseRangeUnit {
+
+		CloseRangeUnitAbstract(Team team) {
+			super(team);
+		}
+
 		@Override
 		public boolean isMoveValid(int x, int y) {
-			return calcMovableMap()[x][y];
+			return getMovableMap()[x][y];
 		}
 
 		@Override
 		public boolean isAttackValid(final int xTo, final int yTo) {
 			Map map = getMap();
 			int xLen = map.getXLen(), yLen = map.getYLen();
-
-			boolean[][] moveableMap = calcMovableMap();
+			boolean[][] moveableMap = getMovableMap();
 			boolean[][] attackableMap = new boolean[xLen][yLen];
 
 			/* Touchable map */
 			for (int x = 0; x < xLen; x++) {
 				for (int y = 0; y < yLen; y++) {
-					boolean nearMoveable = false;
-					for (int neighbor = 0; neighbor < Map.neighbors.length; neighbor++) {
-						int x2 = x + Map.neighbors[neighbor][0];
-						int y2 = y + Map.neighbors[neighbor][1];
-						if (map.isInMap(x2, y2) && moveableMap[x2][y]) {
-							nearMoveable = true;
+					for (Position neighbor : Neighbor.of(x, y)) {
+						if (map.isInMap(neighbor) && moveableMap[neighbor.x][neighbor.y]) {
+							attackableMap[x][y] = true;
 							break;
 						}
 					}
-					attackableMap[x][y] = nearMoveable;
 				}
 			}
 
