@@ -6,9 +6,7 @@ import java.util.Objects;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
-import com.ugav.battalion.level.HardcodedLevel1;
-
-public class MainMenuPanel extends JPanel {
+class MainMenuPanel extends JPanel {
 
 	private final GameFrame gameFrame;
 	private final Data data;
@@ -24,7 +22,7 @@ public class MainMenuPanel extends JPanel {
 			add(new LevelButton(levelIdx));
 	}
 
-	private void selectLevel(int levelIdx) {
+	void selectLevel(int levelIdx) {
 		Game game = new Game(data.getLevel(levelIdx));
 		game.start();
 		gameFrame.getGamePlane().setGame(game);

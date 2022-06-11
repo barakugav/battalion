@@ -2,7 +2,7 @@ package com.ugav.battalion;
 
 import java.util.Objects;
 
-public class Tile {
+class Tile {
 
 	private final Terrain terrain;
 	private final Building building;
@@ -14,42 +14,42 @@ public class Tile {
 		this.unit = unit != null ? unit.deepCopy() : null;
 	}
 
-	public Terrain getTerrain() {
+	Terrain getTerrain() {
 		return terrain;
 	}
 
-	public Building getBuilding() {
+	Building getBuilding() {
 		if (!hasBuilding())
 			throw new IllegalStateException();
 		return building;
 	}
 
-	public boolean hasBuilding() {
+	boolean hasBuilding() {
 		return building != null;
 	}
 
-	public Unit getUnit() {
+	Unit getUnit() {
 		if (!hasUnit())
 			throw new IllegalStateException();
 		return unit;
 	}
 
-	public boolean hasUnit() {
+	boolean hasUnit() {
 		return unit != null;
 	}
 
-	public void setUnit(Unit unit) {
+	void setUnit(Unit unit) {
 		Objects.requireNonNull(unit);
 		if (this.unit != null)
 			throw new IllegalStateException();
 		this.unit = unit;
 	}
 
-	public void removeUnit() {
+	void removeUnit() {
 		unit = null;
 	}
 
-	public Tile deepCopy() {
+	Tile deepCopy() {
 		Terrain terrainCopy = terrain; /* No need to deep copy */
 		Building buildingCopy = building != null ? building.deepCopy() : null;
 		Unit unitCopy = unit != null ? unit.deepCopy() : null;

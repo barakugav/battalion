@@ -1,6 +1,6 @@
 package com.ugav.battalion;
 
-public enum Team {
+enum Team {
 
 	None, Red, Blue
 

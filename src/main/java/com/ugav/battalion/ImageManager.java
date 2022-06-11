@@ -16,24 +16,24 @@ import com.ugav.battalion.Terrain.Mountain;
 import com.ugav.battalion.Unit.Soldier;
 import com.ugav.battalion.Unit.Tank;
 
-public class ImageManager {
+class ImageManager {
 
 	private ImageManager() {
 		throw new InternalError();
 	}
 
 	/* Terrains */
-	static final String FLAT_LAND = "selection";
-	static final String MOUNTAIN = "selection";
-	static final String CLEAR_WATER = "selection";
+	static final String FLAT_LAND = "flat_land";
+	static final String MOUNTAIN = "mountain";
+	static final String CLEAR_WATER = "clear_water";
 
 	/* Units */
-	static final String SOLDIER = "selection";
-	static final String TANK = "selection";
+	static final String SOLDIER = "soldier";
+	static final String TANK = "tank";
 
 	/* Buildings */
-	static final String FACTORY = "selection";
-	static final String OIL_REFINERY = "selection";
+	static final String FACTORY = "facotry";
+	static final String OIL_REFINERY = "oil_refinery";
 
 	/* GUI */
 	static final String SELECTION = "selection";

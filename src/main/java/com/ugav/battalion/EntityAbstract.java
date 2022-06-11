@@ -2,14 +2,14 @@ package com.ugav.battalion;
 
 import java.util.Objects;
 
-public abstract class AbstractEntity implements Entity {
+abstract class EntityAbstract implements Entity {
 
 	private Team team;
-	private boolean canMove;
+	private boolean active;
 
-	AbstractEntity(Team team) {
+	EntityAbstract(Team team) {
 		this.team = Objects.requireNonNull(team);
-		canMove = false;
+		active = false;
 	}
 
 	@Override
@@ -23,13 +23,13 @@ public abstract class AbstractEntity implements Entity {
 	}
 
 	@Override
-	public final boolean canAct() {
-		return canMove;
+	public final boolean isActive() {
+		return active;
 	}
 
 	@Override
-	public final void setCanAct(boolean canMove) {
-		this.canMove = canMove;
+	public final void setActive(boolean active) {
+		this.active = active;
 	}
 
 }

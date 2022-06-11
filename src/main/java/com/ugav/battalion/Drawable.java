@@ -1,5 +1,5 @@
 package com.ugav.battalion;
 
-public interface Drawable {
+interface Drawable {
 
 }

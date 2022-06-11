@@ -1,16 +1,12 @@
-package com.ugav.battalion.level;
+package com.ugav.battalion;
 
 import com.ugav.battalion.Building.Factory;
 import com.ugav.battalion.Building.OilRefinery;
-import com.ugav.battalion.Level;
-import com.ugav.battalion.LevelBuilder;
-import com.ugav.battalion.Team;
-import com.ugav.battalion.Terrain;
 import com.ugav.battalion.Unit.Soldier;
 
-public class HardcodedLevel1 {
+class HardcodedLevel1 {
 
-    private static final Level LEVEL = new LevelBuilder(3, 3)
+	private static final Level LEVEL = new LevelBuilder(3, 3)
 	        .setTile(0, 0, Terrain.FLAT_LAND, null, new Soldier(Team.Blue))
 	        .setTile(0, 1, Terrain.MOUNTAIN, null, null)
 	        .setTile(0, 2, Terrain.FLAT_LAND, new Factory(Team.Blue), new Soldier(Team.Blue))
@@ -26,7 +22,7 @@ public class HardcodedLevel1 {
 		throw new InternalError();
 	}
 
-	public static Level getLevel() {
+	static Level getLevel() {
 		return LEVEL;
 	}
 

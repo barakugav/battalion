@@ -1,6 +1,6 @@
 package com.ugav.battalion;
 
-public interface Unit extends Entity {
+interface Unit extends Entity {
 
 	int getMaxHealth();
 
@@ -13,108 +13,162 @@ public interface Unit extends Entity {
 	@Override
 	Unit deepCopy();
 
-	ExpolredMap getExploredMap();
+	void setPos(int x, int y);
 
-	void setExploredMap(ExpolredMap expolredMap);
+	int getX();
 
-	void invalidateExploredMap();
+	int getY();
 
-	static ExpolredMap getExploredMap(Map map, int fromX, int fromY) {
-		int xLen = map.getXLen(), yLen = map.getYLen();
-		Tile from = map.at(fromX, fromY);
-		if (!from.hasUnit())
-			return ExpolredMap.empty();
-		Unit unit = from.getUnit();
+	void setMap(Map map);
 
-		boolean[][] moveableMap = new boolean[xLen][yLen];
-		boolean[][] touchableMap = new boolean[xLen][yLen];
-		boolean[][] attackableMap = new boolean[xLen][yLen];
+	Map getMap();
 
-		/* Moveable map */
-		int[][] moveableMap0 = new int[xLen][yLen];
-		for (int x = 0; x < xLen; x++)
-			for (int y = 0; y < yLen; y++)
-				moveableMap0[x][y] = -1;
-		moveableMap0[fromX][fromY] = 0;
-		int maxMove = unit.getMaxMove();
-		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
+	boolean isMoveValid(int x, int y);
+
+	boolean isAttackValid(int x, int y);
+
+	abstract class UnitAbstract extends EntityAbstract implements Unit {
+
+		private int health;
+		private int x, y;
+		private Map map;
+
+		UnitAbstract(Team team) {
+			super(team);
+			if (getTeam() == Team.None)
+				throw new IllegalArgumentException();
+			health = getMaxHealth();
+		}
+
+		@Override
+		public final void setTeam(Team team) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public final int getHealth() {
+			return health;
+		}
+
+		@Override
+		public void setPos(int x, int y) {
+			this.x = x;
+			this.y = y;
+		}
+
+		@Override
+		public int getX() {
+			return x;
+		}
+
+		@Override
+		public int getY() {
+			return y;
+		}
+
+		@Override
+		public void setMap(Map map) {
+			this.map = map;
+		}
+
+		@Override
+		public Map getMap() {
+			return map;
+		}
+
+	}
+
+	static abstract class CloseRangeUnitAbstract extends UnitAbstract implements CloseRangeUnit {
+
+		CloseRangeUnitAbstract(Team team) {
+			super(team);
+		}
+
+		private boolean[][] calcMovableMap() {
+			final int xFrom = getX(), yFrom = getY();
+			Map map = getMap();
+			int xLen = map.getXLen(), yLen = map.getYLen();
+
+			boolean[][] moveableMap = new boolean[xLen][yLen];
+
+			/* Moveable map */
+			int[][] moveableMap0 = new int[xLen][yLen];
+			for (int x = 0; x < xLen; x++)
+				for (int y = 0; y < yLen; y++)
+					moveableMap0[x][y] = -1;
+			moveableMap0[xFrom][yFrom] = 0;
+			int maxMove = getMaxMove();
+			for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
+				for (int x = 0; x < xLen; x++) {
+					for (int y = 0; y < yLen; y++) {
+						/* Already can move here */
+						if (moveableMap0[x][y] >= 0)
+							continue;
+						/* Other unit in the way */
+						if (map.at(x, y).hasUnit())
+							continue;
+						/* TODO, check surface */
+						/* Check if we reached any near tiles last moveLen */
+						boolean nearMoveable = false;
+						for (int neighbor = 0; neighbor < Map.neighbors.length; neighbor++) {
+							int x2 = x + Map.neighbors[neighbor][0];
+							int y2 = y + Map.neighbors[neighbor][1];
+							if (map.isInMap(x2, y2) && moveableMap0[x2][y2] != moveLen - 1) {
+								nearMoveable = true;
+								break;
+							}
+						}
+						if (!nearMoveable)
+							continue;
+						moveableMap0[x][y] = moveLen;
+					}
+				}
+			}
+			/* Convert distance map to boolean map */
+			for (int x = 0; x < xLen; x++)
+				for (int y = 0; y < yLen; y++)
+					moveableMap[x][y] = moveableMap0[x][y] > 0;
+
+			return moveableMap;
+		}
+
+		@Override
+		public boolean isMoveValid(int x, int y) {
+			return calcMovableMap()[x][y];
+		}
+
+		@Override
+		public boolean isAttackValid(final int xTo, final int yTo) {
+			Map map = getMap();
+			int xLen = map.getXLen(), yLen = map.getYLen();
+
+			boolean[][] moveableMap = calcMovableMap();
+			boolean[][] attackableMap = new boolean[xLen][yLen];
+
+			/* Touchable map */
 			for (int x = 0; x < xLen; x++) {
 				for (int y = 0; y < yLen; y++) {
-					/* Already can move here */
-					if (moveableMap0[x][y] >= 0)
-						continue;
-					/* Other unit in the way */
-					if (map.at(x, y).hasUnit())
-						continue;
-					/* TODO, check surface */
-					/* Check if we reached any near tiles last moveLen */
 					boolean nearMoveable = false;
 					for (int neighbor = 0; neighbor < Map.neighbors.length; neighbor++) {
 						int x2 = x + Map.neighbors[neighbor][0];
 						int y2 = y + Map.neighbors[neighbor][1];
-						if (map.isInMap(x2, y2) && moveableMap0[x2][y2] != moveLen - 1) {
+						if (map.isInMap(x2, y2) && moveableMap[x2][y]) {
 							nearMoveable = true;
 							break;
 						}
 					}
-					if (!nearMoveable)
-						continue;
-					moveableMap0[x][y] = moveLen;
+					attackableMap[x][y] = nearMoveable;
 				}
 			}
-		}
-		/* Convert distance map to boolean map */
-		for (int x = 0; x < xLen; x++)
-			for (int y = 0; y < yLen; y++)
-				moveableMap[x][y] = moveableMap0[x][y] > 0;
 
-		/* Touchable map */
-		for (int x = 0; x < xLen; x++) {
-			for (int y = 0; y < yLen; y++) {
-				boolean nearMoveable = false;
-				for (int neighbor = 0; neighbor < Map.neighbors.length; neighbor++) {
-					int x2 = x + Map.neighbors[neighbor][0];
-					int y2 = y + Map.neighbors[neighbor][1];
-					if (map.isInMap(x2, y2) && moveableMap[x2][y]) {
-						nearMoveable = true;
-						break;
-					}
-				}
-				touchableMap[x][y] = nearMoveable;
-			}
+			return attackableMap[xTo][yTo];
 		}
 
-		for (int x = 0; x < xLen; x++)
-			for (int y = 0; y < yLen; y++)
-				attackableMap[x][y] = false;
-		if (unit instanceof CloseRangeUnit) {
-			/* Close range attacks are the same as touchable */
-			for (int x = 0; x < xLen; x++)
-				for (int y = 0; y < yLen; y++)
-					attackableMap[x][y] = touchableMap[x][y];
-		} else if (unit instanceof LongRangeUnit) {
-			/* Compute abs distance */
-			LongRangeUnit longRangeUnit = (LongRangeUnit) unit;
-			int minAttack = longRangeUnit.getMinRange();
-			int maxAttack = longRangeUnit.getMaxRange();
-			for (int x = 0; x < xLen; x++) {
-				for (int y = 0; y < yLen; y++) {
-					int xDis = Math.abs(x - fromX);
-					int yDis = Math.abs(y - fromY);
-					int distance = xDis + yDis;
-					attackableMap[x][y] = minAttack <= distance && distance <= maxAttack;
-				}
-			}
-		} else {
-			throw new InternalError();
-		}
-
-		return new ExpolredMap(moveableMap, touchableMap, attackableMap);
 	}
 
-	public static class Soldier extends AbstractUnit implements CloseRangeUnit {
+	static class Soldier extends CloseRangeUnitAbstract implements CloseRangeUnit {
 
-		public Soldier(Team team) {
+		Soldier(Team team) {
 			super(team);
 		}
 
@@ -140,9 +194,9 @@ public interface Unit extends Entity {
 
 	}
 
-	public static class Tank extends AbstractUnit implements CloseRangeUnit {
+	static class Tank extends CloseRangeUnitAbstract implements CloseRangeUnit {
 
-		public Tank(Team team) {
+		Tank(Team team) {
 			super(team);
 		}
 

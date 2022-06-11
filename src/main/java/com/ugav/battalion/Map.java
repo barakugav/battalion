@@ -2,7 +2,7 @@ package com.ugav.battalion;
 
 import java.util.function.Consumer;
 
-public class Map {
+class Map {
 
 	private final int xLen;
 	private final int yLen;

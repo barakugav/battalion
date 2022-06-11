@@ -1,5 +1,5 @@
 package com.ugav.battalion;
 
-public interface CloseRangeUnit extends Unit {
+interface CloseRangeUnit extends Unit {
 
 }

@@ -1,12 +1,12 @@
 package com.ugav.battalion;
 
-public class Level {
+class Level {
 
 	private final int xLen;
 	private final int yLen;
 	private final Tile[][] tiles;
 
-	public Level(Tile[][] tiles) {
+	Level(Tile[][] tiles) {
 		this.xLen = tiles.length;
 		this.yLen = tiles[0].length;
 		this.tiles = new Tile[xLen][yLen];

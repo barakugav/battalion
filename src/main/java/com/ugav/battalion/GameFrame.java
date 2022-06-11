@@ -7,7 +7,7 @@ import java.util.Objects;
 
 import javax.swing.JFrame;
 
-public class GameFrame extends JFrame {
+class GameFrame extends JFrame {
 
 	private static final String TITLE = "Battalion";
 	private static final int FRAME_WIDTH = 500;
@@ -29,7 +29,9 @@ public class GameFrame extends JFrame {
 		windows.add(gamePanel = new LevelPanel(this));
 
 		/* By default display main menu */
-		displayMainMenu();
+//		displayMainMenu();
+//		displayGame();
+		mainMenuPanel.selectLevel(0);
 	}
 
 	void displayMainMenu() {

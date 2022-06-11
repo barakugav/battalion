@@ -1,6 +1,6 @@
 package com.ugav.battalion;
 
-public class Game {
+class Game {
 
 	private final Map map;
 	private Team turn;
@@ -10,6 +10,18 @@ public class Game {
 		map = new Map(level);
 		turn = Team.Blue;
 		winner = Team.None;
+
+		int xLen = map.getXLen(), yLen = map.getYLen();
+		for (int x = 0; x < xLen; x++) {
+			for (int y = 0; y < yLen; y++) {
+				Tile tile = map.at(x, y);
+				if (!tile.hasUnit())
+					continue;
+				Unit u = tile.getUnit();
+				u.setMap(map);
+				u.setPos(x, y);
+			}
+		}
 	}
 
 	int getXLen() {
@@ -32,24 +44,13 @@ public class Game {
 		map.forEach(tile -> {
 			if (tile.hasBuilding()) {
 				Building building = tile.getBuilding();
-				building.setCanAct(building.getTeam() == turn);
+				building.setActive(building.getTeam() == turn);
 			}
 			if (tile.hasUnit()) {
 				Unit unit = tile.getUnit();
-				unit.setCanAct(unit.getTeam() == turn);
+				unit.setActive(unit.getTeam() == turn);
 			}
 		});
-		for (int x = 0; x < map.getXLen(); x++) {
-			for (int y = 0; y < map.getYLen(); y++) {
-				Tile tile = map.at(x, y);
-				if (!tile.hasUnit())
-					continue;
-				Unit unit = tile.getUnit();
-				if (unit.getTeam() != turn)
-					continue;
-				unit.setExploredMap(Unit.getExploredMap(map, x, y));
-			}
-		}
 	}
 
 	void turnEnd() {
@@ -80,12 +81,6 @@ public class Game {
 			return;
 		}
 
-		map.forEach(tile -> {
-			if (tile.hasUnit()) {
-				Unit unit = tile.getUnit();
-				unit.invalidateExploredMap();
-			}
-		});
 		/* TODO add money */
 		turn = turn == Team.Blue ? Team.Red : Team.Blue;
 	}
@@ -95,10 +90,10 @@ public class Game {
 	}
 
 	void move(int fromX, int fromY, int toX, int toY) {
-		if (!canMove(fromX, fromY, toX, toY))
+		if (!isMoveValid(fromX, fromY, toX, toY))
 			throw new IllegalStateException();
 		move0(fromX, fromY, toX, toY);
-		map.at(toX, toY).getUnit().setCanAct(false);
+		map.at(toX, toY).getUnit().setActive(false);
 	}
 
 	private void move0(int fromX, int fromY, int toX, int toY) {
@@ -108,13 +103,13 @@ public class Game {
 		map.at(toX, toY).setUnit(unit);
 	}
 
-	boolean canMove(int fromX, int fromY, int toX, int toY) {
+	boolean isMoveValid(int fromX, int fromY, int toX, int toY) {
 		Tile from = map.at(fromX, fromY);
 		Tile to = map.at(toX, toY);
 		if (!from.hasUnit() || to.hasUnit())
 			return false;
 		Unit unit = from.getUnit();
-		return unit.getTeam() == turn && unit.canAct() && unit.getExploredMap().canMove(toX, toY);
+		return unit.getTeam() == turn && unit.isActive() && unit.isMoveValid(toX, toY);
 	}
 
 	void moveAndAttack(int attackerX, int attackerY, int moveToX, int moveToY, int targetX, int targetY) {
@@ -123,7 +118,7 @@ public class Game {
 		if (!(attacker instanceof CloseRangeUnit))
 			throw new UnsupportedOperationException();
 
-		if (!canAttak(attackerX, attackerY, targetX, targetY))
+		if (!isAttackValid(attackerX, attackerY, targetX, targetY))
 			throw new IllegalStateException();
 
 		boolean moveNearTarget = false;
@@ -140,7 +135,7 @@ public class Game {
 
 		move0(attackerX, attackerY, moveToX, moveToY);
 		doDamage(attacker, target);
-		attacker.setCanAct(false);
+		attacker.setActive(false);
 	}
 
 	void attackRange(int attackerX, int attackerY, int targetX, int targetY) {
@@ -148,19 +143,19 @@ public class Game {
 		Unit target = map.at(targetX, targetY).getUnit();
 		if (!(attacker instanceof LongRangeUnit))
 			throw new UnsupportedOperationException();
-		if (!canAttak(attackerX, attackerY, targetX, targetY))
+		if (!isAttackValid(attackerX, attackerY, targetX, targetY))
 			throw new IllegalStateException();
 		doDamage(attacker, target);
-		attacker.setCanAct(false);
+		attacker.setActive(false);
 	}
 
-	boolean canAttak(int attackerX, int attackerY, int tagertX, int targetY) {
+	boolean isAttackValid(int attackerX, int attackerY, int tagertX, int targetY) {
 		Tile attackerTile = map.at(attackerX, attackerY);
 		Tile targetTile = map.at(tagertX, targetY);
 		if (!attackerTile.hasUnit() || !targetTile.hasUnit())
 			return false;
 		Unit attacker = attackerTile.getUnit();
-		return attacker.getTeam() == turn && attacker.canAct() && attacker.getExploredMap().canAttack(tagertX, targetY)
+		return attacker.getTeam() == turn && attacker.isActive() && attacker.isAttackValid(tagertX, targetY)
 				&& targetTile.getUnit().getTeam() != attacker.getTeam();
 	}
 

@@ -1,14 +1,19 @@
 package com.ugav.battalion;
 
-public class Terrain implements Drawable {
+class Terrain implements Drawable {
 
-	public static final FlatLand FLAT_LAND = new FlatLand();
-	public static final ClearWater CLEAR_WATER = new ClearWater();
-	public static final Mountain MOUNTAIN = new Mountain();
+	static final FlatLand FLAT_LAND = new FlatLand();
+	static final ClearWater CLEAR_WATER = new ClearWater();
+	static final Mountain MOUNTAIN = new Mountain();
 
 	static class Land extends Terrain {
 
 		private Land() {
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName();
 		}
 
 	}
@@ -18,6 +23,11 @@ public class Terrain implements Drawable {
 		private FlatLand() {
 		}
 
+		@Override
+		public String toString() {
+			return getClass().getSimpleName();
+		}
+
 	}
 
 	static class Mountain extends Land {
@@ -25,11 +35,21 @@ public class Terrain implements Drawable {
 		private Mountain() {
 		}
 
+		@Override
+		public String toString() {
+			return getClass().getSimpleName();
+		}
+
 	}
 
 	static class ClearWater extends Terrain {
 
 		private ClearWater() {
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName();
 		}
 
 	}

@@ -15,7 +15,7 @@ import java.util.Random;
 
 import javax.swing.JPanel;
 
-public class LevelPanel extends JPanel {
+class LevelPanel extends JPanel {
 
 	private final GameFrame gameFrame;
 
@@ -23,6 +23,7 @@ public class LevelPanel extends JPanel {
 	private int selectedX;
 	private int selectedY;
 	private Game game;
+	private final DebugPrintsManager debug;
 
 	private static final int BOARD_SIZE = 3;
 	private static final int TILE_SIZE_PIXEL = 64;
@@ -41,6 +42,8 @@ public class LevelPanel extends JPanel {
 
 		selectedX = -1;
 		selectedY = -1;
+
+		debug = new DebugPrintsManager(true); // TODO
 	}
 
 	void setGame(Game game) {
@@ -53,22 +56,22 @@ public class LevelPanel extends JPanel {
 	}
 
 	private void clearSelection() {
-		if (!(anySelection()))
+		if (!(isAnySelected()))
 			return;
 		int oldSelectedX = selectedX;
 		int oldSelectedY = selectedY;
 		selectedX = -1;
 		selectedY = -1;
 		tiles[oldSelectedX][oldSelectedY].repaint();
-		System.out.println("clearSelection " + oldSelectedX + " " + oldSelectedY);
+		debug.println("clearSelection ", Integer.valueOf(oldSelectedX), " ", Integer.valueOf(oldSelectedY));
 	}
 
-	private boolean anySelection() {
+	private boolean isAnySelected() {
 		return selectedX >= 0 && selectedY >= 0;
 	}
 
 	private Tile getSelection() {
-		if (!anySelection())
+		if (!isAnySelected())
 			throw new IllegalStateException();
 		return game.getTile(selectedX, selectedY);
 	}
@@ -78,7 +81,7 @@ public class LevelPanel extends JPanel {
 		private final int x;
 		private final int y;
 
-		public BoardTile(int x, int y) {
+		BoardTile(int x, int y) {
 			this.x = x;
 			this.y = y;
 
@@ -91,17 +94,18 @@ public class LevelPanel extends JPanel {
 				public void mousePressed(MouseEvent e) {
 					if (game == null)
 						return;
-					if (anySelection()) {
+					if (isAnySelected()) {
 						Tile tile = getSelection();
 						Unit unit = tile.getUnit();
-						if (game.canMove(selectedX, selectedY, x, y)) {
-							System.out.printf("Move %d %d %d %d\n", selectedX, selectedY, x, y);
+						if (game.isMoveValid(selectedX, selectedY, x, y)) {
+							debug.format("Move %d %d %d %d\n", Integer.valueOf(selectedX), Integer.valueOf(selectedY),
+									Integer.valueOf(x), Integer.valueOf(y));
 							game.move(selectedX, selectedY, x, y);
 							clearSelection();
 							repaint();
 							return;
 						}
-						if (game.canAttak(selectedX, selectedY, x, y)) {
+						if (game.isAttackValid(selectedX, selectedY, x, y)) {
 							// game.a
 						}
 					}
@@ -123,7 +127,7 @@ public class LevelPanel extends JPanel {
 			boolean select = !isSelected() && canSelect();
 			clearSelection();
 			if (select) {
-				System.out.printf("Selected %d %d\n", x, y);
+				debug.format("Selected %d %d\n", Integer.valueOf(x), Integer.valueOf(y));
 				selectedX = x;
 				selectedY = y;
 				repaint();
@@ -138,7 +142,7 @@ public class LevelPanel extends JPanel {
 			if (!tile().hasUnit())
 				return false;
 			Unit unit = tile().getUnit();
-			return unit.canAct();
+			return unit.isActive();
 		}
 
 		@Override
@@ -154,7 +158,7 @@ public class LevelPanel extends JPanel {
 				Unit unit = tile().getUnit();
 				Graphics2D g2 = (Graphics2D) g;
 				Composite oldComp = g2.getComposite();
-				if (!unit.canAct())
+				if (!unit.isActive())
 					g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
 				drawImage(g, ImageManager.getLabel(unit));
 				g2.setComposite(oldComp);

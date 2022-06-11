@@ -1,14 +1,14 @@
 package com.ugav.battalion;
 
-public interface Entity extends Drawable {
+interface Entity extends Drawable {
 
 	Team getTeam();
 
 	void setTeam(Team team);
 
-	boolean canAct();
+	boolean isActive();
 
-	void setCanAct(boolean canMove);
+	void setActive(boolean active);
 
 	Entity deepCopy();
 
