@@ -22,12 +22,12 @@ public class HardcodedLevel1 {
 	        .setTile(2, 2, Terrain.CLEAR_WATER, null, null)
 	        .buildLevel();
 
-    private HardcodedLevel1() {
-	throw new InternalError();
-    }
+	private HardcodedLevel1() {
+		throw new InternalError();
+	}
 
-    public static Level getLevel() {
-	return LEVEL;
-    }
+	public static Level getLevel() {
+		return LEVEL;
+	}
 
 }

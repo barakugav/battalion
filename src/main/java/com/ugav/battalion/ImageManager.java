@@ -18,86 +18,86 @@ import com.ugav.battalion.Unit.Tank;
 
 public class ImageManager {
 
-    private ImageManager() {
-	throw new InternalError();
-    }
-
-    /* Terrains */
-    static final String FLAT_LAND = "selection";
-    static final String MOUNTAIN = "selection";
-    static final String CLEAR_WATER = "selection";
-
-    /* Units */
-    static final String SOLDIER = "selection";
-    static final String TANK = "selection";
-
-    /* Buildings */
-    static final String FACTORY = "selection";
-    static final String OIL_REFINERY = "selection";
-
-    /* GUI */
-    static final String SELECTION = "selection";
-
-    private static final java.util.Map<String, BufferedImage> images = new HashMap<>();
-
-    static {
-	java.util.Map<String, String> images_paths = new HashMap<>();
+	private ImageManager() {
+		throw new InternalError();
+	}
 
 	/* Terrains */
-	images_paths.put(FLAT_LAND, "img/terrain/flat_land.png");
-	images_paths.put(MOUNTAIN, "img/terrain/mountain.png");
-	images_paths.put(CLEAR_WATER, "img/terrain/clear_water.png");
+	static final String FLAT_LAND = "selection";
+	static final String MOUNTAIN = "selection";
+	static final String CLEAR_WATER = "selection";
 
 	/* Units */
-	images_paths.put(SOLDIER, "img/unit/soldier.png");
-	images_paths.put(TANK, "img/unit/tank.png");
+	static final String SOLDIER = "selection";
+	static final String TANK = "selection";
 
 	/* Buildings */
-	images_paths.put(FACTORY, "img/building/facotry.png");
-	images_paths.put(OIL_REFINERY, "img/building/oil_refinery.png");
+	static final String FACTORY = "selection";
+	static final String OIL_REFINERY = "selection";
 
 	/* GUI */
-	images_paths.put(SELECTION, "img/gui/selection.png");
+	static final String SELECTION = "selection";
 
-	try {
-	    for (java.util.Map.Entry<String, String> entry : images_paths.entrySet()) {
-		BufferedImage image = ImageIO.read(new File(entry.getValue()));
-		images.put(entry.getKey(), image);
-	    }
-	} catch (IOException e) {
-	    throw new UncheckedIOException(e);
+	private static final java.util.Map<String, BufferedImage> images = new HashMap<>();
+
+	static {
+		java.util.Map<String, String> images_paths = new HashMap<>();
+
+		/* Terrains */
+		images_paths.put(FLAT_LAND, "img/terrain/flat_land.png");
+		images_paths.put(MOUNTAIN, "img/terrain/mountain.png");
+		images_paths.put(CLEAR_WATER, "img/terrain/clear_water.png");
+
+		/* Units */
+		images_paths.put(SOLDIER, "img/unit/soldier.png");
+		images_paths.put(TANK, "img/unit/tank.png");
+
+		/* Buildings */
+		images_paths.put(FACTORY, "img/building/facotry.png");
+		images_paths.put(OIL_REFINERY, "img/building/oil_refinery.png");
+
+		/* GUI */
+		images_paths.put(SELECTION, "img/gui/selection.png");
+
+		try {
+			for (java.util.Map.Entry<String, String> entry : images_paths.entrySet()) {
+				BufferedImage image = ImageIO.read(new File(entry.getValue()));
+				images.put(entry.getKey(), image);
+			}
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
-    }
 
-    static BufferedImage getImage(String label) {
-	BufferedImage image = images.get(label);
-	if (image == null)
-	    throw new IllegalArgumentException("Image not found for label: " + label);
-	return image;
-    }
+	static BufferedImage getImage(String label) {
+		BufferedImage image = images.get(label);
+		if (image == null)
+			throw new IllegalArgumentException("Image not found for label: " + label);
+		return image;
+	}
 
-    static String getLabel(Drawable obj) {
-	/* Terrains */
-	if (obj instanceof FlatLand)
-	    return FLAT_LAND;
-	else if (obj instanceof Mountain)
-	    return MOUNTAIN;
-	else if (obj instanceof ClearWater)
-	    return CLEAR_WATER;
-	/* Units */
-	else if (obj instanceof Soldier)
-	    return SOLDIER;
-	else if (obj instanceof Tank)
-	    return TANK;
-	/* Buildings */
-	else if (obj instanceof OilRefinery)
-	    return OIL_REFINERY;
-	else if (obj instanceof Factory)
-	    return FACTORY;
-	/* Not Found */
-	else
-	    throw new IllegalArgumentException();
+	static String getLabel(Drawable obj) {
+		/* Terrains */
+		if (obj instanceof FlatLand)
+			return FLAT_LAND;
+		else if (obj instanceof Mountain)
+			return MOUNTAIN;
+		else if (obj instanceof ClearWater)
+			return CLEAR_WATER;
+		/* Units */
+		else if (obj instanceof Soldier)
+			return SOLDIER;
+		else if (obj instanceof Tank)
+			return TANK;
+		/* Buildings */
+		else if (obj instanceof OilRefinery)
+			return OIL_REFINERY;
+		else if (obj instanceof Factory)
+			return FACTORY;
+		/* Not Found */
+		else
+			throw new IllegalArgumentException();
 
-    }
+	}
 
 }

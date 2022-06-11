@@ -5,57 +5,56 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 
-import javax.swing.JButton;
 import javax.swing.JFrame;
 
 public class GameFrame extends JFrame {
 
-    private static final String TITLE = "Battalion";
-    private static final int FRAME_WIDTH = 500;
-    private static final int FRAME_HEIGHT = 500;
+	private static final String TITLE = "Battalion";
+	private static final int FRAME_WIDTH = 500;
+	private static final int FRAME_HEIGHT = 500;
 
-    private final MainMenuPanel mainMenuPanel;
-    private final LevelPanel gamePanel;
-    private final Collection<Component> windows;
+	private final MainMenuPanel mainMenuPanel;
+	private final LevelPanel gamePanel;
+	private final Collection<Component> windows;
 
-    GameFrame() {
-	super(TITLE);
-	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	setLocationByPlatform(true);
-	setResizable(false);
-	setSize(FRAME_WIDTH, FRAME_HEIGHT);
+	GameFrame() {
+		super(TITLE);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLocationByPlatform(true);
+		setResizable(false);
+		setSize(FRAME_WIDTH, FRAME_HEIGHT);
 
-	windows = new ArrayList<>();
-	windows.add(mainMenuPanel = new MainMenuPanel(this));
-	windows.add(gamePanel = new LevelPanel(this));
+		windows = new ArrayList<>();
+		windows.add(mainMenuPanel = new MainMenuPanel(this));
+		windows.add(gamePanel = new LevelPanel(this));
 
-	/* By default display main menu */
-	displayMainMenu();
-    }
+		/* By default display main menu */
+		displayMainMenu();
+	}
 
-    void displayMainMenu() {
-	displayWindow(mainMenuPanel);
-    }
+	void displayMainMenu() {
+		displayWindow(mainMenuPanel);
+	}
 
-    void displayGame() {
-	displayWindow(gamePanel);
-    }
+	void displayGame() {
+		displayWindow(gamePanel);
+	}
 
-    private void displayWindow(Component window) {
-	if (!windows.contains(Objects.requireNonNull(window)))
-	    throw new IllegalArgumentException();
-	removeAllWindows();
-	add(window);
-	invalidate();
-	repaint();
-    }
+	private void displayWindow(Component window) {
+		if (!windows.contains(Objects.requireNonNull(window)))
+			throw new IllegalArgumentException();
+		removeAllWindows();
+		add(window);
+		invalidate();
+		repaint();
+	}
 
-    LevelPanel getGamePlane() {
-	return gamePanel;
-    }
+	LevelPanel getGamePlane() {
+		return gamePanel;
+	}
 
-    private void removeAllWindows() {
-	windows.forEach(this::remove);
-    }
+	private void removeAllWindows() {
+		windows.forEach(this::remove);
+	}
 
 }

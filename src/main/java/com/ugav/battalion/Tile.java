@@ -4,56 +4,56 @@ import java.util.Objects;
 
 public class Tile {
 
-    private final Terrain terrain;
-    private final Building building;
-    private Unit unit;
+	private final Terrain terrain;
+	private final Building building;
+	private Unit unit;
 
-    Tile(Terrain terrain, Building building, Unit unit) {
-	this.terrain = Objects.requireNonNull(terrain);
-	this.building = building != null ? building.deepCopy() : null;
-	this.unit = unit != null ? unit.deepCopy() : null;
-    }
+	Tile(Terrain terrain, Building building, Unit unit) {
+		this.terrain = Objects.requireNonNull(terrain);
+		this.building = building != null ? building.deepCopy() : null;
+		this.unit = unit != null ? unit.deepCopy() : null;
+	}
 
-    public Terrain getTerrain() {
-	return terrain;
-    }
+	public Terrain getTerrain() {
+		return terrain;
+	}
 
-    public Building getBuilding() {
-	if (!hasBuilding())
-	    throw new IllegalStateException();
-	return building;
-    }
+	public Building getBuilding() {
+		if (!hasBuilding())
+			throw new IllegalStateException();
+		return building;
+	}
 
-    public boolean hasBuilding() {
-	return building != null;
-    }
+	public boolean hasBuilding() {
+		return building != null;
+	}
 
-    public Unit getUnit() {
-	if (!hasUnit())
-	    throw new IllegalStateException();
-	return unit;
-    }
+	public Unit getUnit() {
+		if (!hasUnit())
+			throw new IllegalStateException();
+		return unit;
+	}
 
-    public boolean hasUnit() {
-	return unit != null;
-    }
+	public boolean hasUnit() {
+		return unit != null;
+	}
 
-    public void setUnit(Unit unit) {
-	Objects.requireNonNull(unit);
-	if (this.unit != null)
-	    throw new IllegalStateException();
-	this.unit = unit;
-    }
+	public void setUnit(Unit unit) {
+		Objects.requireNonNull(unit);
+		if (this.unit != null)
+			throw new IllegalStateException();
+		this.unit = unit;
+	}
 
-    public void removeUnit() {
-	unit = null;
-    }
+	public void removeUnit() {
+		unit = null;
+	}
 
-    public Tile deepCopy() {
-	Terrain terrainCopy = terrain; /* No need to deep copy */
-	Building buildingCopy = building != null ? building.deepCopy() : null;
-	Unit unitCopy = unit != null ? unit.deepCopy() : null;
-	return new Tile(terrainCopy, buildingCopy, unitCopy);
-    }
+	public Tile deepCopy() {
+		Terrain terrainCopy = terrain; /* No need to deep copy */
+		Building buildingCopy = building != null ? building.deepCopy() : null;
+		Unit unitCopy = unit != null ? unit.deepCopy() : null;
+		return new Tile(terrainCopy, buildingCopy, unitCopy);
+	}
 
 }
