@@ -10,8 +10,8 @@ class Tile {
 
 	Tile(Terrain terrain, Building building, Unit unit) {
 		this.terrain = Objects.requireNonNull(terrain);
-		this.building = building != null ? building.deepCopy() : null;
-		this.unit = unit != null ? unit.deepCopy() : null;
+		this.building = building;
+		this.unit = unit;
 	}
 
 	Terrain getTerrain() {
@@ -47,13 +47,6 @@ class Tile {
 
 	void removeUnit() {
 		unit = null;
-	}
-
-	Tile deepCopy() {
-		Terrain terrainCopy = terrain; /* No need to deep copy */
-		Building buildingCopy = building != null ? building.deepCopy() : null;
-		Unit unitCopy = unit != null ? unit.deepCopy() : null;
-		return new Tile(terrainCopy, buildingCopy, unitCopy);
 	}
 
 }

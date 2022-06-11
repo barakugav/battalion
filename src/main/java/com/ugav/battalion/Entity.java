@@ -10,6 +10,4 @@ interface Entity extends Drawable {
 
 	void setActive(boolean active);
 
-	Entity deepCopy();
-
 }

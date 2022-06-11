@@ -1,38 +1,29 @@
 package com.ugav.battalion;
 
+import com.ugav.battalion.Level.BuildingDesc;
+import com.ugav.battalion.Level.TileDesc;
+import com.ugav.battalion.Level.UnitDesc;
+
 class LevelBuilder {
 
-	private final Tile[][] tiles;
+	private final TileDesc[][] tiles;
 
 	LevelBuilder(int xLen, int yLen) {
 		if (xLen <= 0 || yLen <= 0)
 			throw new IllegalArgumentException();
-		tiles = new Tile[xLen][yLen];
+		tiles = new TileDesc[xLen][yLen];
 		for (int x = 0; x < xLen; x++)
 			for (int y = 0; y < yLen; y++)
-				tiles[x][y] = new Tile(Terrain.FLAT_LAND, null, null);
+				tiles[x][y] = TileDesc.of(Terrain.FLAT_LAND, null, null);
 	}
 
-	LevelBuilder setTile(int x, int y, Tile tile) {
-		tiles[x][y] = tile.deepCopy();
+	LevelBuilder setTile(int x, int y, TileDesc tile) {
+		tiles[x][y] = tile;
 		return this;
 	}
 
-	LevelBuilder setTile(int x, int y, Terrain terrain, Building building, Unit unit) {
-		setTile(x, y, new Tile(terrain, building, unit));
-		return this;
-	}
-
-	LevelBuilder setBuilding(int x, int y, Building building) {
-		Tile tile = tiles[x][y];
-		tiles[x][y] = new Tile(tile.getTerrain(), building, tile.hasUnit() ? tile.getUnit() : null);
-		return this;
-	}
-
-	LevelBuilder setUnit(int x, int y, Unit unit) {
-		Tile tile = tiles[x][y];
-		tiles[x][y] = new Tile(tile.getTerrain(), tile.hasBuilding() ? tile.getBuilding() : null, unit);
-		return this;
+	LevelBuilder setTile(int x, int y, Terrain terrain, BuildingDesc buiding, UnitDesc unit) {
+		return setTile(x, y, TileDesc.of(terrain, buiding, unit));
 	}
 
 	Level buildLevel() {

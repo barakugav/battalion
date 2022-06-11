@@ -2,6 +2,10 @@ package com.ugav.battalion;
 
 import java.util.function.Consumer;
 
+import com.ugav.battalion.Level.BuildingDesc;
+import com.ugav.battalion.Level.TileDesc;
+import com.ugav.battalion.Level.UnitDesc;
+
 class Map {
 
 	private final int xLen;
@@ -53,13 +57,18 @@ class Map {
 		this.tiles = new Tile[xLen][yLen];
 		for (int x = 0; x < xLen; x++)
 			for (int y = 0; y < yLen; y++)
-				this.tiles[x][y] = tiles[x][y].deepCopy();
+				this.tiles[x][y] = tiles[x][y];
 	}
 
 	Map(Level level) {
 		xLen = level.getXLen();
 		yLen = level.getYLen();
-		tiles = level.getTiles();
+
+		int xLen = level.getXLen(), yLen = level.getYLen();
+		tiles = new Tile[xLen][yLen];
+		for (int x = 0; x < xLen; x++)
+			for (int y = 0; y < yLen; y++)
+				tiles[x][y] = createTile(level.tileDesc(x, y), x, y);
 	}
 
 	int getXLen() {
@@ -87,9 +96,50 @@ class Map {
 	}
 
 	void forEach(Consumer<Tile> func) {
+		// TODO iterator
 		for (int x = 0; x < xLen; x++)
 			for (int y = 0; y < yLen; y++)
 				func.accept(tiles[x][y]);
+	}
+
+	private Tile createTile(TileDesc desc, int x, int y) {
+		Terrain terrain = desc.terrain;
+		Building building = createBuilding(desc.buiding);
+		Unit unit = createUnit(desc.unit, x, y);
+		return new Tile(terrain, building, unit);
+	}
+
+	@SuppressWarnings("static-method")
+	private Building createBuilding(BuildingDesc desc) {
+		if (desc == null)
+			return null;
+		switch (desc.type) {
+		case OilRefinery:
+			return new Building.OilRefinery(desc.team);
+		case Factory:
+			return new Building.Factory(desc.team);
+		default:
+			throw new InternalError();
+		}
+	}
+
+	private Unit createUnit(UnitDesc desc, int x, int y) {
+		if (desc == null)
+			return null;
+		Unit unit;
+		switch (desc.type) {
+		case Soldier:
+			unit = new Unit.Soldier(desc.team);
+			break;
+		case Tank:
+			unit = new Unit.Tank(desc.team);
+			break;
+		default:
+			throw new InternalError();
+		}
+		unit.setMap(this);
+		unit.setPos(x, y);
+		return unit;
 	}
 
 }

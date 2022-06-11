@@ -2,6 +2,7 @@ package com.ugav.battalion;
 
 import com.ugav.battalion.Map.Neighbor;
 import com.ugav.battalion.Map.Position;
+import com.ugav.battalion.Unit.Category;
 
 class Game {
 
@@ -118,7 +119,7 @@ class Game {
 	void moveAndAttack(int attackerX, int attackerY, int moveToX, int moveToY, int targetX, int targetY) {
 		Unit attacker = map.at(attackerX, attackerY).getUnit();
 		Unit target = map.at(targetX, targetY).getUnit();
-		if (!(attacker instanceof CloseRangeUnit))
+		if (!(attacker.type.category == Category.Land))
 			throw new UnsupportedOperationException();
 
 		if (!isAttackValid(attackerX, attackerY, targetX, targetY))
@@ -142,8 +143,8 @@ class Game {
 	void attackRange(int attackerX, int attackerY, int targetX, int targetY) {
 		Unit attacker = map.at(attackerX, attackerY).getUnit();
 		Unit target = map.at(targetX, targetY).getUnit();
-		if (!(attacker instanceof LongRangeUnit))
-			throw new UnsupportedOperationException();
+//		if (!(attacker instanceof LongRangeUnit))
+//			throw new UnsupportedOperationException();
 		if (!isAttackValid(attackerX, attackerY, targetX, targetY))
 			throw new IllegalStateException();
 		doDamage(attacker, target);

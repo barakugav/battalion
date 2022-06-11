@@ -2,22 +2,21 @@ package com.ugav.battalion;
 
 abstract class Building extends EntityAbstract {
 
-	Building(Team team) {
-		super(team);
+	enum Type {
+		OilRefinery, Factory
 	}
 
-	@Override
-	public abstract Building deepCopy();
+	final Type type;
+
+	Building(Type type, Team team) {
+		super(team);
+		this.type = type;
+	}
 
 	static class OilRefinery extends Building {
 
 		OilRefinery(Team team) {
-			super(team);
-		}
-
-		@Override
-		public OilRefinery deepCopy() {
-			return new OilRefinery(getTeam());
+			super(Type.OilRefinery, team);
 		}
 
 	}
@@ -25,12 +24,7 @@ abstract class Building extends EntityAbstract {
 	static class Factory extends Building {
 
 		Factory(Team team) {
-			super(team);
-		}
-
-		@Override
-		public Factory deepCopy() {
-			return new Factory(getTeam());
+			super(Type.Factory, team);
 		}
 
 	}
