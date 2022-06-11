@@ -1,6 +1,9 @@
 package com.ugav.battalion;
 
-import java.util.function.Consumer;
+import java.util.AbstractCollection;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import com.ugav.battalion.Level.BuildingDesc;
 import com.ugav.battalion.Level.TileDesc;
@@ -95,11 +98,71 @@ class Map {
 		return isInMap(pos.x, pos.y);
 	}
 
-	void forEach(Consumer<Tile> func) {
-		// TODO iterator
-		for (int x = 0; x < xLen; x++)
-			for (int y = 0; y < yLen; y++)
-				func.accept(tiles[x][y]);
+	Collection<Position> positions() {
+		return new AbstractCollection<>() {
+
+			@Override
+			public int size() {
+				return xLen * yLen;
+			}
+
+			@Override
+			public Iterator<Position> iterator() {
+				return new Iterator<>() {
+
+					int x = 0, y = 0;
+
+					@Override
+					public boolean hasNext() {
+						return x < xLen;
+					}
+
+					@Override
+					public Position next() {
+						if (!hasNext())
+							throw new NoSuchElementException();
+						Position pos = new Position(x, y);
+						if (++y >= yLen) {
+							y = 0;
+							x++;
+						}
+						return pos;
+					}
+
+				};
+			}
+
+		};
+	}
+
+	Collection<Tile> tiles() {
+		return new AbstractCollection<>() {
+
+			@Override
+			public int size() {
+				return xLen * yLen;
+			}
+
+			@Override
+			public Iterator<Tile> iterator() {
+				return new Iterator<>() {
+
+					Iterator<Position> posIt = positions().iterator();
+
+					@Override
+					public boolean hasNext() {
+						return posIt.hasNext();
+					}
+
+					@Override
+					public Tile next() {
+						return at(posIt.next());
+					}
+
+				};
+			}
+
+		};
 	}
 
 	private Tile createTile(TileDesc desc, int x, int y) {

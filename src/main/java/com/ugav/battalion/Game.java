@@ -45,7 +45,7 @@ class Game {
 	}
 
 	void turnBegin() {
-		map.forEach(tile -> {
+		for (Tile tile : map.tiles()) {
 			if (tile.hasBuilding()) {
 				Building building = tile.getBuilding();
 				building.setActive(building.getTeam() == turn);
@@ -54,33 +54,29 @@ class Game {
 				Unit unit = tile.getUnit();
 				unit.setActive(unit.getTeam() == turn);
 			}
-		});
+		}
 	}
 
 	void turnEnd() {
-		final var blueDead = new Object() {
-			boolean val = true;
-		};
-		final var redDead = new Object() {
-			boolean val = true;
-		};
-		map.forEach(tile -> {
+		boolean blueDead = true;
+		boolean redDead = true;
+		for (Tile tile : map.tiles()) {
 			if (tile.hasUnit()) {
 				Team unitTeam = tile.getUnit().getTeam();
 				if (unitTeam == Team.Blue)
-					blueDead.val = false;
+					blueDead = false;
 				else if (unitTeam == Team.Red)
-					redDead.val = false;
+					redDead = false;
 				else
 					throw new InternalError();
 			}
-		});
+		}
 
-		if (blueDead.val) {
+		if (blueDead) {
 			winner = Team.Red;
 			return;
 		}
-		if (redDead.val) {
+		if (redDead) {
 			winner = Team.Blue;
 			return;
 		}

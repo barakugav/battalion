@@ -148,33 +148,26 @@ abstract class Unit extends EntityAbstract {
 
 		int maxMove = type.moveLimit;
 		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
-			for (int x = 0; x < xLen; x++) {
-				for (int y = 0; y < yLen; y++) {
-					/* Already can move here */
-					if (moveableMap0[x][y] >= 0)
-						continue;
-					/* Other unit in the way */
-					if (map.at(x, y).hasUnit())
-						continue;
-					/* TODO, check surface */
-					/* Check if we reached any near tiles last moveLen */
-					boolean nearMoveable = false;
-					for (Position neighbor : Neighbor.of(x, y)) {
-						if (map.isInMap(neighbor) && moveableMap0[neighbor.x][neighbor.y] != moveLen - 1) {
-							nearMoveable = true;
-							break;
-						}
+			for (Position pos : map.positions()) {
+				/* Already can move here */
+				if (moveableMap0[pos.x][pos.y] >= 0)
+					continue;
+				/* Other unit in the way */
+				if (map.at(pos).hasUnit())
+					continue;
+				/* TODO, check surface */
+				/* Check if we reached any near tiles last moveLen */
+				for (Position neighbor : Neighbor.of(pos.x, pos.y)) {
+					if (map.isInMap(neighbor) && moveableMap0[neighbor.x][neighbor.y] != moveLen - 1) {
+						moveableMap0[pos.x][pos.y] = moveLen;
+						break;
 					}
-					if (!nearMoveable)
-						continue;
-					moveableMap0[x][y] = moveLen;
 				}
 			}
 		}
 		/* Convert distance map to boolean map */
-		for (int x = 0; x < xLen; x++)
-			for (int y = 0; y < yLen; y++)
-				moveableMap[x][y] = moveableMap0[x][y] > 0;
+		for (Position pos : map.positions())
+			moveableMap[pos.x][pos.y] = moveableMap0[pos.x][pos.y] > 0;
 
 		return moveableMap;
 	}
