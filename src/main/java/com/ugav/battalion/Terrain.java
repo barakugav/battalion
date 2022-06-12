@@ -1,9 +1,26 @@
 package com.ugav.battalion;
 
+import com.ugav.battalion.Images.Drawable;
+
 class Terrain implements Drawable {
 
 	enum Category {
-		Land, Mountain, Shore, Water
+		Land, Mountain, Shore, Water;
+
+		String shortName() {
+			switch (this) {
+			case Land:
+				return "L";
+			case Mountain:
+				return "M";
+			case Shore:
+				return "S";
+			case Water:
+				return "W";
+			default:
+				throw new InternalError();
+			}
+		}
 	}
 
 	enum Type {

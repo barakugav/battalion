@@ -65,6 +65,8 @@ class Images {
 
 		/* GUI */
 		addImg.accept(Label.Selection, "img/gui/selection.png");
+		addImg.accept(Label.Reachable, "img/gui/reachable.png");
+		addImg.accept(Label.Attackable, "img/gui/attackabe.png");
 	}
 
 	BufferedImage getImage(Label label) {
@@ -85,7 +87,7 @@ class Images {
 		FactoryRed, FactoryBlue, OilRefineryRed, OilRefineryBlue,
 
 		/* GUI */
-		Selection;
+		Selection, Reachable, Attackable;
 
 		static Label of(Drawable obj) {
 			if (obj instanceof Terrain) {
@@ -116,6 +118,9 @@ class Images {
 			}
 			throw new InternalError();
 		}
+	}
+
+	interface Drawable {
 	}
 
 }

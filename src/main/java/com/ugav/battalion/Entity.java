@@ -2,6 +2,8 @@ package com.ugav.battalion;
 
 import java.util.Objects;
 
+import com.ugav.battalion.Images.Drawable;
+
 abstract class Entity implements Drawable {
 
 	private Team team;

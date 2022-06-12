@@ -137,4 +137,9 @@ class Arena {
 		return unit;
 	}
 
+	@Override
+	public String toString() {
+		return Utils.toString(tiles);
+	}
+
 }

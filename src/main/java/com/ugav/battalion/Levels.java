@@ -51,7 +51,7 @@ class Levels {
 	        .setTile(0, 1, Terrain.FLAT_LAND, null, UnitDesc.of(Unit.Type.Soldier, Team.Blue))
 	        .setTile(0, 2, Terrain.FLAT_LAND, null, UnitDesc.of(Unit.Type.Soldier, Team.Blue))
 	        .setTile(0, 3, Terrain.FLAT_LAND, null, UnitDesc.of(Unit.Type.Soldier, Team.Blue))
-	        .setTile(0, 4, Terrain.FLAT_LAND, null, UnitDesc.of(Unit.Type.Soldier, Team.Blue))
+	        .setTile(0, 4, Terrain.FLAT_LAND, null, UnitDesc.of(Unit.Type.Tank, Team.Blue))
 	        .setTile(1, 0, Terrain.FLAT_LAND, null, null)
 	        .setTile(1, 1, Terrain.FLAT_LAND, null, null)
 	        .setTile(1, 2, Terrain.FLAT_LAND, null, null)
@@ -70,7 +70,7 @@ class Levels {
 	        .setTile(4, 0, Terrain.FLAT_LAND, null, UnitDesc.of(Unit.Type.Soldier, Team.Red))
 	        .setTile(4, 1, Terrain.FLAT_LAND, null, UnitDesc.of(Unit.Type.Soldier, Team.Red))
 	        .setTile(4, 2, Terrain.FLAT_LAND, null, UnitDesc.of(Unit.Type.Soldier, Team.Red))
-	        .setTile(4, 3, Terrain.FLAT_LAND, null, UnitDesc.of(Unit.Type.Soldier, Team.Red))
+	        .setTile(4, 3, Terrain.FLAT_LAND, null, UnitDesc.of(Unit.Type.Tank, Team.Red))
 	        .setTile(4, 4, Terrain.FLAT_LAND, null, UnitDesc.of(Unit.Type.Soldier, Team.Red))
 	        .buildLevel();
 

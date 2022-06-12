@@ -23,6 +23,8 @@ class LevelPanel extends JPanel {
 
 	private final Map<Position, BoardTile> tiles;
 	private Position selection;
+	private Position.Bitmap reachableMap = Position.Bitmap.empty;
+	private Position.Bitmap attackableMap = Position.Bitmap.empty;
 	private Game game;
 	private final Images images = new Images();
 	private final DebugPrintsManager debug;
@@ -66,21 +68,41 @@ class LevelPanel extends JPanel {
 	}
 
 	private void clearSelection() {
-		if (!(isAnySelected()))
+		if (selection == null)
 			return;
 		debug.println("clearSelection ", selection);
-		tile(selection).repaint();
 		selection = null;
+		for (Position pos : reachableMap)
+			tile(pos).invalidate();
+		for (Position pos : attackableMap)
+			tile(pos).invalidate();
+		reachableMap = Position.Bitmap.empty;
+		attackableMap = Position.Bitmap.empty;
 	}
 
-	private boolean isAnySelected() {
-		return selection != null;
-	}
+	private void tileClicked(BoardTile tile) {
+		if (game == null)
+			return;
+		if (selection == null) {
+			if (tile.canSelect()) {
+				debug.println("Selected ", tile.pos);
+				selection = tile.pos;
+				Unit unit = tile.tile().getUnit();
+				reachableMap = unit.getReachableMap();
+				attackableMap = unit.getAttackableMap();
+			}
 
-	private Tile getSelection() {
-		if (!isAnySelected())
-			throw new IllegalStateException();
-		return game.getTile(selection);
+		} else {
+			if (game.isMoveValid(selection, tile.pos)) {
+				debug.println("Move ", selection, " ", tile.pos);
+				game.move(selection, tile.pos);
+			} else if (game.isAttackValid(selection, tile.pos)) {
+				// game.a
+			}
+
+			clearSelection();
+		}
+		repaint();
 	}
 
 	private class BoardTile extends JPanel {
@@ -97,23 +119,7 @@ class LevelPanel extends JPanel {
 
 				@Override
 				public void mousePressed(MouseEvent e) {
-					if (game == null)
-						return;
-					if (isAnySelected()) {
-						Tile tile = getSelection();
-						Unit unit = tile.getUnit();
-						if (game.isMoveValid(selection, pos)) {
-							debug.println("Move ", selection, " ", pos);
-							game.move(selection, pos);
-							clearSelection();
-							repaint();
-							return;
-						}
-						if (game.isAttackValid(selection, pos)) {
-							// game.a
-						}
-					}
-					select();
+					tileClicked(BoardTile.this);
 				}
 
 			});
@@ -127,16 +133,6 @@ class LevelPanel extends JPanel {
 
 		}
 
-		private void select() {
-			boolean select = !isSelected() && canSelect();
-			clearSelection();
-			if (select) {
-				debug.println("Selected ", pos);
-				selection = pos;
-				repaint();
-			}
-		}
-
 		private boolean isSelected() {
 			return pos.equals(selection);
 		}
@@ -146,6 +142,14 @@ class LevelPanel extends JPanel {
 				return false;
 			Unit unit = tile().getUnit();
 			return unit.isActive();
+		}
+
+		private boolean isReachable() {
+			return reachableMap.at(pos);
+		}
+
+		private boolean isAttackable() {
+			return attackableMap.at(pos);
 		}
 
 		@Override
@@ -166,8 +170,13 @@ class LevelPanel extends JPanel {
 				drawImage(g, Images.Label.of(unit));
 				g2.setComposite(oldComp);
 			}
+
 			if (isSelected())
 				drawImage(g, Images.Label.Selection);
+			if (isReachable())
+				drawImage(g, Images.Label.Reachable);
+			if (isAttackable())
+				drawImage(g, Images.Label.Attackable);
 		}
 
 		private void drawImage(Graphics g, Images.Label label) {

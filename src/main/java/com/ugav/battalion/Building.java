@@ -29,4 +29,9 @@ abstract class Building extends Entity {
 
 	}
 
+	@Override
+	public String toString() {
+		return (getTeam() == Team.Red ? "R" : "B") + type;
+	}
+
 }

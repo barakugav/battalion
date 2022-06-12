@@ -1,9 +1,11 @@
 package com.ugav.battalion;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.Predicate;
 
 class Position {
 
@@ -82,6 +84,34 @@ class Position {
 				r++;
 			}
 			return pos;
+		}
+
+	}
+
+	static class Bitmap implements Predicate<Position>, Iterable<Position> {
+
+		private final boolean[][] map;
+
+		static final Bitmap empty = new Bitmap(new boolean[0][0]);
+
+		Bitmap(boolean[][] map) {
+			this.map = map;
+		}
+
+		boolean at(Position pos) {
+			return pos.row < map.length && pos.col < map[pos.row].length && map[pos.row][pos.col];
+		}
+
+		@Override
+		public boolean test(Position pos) {
+			return at(pos);
+		}
+
+		@Override
+		public Iterator<Position> iterator() {
+			if (map.length == 0 || map[0].length == 0)
+				return Collections.emptyIterator();
+			return Utils.iteratorIf(new Iterator2D(map.length, map[0].length), this);
 		}
 
 	}

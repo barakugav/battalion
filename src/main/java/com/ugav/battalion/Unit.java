@@ -58,10 +58,12 @@ abstract class Unit extends Entity {
 	}
 
 	boolean isMoveValid(Position target) {
-		return getMovableMap()[target.row][target.col];
+		return getReachableMap().at(target);
 	}
 
-	abstract boolean isAttackValid(Position target);
+	boolean isAttackValid(Position target) {
+		return getAttackableMap().at(target);
+	}
 
 	enum Category {
 		Land, Water, Air
@@ -91,23 +93,28 @@ abstract class Unit extends Entity {
 		}
 
 		@Override
-		public boolean isAttackValid(Position target) {
+		public Position.Bitmap getAttackableMap() {
 			Arena arena = getArena();
 			int rows = arena.getrows(), cols = arena.getcols();
-			boolean[][] moveableMap = getMovableMap();
+			Position.Bitmap reachableMap = getReachableMap();
 			boolean[][] attackableMap = new boolean[rows][cols];
 
 			/* Touchable map */
 			for (Position pos : Utils.iterable(new Position.Iterator2D(rows, cols))) {
+				if (!arena.at(pos).hasUnit())
+					continue;
+				Unit other = arena.at(pos).getUnit();
+				if (other.getTeam() == getTeam())
+					continue;
 				for (Position neighbor : pos.neighbors()) {
-					if (arena.isValidPos(neighbor) && moveableMap[neighbor.row][neighbor.col]) {
+					if (arena.isValidPos(neighbor) && reachableMap.at(neighbor)) {
 						attackableMap[pos.row][pos.col] = true;
 						break;
 					}
 				}
 			}
 
-			return attackableMap[target.row][target.col];
+			return new Position.Bitmap(attackableMap);
 		}
 
 	}
@@ -138,21 +145,21 @@ abstract class Unit extends Entity {
 
 	}
 
-	boolean[][] getMovableMap() {
+	Position.Bitmap getReachableMap() {
 		Arena arena = getArena();
 		int rows = arena.getrows(), cols = arena.getcols();
-		boolean[][] moveableMap = new boolean[rows][cols];
+		boolean[][] reachableMap = new boolean[rows][cols];
 
-		int[][] moveableMap0 = new int[rows][cols];
+		int[][] reachableMap0 = new int[rows][cols];
 		for (int r = 0; r < rows; r++)
-			Arrays.fill(moveableMap0[r], -1);
-		moveableMap0[pos.row][pos.col] = 0;
+			Arrays.fill(reachableMap0[r], -1);
+		reachableMap0[pos.row][pos.col] = 0;
 
 		int maxMove = type.moveLimit;
 		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
 			for (Position pos : arena.positions()) {
 				/* Already can move here */
-				if (moveableMap0[pos.row][pos.col] >= 0)
+				if (reachableMap0[pos.row][pos.col] >= 0)
 					continue;
 				/* Other unit in the way */
 				if (arena.at(pos).hasUnit())
@@ -161,8 +168,8 @@ abstract class Unit extends Entity {
 					continue;
 				/* Check if we reached any near tiles last moveLen */
 				for (Position neighbor : pos.neighbors()) {
-					if (arena.isValidPos(neighbor) && moveableMap0[neighbor.row][neighbor.col] == moveLen - 1) {
-						moveableMap0[pos.row][pos.col] = moveLen;
+					if (arena.isValidPos(neighbor) && reachableMap0[neighbor.row][neighbor.col] == moveLen - 1) {
+						reachableMap0[pos.row][pos.col] = moveLen;
 						break;
 					}
 				}
@@ -170,9 +177,16 @@ abstract class Unit extends Entity {
 		}
 		/* Convert distance map to boolean map */
 		for (Position pos : arena.positions())
-			moveableMap[pos.row][pos.col] = moveableMap0[pos.row][pos.col] > 0;
+			reachableMap[pos.row][pos.col] = reachableMap0[pos.row][pos.col] > 0;
 
-		return moveableMap;
+		return new Position.Bitmap(reachableMap);
+	}
+
+	abstract Position.Bitmap getAttackableMap();
+
+	@Override
+	public String toString() {
+		return (getTeam() == Team.Red ? "R" : "B") + type;
 	}
 
 }
