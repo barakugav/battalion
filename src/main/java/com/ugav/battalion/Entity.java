@@ -14,19 +14,19 @@ abstract class Entity implements Drawable {
 		active = false;
 	}
 
-	public Team getTeam() {
+	Team getTeam() {
 		return team;
 	}
 
-	public void setTeam(Team team) {
+	void setTeam(Team team) {
 		this.team = Objects.requireNonNull(team);
 	}
 
-	public boolean isActive() {
+	boolean isActive() {
 		return active;
 	}
 
-	public void setActive(boolean active) {
+	void setActive(boolean active) {
 		this.active = active;
 	}
 

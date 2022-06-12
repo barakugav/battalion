@@ -18,7 +18,7 @@ abstract class Unit extends Entity {
 	}
 
 	@Override
-	public final void setTeam(Team team) {
+	final void setTeam(Team team) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -93,14 +93,13 @@ abstract class Unit extends Entity {
 		}
 
 		@Override
-		public Position.Bitmap getAttackableMap() {
+		Position.Bitmap getAttackableMap() {
 			Arena arena = getArena();
-			int rows = arena.getrows(), cols = arena.getcols();
 			Position.Bitmap reachableMap = getReachableMap();
-			boolean[][] attackableMap = new boolean[rows][cols];
+			boolean[][] attackableMap = new boolean[arena.getrows()][arena.getcols()];
 
 			/* Touchable map */
-			for (Position pos : Utils.iterable(new Position.Iterator2D(rows, cols))) {
+			for (Position pos : arena.positions()) {
 				if (!arena.at(pos).hasUnit())
 					continue;
 				Unit other = arena.at(pos).getUnit();
@@ -117,6 +116,15 @@ abstract class Unit extends Entity {
 			return new Position.Bitmap(attackableMap);
 		}
 
+		@Override
+		Position getMovePositionToAttack(Position target) {
+			Position.Bitmap reachableMap = getReachableMap();
+			for (Position neighbor : target.neighbors())
+				if (reachableMap.at(neighbor))
+					return neighbor;
+			return null;
+		}
+
 	}
 
 	static class Soldier extends CloseRangeUnitAbstract {
@@ -126,7 +134,7 @@ abstract class Unit extends Entity {
 		}
 
 		@Override
-		public int getDamge() {
+		int getDamge() {
 			return type.damage;
 		}
 
@@ -139,7 +147,7 @@ abstract class Unit extends Entity {
 		}
 
 		@Override
-		public int getDamge() {
+		int getDamge() {
 			return type.damage;
 		}
 
@@ -183,6 +191,8 @@ abstract class Unit extends Entity {
 	}
 
 	abstract Position.Bitmap getAttackableMap();
+
+	abstract Position getMovePositionToAttack(Position target);
 
 	@Override
 	public String toString() {

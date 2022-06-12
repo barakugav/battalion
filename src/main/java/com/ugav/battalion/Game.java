@@ -23,16 +23,20 @@ class Game {
 		}
 	}
 
-	int getrows() {
+	int getRows() {
 		return arena.getrows();
 	}
 
-	int getcols() {
+	int getCols() {
 		return arena.getcols();
 	}
 
 	Tile getTile(Position pos) {
 		return arena.at(pos);
+	}
+
+	Team getTurn() {
+		return turn;
 	}
 
 	void start() {
@@ -96,6 +100,7 @@ class Game {
 		Unit unit = from.getUnit();
 		from.removeUnit();
 		arena.at(target).setUnit(unit);
+		unit.setPos(target);
 	}
 
 	boolean isMoveValid(Position source, Position target) {
@@ -107,7 +112,7 @@ class Game {
 		return unit.getTeam() == turn && unit.isActive() && unit.isMoveValid(target);
 	}
 
-	void moveAndAttack(Position attackerPos, Position moveTarget, Position attackedPos) {
+	void moveAndAttack(Position attackerPos, /* Position moveTarget, */ Position attackedPos) {
 		Unit attacker = arena.at(attackerPos).getUnit();
 		Unit target = arena.at(attackedPos).getUnit();
 		if (!(attacker.type.category == Category.Land))
@@ -115,6 +120,7 @@ class Game {
 
 		if (!isAttackValid(attackerPos, attackedPos))
 			throw new IllegalStateException();
+		Position moveTarget = attacker.getMovePositionToAttack(attackedPos);
 
 		boolean moveNearTarget = false;
 		for (Position neighbor : attackedPos.neighbors()) {
@@ -148,8 +154,8 @@ class Game {
 		if (!attackerTile.hasUnit() || !targetTile.hasUnit())
 			return false;
 		Unit attacker = attackerTile.getUnit();
-		return attacker.getTeam() == turn && attacker.isActive() && attacker.isAttackValid(targetPos)
-				&& targetTile.getUnit().getTeam() != attacker.getTeam();
+		return attacker.getTeam() == turn && attacker.isActive() && attacker.getTeam() != targetTile.getUnit().getTeam()
+				&& attacker.isAttackValid(targetPos);
 	}
 
 	private void doDamage(Unit attacker, Unit target) {

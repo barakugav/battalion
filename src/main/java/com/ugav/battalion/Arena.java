@@ -99,23 +99,28 @@ class Arena {
 
 	private Tile createTile(TileDesc desc, Position pos) {
 		Terrain terrain = desc.terrain;
-		Building building = createBuilding(desc.buiding);
+		Building building = createBuilding(desc.buiding, pos);
 		Unit unit = createUnit(desc.unit, pos);
 		return new Tile(terrain, building, unit);
 	}
 
 	@SuppressWarnings("static-method")
-	private Building createBuilding(BuildingDesc desc) {
+	private Building createBuilding(BuildingDesc desc, Position pos) {
 		if (desc == null)
 			return null;
+		Building building;
 		switch (desc.type) {
 		case OilRefinery:
-			return new Building.OilRefinery(desc.team);
+			building = new Building.OilRefinery(desc.team);
+			break;
 		case Factory:
-			return new Building.Factory(desc.team);
+			building = new Building.Factory(desc.team);
+			break;
 		default:
 			throw new InternalError();
 		}
+		building.setPos(pos);
+		return building;
 	}
 
 	private Unit createUnit(UnitDesc desc, Position pos) {

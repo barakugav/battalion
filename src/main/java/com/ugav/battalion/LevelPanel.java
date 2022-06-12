@@ -1,19 +1,18 @@
 package com.ugav.battalion;
 
 import java.awt.AlphaComposite;
-import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Random;
 
 import javax.swing.JPanel;
 
@@ -21,7 +20,9 @@ class LevelPanel extends JPanel {
 
 	private final GameFrame gameFrame;
 
-	private final Map<Position, BoardTile> tiles;
+	private final Map<Position, TileComp> tiles;
+	private final List<UnitComp> units;
+	private final List<BuildingComp> buildings;
 	private Position selection;
 	private Position.Bitmap reachableMap = Position.Bitmap.empty;
 	private Position.Bitmap attackableMap = Position.Bitmap.empty;
@@ -35,36 +36,64 @@ class LevelPanel extends JPanel {
 		this.gameFrame = Objects.requireNonNull(gameFrame);
 
 		tiles = new HashMap<>();
+		units = new ArrayList<>();
+		buildings = new ArrayList<>();
 		selection = null;
 		debug = new DebugPrintsManager(true); // TODO
+
+		addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				tileClicked(new Position(e.getY() / TILE_SIZE_PIXEL, e.getX() / TILE_SIZE_PIXEL));
+			}
+		});
 	}
 
-	private BoardTile tile(Position pos) {
-		return tiles.get(pos);
-	}
+//	private TileComp tile(Position pos) {
+//		return tiles.get(pos);
+//	}
 
 	void setGame(Game game) {
 		this.game = Objects.requireNonNull(game);
 
-		int rows = game.arena.getrows(), cols = game.arena.getcols();
-		setLayout(new GridLayout(rows, cols));
-		setPreferredSize(getPreferredSize());
-
 		tiles.clear();
+		units.clear();
+		buildings.clear();
 		for (Position pos : game.arena.positions()) {
-			BoardTile tile = new BoardTile(pos);
+			TileComp tile = new TileComp(pos);
 			tiles.put(pos, tile);
-			add(tile);
+			if (tile.tile().hasUnit())
+				units.add(new UnitComp(tile.tile().getUnit()));
+			if (tile.tile().hasBuilding())
+				buildings.add(new BuildingComp(tile.tile().getBuilding()));
 		}
 
+		setPreferredSize(getPreferredSize());
 		invalidate();
 		repaint();
 	}
 
 	@Override
+	protected void paintComponent(Graphics g) {
+		for (TileComp tile : tiles.values())
+			tile.paintComponent(g);
+		for (BuildingComp building : buildings)
+			building.paintComponent(g);
+		for (UnitComp unit : units)
+			unit.paintComponent(g);
+
+		if (selection != null) {
+			tiles.get(selection).drawImage(g, Images.Label.Selection);
+			for (Position pos : reachableMap)
+				tiles.get(pos).drawImage(g, Images.Label.Reachable);
+			for (Position pos : attackableMap)
+				tiles.get(pos).drawImage(g, Images.Label.Attackable);
+		}
+	}
+
+	@Override
 	public Dimension getPreferredSize() {
-		int rows = game.arena.getrows(), cols = game.arena.getcols();
-		return new Dimension(TILE_SIZE_PIXEL * rows, TILE_SIZE_PIXEL * cols);
+		return new Dimension(TILE_SIZE_PIXEL * game.arena.getrows(), TILE_SIZE_PIXEL * game.arena.getcols());
 	}
 
 	private void clearSelection() {
@@ -72,17 +101,14 @@ class LevelPanel extends JPanel {
 			return;
 		debug.println("clearSelection ", selection);
 		selection = null;
-		for (Position pos : reachableMap)
-			tile(pos).invalidate();
-		for (Position pos : attackableMap)
-			tile(pos).invalidate();
 		reachableMap = Position.Bitmap.empty;
 		attackableMap = Position.Bitmap.empty;
 	}
 
-	private void tileClicked(BoardTile tile) {
+	private void tileClicked(Position pos) {
 		if (game == null)
 			return;
+		TileComp tile = tiles.get(pos);
 		if (selection == null) {
 			if (tile.canSelect()) {
 				debug.println("Selected ", tile.pos);
@@ -96,8 +122,10 @@ class LevelPanel extends JPanel {
 			if (game.isMoveValid(selection, tile.pos)) {
 				debug.println("Move ", selection, " ", tile.pos);
 				game.move(selection, tile.pos);
+
 			} else if (game.isAttackValid(selection, tile.pos)) {
-				// game.a
+				debug.println("Attack ", selection, " ", tile.pos);
+				game.moveAndAttack(selection, tile.pos);
 			}
 
 			clearSelection();
@@ -105,36 +133,45 @@ class LevelPanel extends JPanel {
 		repaint();
 	}
 
-	private class BoardTile extends JPanel {
+	private class UnitComp {
+		private final Unit unit;
+
+		UnitComp(Unit unit) {
+			this.unit = unit;
+		}
+
+		void paintComponent(Graphics g) {
+			Graphics2D g2 = (Graphics2D) g;
+			Composite oldComp = g2.getComposite();
+			if (unit.getTeam() == game.getTurn() && !unit.isActive())
+				g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+			drawImage(g, Images.Label.of(unit), unit.getPos());
+			g2.setComposite(oldComp);
+
+			g2.drawRect(TILE_SIZE_PIXEL, ABORT, WIDTH, HEIGHT);
+		}
+
+	}
+
+	private class BuildingComp {
+		private final Building building;
+
+		BuildingComp(Building building) {
+			this.building = building;
+		}
+
+		void paintComponent(Graphics g) {
+			drawImage(g, Images.Label.of(building), building.getPos());
+		}
+
+	}
+
+	private class TileComp {
 
 		private final Position pos;
 
-		BoardTile(Position pos) {
+		TileComp(Position pos) {
 			this.pos = pos;
-
-			setOpaque(true);
-			setBackground(new Color(new Random().nextInt()));
-
-			addMouseListener(new MouseAdapter() {
-
-				@Override
-				public void mousePressed(MouseEvent e) {
-					tileClicked(BoardTile.this);
-				}
-
-			});
-		}
-
-		private void move() {
-
-		}
-
-		private void attack() {
-
-		}
-
-		private boolean isSelected() {
-			return pos.equals(selection);
 		}
 
 		private boolean canSelect() {
@@ -144,55 +181,24 @@ class LevelPanel extends JPanel {
 			return unit.isActive();
 		}
 
-		private boolean isReachable() {
-			return reachableMap.at(pos);
-		}
-
-		private boolean isAttackable() {
-			return attackableMap.at(pos);
-		}
-
-		@Override
-		protected void paintComponent(Graphics g) {
-			super.paintComponent(g);
-			if (game == null)
-				return;
-
+		void paintComponent(Graphics g) {
 			drawImage(g, Images.Label.of(tile().getTerrain()));
-			if (tile().hasBuilding())
-				drawImage(g, Images.Label.of(tile().getBuilding()));
-			if (tile().hasUnit()) {
-				Unit unit = tile().getUnit();
-				Graphics2D g2 = (Graphics2D) g;
-				Composite oldComp = g2.getComposite();
-				if (!unit.isActive())
-					g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-				drawImage(g, Images.Label.of(unit));
-				g2.setComposite(oldComp);
-			}
-
-			if (isSelected())
-				drawImage(g, Images.Label.Selection);
-			if (isReachable())
-				drawImage(g, Images.Label.Reachable);
-			if (isAttackable())
-				drawImage(g, Images.Label.Attackable);
-		}
-
-		private void drawImage(Graphics g, Images.Label label) {
-			BufferedImage unitImg = images.getImage(label);
-			g.drawImage(unitImg, 0, 0, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, this);
 		}
 
 		private Tile tile() {
 			return game.getTile(pos);
 		}
 
-		@Override
-		public Dimension getPreferredSize() {
-			return new Dimension(TILE_SIZE_PIXEL, TILE_SIZE_PIXEL);
+		void drawImage(Graphics g, Images.Label label) {
+			LevelPanel.this.drawImage(g, label, pos);
 		}
 
+	}
+
+	private void drawImage(Graphics g, Images.Label label, Position pos) {
+		BufferedImage unitImg = images.getImage(label);
+		g.drawImage(unitImg, pos.col * TILE_SIZE_PIXEL, pos.row * TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL,
+				this);
 	}
 
 }

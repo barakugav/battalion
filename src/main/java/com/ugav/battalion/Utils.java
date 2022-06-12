@@ -46,7 +46,7 @@ class Utils {
 		public boolean hasNext() {
 			if (nextElm != NoElm)
 				return true;
-			for (; !it.hasNext();) {
+			for (; it.hasNext();) {
 				E e = it.next();
 				if (condition.test(e)) {
 					nextElm = e;

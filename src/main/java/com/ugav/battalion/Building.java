@@ -7,10 +7,19 @@ abstract class Building extends Entity {
 	}
 
 	final Type type;
+	private Position pos;
 
 	Building(Type type, Team team) {
 		super(team);
 		this.type = type;
+	}
+
+	Position getPos() {
+		return pos;
+	}
+
+	void setPos(Position pos) {
+		this.pos = pos;
 	}
 
 	static class OilRefinery extends Building {
