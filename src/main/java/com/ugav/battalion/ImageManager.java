@@ -1,10 +1,15 @@
 package com.ugav.battalion;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import javax.imageio.ImageIO;
 
@@ -22,82 +27,101 @@ class ImageManager {
 		throw new InternalError();
 	}
 
-	/* Terrains */
-	static final String FLAT_LAND = "flat_land";
-	static final String MOUNTAIN = "mountain";
-	static final String CLEAR_WATER = "clear_water";
-
-	/* Units */
-	static final String SOLDIER = "soldier";
-	static final String TANK = "tank";
-
-	/* Buildings */
-	static final String FACTORY = "facotry";
-	static final String OIL_REFINERY = "oil_refinery";
-
-	/* GUI */
-	static final String SELECTION = "selection";
-
-	private static final java.util.Map<String, BufferedImage> images = new HashMap<>();
-
-	static {
-		java.util.Map<String, String> images_paths = new HashMap<>();
-
+	static enum Label {
 		/* Terrains */
-		images_paths.put(FLAT_LAND, "img/terrain/flat_land.png");
-		images_paths.put(MOUNTAIN, "img/terrain/mountain.png");
-		images_paths.put(CLEAR_WATER, "img/terrain/clear_water.png");
+		FlatLand, Mountain, ClearWater,
 
 		/* Units */
-		images_paths.put(SOLDIER, "img/unit/soldier.png");
-		images_paths.put(TANK, "img/unit/tank.png");
+		SoldierRed, SoldierBlue, TankRed, TankBlue,
 
 		/* Buildings */
-		images_paths.put(FACTORY, "img/building/facotry.png");
-		images_paths.put(OIL_REFINERY, "img/building/oil_refinery.png");
+		FactoryRed, FactoryBlue, OilRefineryRed, OilRefineryBlue,
 
 		/* GUI */
-		images_paths.put(SELECTION, "img/gui/selection.png");
-
-		try {
-			for (java.util.Map.Entry<String, String> entry : images_paths.entrySet()) {
-				BufferedImage image = ImageIO.read(new File(entry.getValue()));
-				images.put(entry.getKey(), image);
-			}
-		} catch (IOException e) {
-			throw new UncheckedIOException(e);
-		}
+		Selection
 	}
 
-	static BufferedImage getImage(String label) {
+	private static final java.util.Map<Label, BufferedImage> images;
+
+	static {
+		java.util.Map<Label, BufferedImage> images0 = new HashMap<>();
+
+		Function<String, BufferedImage> loadImg = path -> {
+			try {
+				return ImageIO.read(new File(path));
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
+			}
+		};
+		BiConsumer<Label, String> addImg = (label, path) -> {
+			images0.put(label, loadImg.apply(path));
+		};
+		BiConsumer<Pair<Label, Label>, String> addImgRedBlue = (labels, path) -> {
+			BufferedImage imgRed = loadImg.apply(path);
+
+			ColorModel colorModel = imgRed.getColorModel();
+			WritableRaster swapped = imgRed.getRaster().createWritableChild(0, 0, imgRed.getWidth(), imgRed.getHeight(),
+					0, 0, new int[] { 2, 1, 0, 3 });
+			BufferedImage imgBlue = new BufferedImage(colorModel, swapped, colorModel.isAlphaPremultiplied(), null);
+
+			images0.put(labels.e1, imgRed);
+			images0.put(labels.e2, imgBlue);
+		};
+
+		/* Terrains */
+		addImg.accept(Label.FlatLand, "img/terrain/flat_land.png");
+		addImg.accept(Label.Mountain, "img/terrain/mountain.png");
+		addImg.accept(Label.ClearWater, "img/terrain/clear_water.png");
+
+		/* Units */
+		addImgRedBlue.accept(Pair.of(Label.SoldierRed, Label.SoldierBlue), "img/unit/soldier.png");
+		addImgRedBlue.accept(Pair.of(Label.TankRed, Label.TankBlue), "img/unit/tank.png");
+
+		/* Buildings */
+		addImgRedBlue.accept(Pair.of(Label.FactoryRed, Label.FactoryBlue), "img/building/facotry.png");
+		addImgRedBlue.accept(Pair.of(Label.OilRefineryRed, Label.OilRefineryBlue), "img/building/oil_refinery.png");
+
+		/* GUI */
+		addImg.accept(Label.Selection, "img/gui/selection.png");
+
+		images = Collections.unmodifiableMap(images0);
+	}
+
+	static BufferedImage getImage(Label label) {
 		BufferedImage image = images.get(label);
 		if (image == null)
-			throw new IllegalArgumentException("Image not found for label: " + label);
+			throw new InternalError("Image not found for label: " + label);
 		return image;
 	}
 
-	static String getLabel(Drawable obj) {
-		/* Terrains */
-		if (obj instanceof FlatLand)
-			return FLAT_LAND;
-		else if (obj instanceof Mountain)
-			return MOUNTAIN;
-		else if (obj instanceof ClearWater)
-			return CLEAR_WATER;
-		/* Units */
-		else if (obj instanceof Soldier)
-			return SOLDIER;
-		else if (obj instanceof Tank)
-			return TANK;
-		/* Buildings */
-		else if (obj instanceof OilRefinery)
-			return OIL_REFINERY;
-		else if (obj instanceof Factory)
-			return FACTORY;
-		/* Not Found */
-		else
-			throw new IllegalArgumentException();
+	static Label getLabel(Drawable obj) {
+		if (obj instanceof Terrain) {
+			Terrain terrain = (Terrain) obj;
+			if (terrain instanceof FlatLand)
+				return Label.FlatLand;
+			else if (terrain instanceof Mountain)
+				return Label.Mountain;
+			else if (terrain instanceof ClearWater)
+				return Label.ClearWater;
 
+		} else if (obj instanceof Unit) {
+			Unit unit = (Unit) obj;
+			Team team = unit.getTeam();
+			if (unit instanceof Soldier)
+				return team == Team.Red ? Label.SoldierRed : Label.SoldierBlue;
+			else if (unit instanceof Tank)
+				return team == Team.Red ? Label.TankRed : Label.TankBlue;
+
+		} else if (obj instanceof Building) {
+			Building building = (Building) obj;
+			Team team = building.getTeam();
+			if (building instanceof OilRefinery)
+				return team == Team.Red ? Label.OilRefineryRed : Label.OilRefineryBlue;
+			else if (building instanceof Factory)
+				return team == Team.Red ? Label.FactoryRed : Label.FactoryBlue;
+			return Label.FactoryRed;
+		}
+		throw new InternalError();
 	}
 
 }

@@ -52,6 +52,19 @@ abstract class Unit extends Entity {
 
 	abstract int getDamge();
 
+	boolean isTerrainPassable(Terrain terrain) {
+		switch (terrain.type.category) {
+		case Land:
+			return type.category != Category.Water;
+		case Mountain:
+			return type == Type.Soldier;
+		case Water:
+			return type.category != Category.Land;
+		default:
+			throw new InternalError();
+		}
+	}
+
 	boolean isMoveValid(int x, int y) {
 		return getMovableMap()[x][y];
 	}
@@ -155,7 +168,8 @@ abstract class Unit extends Entity {
 				/* Other unit in the way */
 				if (map.at(pos).hasUnit())
 					continue;
-				/* TODO, check surface */
+				if (!isTerrainPassable(map.at(pos).getTerrain()))
+					continue;
 				/* Check if we reached any near tiles last moveLen */
 				for (Position neighbor : Neighbor.of(pos.x, pos.y)) {
 					if (map.isInMap(neighbor) && moveableMap0[neighbor.x][neighbor.y] != moveLen - 1) {

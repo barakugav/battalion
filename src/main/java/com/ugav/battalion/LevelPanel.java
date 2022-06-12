@@ -164,10 +164,10 @@ class LevelPanel extends JPanel {
 				g2.setComposite(oldComp);
 			}
 			if (isSelected())
-				drawImage(g, ImageManager.SELECTION);
+				drawImage(g, ImageManager.Label.Selection);
 		}
 
-		private void drawImage(Graphics g, String label) {
+		private void drawImage(Graphics g, ImageManager.Label label) {
 			BufferedImage unitImg = ImageManager.getImage(label);
 			g.drawImage(unitImg, 0, 0, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, this);
 		}
