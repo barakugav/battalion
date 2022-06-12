@@ -10,8 +10,8 @@ import javax.swing.JFrame;
 class GameFrame extends JFrame {
 
 	private static final String TITLE = "Battalion";
-	private static final int FRAME_WIDTH = 500;
-	private static final int FRAME_HEIGHT = 500;
+	private static final int FRAME_WIDTH = 2500;
+	private static final int FRAME_HEIGHT = 2500;
 
 	private final MainMenuPanel mainMenuPanel;
 	private final LevelPanel gamePanel;
@@ -31,7 +31,7 @@ class GameFrame extends JFrame {
 		/* By default display main menu */
 //		displayMainMenu();
 //		displayGame();
-		mainMenuPanel.selectLevel(0);
+		mainMenuPanel.selectLevel(1);
 	}
 
 	void displayMainMenu() {

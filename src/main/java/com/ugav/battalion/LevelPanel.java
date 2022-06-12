@@ -10,6 +10,8 @@ import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
@@ -19,71 +21,74 @@ class LevelPanel extends JPanel {
 
 	private final GameFrame gameFrame;
 
-	private final BoardTile[][] tiles;
-	private int selectedX;
-	private int selectedY;
+	private final Map<Position, BoardTile> tiles;
+	private Position selection;
 	private Game game;
+	private final Images images = new Images();
 	private final DebugPrintsManager debug;
 
-	private static final int BOARD_SIZE = 3;
 	private static final int TILE_SIZE_PIXEL = 64;
-	private static final int BOARD_SIZE_PIXEL = TILE_SIZE_PIXEL * BOARD_SIZE;
 
 	LevelPanel(GameFrame gameFrame) {
 		this.gameFrame = Objects.requireNonNull(gameFrame);
 
-		setLayout(new GridLayout(BOARD_SIZE, BOARD_SIZE));
-		setPreferredSize(getPreferredSize());
-
-		tiles = new BoardTile[BOARD_SIZE][BOARD_SIZE];
-		for (int x = 0; x < BOARD_SIZE; x++)
-			for (int y = 0; y < BOARD_SIZE; y++)
-				add(tiles[x][y] = new BoardTile(x, y));
-
-		selectedX = -1;
-		selectedY = -1;
-
+		tiles = new HashMap<>();
+		selection = null;
 		debug = new DebugPrintsManager(true); // TODO
+	}
+
+	private BoardTile tile(Position pos) {
+		return tiles.get(pos);
 	}
 
 	void setGame(Game game) {
 		this.game = Objects.requireNonNull(game);
+
+		int xLen = game.arena.getXLen(), yLen = game.arena.getYLen();
+		setLayout(new GridLayout(xLen, yLen));
+		setPreferredSize(getPreferredSize());
+
+		tiles.clear();
+		for (Position pos : game.arena.positions()) {
+			BoardTile tile = new BoardTile(pos);
+			tiles.put(pos, tile);
+			add(tile);
+		}
+
+		invalidate();
+		repaint();
 	}
 
 	@Override
 	public Dimension getPreferredSize() {
-		return new Dimension(BOARD_SIZE_PIXEL, BOARD_SIZE_PIXEL);
+		int xLen = game.arena.getXLen(), yLen = game.arena.getYLen();
+		return new Dimension(TILE_SIZE_PIXEL * xLen, TILE_SIZE_PIXEL * yLen);
 	}
 
 	private void clearSelection() {
 		if (!(isAnySelected()))
 			return;
-		int oldSelectedX = selectedX;
-		int oldSelectedY = selectedY;
-		selectedX = -1;
-		selectedY = -1;
-		tiles[oldSelectedX][oldSelectedY].repaint();
-		debug.println("clearSelection ", Integer.valueOf(oldSelectedX), " ", Integer.valueOf(oldSelectedY));
+		debug.println("clearSelection ", selection);
+		tile(selection).repaint();
+		selection = null;
 	}
 
 	private boolean isAnySelected() {
-		return selectedX >= 0 && selectedY >= 0;
+		return selection != null;
 	}
 
 	private Tile getSelection() {
 		if (!isAnySelected())
 			throw new IllegalStateException();
-		return game.getTile(selectedX, selectedY);
+		return game.getTile(selection);
 	}
 
 	private class BoardTile extends JPanel {
 
-		private final int x;
-		private final int y;
+		private final Position pos;
 
-		BoardTile(int x, int y) {
-			this.x = x;
-			this.y = y;
+		BoardTile(Position pos) {
+			this.pos = pos;
 
 			setOpaque(true);
 			setBackground(new Color(new Random().nextInt()));
@@ -97,15 +102,14 @@ class LevelPanel extends JPanel {
 					if (isAnySelected()) {
 						Tile tile = getSelection();
 						Unit unit = tile.getUnit();
-						if (game.isMoveValid(selectedX, selectedY, x, y)) {
-							debug.format("Move %d %d %d %d\n", Integer.valueOf(selectedX), Integer.valueOf(selectedY),
-									Integer.valueOf(x), Integer.valueOf(y));
-							game.move(selectedX, selectedY, x, y);
+						if (game.isMoveValid(selection, pos)) {
+							debug.println("Move ", selection, " ", pos);
+							game.move(selection, pos);
 							clearSelection();
 							repaint();
 							return;
 						}
-						if (game.isAttackValid(selectedX, selectedY, x, y)) {
+						if (game.isAttackValid(selection, pos)) {
 							// game.a
 						}
 					}
@@ -127,15 +131,14 @@ class LevelPanel extends JPanel {
 			boolean select = !isSelected() && canSelect();
 			clearSelection();
 			if (select) {
-				debug.format("Selected %d %d\n", Integer.valueOf(x), Integer.valueOf(y));
-				selectedX = x;
-				selectedY = y;
+				debug.println("Selected ", pos);
+				selection = pos;
 				repaint();
 			}
 		}
 
 		private boolean isSelected() {
-			return selectedX == x && selectedY == y;
+			return pos.equals(selection);
 		}
 
 		private boolean canSelect() {
@@ -151,29 +154,29 @@ class LevelPanel extends JPanel {
 			if (game == null)
 				return;
 
-			drawImage(g, ImageManager.getLabel(tile().getTerrain()));
+			drawImage(g, Images.Label.of(tile().getTerrain()));
 			if (tile().hasBuilding())
-				drawImage(g, ImageManager.getLabel(tile().getBuilding()));
+				drawImage(g, Images.Label.of(tile().getBuilding()));
 			if (tile().hasUnit()) {
 				Unit unit = tile().getUnit();
 				Graphics2D g2 = (Graphics2D) g;
 				Composite oldComp = g2.getComposite();
 				if (!unit.isActive())
 					g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-				drawImage(g, ImageManager.getLabel(unit));
+				drawImage(g, Images.Label.of(unit));
 				g2.setComposite(oldComp);
 			}
 			if (isSelected())
-				drawImage(g, ImageManager.Label.Selection);
+				drawImage(g, Images.Label.Selection);
 		}
 
-		private void drawImage(Graphics g, ImageManager.Label label) {
-			BufferedImage unitImg = ImageManager.getImage(label);
+		private void drawImage(Graphics g, Images.Label label) {
+			BufferedImage unitImg = images.getImage(label);
 			g.drawImage(unitImg, 0, 0, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, this);
 		}
 
 		private Tile tile() {
-			return game.getTile(x, y);
+			return game.getTile(pos);
 		}
 
 		@Override

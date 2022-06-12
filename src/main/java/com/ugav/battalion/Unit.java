@@ -2,15 +2,12 @@ package com.ugav.battalion;
 
 import java.util.Arrays;
 
-import com.ugav.battalion.Map.Neighbor;
-import com.ugav.battalion.Map.Position;
-
 abstract class Unit extends Entity {
 
 	final Type type;
 	private int health;
-	private int x, y;
-	private Map map;
+	private Position pos;
+	private Arena arena;
 
 	Unit(Type type, Team team) {
 		super(team);
@@ -29,25 +26,20 @@ abstract class Unit extends Entity {
 		return health;
 	}
 
-	void setPos(int x, int y) {
-		this.x = x;
-		this.y = y;
+	void setPos(Position pos) {
+		this.pos = pos;
 	}
 
-	int getX() {
-		return x;
+	Position getPos() {
+		return pos;
 	}
 
-	int getY() {
-		return y;
+	void setArena(Arena arena) {
+		this.arena = arena;
 	}
 
-	void setMap(Map map) {
-		this.map = map;
-	}
-
-	Map getMap() {
-		return map;
+	Arena getArena() {
+		return arena;
 	}
 
 	abstract int getDamge();
@@ -65,11 +57,11 @@ abstract class Unit extends Entity {
 		}
 	}
 
-	boolean isMoveValid(int x, int y) {
-		return getMovableMap()[x][y];
+	boolean isMoveValid(Position target) {
+		return getMovableMap()[target.x][target.y];
 	}
 
-	abstract boolean isAttackValid(int x, int y);
+	abstract boolean isAttackValid(Position target);
 
 	enum Category {
 		Land, Water, Air
@@ -99,25 +91,23 @@ abstract class Unit extends Entity {
 		}
 
 		@Override
-		public boolean isAttackValid(final int xTo, final int yTo) {
-			Map map = getMap();
-			int xLen = map.getXLen(), yLen = map.getYLen();
+		public boolean isAttackValid(Position target) {
+			Arena arena = getArena();
+			int xLen = arena.getXLen(), yLen = arena.getYLen();
 			boolean[][] moveableMap = getMovableMap();
 			boolean[][] attackableMap = new boolean[xLen][yLen];
 
 			/* Touchable map */
-			for (int x = 0; x < xLen; x++) {
-				for (int y = 0; y < yLen; y++) {
-					for (Position neighbor : Neighbor.of(x, y)) {
-						if (map.isInMap(neighbor) && moveableMap[neighbor.x][neighbor.y]) {
-							attackableMap[x][y] = true;
-							break;
-						}
+			for (Position pos : Utils.iterable(new Position.Iterator2D(xLen, yLen))) {
+				for (Position neighbor : pos.neighbors()) {
+					if (arena.isValidPos(neighbor) && moveableMap[neighbor.x][neighbor.y]) {
+						attackableMap[pos.x][pos.y] = true;
+						break;
 					}
 				}
 			}
 
-			return attackableMap[xTo][yTo];
+			return attackableMap[target.x][target.y];
 		}
 
 	}
@@ -149,30 +139,29 @@ abstract class Unit extends Entity {
 	}
 
 	boolean[][] getMovableMap() {
-		final int xFrom = getX(), yFrom = getY();
-		Map map = getMap();
-		int xLen = map.getXLen(), yLen = map.getYLen();
+		Arena arena = getArena();
+		int xLen = arena.getXLen(), yLen = arena.getYLen();
 		boolean[][] moveableMap = new boolean[xLen][yLen];
 
 		int[][] moveableMap0 = new int[xLen][yLen];
 		for (int x = 0; x < xLen; x++)
 			Arrays.fill(moveableMap0[x], -1);
-		moveableMap0[xFrom][yFrom] = 0;
+		moveableMap0[pos.x][pos.y] = 0;
 
 		int maxMove = type.moveLimit;
 		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
-			for (Position pos : map.positions()) {
+			for (Position pos : arena.positions()) {
 				/* Already can move here */
 				if (moveableMap0[pos.x][pos.y] >= 0)
 					continue;
 				/* Other unit in the way */
-				if (map.at(pos).hasUnit())
+				if (arena.at(pos).hasUnit())
 					continue;
-				if (!isTerrainPassable(map.at(pos).getTerrain()))
+				if (!isTerrainPassable(arena.at(pos).getTerrain()))
 					continue;
 				/* Check if we reached any near tiles last moveLen */
-				for (Position neighbor : Neighbor.of(pos.x, pos.y)) {
-					if (map.isInMap(neighbor) && moveableMap0[neighbor.x][neighbor.y] != moveLen - 1) {
+				for (Position neighbor : pos.neighbors()) {
+					if (arena.isValidPos(neighbor) && moveableMap0[neighbor.x][neighbor.y] == moveLen - 1) {
 						moveableMap0[pos.x][pos.y] = moveLen;
 						break;
 					}
@@ -180,7 +169,7 @@ abstract class Unit extends Entity {
 			}
 		}
 		/* Convert distance map to boolean map */
-		for (Position pos : map.positions())
+		for (Position pos : arena.positions())
 			moveableMap[pos.x][pos.y] = moveableMap0[pos.x][pos.y] > 0;
 
 		return moveableMap;

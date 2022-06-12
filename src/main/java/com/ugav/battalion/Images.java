@@ -6,8 +6,8 @@ import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -21,30 +21,12 @@ import com.ugav.battalion.Terrain.Mountain;
 import com.ugav.battalion.Unit.Soldier;
 import com.ugav.battalion.Unit.Tank;
 
-class ImageManager {
+class Images {
 
-	private ImageManager() {
-		throw new InternalError();
-	}
+	private final Map<Label, BufferedImage> images;
 
-	static enum Label {
-		/* Terrains */
-		FlatLand, Mountain, ClearWater,
-
-		/* Units */
-		SoldierRed, SoldierBlue, TankRed, TankBlue,
-
-		/* Buildings */
-		FactoryRed, FactoryBlue, OilRefineryRed, OilRefineryBlue,
-
-		/* GUI */
-		Selection
-	}
-
-	private static final java.util.Map<Label, BufferedImage> images;
-
-	static {
-		java.util.Map<Label, BufferedImage> images0 = new HashMap<>();
+	Images() {
+		images = new HashMap<>();
 
 		Function<String, BufferedImage> loadImg = path -> {
 			try {
@@ -54,7 +36,7 @@ class ImageManager {
 			}
 		};
 		BiConsumer<Label, String> addImg = (label, path) -> {
-			images0.put(label, loadImg.apply(path));
+			images.put(label, loadImg.apply(path));
 		};
 		BiConsumer<Pair<Label, Label>, String> addImgRedBlue = (labels, path) -> {
 			BufferedImage imgRed = loadImg.apply(path);
@@ -64,8 +46,8 @@ class ImageManager {
 					0, 0, new int[] { 2, 1, 0, 3 });
 			BufferedImage imgBlue = new BufferedImage(colorModel, swapped, colorModel.isAlphaPremultiplied(), null);
 
-			images0.put(labels.e1, imgRed);
-			images0.put(labels.e2, imgBlue);
+			images.put(labels.e1, imgRed);
+			images.put(labels.e2, imgBlue);
 		};
 
 		/* Terrains */
@@ -83,45 +65,57 @@ class ImageManager {
 
 		/* GUI */
 		addImg.accept(Label.Selection, "img/gui/selection.png");
-
-		images = Collections.unmodifiableMap(images0);
 	}
 
-	static BufferedImage getImage(Label label) {
+	BufferedImage getImage(Label label) {
 		BufferedImage image = images.get(label);
 		if (image == null)
 			throw new InternalError("Image not found for label: " + label);
 		return image;
 	}
 
-	static Label getLabel(Drawable obj) {
-		if (obj instanceof Terrain) {
-			Terrain terrain = (Terrain) obj;
-			if (terrain instanceof FlatLand)
-				return Label.FlatLand;
-			else if (terrain instanceof Mountain)
-				return Label.Mountain;
-			else if (terrain instanceof ClearWater)
-				return Label.ClearWater;
+	static enum Label {
+		/* Terrains */
+		FlatLand, Mountain, ClearWater,
 
-		} else if (obj instanceof Unit) {
-			Unit unit = (Unit) obj;
-			Team team = unit.getTeam();
-			if (unit instanceof Soldier)
-				return team == Team.Red ? Label.SoldierRed : Label.SoldierBlue;
-			else if (unit instanceof Tank)
-				return team == Team.Red ? Label.TankRed : Label.TankBlue;
+		/* Units */
+		SoldierRed, SoldierBlue, TankRed, TankBlue,
 
-		} else if (obj instanceof Building) {
-			Building building = (Building) obj;
-			Team team = building.getTeam();
-			if (building instanceof OilRefinery)
-				return team == Team.Red ? Label.OilRefineryRed : Label.OilRefineryBlue;
-			else if (building instanceof Factory)
-				return team == Team.Red ? Label.FactoryRed : Label.FactoryBlue;
-			return Label.FactoryRed;
+		/* Buildings */
+		FactoryRed, FactoryBlue, OilRefineryRed, OilRefineryBlue,
+
+		/* GUI */
+		Selection;
+
+		static Label of(Drawable obj) {
+			if (obj instanceof Terrain) {
+				Terrain terrain = (Terrain) obj;
+				if (terrain instanceof FlatLand)
+					return FlatLand;
+				else if (terrain instanceof Mountain)
+					return Mountain;
+				else if (terrain instanceof ClearWater)
+					return ClearWater;
+
+			} else if (obj instanceof Unit) {
+				Unit unit = (Unit) obj;
+				Team team = unit.getTeam();
+				if (unit instanceof Soldier)
+					return team == Team.Red ? SoldierRed : SoldierBlue;
+				else if (unit instanceof Tank)
+					return team == Team.Red ? TankRed : TankBlue;
+
+			} else if (obj instanceof Building) {
+				Building building = (Building) obj;
+				Team team = building.getTeam();
+				if (building instanceof OilRefinery)
+					return team == Team.Red ? OilRefineryRed : OilRefineryBlue;
+				else if (building instanceof Factory)
+					return team == Team.Red ? FactoryRed : FactoryBlue;
+				return FactoryRed;
+			}
+			throw new InternalError();
 		}
-		throw new InternalError();
 	}
 
 }

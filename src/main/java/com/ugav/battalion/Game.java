@@ -1,43 +1,38 @@
 package com.ugav.battalion;
 
-import com.ugav.battalion.Map.Neighbor;
-import com.ugav.battalion.Map.Position;
 import com.ugav.battalion.Unit.Category;
 
 class Game {
 
-	private final Map map;
+	final Arena arena;
 	private Team turn;
 	private Team winner;
 
 	Game(Level level) {
-		map = new Map(level);
+		arena = new Arena(level);
 		turn = Team.Blue;
 		winner = Team.None;
 
-		int xLen = map.getXLen(), yLen = map.getYLen();
-		for (int x = 0; x < xLen; x++) {
-			for (int y = 0; y < yLen; y++) {
-				Tile tile = map.at(x, y);
-				if (!tile.hasUnit())
-					continue;
-				Unit u = tile.getUnit();
-				u.setMap(map);
-				u.setPos(x, y);
-			}
+		for (Position pos : arena.positions()) {
+			Tile tile = arena.at(pos);
+			if (!tile.hasUnit())
+				continue;
+			Unit u = tile.getUnit();
+			u.setArena(arena);
+			u.setPos(pos);
 		}
 	}
 
 	int getXLen() {
-		return map.getXLen();
+		return arena.getXLen();
 	}
 
 	int getYLen() {
-		return map.getYLen();
+		return arena.getYLen();
 	}
 
-	Tile getTile(int x, int y) {
-		return map.at(x, y);
+	Tile getTile(Position pos) {
+		return arena.at(pos);
 	}
 
 	void start() {
@@ -45,7 +40,7 @@ class Game {
 	}
 
 	void turnBegin() {
-		for (Tile tile : map.tiles()) {
+		for (Tile tile : arena.tiles()) {
 			if (tile.hasBuilding()) {
 				Building building = tile.getBuilding();
 				building.setActive(building.getTeam() == turn);
@@ -60,7 +55,7 @@ class Game {
 	void turnEnd() {
 		boolean blueDead = true;
 		boolean redDead = true;
-		for (Tile tile : map.tiles()) {
+		for (Tile tile : arena.tiles()) {
 			if (tile.hasUnit()) {
 				Team unitTeam = tile.getUnit().getTeam();
 				if (unitTeam == Team.Blue)
@@ -89,41 +84,41 @@ class Game {
 		return winner;
 	}
 
-	void move(int fromX, int fromY, int toX, int toY) {
-		if (!isMoveValid(fromX, fromY, toX, toY))
+	void move(Position source, Position target) {
+		if (!isMoveValid(source, target))
 			throw new IllegalStateException();
-		move0(fromX, fromY, toX, toY);
-		map.at(toX, toY).getUnit().setActive(false);
+		move0(source, target);
+		arena.at(target).getUnit().setActive(false);
 	}
 
-	private void move0(int fromX, int fromY, int toX, int toY) {
-		Tile from = map.at(fromX, fromY);
+	private void move0(Position source, Position target) {
+		Tile from = arena.at(source);
 		Unit unit = from.getUnit();
 		from.removeUnit();
-		map.at(toX, toY).setUnit(unit);
+		arena.at(target).setUnit(unit);
 	}
 
-	boolean isMoveValid(int fromX, int fromY, int toX, int toY) {
-		Tile from = map.at(fromX, fromY);
-		Tile to = map.at(toX, toY);
+	boolean isMoveValid(Position source, Position target) {
+		Tile from = arena.at(source);
+		Tile to = arena.at(target);
 		if (!from.hasUnit() || to.hasUnit())
 			return false;
 		Unit unit = from.getUnit();
-		return unit.getTeam() == turn && unit.isActive() && unit.isMoveValid(toX, toY);
+		return unit.getTeam() == turn && unit.isActive() && unit.isMoveValid(target);
 	}
 
-	void moveAndAttack(int attackerX, int attackerY, int moveToX, int moveToY, int targetX, int targetY) {
-		Unit attacker = map.at(attackerX, attackerY).getUnit();
-		Unit target = map.at(targetX, targetY).getUnit();
+	void moveAndAttack(Position attackerPos, Position moveTarget, Position attackedPos) {
+		Unit attacker = arena.at(attackerPos).getUnit();
+		Unit target = arena.at(attackedPos).getUnit();
 		if (!(attacker.type.category == Category.Land))
 			throw new UnsupportedOperationException();
 
-		if (!isAttackValid(attackerX, attackerY, targetX, targetY))
+		if (!isAttackValid(attackerPos, attackedPos))
 			throw new IllegalStateException();
 
 		boolean moveNearTarget = false;
-		for (Position neighbor : Neighbor.of(targetX, targetY)) {
-			if (map.isInMap(neighbor) && neighbor.x == moveToX && neighbor.y == moveToY) {
+		for (Position neighbor : attackedPos.neighbors()) {
+			if (arena.isValidPos(neighbor) && neighbor.equals(moveTarget)) {
 				moveNearTarget = true;
 				break;
 			}
@@ -131,29 +126,29 @@ class Game {
 		if (!moveNearTarget)
 			throw new UnsupportedOperationException();
 
-		move0(attackerX, attackerY, moveToX, moveToY);
+		move0(attackerPos, moveTarget);
 		doDamage(attacker, target);
 		attacker.setActive(false);
 	}
 
-	void attackRange(int attackerX, int attackerY, int targetX, int targetY) {
-		Unit attacker = map.at(attackerX, attackerY).getUnit();
-		Unit target = map.at(targetX, targetY).getUnit();
+	void attackRange(Position attackerPos, Position targetPos) {
+		Unit attacker = arena.at(attackerPos).getUnit();
+		Unit target = arena.at(targetPos).getUnit();
 //		if (!(attacker instanceof LongRangeUnit))
 //			throw new UnsupportedOperationException();
-		if (!isAttackValid(attackerX, attackerY, targetX, targetY))
+		if (!isAttackValid(attackerPos, targetPos))
 			throw new IllegalStateException();
 		doDamage(attacker, target);
 		attacker.setActive(false);
 	}
 
-	boolean isAttackValid(int attackerX, int attackerY, int tagertX, int targetY) {
-		Tile attackerTile = map.at(attackerX, attackerY);
-		Tile targetTile = map.at(tagertX, targetY);
+	boolean isAttackValid(Position attackerPos, Position targetPos) {
+		Tile attackerTile = arena.at(attackerPos);
+		Tile targetTile = arena.at(targetPos);
 		if (!attackerTile.hasUnit() || !targetTile.hasUnit())
 			return false;
 		Unit attacker = attackerTile.getUnit();
-		return attacker.getTeam() == turn && attacker.isActive() && attacker.isAttackValid(tagertX, targetY)
+		return attacker.getTeam() == turn && attacker.isActive() && attacker.isAttackValid(targetPos)
 				&& targetTile.getUnit().getTeam() != attacker.getTeam();
 	}
 

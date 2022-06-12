@@ -9,21 +9,21 @@ import javax.swing.JPanel;
 class MainMenuPanel extends JPanel {
 
 	private final GameFrame gameFrame;
-	private final Data data;
+	private final Levels levels;
 
 	MainMenuPanel(GameFrame gameFrame) {
 		this.gameFrame = Objects.requireNonNull(gameFrame);
-		data = new Data();
+		levels = new Levels();
 
-		int levelCount = data.getLevelCount();
+		int levelCount = levels.getLevels().size();
 		setLayout(new GridLayout(levelCount, 1));
 
-		for (int levelIdx = 0; levelIdx < data.getLevelCount(); levelIdx++)
+		for (int levelIdx = 0; levelIdx < levelCount; levelIdx++)
 			add(new LevelButton(levelIdx));
 	}
 
 	void selectLevel(int levelIdx) {
-		Game game = new Game(data.getLevel(levelIdx));
+		Game game = new Game(levels.getLevels().get(levelIdx).e2);
 		game.start();
 		gameFrame.getGamePlane().setGame(game);
 		gameFrame.displayGame();
@@ -43,31 +43,6 @@ class MainMenuPanel extends JPanel {
 			addActionListener(e -> {
 				selectLevel(this.levelIdx);
 			});
-		}
-
-	}
-
-	private static class Data {
-
-		private static final int LEVEL_COUNT = 1;
-
-		private final Level levels[];
-
-		Data() {
-			levels = new Level[LEVEL_COUNT];
-			loadLevels();
-		}
-
-		int getLevelCount() {
-			return LEVEL_COUNT;
-		}
-
-		Level getLevel(int idx) {
-			return levels[idx];
-		}
-
-		private void loadLevels() {
-			levels[0] = HardcodedLevel1.getLevel();
 		}
 
 	}

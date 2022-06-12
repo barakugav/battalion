@@ -54,9 +54,8 @@ class Level {
 		this.xLen = tiles.length;
 		this.yLen = tiles[0].length;
 		this.tiles = new TileDesc[xLen][yLen];
-		for (int x = 0; x < xLen; x++)
-			for (int y = 0; y < yLen; y++)
-				this.tiles[x][y] = tiles[x][y];
+		for (Position pos : Utils.iterable(new Position.Iterator2D(xLen, yLen)))
+			this.tiles[pos.x][pos.y] = tiles[pos.x][pos.y];
 	}
 
 	int getXLen() {
@@ -67,8 +66,8 @@ class Level {
 		return yLen;
 	}
 
-	TileDesc tileDesc(int x, int y) {
-		return tiles[x][y];
+	TileDesc tileDesc(Position pos) {
+		return tiles[pos.x][pos.y];
 	}
 
 }

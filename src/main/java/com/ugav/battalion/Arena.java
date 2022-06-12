@@ -9,50 +9,13 @@ import com.ugav.battalion.Level.BuildingDesc;
 import com.ugav.battalion.Level.TileDesc;
 import com.ugav.battalion.Level.UnitDesc;
 
-class Map {
+class Arena {
 
 	private final int xLen;
 	private final int yLen;
 	private final Tile[][] tiles;
 
-	static class Position {
-		final int x, y;
-
-		Position(int x, int y) {
-			this.x = x;
-			this.y = y;
-		}
-	}
-
-	static enum Neighbor {
-
-		XPos(1, 0), XNeg(-1, 0), YPos(0, 1), YNeg(0, -1);
-
-		final int dx, dy;
-
-		Neighbor(int dx, int dy) {
-			this.dx = dx;
-			this.dy = dy;
-		}
-
-		Position from(int x, int y) {
-			return new Position(x + dx, y + dy);
-		}
-
-		Position from(Position pos) {
-			return from(pos.x, pos.y);
-		}
-
-		static Position[] of(int x, int y) {
-			Position[] pos = new Position[Neighbor.values().length];
-			for (int i = 0; i < Neighbor.values().length; i++)
-				pos[i] = Neighbor.values()[i].from(x, y);
-			return pos;
-		}
-
-	};
-
-	Map(int xLen, int yLen, Tile[][] tiles) {
+	Arena(int xLen, int yLen, Tile[][] tiles) {
 		if (xLen <= 0 || yLen <= 0)
 			throw new IllegalArgumentException();
 		this.xLen = xLen;
@@ -63,15 +26,14 @@ class Map {
 				this.tiles[x][y] = tiles[x][y];
 	}
 
-	Map(Level level) {
+	Arena(Level level) {
 		xLen = level.getXLen();
 		yLen = level.getYLen();
 
 		int xLen = level.getXLen(), yLen = level.getYLen();
 		tiles = new Tile[xLen][yLen];
-		for (int x = 0; x < xLen; x++)
-			for (int y = 0; y < yLen; y++)
-				tiles[x][y] = createTile(level.tileDesc(x, y), x, y);
+		for (Position pos : Utils.iterable(new Position.Iterator2D(xLen, yLen)))
+			tiles[pos.x][pos.y] = createTile(level.tileDesc(pos), pos);
 	}
 
 	int getXLen() {
@@ -82,20 +44,12 @@ class Map {
 		return yLen;
 	}
 
-	Tile at(int x, int y) {
-		return tiles[x][y];
-	}
-
 	Tile at(Position pos) {
-		return at(pos.x, pos.y);
+		return tiles[pos.x][pos.y];
 	}
 
-	boolean isInMap(int x, int y) {
-		return 0 <= x && x < xLen && 0 <= y && y < yLen;
-	}
-
-	boolean isInMap(Position pos) {
-		return isInMap(pos.x, pos.y);
+	boolean isValidPos(Position pos) {
+		return 0 <= pos.x && pos.x < xLen && 0 <= pos.y && pos.y < yLen;
 	}
 
 	Collection<Position> positions() {
@@ -108,28 +62,7 @@ class Map {
 
 			@Override
 			public Iterator<Position> iterator() {
-				return new Iterator<>() {
-
-					int x = 0, y = 0;
-
-					@Override
-					public boolean hasNext() {
-						return x < xLen;
-					}
-
-					@Override
-					public Position next() {
-						if (!hasNext())
-							throw new NoSuchElementException();
-						Position pos = new Position(x, y);
-						if (++y >= yLen) {
-							y = 0;
-							x++;
-						}
-						return pos;
-					}
-
-				};
+				return new Position.Iterator2D(xLen, yLen);
 			}
 
 		};
@@ -165,10 +98,10 @@ class Map {
 		};
 	}
 
-	private Tile createTile(TileDesc desc, int x, int y) {
+	private Tile createTile(TileDesc desc, Position pos) {
 		Terrain terrain = desc.terrain;
 		Building building = createBuilding(desc.buiding);
-		Unit unit = createUnit(desc.unit, x, y);
+		Unit unit = createUnit(desc.unit, pos);
 		return new Tile(terrain, building, unit);
 	}
 
@@ -186,7 +119,7 @@ class Map {
 		}
 	}
 
-	private Unit createUnit(UnitDesc desc, int x, int y) {
+	private Unit createUnit(UnitDesc desc, Position pos) {
 		if (desc == null)
 			return null;
 		Unit unit;
@@ -200,8 +133,8 @@ class Map {
 		default:
 			throw new InternalError();
 		}
-		unit.setMap(this);
-		unit.setPos(x, y);
+		unit.setArena(this);
+		unit.setPos(pos);
 		return unit;
 	}
 
