@@ -10,45 +10,45 @@ import com.ugav.battalion.Level.UnitDesc;
 
 class Arena {
 
-	private final int rows;
-	private final int cols;
+	private final int width;
+	private final int height;
 	private final Tile[][] tiles;
 
-	Arena(int rows, int cols, Tile[][] tiles) {
-		if (rows <= 0 || cols <= 0)
+	Arena(int width, int height, Tile[][] tiles) {
+		if (width <= 0 || height <= 0)
 			throw new IllegalArgumentException();
-		this.rows = rows;
-		this.cols = cols;
-		this.tiles = new Tile[rows][cols];
-		for (int r = 0; r < rows; r++)
-			for (int c = 0; c < cols; c++)
-				this.tiles[r][c] = tiles[r][c];
+		this.width = width;
+		this.height = height;
+		this.tiles = new Tile[width][height];
+		for (int x = 0; x < width; x++)
+			for (int y = 0; y < height; y++)
+				this.tiles[x][y] = tiles[x][y];
 	}
 
 	Arena(Level level) {
-		rows = level.getrows();
-		cols = level.getcols();
+		width = level.getWidth();
+		height = level.getHeight();
 
-		int rows = level.getrows(), cols = level.getcols();
-		tiles = new Tile[rows][cols];
-		for (Position pos : Utils.iterable(new Position.Iterator2D(rows, cols)))
-			tiles[pos.row][pos.col] = createTile(level.tileDesc(pos), pos);
+		int width = level.getWidth(), height = level.getHeight();
+		tiles = new Tile[width][height];
+		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
+			tiles[pos.x][pos.y] = createTile(level.tileDesc(pos), pos);
 	}
 
-	int getrows() {
-		return rows;
+	int getWidth() {
+		return width;
 	}
 
-	int getcols() {
-		return cols;
+	int getHeight() {
+		return height;
 	}
 
 	Tile at(Position pos) {
-		return tiles[pos.row][pos.col];
+		return tiles[pos.x][pos.y];
 	}
 
 	boolean isValidPos(Position pos) {
-		return 0 <= pos.row && pos.row < rows && 0 <= pos.col && pos.col < cols;
+		return 0 <= pos.x && pos.x < width && 0 <= pos.y && pos.y < height;
 	}
 
 	Collection<Position> positions() {
@@ -56,12 +56,12 @@ class Arena {
 
 			@Override
 			public int size() {
-				return rows * cols;
+				return width * height;
 			}
 
 			@Override
 			public Iterator<Position> iterator() {
-				return new Position.Iterator2D(rows, cols);
+				return new Position.Iterator2D(width, height);
 			}
 
 		};
@@ -72,7 +72,7 @@ class Arena {
 
 			@Override
 			public int size() {
-				return rows * cols;
+				return width * height;
 			}
 
 			@Override

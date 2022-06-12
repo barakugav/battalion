@@ -23,12 +23,12 @@ class Game {
 		}
 	}
 
-	int getRows() {
-		return arena.getrows();
+	int getWidth() {
+		return arena.getWidth();
 	}
 
-	int getCols() {
-		return arena.getcols();
+	int getHeight() {
+		return arena.getHeight();
 	}
 
 	Tile getTile(Position pos) {

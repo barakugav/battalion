@@ -93,7 +93,7 @@ class LevelPanel extends JPanel {
 
 	@Override
 	public Dimension getPreferredSize() {
-		return new Dimension(TILE_SIZE_PIXEL * game.arena.getrows(), TILE_SIZE_PIXEL * game.arena.getcols());
+		return new Dimension(TILE_SIZE_PIXEL * game.arena.getWidth(), TILE_SIZE_PIXEL * game.arena.getHeight());
 	}
 
 	private void clearSelection() {
@@ -197,7 +197,7 @@ class LevelPanel extends JPanel {
 
 	private void drawImage(Graphics g, Images.Label label, Position pos) {
 		BufferedImage unitImg = images.getImage(label);
-		g.drawImage(unitImg, pos.col * TILE_SIZE_PIXEL, pos.row * TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL,
+		g.drawImage(unitImg, pos.y * TILE_SIZE_PIXEL, pos.x * TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL,
 				this);
 	}
 

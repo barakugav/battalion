@@ -9,21 +9,21 @@ import java.util.function.Predicate;
 
 class Position {
 
-	final int row, col;
+	final int x, y;
 
-	Position(int row, int col) {
-		this.row = row;
-		this.col = col;
+	Position(int x, int y) {
+		this.x = x;
+		this.y = y;
 	}
 
 	@Override
 	public String toString() {
-		return "(" + row + ", " + col + ")";
+		return "(" + x + ", " + y + ")";
 	}
 
 	@Override
 	public int hashCode() {
-		return row << 16 + col;
+		return x << 16 + y;
 	}
 
 	@Override
@@ -33,18 +33,18 @@ class Position {
 		if (!(other instanceof Position))
 			return false;
 		Position o = (Position) other;
-		return row == o.row && col == o.col;
+		return x == o.x && y == o.y;
 	}
 
 	static enum Direction {
 
-		RowPos(1, 0), RowNeg(-1, 0), ColPos(0, 1), ColNeg(0, -1);
+		XPos(1, 0), XNeg(-1, 0), YPos(0, 1), YNeg(0, -1);
 
-		final int dr, dc;
+		final int dx, dy;
 
 		Direction(int dr, int dc) {
-			this.dr = dr;
-			this.dc = dc;
+			this.dx = dr;
+			this.dy = dc;
 		}
 
 	};
@@ -52,36 +52,36 @@ class Position {
 	List<Position> neighbors() {
 		List<Position> neighbors = new ArrayList<>(Direction.values().length);
 		for (Direction dir : Direction.values())
-			neighbors.add(new Position(row + dir.dr, col + dir.dc));
+			neighbors.add(new Position(x + dir.dx, y + dir.dy));
 		return neighbors;
 	}
 
 	static class Iterator2D implements Iterator<Position> {
 
-		final int rows, cols;
-		int r, c;
+		final int width, height;
+		int x, y;
 
-		Iterator2D(int rows, int cols) {
-			if (rows < 0 || cols < 0)
+		Iterator2D(int width, int height) {
+			if (width < 0 || height < 0)
 				throw new IllegalArgumentException();
-			this.rows = rows;
-			this.cols = cols;
-			r = c = 0;
+			this.width = width;
+			this.height = height;
+			x = y = 0;
 		}
 
 		@Override
 		public boolean hasNext() {
-			return r < rows;
+			return x < width;
 		}
 
 		@Override
 		public Position next() {
 			if (!hasNext())
 				throw new NoSuchElementException();
-			Position pos = new Position(r, c);
-			if (++c >= cols) {
-				c = 0;
-				r++;
+			Position pos = new Position(x, y);
+			if (++y >= height) {
+				y = 0;
+				x++;
 			}
 			return pos;
 		}
@@ -99,7 +99,7 @@ class Position {
 		}
 
 		boolean at(Position pos) {
-			return pos.row < map.length && pos.col < map[pos.row].length && map[pos.row][pos.col];
+			return pos.x < map.length && pos.y < map[pos.x].length && map[pos.x][pos.y];
 		}
 
 		@Override

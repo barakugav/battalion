@@ -96,7 +96,7 @@ abstract class Unit extends Entity {
 		Position.Bitmap getAttackableMap() {
 			Arena arena = getArena();
 			Position.Bitmap reachableMap = getReachableMap();
-			boolean[][] attackableMap = new boolean[arena.getrows()][arena.getcols()];
+			boolean[][] attackableMap = new boolean[arena.getWidth()][arena.getHeight()];
 
 			/* Touchable map */
 			for (Position pos : arena.positions()) {
@@ -107,7 +107,7 @@ abstract class Unit extends Entity {
 					continue;
 				for (Position neighbor : pos.neighbors()) {
 					if (arena.isValidPos(neighbor) && reachableMap.at(neighbor)) {
-						attackableMap[pos.row][pos.col] = true;
+						attackableMap[pos.x][pos.y] = true;
 						break;
 					}
 				}
@@ -155,19 +155,19 @@ abstract class Unit extends Entity {
 
 	Position.Bitmap getReachableMap() {
 		Arena arena = getArena();
-		int rows = arena.getrows(), cols = arena.getcols();
-		boolean[][] reachableMap = new boolean[rows][cols];
+		int width = arena.getWidth(), height = arena.getHeight();
+		boolean[][] reachableMap = new boolean[width][height];
 
-		int[][] reachableMap0 = new int[rows][cols];
-		for (int r = 0; r < rows; r++)
-			Arrays.fill(reachableMap0[r], -1);
-		reachableMap0[pos.row][pos.col] = 0;
+		int[][] reachableMap0 = new int[width][height];
+		for (int x = 0; x < width; x++)
+			Arrays.fill(reachableMap0[x], -1);
+		reachableMap0[pos.x][pos.y] = 0;
 
 		int maxMove = type.moveLimit;
 		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
 			for (Position pos : arena.positions()) {
 				/* Already can move here */
-				if (reachableMap0[pos.row][pos.col] >= 0)
+				if (reachableMap0[pos.x][pos.y] >= 0)
 					continue;
 				/* Other unit in the way */
 				if (arena.at(pos).hasUnit())
@@ -176,8 +176,8 @@ abstract class Unit extends Entity {
 					continue;
 				/* Check if we reached any near tiles last moveLen */
 				for (Position neighbor : pos.neighbors()) {
-					if (arena.isValidPos(neighbor) && reachableMap0[neighbor.row][neighbor.col] == moveLen - 1) {
-						reachableMap0[pos.row][pos.col] = moveLen;
+					if (arena.isValidPos(neighbor) && reachableMap0[neighbor.x][neighbor.y] == moveLen - 1) {
+						reachableMap0[pos.x][pos.y] = moveLen;
 						break;
 					}
 				}
@@ -185,7 +185,7 @@ abstract class Unit extends Entity {
 		}
 		/* Convert distance map to boolean map */
 		for (Position pos : arena.positions())
-			reachableMap[pos.row][pos.col] = reachableMap0[pos.row][pos.col] > 0;
+			reachableMap[pos.x][pos.y] = reachableMap0[pos.x][pos.y] > 0;
 
 		return new Position.Bitmap(reachableMap);
 	}
