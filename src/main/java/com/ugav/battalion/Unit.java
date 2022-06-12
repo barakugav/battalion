@@ -26,6 +26,10 @@ abstract class Unit extends Entity {
 		return health;
 	}
 
+	void setHealth(int health) {
+		this.health = health;
+	}
+
 	void setPos(Position pos) {
 		this.pos = pos;
 	}
@@ -42,7 +46,7 @@ abstract class Unit extends Entity {
 		return arena;
 	}
 
-	abstract int getDamge();
+	abstract int getDamge(Unit target);
 
 	boolean isTerrainPassable(Terrain terrain) {
 		switch (terrain.type.category) {
@@ -134,7 +138,7 @@ abstract class Unit extends Entity {
 		}
 
 		@Override
-		int getDamge() {
+		int getDamge(Unit target) {
 			return type.damage;
 		}
 
@@ -147,7 +151,7 @@ abstract class Unit extends Entity {
 		}
 
 		@Override
-		int getDamge() {
+		int getDamge(Unit target) {
 			return type.damage;
 		}
 

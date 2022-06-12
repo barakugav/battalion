@@ -1,6 +1,7 @@
 package com.ugav.battalion;
 
 import java.awt.AlphaComposite;
+import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -44,7 +45,7 @@ class LevelPanel extends JPanel {
 		addMouseListener(new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent e) {
-				tileClicked(new Position(e.getY() / TILE_SIZE_PIXEL, e.getX() / TILE_SIZE_PIXEL));
+				tileClicked(new Position(e.getX() / TILE_SIZE_PIXEL, e.getY() / TILE_SIZE_PIXEL));
 			}
 		});
 	}
@@ -136,6 +137,10 @@ class LevelPanel extends JPanel {
 	private class UnitComp {
 		private final Unit unit;
 
+		private final int HealthBarWidth = 26;
+		private final int HealthBarHeight = 4;
+		private final int HealthBarBottomMargin = 3;
+
 		UnitComp(Unit unit) {
 			this.unit = unit;
 		}
@@ -148,7 +153,12 @@ class LevelPanel extends JPanel {
 			drawImage(g, Images.Label.of(unit), unit.getPos());
 			g2.setComposite(oldComp);
 
-			g2.drawRect(TILE_SIZE_PIXEL, ABORT, WIDTH, HEIGHT);
+			int x = (int) ((unit.getPos().x + 0.5) * TILE_SIZE_PIXEL - HealthBarWidth * 0.5);
+			int y = (unit.getPos().y + 1) * TILE_SIZE_PIXEL - HealthBarHeight - HealthBarBottomMargin;
+			g2.setColor(Color.GREEN);
+			g2.fillRect(x, y, (int) ((double) HealthBarWidth * unit.getHealth() / unit.type.health), HealthBarHeight);
+			g2.setColor(Color.BLACK);
+			g2.drawRect(x, y, HealthBarWidth, HealthBarHeight);
 		}
 
 	}
@@ -197,8 +207,7 @@ class LevelPanel extends JPanel {
 
 	private void drawImage(Graphics g, Images.Label label, Position pos) {
 		BufferedImage unitImg = images.getImage(label);
-		g.drawImage(unitImg, pos.y * TILE_SIZE_PIXEL, pos.x * TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL,
-				this);
+		g.drawImage(unitImg, pos.x * TILE_SIZE_PIXEL, pos.y * TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, this);
 	}
 
 }

@@ -159,7 +159,12 @@ class Game {
 	}
 
 	private void doDamage(Unit attacker, Unit target) {
-		/* TODO */
+		int damage = attacker.getDamge(target);
+		if (target.getHealth() <= damage) {
+			target.setHealth(0);
+		} else {
+			target.setHealth(target.getHealth() - damage);
+		}
 	}
 
 }
