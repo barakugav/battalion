@@ -30,6 +30,10 @@ abstract class Unit extends Entity {
 		this.health = health;
 	}
 
+	boolean isDead() {
+		return health <= 0;
+	}
+
 	void setPos(Position pos) {
 		this.pos = pos;
 	}

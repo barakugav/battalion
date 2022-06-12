@@ -84,6 +84,10 @@ class Game {
 		turn = turn == Team.Blue ? Team.Red : Team.Blue;
 	}
 
+	boolean isFinished() {
+		return winner != Team.None;
+	}
+
 	Team getWinner() {
 		return winner;
 	}
@@ -162,6 +166,7 @@ class Game {
 		int damage = attacker.getDamge(target);
 		if (target.getHealth() <= damage) {
 			target.setHealth(0);
+			arena.at(target.getPos()).removeUnit();
 		} else {
 			target.setHealth(target.getHealth() - damage);
 		}
