@@ -11,8 +11,6 @@ abstract class Unit extends Entity {
 
 	Unit(Type type, Team team) {
 		super(team);
-		if (getTeam() == Team.None)
-			throw new IllegalArgumentException();
 		this.type = type;
 		health = type.health;
 	}

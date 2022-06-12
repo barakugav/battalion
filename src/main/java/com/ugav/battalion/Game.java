@@ -1,17 +1,32 @@
 package com.ugav.battalion;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.ugav.battalion.Unit.Category;
 
 class Game {
 
 	final Arena arena;
+	private final Map<Team, TeamData> teamData;
+	private final Iterator<Team> turnIterator;
 	private Team turn;
 	private Team winner;
 
+	private static class TeamData {
+		int money;
+	}
+
 	Game(Level level) {
 		arena = new Arena(level);
-		turn = Team.Blue;
-		winner = Team.None;
+		teamData = new HashMap<>();
+		turnIterator = Utils.iteratorRepeatInfty(List.of(Team.values()));
+		turn = turnIterator.next();
+		winner = null;
 
 		for (Position pos : arena.positions()) {
 			Tile tile = arena.at(pos);
@@ -21,6 +36,9 @@ class Game {
 			u.setArena(arena);
 			u.setPos(pos);
 		}
+
+		for (Team team : Team.values())
+			teamData.put(team, new TeamData());
 	}
 
 	int getWidth() {
@@ -37,6 +55,10 @@ class Game {
 
 	Team getTurn() {
 		return turn;
+	}
+
+	int getMoney(Team team) {
+		return teamData.get(team).money;
 	}
 
 	void start() {
@@ -57,35 +79,32 @@ class Game {
 	}
 
 	void turnEnd() {
-		boolean blueDead = true;
-		boolean redDead = true;
+		if (isFinished()) {
+			Set<Team> alive = getAlive();
+			winner = alive.size() == 1 ? alive.iterator().next() : null;
+			return;
+		}
+
 		for (Tile tile : arena.tiles()) {
-			if (tile.hasUnit()) {
-				Team unitTeam = tile.getUnit().getTeam();
-				if (unitTeam == Team.Blue)
-					blueDead = false;
-				else if (unitTeam == Team.Red)
-					redDead = false;
-				else
-					throw new InternalError();
+			if (tile.hasBuilding()) {
+				Building building = tile.getBuilding();
+				teamData.get(building.getTeam()).money += building.getMoneyGain();
 			}
 		}
 
-		if (blueDead) {
-			winner = Team.Red;
-			return;
-		}
-		if (redDead) {
-			winner = Team.Blue;
-			return;
-		}
+		turn = turnIterator.next();
+	}
 
-		/* TODO add money */
-		turn = turn == Team.Blue ? Team.Red : Team.Blue;
+	private Set<Team> getAlive() {
+		Set<Team> alive = new HashSet<>();
+		for (Tile tile : arena.tiles())
+			if (tile.hasUnit())
+				alive.add(tile.getUnit().getTeam());
+		return alive;
 	}
 
 	boolean isFinished() {
-		return winner != Team.None;
+		return getAlive().size() <= 1;
 	}
 
 	Team getWinner() {

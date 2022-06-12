@@ -99,7 +99,7 @@ class Position {
 		}
 
 		boolean at(Position pos) {
-			return pos.x < map.length && pos.y < map[pos.x].length && map[pos.x][pos.y];
+			return 0 <= pos.x && pos.x < map.length && 0 <= pos.y && pos.y < map[pos.x].length && map[pos.x][pos.y];
 		}
 
 		@Override

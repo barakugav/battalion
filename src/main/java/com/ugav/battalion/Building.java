@@ -22,10 +22,17 @@ abstract class Building extends Entity {
 		this.pos = pos;
 	}
 
+	abstract int getMoneyGain();
+
 	static class OilRefinery extends Building {
 
 		OilRefinery(Team team) {
 			super(Type.OilRefinery, team);
+		}
+
+		@Override
+		int getMoneyGain() {
+			return 100;
 		}
 
 	}
@@ -34,6 +41,11 @@ abstract class Building extends Entity {
 
 		Factory(Team team) {
 			super(Type.Factory, team);
+		}
+
+		@Override
+		int getMoneyGain() {
+			return 0;
 		}
 
 	}

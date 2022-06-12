@@ -67,6 +67,49 @@ class Utils {
 		}
 	}
 
+	static <E> Iterator<E> iteratorRepeat(Iterable<E> iterable, int repeat) {
+		return new IteratorRepeat<>(iterable, repeat);
+	}
+
+	static <E> Iterator<E> iteratorRepeatInfty(Iterable<E> iterable) {
+		return iteratorRepeat(iterable, -1);
+	}
+
+	private static class IteratorRepeat<E> implements Iterator<E> {
+
+		private final Iterable<E> iterable;
+		private Iterator<E> it;
+		private int repeat;
+
+		IteratorRepeat(Iterable<E> iterable, int repeat) {
+			this.iterable = iterable;
+			this.repeat = repeat;
+			it = iterable.iterator();
+		}
+
+		@Override
+		public boolean hasNext() {
+			if (it.hasNext())
+				return true;
+			if (repeat == 0)
+				return false;
+			it = iterable.iterator();
+			if (!it.hasNext())
+				return false;
+			if (repeat > 0)
+				repeat--;
+			return true;
+		}
+
+		@Override
+		public E next() {
+			if (!hasNext())
+				throw new NoSuchElementException();
+			return it.next();
+		}
+
+	}
+
 	static <T> String toString(T[][] a) {
 		if (a == null)
 			return "null";

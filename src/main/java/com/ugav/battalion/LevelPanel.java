@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 class LevelPanel extends JPanel {
@@ -59,19 +60,38 @@ class LevelPanel extends JPanel {
 		} else {
 			game.turnBegin();
 		}
+		menu.refresh();
 		repaint();
 	}
 
 	private class Menu extends JPanel {
 
+		private final Map<Team, JLabel> labelMoney;
+		private final JButton buttonEndTurn;
+
 		Menu() {
-			JButton buttonEndTurn = new JButton("End Turn");
+			labelMoney = new HashMap<>();
+			for (Team team : Team.values())
+				labelMoney.put(team, new JLabel());
+			buttonEndTurn = new JButton("End Turn");
 
 			buttonEndTurn.addActionListener(e -> endTurn());
 
-			setLayout(new GridLayout());
+			setLayout(new GridLayout(0, 1));
+			for (JLabel label : labelMoney.values())
+				add(label);
 			add(buttonEndTurn);
+
+			refresh();
 		}
+
+		void refresh() {
+			for (Team team : Team.values()) {
+				int m = game != null ? game.getMoney(team) : 0;
+				labelMoney.get(team).setText(team.toString() + ": " + m);
+			}
+		}
+
 	}
 
 	private class ArenaPanel extends JPanel {
@@ -203,7 +223,7 @@ class LevelPanel extends JPanel {
 				int x = (int) ((unit.getPos().x + 0.5) * TILE_SIZE_PIXEL - HealthBarWidth * 0.5);
 				int y = (unit.getPos().y + 1) * TILE_SIZE_PIXEL - HealthBarHeight - HealthBarBottomMargin;
 				g2.setColor(Color.GREEN);
-				g2.fillRect(x, y, (int) ((double) HealthBarWidth * unit.getHealth() / unit.type.health),
+				g2.fillRect(x, y, (int) ((double) (HealthBarWidth - 2) * unit.getHealth() / unit.type.health),
 						HealthBarHeight);
 				g2.setColor(Color.BLACK);
 				g2.drawRect(x, y, HealthBarWidth, HealthBarHeight);
