@@ -58,7 +58,7 @@ abstract class Unit extends Entity {
 	}
 
 	boolean isMoveValid(Position target) {
-		return getMovableMap()[target.x][target.y];
+		return getMovableMap()[target.row][target.col];
 	}
 
 	abstract boolean isAttackValid(Position target);
@@ -93,21 +93,21 @@ abstract class Unit extends Entity {
 		@Override
 		public boolean isAttackValid(Position target) {
 			Arena arena = getArena();
-			int xLen = arena.getXLen(), yLen = arena.getYLen();
+			int rows = arena.getrows(), cols = arena.getcols();
 			boolean[][] moveableMap = getMovableMap();
-			boolean[][] attackableMap = new boolean[xLen][yLen];
+			boolean[][] attackableMap = new boolean[rows][cols];
 
 			/* Touchable map */
-			for (Position pos : Utils.iterable(new Position.Iterator2D(xLen, yLen))) {
+			for (Position pos : Utils.iterable(new Position.Iterator2D(rows, cols))) {
 				for (Position neighbor : pos.neighbors()) {
-					if (arena.isValidPos(neighbor) && moveableMap[neighbor.x][neighbor.y]) {
-						attackableMap[pos.x][pos.y] = true;
+					if (arena.isValidPos(neighbor) && moveableMap[neighbor.row][neighbor.col]) {
+						attackableMap[pos.row][pos.col] = true;
 						break;
 					}
 				}
 			}
 
-			return attackableMap[target.x][target.y];
+			return attackableMap[target.row][target.col];
 		}
 
 	}
@@ -140,19 +140,19 @@ abstract class Unit extends Entity {
 
 	boolean[][] getMovableMap() {
 		Arena arena = getArena();
-		int xLen = arena.getXLen(), yLen = arena.getYLen();
-		boolean[][] moveableMap = new boolean[xLen][yLen];
+		int rows = arena.getrows(), cols = arena.getcols();
+		boolean[][] moveableMap = new boolean[rows][cols];
 
-		int[][] moveableMap0 = new int[xLen][yLen];
-		for (int x = 0; x < xLen; x++)
-			Arrays.fill(moveableMap0[x], -1);
-		moveableMap0[pos.x][pos.y] = 0;
+		int[][] moveableMap0 = new int[rows][cols];
+		for (int r = 0; r < rows; r++)
+			Arrays.fill(moveableMap0[r], -1);
+		moveableMap0[pos.row][pos.col] = 0;
 
 		int maxMove = type.moveLimit;
 		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
 			for (Position pos : arena.positions()) {
 				/* Already can move here */
-				if (moveableMap0[pos.x][pos.y] >= 0)
+				if (moveableMap0[pos.row][pos.col] >= 0)
 					continue;
 				/* Other unit in the way */
 				if (arena.at(pos).hasUnit())
@@ -161,8 +161,8 @@ abstract class Unit extends Entity {
 					continue;
 				/* Check if we reached any near tiles last moveLen */
 				for (Position neighbor : pos.neighbors()) {
-					if (arena.isValidPos(neighbor) && moveableMap0[neighbor.x][neighbor.y] == moveLen - 1) {
-						moveableMap0[pos.x][pos.y] = moveLen;
+					if (arena.isValidPos(neighbor) && moveableMap0[neighbor.row][neighbor.col] == moveLen - 1) {
+						moveableMap0[pos.row][pos.col] = moveLen;
 						break;
 					}
 				}
@@ -170,7 +170,7 @@ abstract class Unit extends Entity {
 		}
 		/* Convert distance map to boolean map */
 		for (Position pos : arena.positions())
-			moveableMap[pos.x][pos.y] = moveableMap0[pos.x][pos.y] > 0;
+			moveableMap[pos.row][pos.col] = moveableMap0[pos.row][pos.col] > 0;
 
 		return moveableMap;
 	}

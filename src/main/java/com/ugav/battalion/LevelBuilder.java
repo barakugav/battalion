@@ -8,22 +8,22 @@ class LevelBuilder {
 
 	private final TileDesc[][] tiles;
 
-	LevelBuilder(int xLen, int yLen) {
-		if (xLen <= 0 || yLen <= 0)
+	LevelBuilder(int rows, int cols) {
+		if (rows <= 0 || cols <= 0)
 			throw new IllegalArgumentException();
-		tiles = new TileDesc[xLen][yLen];
-		for (int x = 0; x < xLen; x++)
-			for (int y = 0; y < yLen; y++)
-				tiles[x][y] = TileDesc.of(Terrain.FLAT_LAND, null, null);
+		tiles = new TileDesc[rows][cols];
+		for (int r = 0; r < rows; r++)
+			for (int c = 0; c < cols; c++)
+				tiles[r][c] = TileDesc.of(Terrain.FLAT_LAND, null, null);
 	}
 
-	LevelBuilder setTile(int x, int y, TileDesc tile) {
-		tiles[x][y] = tile;
+	LevelBuilder setTile(int r, int c, TileDesc tile) {
+		tiles[r][c] = tile;
 		return this;
 	}
 
-	LevelBuilder setTile(int x, int y, Terrain terrain, BuildingDesc buiding, UnitDesc unit) {
-		return setTile(x, y, TileDesc.of(terrain, buiding, unit));
+	LevelBuilder setTile(int r, int c, Terrain terrain, BuildingDesc buiding, UnitDesc unit) {
+		return setTile(r, c, TileDesc.of(terrain, buiding, unit));
 	}
 
 	Level buildLevel() {

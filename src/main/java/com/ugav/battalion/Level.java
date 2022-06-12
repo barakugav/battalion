@@ -2,8 +2,8 @@ package com.ugav.battalion;
 
 class Level {
 
-	private final int xLen;
-	private final int yLen;
+	private final int rows;
+	private final int cols;
 	private final TileDesc[][] tiles;
 
 	static class TileDesc {
@@ -51,23 +51,23 @@ class Level {
 	}
 
 	Level(TileDesc[][] tiles) {
-		this.xLen = tiles.length;
-		this.yLen = tiles[0].length;
-		this.tiles = new TileDesc[xLen][yLen];
-		for (Position pos : Utils.iterable(new Position.Iterator2D(xLen, yLen)))
-			this.tiles[pos.x][pos.y] = tiles[pos.x][pos.y];
+		this.rows = tiles.length;
+		this.cols = tiles[0].length;
+		this.tiles = new TileDesc[rows][cols];
+		for (Position pos : Utils.iterable(new Position.Iterator2D(rows, cols)))
+			this.tiles[pos.row][pos.col] = tiles[pos.row][pos.col];
 	}
 
-	int getXLen() {
-		return xLen;
+	int getrows() {
+		return rows;
 	}
 
-	int getYLen() {
-		return yLen;
+	int getcols() {
+		return cols;
 	}
 
 	TileDesc tileDesc(Position pos) {
-		return tiles[pos.x][pos.y];
+		return tiles[pos.row][pos.col];
 	}
 
 }

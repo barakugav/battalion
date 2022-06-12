@@ -44,8 +44,8 @@ class LevelPanel extends JPanel {
 	void setGame(Game game) {
 		this.game = Objects.requireNonNull(game);
 
-		int xLen = game.arena.getXLen(), yLen = game.arena.getYLen();
-		setLayout(new GridLayout(xLen, yLen));
+		int rows = game.arena.getrows(), cols = game.arena.getcols();
+		setLayout(new GridLayout(rows, cols));
 		setPreferredSize(getPreferredSize());
 
 		tiles.clear();
@@ -61,8 +61,8 @@ class LevelPanel extends JPanel {
 
 	@Override
 	public Dimension getPreferredSize() {
-		int xLen = game.arena.getXLen(), yLen = game.arena.getYLen();
-		return new Dimension(TILE_SIZE_PIXEL * xLen, TILE_SIZE_PIXEL * yLen);
+		int rows = game.arena.getrows(), cols = game.arena.getcols();
+		return new Dimension(TILE_SIZE_PIXEL * rows, TILE_SIZE_PIXEL * cols);
 	}
 
 	private void clearSelection() {

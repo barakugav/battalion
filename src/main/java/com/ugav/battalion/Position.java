@@ -7,21 +7,21 @@ import java.util.NoSuchElementException;
 
 class Position {
 
-	final int x, y;
+	final int row, col;
 
-	Position(int x, int y) {
-		this.x = x;
-		this.y = y;
+	Position(int row, int col) {
+		this.row = row;
+		this.col = col;
 	}
 
 	@Override
 	public String toString() {
-		return "(" + x + ", " + y + ")";
+		return "(" + row + ", " + col + ")";
 	}
 
 	@Override
 	public int hashCode() {
-		return x << 16 + y;
+		return row << 16 + col;
 	}
 
 	@Override
@@ -31,18 +31,18 @@ class Position {
 		if (!(other instanceof Position))
 			return false;
 		Position o = (Position) other;
-		return x == o.x && y == o.y;
+		return row == o.row && col == o.col;
 	}
 
 	static enum Direction {
 
-		XPos(1, 0), XNeg(-1, 0), YPos(0, 1), YNeg(0, -1);
+		RowPos(1, 0), RowNeg(-1, 0), ColPos(0, 1), ColNeg(0, -1);
 
-		final int dx, dy;
+		final int dr, dc;
 
-		Direction(int dx, int dy) {
-			this.dx = dx;
-			this.dy = dy;
+		Direction(int dr, int dc) {
+			this.dr = dr;
+			this.dc = dc;
 		}
 
 	};
@@ -50,36 +50,36 @@ class Position {
 	List<Position> neighbors() {
 		List<Position> neighbors = new ArrayList<>(Direction.values().length);
 		for (Direction dir : Direction.values())
-			neighbors.add(new Position(x + dir.dx, y + dir.dy));
+			neighbors.add(new Position(row + dir.dr, col + dir.dc));
 		return neighbors;
 	}
 
 	static class Iterator2D implements Iterator<Position> {
 
-		final int xLen, yLen;
-		int x, y;
+		final int rows, cols;
+		int r, c;
 
-		Iterator2D(int xLen, int yLen) {
-			if (xLen < 0 || yLen < 0)
+		Iterator2D(int rows, int cols) {
+			if (rows < 0 || cols < 0)
 				throw new IllegalArgumentException();
-			this.xLen = xLen;
-			this.yLen = yLen;
-			x = y = 0;
+			this.rows = rows;
+			this.cols = cols;
+			r = c = 0;
 		}
 
 		@Override
 		public boolean hasNext() {
-			return x < xLen;
+			return r < rows;
 		}
 
 		@Override
 		public Position next() {
 			if (!hasNext())
 				throw new NoSuchElementException();
-			Position pos = new Position(x, y);
-			if (++y >= yLen) {
-				y = 0;
-				x++;
+			Position pos = new Position(r, c);
+			if (++c >= cols) {
+				c = 0;
+				r++;
 			}
 			return pos;
 		}

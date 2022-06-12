@@ -3,7 +3,6 @@ package com.ugav.battalion;
 import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 import com.ugav.battalion.Level.BuildingDesc;
 import com.ugav.battalion.Level.TileDesc;
@@ -11,45 +10,45 @@ import com.ugav.battalion.Level.UnitDesc;
 
 class Arena {
 
-	private final int xLen;
-	private final int yLen;
+	private final int rows;
+	private final int cols;
 	private final Tile[][] tiles;
 
-	Arena(int xLen, int yLen, Tile[][] tiles) {
-		if (xLen <= 0 || yLen <= 0)
+	Arena(int rows, int cols, Tile[][] tiles) {
+		if (rows <= 0 || cols <= 0)
 			throw new IllegalArgumentException();
-		this.xLen = xLen;
-		this.yLen = yLen;
-		this.tiles = new Tile[xLen][yLen];
-		for (int x = 0; x < xLen; x++)
-			for (int y = 0; y < yLen; y++)
-				this.tiles[x][y] = tiles[x][y];
+		this.rows = rows;
+		this.cols = cols;
+		this.tiles = new Tile[rows][cols];
+		for (int r = 0; r < rows; r++)
+			for (int c = 0; c < cols; c++)
+				this.tiles[r][c] = tiles[r][c];
 	}
 
 	Arena(Level level) {
-		xLen = level.getXLen();
-		yLen = level.getYLen();
+		rows = level.getrows();
+		cols = level.getcols();
 
-		int xLen = level.getXLen(), yLen = level.getYLen();
-		tiles = new Tile[xLen][yLen];
-		for (Position pos : Utils.iterable(new Position.Iterator2D(xLen, yLen)))
-			tiles[pos.x][pos.y] = createTile(level.tileDesc(pos), pos);
+		int rows = level.getrows(), cols = level.getcols();
+		tiles = new Tile[rows][cols];
+		for (Position pos : Utils.iterable(new Position.Iterator2D(rows, cols)))
+			tiles[pos.row][pos.col] = createTile(level.tileDesc(pos), pos);
 	}
 
-	int getXLen() {
-		return xLen;
+	int getrows() {
+		return rows;
 	}
 
-	int getYLen() {
-		return yLen;
+	int getcols() {
+		return cols;
 	}
 
 	Tile at(Position pos) {
-		return tiles[pos.x][pos.y];
+		return tiles[pos.row][pos.col];
 	}
 
 	boolean isValidPos(Position pos) {
-		return 0 <= pos.x && pos.x < xLen && 0 <= pos.y && pos.y < yLen;
+		return 0 <= pos.row && pos.row < rows && 0 <= pos.col && pos.col < cols;
 	}
 
 	Collection<Position> positions() {
@@ -57,12 +56,12 @@ class Arena {
 
 			@Override
 			public int size() {
-				return xLen * yLen;
+				return rows * cols;
 			}
 
 			@Override
 			public Iterator<Position> iterator() {
-				return new Position.Iterator2D(xLen, yLen);
+				return new Position.Iterator2D(rows, cols);
 			}
 
 		};
@@ -73,7 +72,7 @@ class Arena {
 
 			@Override
 			public int size() {
-				return xLen * yLen;
+				return rows * cols;
 			}
 
 			@Override
