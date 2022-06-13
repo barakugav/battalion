@@ -20,6 +20,7 @@ import com.ugav.battalion.Terrain.FlatLand;
 import com.ugav.battalion.Terrain.Mountain;
 import com.ugav.battalion.Unit.Soldier;
 import com.ugav.battalion.Unit.Tank;
+import com.ugav.battalion.Unit.Type;
 
 class Images {
 
@@ -67,6 +68,7 @@ class Images {
 		addImg.accept(Label.Selection, "img/gui/selection.png");
 		addImg.accept(Label.Reachable, "img/gui/reachable.png");
 		addImg.accept(Label.Attackable, "img/gui/attackabe.png");
+		addImg.accept(Label.UnitLocked, "img/gui/unit_locked.png");
 	}
 
 	BufferedImage getImage(Label label) {
@@ -87,7 +89,7 @@ class Images {
 		FactoryRed, FactoryBlue, OilRefineryRed, OilRefineryBlue,
 
 		/* GUI */
-		Selection, Reachable, Attackable;
+		Selection, Reachable, Attackable, UnitLocked;
 
 		static Label of(Drawable obj) {
 			if (obj instanceof Terrain) {
@@ -101,11 +103,7 @@ class Images {
 
 			} else if (obj instanceof Unit) {
 				Unit unit = (Unit) obj;
-				Team team = unit.getTeam();
-				if (unit instanceof Soldier)
-					return team == Team.Red ? SoldierRed : SoldierBlue;
-				else if (unit instanceof Tank)
-					return team == Team.Red ? TankRed : TankBlue;
+				return of(unit.type, unit.getTeam());
 
 			} else if (obj instanceof Building) {
 				Building building = (Building) obj;
@@ -116,6 +114,14 @@ class Images {
 					return team == Team.Red ? FactoryRed : FactoryBlue;
 				return FactoryRed;
 			}
+			throw new InternalError();
+		}
+
+		static Label of(Unit.Type unitType, Team team) {
+			if (unitType == Type.Soldier)
+				return team == Team.Red ? SoldierRed : SoldierBlue;
+			else if (unitType == Type.Tank)
+				return team == Team.Red ? TankRed : TankBlue;
 			throw new InternalError();
 		}
 	}

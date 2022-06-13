@@ -68,11 +68,13 @@ class Utils {
 	}
 
 	static <E> Iterator<E> iteratorRepeat(Iterable<E> iterable, int repeat) {
+		if (repeat < 0)
+			throw new IllegalArgumentException();
 		return new IteratorRepeat<>(iterable, repeat);
 	}
 
 	static <E> Iterator<E> iteratorRepeatInfty(Iterable<E> iterable) {
-		return iteratorRepeat(iterable, -1);
+		return new IteratorRepeat<>(iterable, -1);
 	}
 
 	private static class IteratorRepeat<E> implements Iterator<E> {
@@ -94,11 +96,9 @@ class Utils {
 			if (repeat == 0)
 				return false;
 			it = iterable.iterator();
-			if (!it.hasNext())
-				return false;
 			if (repeat > 0)
 				repeat--;
-			return true;
+			return it.hasNext();
 		}
 
 		@Override

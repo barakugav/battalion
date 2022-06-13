@@ -7,6 +7,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -17,7 +19,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
@@ -45,14 +51,21 @@ class LevelPanel extends JPanel {
 	}
 
 	void setGame(Game game) {
+		if (this.game != null) {
+			menu.clearGame();
+			arenaPanel.clearGame();
+		}
+
 		this.game = Objects.requireNonNull(game);
-		arenaPanel.initNewGame();
+		menu.initGame();
+		arenaPanel.initGame();
 		invalidate();
 		repaint();
 	}
 
 	private void endTurn() {
 		debug.println("End turn");
+		arenaPanel.clearSelection();
 		game.turnEnd();
 		if (game.isFinished()) {
 			debug.println("Game finished");
@@ -60,7 +73,6 @@ class LevelPanel extends JPanel {
 		} else {
 			game.turnBegin();
 		}
-		menu.refresh();
 		repaint();
 	}
 
@@ -68,6 +80,7 @@ class LevelPanel extends JPanel {
 
 		private final Map<Team, JLabel> labelMoney;
 		private final JButton buttonEndTurn;
+		private final DataChangeRegister register;
 
 		Menu() {
 			labelMoney = new HashMap<>();
@@ -82,14 +95,22 @@ class LevelPanel extends JPanel {
 				add(label);
 			add(buttonEndTurn);
 
-			refresh();
+			register = new DataChangeRegister();
+
+			for (Team team : Team.values())
+				updateMoneyLabel(team, 0);
 		}
 
-		void refresh() {
-			for (Team team : Team.values()) {
-				int m = game != null ? game.getMoney(team) : 0;
-				labelMoney.get(team).setText(team.toString() + ": " + m);
-			}
+		void initGame() {
+			register.registerListener(game.onMoneyChange, e -> updateMoneyLabel(e.team, e.newAmount));
+		}
+
+		void clearGame() {
+			register.unregisterAllListeners(game.onMoneyChange);
+		}
+
+		private void updateMoneyLabel(Team team, int money) {
+			labelMoney.get(team).setText(team.toString() + ": " + money);
 		}
 
 	}
@@ -102,13 +123,14 @@ class LevelPanel extends JPanel {
 		private Position selection;
 		private Position.Bitmap reachableMap = Position.Bitmap.empty;
 		private Position.Bitmap attackableMap = Position.Bitmap.empty;
+		private final DataChangeRegister register;
 
 		ArenaPanel() {
-
 			tiles = new HashMap<>();
 			units = new IdentityHashMap<>();
 			buildings = new IdentityHashMap<>();
 			selection = null;
+			register = new DataChangeRegister();
 
 			addMouseListener(new MouseAdapter() {
 				@Override
@@ -118,17 +140,13 @@ class LevelPanel extends JPanel {
 			});
 		}
 
-		void initNewGame() {
-			tiles.clear();
-			units.clear();
-			buildings.clear();
+		void initGame() {
 			for (Position pos : game.arena.positions()) {
 				TileComp tile = new TileComp(pos);
 				tiles.put(pos, tile);
-				if (tile.tile().hasUnit()) {
-					Unit unit = tile.tile().getUnit();
-					units.put(unit, new UnitComp(unit));
-				}
+				if (tile.tile().hasUnit())
+					addUnitComp(tile.tile().getUnit());
+
 				if (tile.tile().hasBuilding()) {
 					Building building = tile.tile().getBuilding();
 					buildings.put(building, new BuildingComp(building));
@@ -136,6 +154,29 @@ class LevelPanel extends JPanel {
 			}
 
 			setPreferredSize(getPreferredSize());
+
+			register.registerListener(game.onNewUnit, e -> {
+				addUnitComp(e.unit);
+				repaint();
+			});
+		}
+
+		void clearGame() {
+			for (TileComp tile : tiles.values())
+				tile.clear();
+			for (BuildingComp building : buildings.values())
+				building.clear();
+			for (UnitComp unit : units.values())
+				unit.clear();
+			tiles.clear();
+			units.clear();
+			buildings.clear();
+
+			register.unregisterAllListeners(game.onNewUnit);
+		}
+
+		private void addUnitComp(Unit unit) {
+			units.put(unit, new UnitComp(unit));
 		}
 
 		@Override
@@ -161,7 +202,7 @@ class LevelPanel extends JPanel {
 			return new Dimension(TILE_SIZE_PIXEL * game.arena.getWidth(), TILE_SIZE_PIXEL * game.arena.getHeight());
 		}
 
-		private void clearSelection() {
+		void clearSelection() {
 			if (selection == null)
 				return;
 			debug.println("clearSelection ", selection);
@@ -173,36 +214,60 @@ class LevelPanel extends JPanel {
 		private void tileClicked(Position pos) {
 			if (game == null)
 				return;
-			TileComp tile = tiles.get(pos);
+			TileComp tileComp = tiles.get(pos);
 			if (selection == null) {
-				if (tile.canSelect()) {
-					debug.println("Selected ", pos);
-					selection = pos;
-					Unit unit = tile.tile().getUnit();
-					reachableMap = unit.getReachableMap();
-					attackableMap = unit.getAttackableMap();
-				}
+				trySelect(tileComp);
 
 			} else {
-				if (game.isMoveValid(selection, pos)) {
-					debug.println("Move ", selection, " ", pos);
-					game.move(selection, pos);
-
-				} else if (game.isAttackValid(selection, pos)) {
-					debug.println("Attack ", selection, " ", pos);
-					Unit target = tile.tile().getUnit();
-					game.moveAndAttack(selection, pos);
-					if (target.isDead())
-						units.remove(target);
-				}
-
+				actionAfterSelection(tileComp);
 				clearSelection();
 			}
 			repaint();
 		}
 
+		private void trySelect(TileComp tileComp) {
+			if (!tileComp.canSelect())
+				return;
+			debug.println("Selected ", tileComp.pos);
+			selection = tileComp.pos;
+			Tile tile = tileComp.tile();
+
+			if (tile.hasUnit()) {
+				Unit unit = tile.getUnit();
+				reachableMap = unit.getReachableMap();
+				attackableMap = unit.getAttackableMap();
+
+			} else if (tile.hasBuilding()) {
+				Building building = tile.getBuilding();
+				if (building instanceof Building.Factory) {
+					Building.Factory factory = (Building.Factory) building;
+					FactoryMenu factoryMenu = new FactoryMenu(gameFrame, factory);
+					factoryMenu.setVisible(true);
+				}
+
+			} else {
+				throw new InternalError();
+			}
+		}
+
+		private void actionAfterSelection(TileComp tileComp) {
+			if (!tileComp.tile().hasUnit()) {
+				if (game.isMoveValid(selection, tileComp.pos)) {
+					debug.println("Move ", selection, " ", tileComp.pos);
+					game.move(selection, tileComp.pos);
+				}
+			} else if (game.isAttackValid(selection, tileComp.pos)) {
+				debug.println("Attack ", selection, " ", tileComp.pos);
+				Unit target = tileComp.tile().getUnit();
+				game.moveAndAttack(selection, tileComp.pos);
+				if (target.isDead())
+					units.remove(target);
+			}
+		}
+
 		private class UnitComp {
 			private final Unit unit;
+			private final DataChangeRegister register;
 
 			private final int HealthBarWidth = 26;
 			private final int HealthBarHeight = 4;
@@ -210,6 +275,12 @@ class LevelPanel extends JPanel {
 
 			UnitComp(Unit unit) {
 				this.unit = unit;
+				register = new DataChangeRegister();
+
+				register.registerListener(unit.onChange, e -> {
+					if (unit.isDead())
+						units.remove(unit);
+				});
 			}
 
 			void paintComponent(Graphics g) {
@@ -223,10 +294,14 @@ class LevelPanel extends JPanel {
 				int x = (int) ((unit.getPos().x + 0.5) * TILE_SIZE_PIXEL - HealthBarWidth * 0.5);
 				int y = (unit.getPos().y + 1) * TILE_SIZE_PIXEL - HealthBarHeight - HealthBarBottomMargin;
 				g2.setColor(Color.GREEN);
-				g2.fillRect(x, y, (int) ((double) (HealthBarWidth - 2) * unit.getHealth() / unit.type.health),
+				g2.fillRect(x + 1, y, (int) ((double) (HealthBarWidth - 1) * unit.getHealth() / unit.type.health),
 						HealthBarHeight);
 				g2.setColor(Color.BLACK);
 				g2.drawRect(x, y, HealthBarWidth, HealthBarHeight);
+			}
+
+			void clear() {
+				register.unregisterAllListeners(unit.onChange);
 			}
 
 		}
@@ -242,6 +317,9 @@ class LevelPanel extends JPanel {
 				drawImage(g, Images.Label.of(building), building.getPos());
 			}
 
+			void clear() {
+			}
+
 		}
 
 		private class TileComp {
@@ -253,10 +331,15 @@ class LevelPanel extends JPanel {
 			}
 
 			private boolean canSelect() {
-				if (!tile().hasUnit())
-					return false;
-				Unit unit = tile().getUnit();
-				return unit.isActive();
+				if (tile().hasUnit()) {
+					Unit unit = tile().getUnit();
+					return unit.isActive();
+				}
+				if (tile().hasBuilding()) {
+					Building building = tile().getBuilding();
+					return building.isActive();
+				}
+				return false;
 			}
 
 			void paintComponent(Graphics g) {
@@ -271,6 +354,14 @@ class LevelPanel extends JPanel {
 				ArenaPanel.this.drawImage(g, label, pos);
 			}
 
+			@Override
+			public String toString() {
+				return pos.toString();
+			}
+
+			void clear() {
+			}
+
 		}
 
 		private void drawImage(Graphics g, Images.Label label, Position pos) {
@@ -279,6 +370,76 @@ class LevelPanel extends JPanel {
 					this);
 		}
 
+	}
+
+	private class FactoryMenu extends JDialog {
+
+		private final Building.Factory factory;
+
+		FactoryMenu(JFrame parent, Building.Factory factory) {
+			super(parent);
+			this.factory = factory;
+			initUI();
+		}
+
+		private void initUI() {
+			setTitle("Factory");
+
+			int unitCount = Unit.Type.values().length;
+			setLayout(new GridLayout(1, unitCount));
+
+			List<Building.Factory.UnitSale> sales = factory.getAvailableUnits();
+
+			for (int unitIdx = 0; unitIdx < unitCount; unitIdx++) {
+				Unit.Type unit = Unit.Type.values()[unitIdx];
+				Building.Factory.UnitSale unitSale = null;
+				for (Building.Factory.UnitSale sale : sales)
+					if (sale.type == unit)
+						unitSale = sale;
+
+				JPanel saleComp = new JPanel();
+				saleComp.setLayout(new GridBagLayout());
+				JComponent upperComp;
+				JComponent lowerComp;
+
+				if (unitSale != null) {
+					upperComp = new JLabel(new ImageIcon(images.getImage(Images.Label.of(unit, Team.Red))));
+					lowerComp = new JLabel("" + unitSale.price);
+				} else {
+					upperComp = new JLabel(new ImageIcon(images.getImage(Images.Label.UnitLocked)));
+					lowerComp = new JLabel("none");
+				}
+
+				GridBagConstraints c = new GridBagConstraints();
+				c.gridx = c.gridy = 0;
+				c.gridwidth = 1;
+				c.gridheight = 3;
+				saleComp.add(upperComp, c);
+				c.gridy = 3;
+				c.gridheight = 1;
+				saleComp.add(lowerComp, c);
+
+				if (unitSale != null) {
+					Building.Factory.UnitSale sale = unitSale;
+					saleComp.addMouseListener(new MouseAdapter() {
+						@Override
+						public void mousePressed(MouseEvent e) {
+							buyNewUnit(sale);
+						}
+					});
+				}
+
+				add(saleComp);
+			}
+
+			pack();
+			setLocationRelativeTo(getParent());
+		}
+
+		private void buyNewUnit(Building.Factory.UnitSale sale) {
+			game.buildUnit(factory, sale.type);
+			dispose();
+		}
 	}
 
 }

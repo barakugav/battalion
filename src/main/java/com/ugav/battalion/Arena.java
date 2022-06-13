@@ -104,7 +104,6 @@ class Arena {
 		return new Tile(terrain, building, unit);
 	}
 
-	@SuppressWarnings("static-method")
 	private Building createBuilding(BuildingDesc desc, Position pos) {
 		if (desc == null)
 			return null;
@@ -119,25 +118,25 @@ class Arena {
 		default:
 			throw new InternalError();
 		}
+		building.setArena(this);
 		building.setPos(pos);
 		return building;
 	}
 
-	private Unit createUnit(UnitDesc desc, Position pos) {
+	Unit createUnit(UnitDesc desc, Position pos) {
 		if (desc == null)
 			return null;
 		Unit unit;
 		switch (desc.type) {
 		case Soldier:
-			unit = new Unit.Soldier(desc.team);
+			unit = new Unit.Soldier(this, desc.team);
 			break;
 		case Tank:
-			unit = new Unit.Tank(desc.team);
+			unit = new Unit.Tank(this, desc.team);
 			break;
 		default:
 			throw new InternalError();
 		}
-		unit.setArena(this);
 		unit.setPos(pos);
 		return unit;
 	}

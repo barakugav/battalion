@@ -31,7 +31,7 @@ class GameFrame extends JFrame {
 		/* By default display main menu */
 //		displayMainMenu();
 //		displayGame();
-		mainMenuPanel.selectLevel(1);
+		mainMenuPanel.selectLevel(0);
 	}
 
 	void displayMainMenu() {

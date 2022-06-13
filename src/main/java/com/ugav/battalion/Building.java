@@ -1,5 +1,8 @@
 package com.ugav.battalion;
 
+import java.util.ArrayList;
+import java.util.List;
+
 abstract class Building extends Entity {
 
 	enum Type {
@@ -8,6 +11,7 @@ abstract class Building extends Entity {
 
 	final Type type;
 	private Position pos;
+	private Arena arena;
 
 	Building(Type type, Team team) {
 		super(team);
@@ -22,20 +26,15 @@ abstract class Building extends Entity {
 		this.pos = pos;
 	}
 
-	abstract int getMoneyGain();
-
-	static class OilRefinery extends Building {
-
-		OilRefinery(Team team) {
-			super(Type.OilRefinery, team);
-		}
-
-		@Override
-		int getMoneyGain() {
-			return 100;
-		}
-
+	void setArena(Arena arena) {
+		this.arena = arena;
 	}
+
+	Arena getArena() {
+		return arena;
+	}
+
+	abstract int getMoneyGain();
 
 	static class Factory extends Building {
 
@@ -46,6 +45,58 @@ abstract class Building extends Entity {
 		@Override
 		int getMoneyGain() {
 			return 0;
+		}
+
+		List<UnitSale> getAvailableUnits() {
+			List<UnitSale> l = new ArrayList<>();
+			l.add(UnitSale.of(Unit.Type.Soldier, 100));
+			l.add(UnitSale.of(Unit.Type.Tank, 300));
+			return l;
+		}
+
+		static class UnitSale {
+			final Unit.Type type;
+			final int price;
+
+			UnitSale(Unit.Type type, int price) {
+				this.type = type;
+				this.price = price;
+			}
+
+			private static UnitSale of(Unit.Type type, int price) {
+				return new UnitSale(type, price);
+			}
+		}
+
+	}
+
+	private static abstract class BuildingNonActive extends Building {
+
+		BuildingNonActive(Type type, Team team) {
+			super(type, team);
+			super.setActive(false);
+		}
+
+		@Override
+		final boolean isActive() {
+			return false;
+		}
+
+		@Override
+		final void setActive(boolean active) {
+		}
+
+	}
+
+	static class OilRefinery extends BuildingNonActive {
+
+		OilRefinery(Team team) {
+			super(Type.OilRefinery, team);
+		}
+
+		@Override
+		int getMoneyGain() {
+			return 100;
 		}
 
 	}

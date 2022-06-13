@@ -1,5 +1,6 @@
 package com.ugav.battalion;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -7,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.ugav.battalion.Level.UnitDesc;
 import com.ugav.battalion.Unit.Category;
 
 class Game {
@@ -16,6 +18,10 @@ class Game {
 	private final Iterator<Team> turnIterator;
 	private Team turn;
 	private Team winner;
+	private final List<Unit> deadQueue;
+
+	final DataChangeNotifier<DataEvent.NewUnit> onNewUnit;
+	final DataChangeNotifier<DataEvent.MoneyChange> onMoneyChange;
 
 	private static class TeamData {
 		int money;
@@ -27,13 +33,15 @@ class Game {
 		turnIterator = Utils.iteratorRepeatInfty(List.of(Team.values()));
 		turn = turnIterator.next();
 		winner = null;
+		deadQueue = new ArrayList<>();
+		onNewUnit = new DataChangeNotifier<>();
+		onMoneyChange = new DataChangeNotifier<>();
 
 		for (Position pos : arena.positions()) {
 			Tile tile = arena.at(pos);
 			if (!tile.hasUnit())
 				continue;
 			Unit u = tile.getUnit();
-			u.setArena(arena);
 			u.setPos(pos);
 		}
 
@@ -79,18 +87,29 @@ class Game {
 	}
 
 	void turnEnd() {
+		for (Unit dead : deadQueue)
+			dead.clear();
+		deadQueue.clear();
+
 		if (isFinished()) {
 			Set<Team> alive = getAlive();
 			winner = alive.size() == 1 ? alive.iterator().next() : null;
 			return;
 		}
 
+		Set<Team> moneyChanged = new HashSet<>();
 		for (Tile tile : arena.tiles()) {
 			if (tile.hasBuilding()) {
 				Building building = tile.getBuilding();
-				teamData.get(building.getTeam()).money += building.getMoneyGain();
+				int gain = building.getMoneyGain();
+				if (gain != 0) {
+					teamData.get(building.getTeam()).money += gain;
+					moneyChanged.add(building.getTeam());
+				}
 			}
 		}
+		for (Team team : moneyChanged)
+			onMoneyChange.notify(new DataEvent.MoneyChange(this, team, teamData.get(team).money));
 
 		turn = turnIterator.next();
 	}
@@ -185,10 +204,36 @@ class Game {
 		int damage = attacker.getDamge(target);
 		if (target.getHealth() <= damage) {
 			target.setHealth(0);
+			deadQueue.add(target);
 			arena.at(target.getPos()).removeUnit();
 		} else {
 			target.setHealth(target.getHealth() - damage);
 		}
+	}
+
+	void buildUnit(Building.Factory factory, Unit.Type unitType) {
+		Position pos = factory.getPos();
+		if (!factory.isActive() || arena.at(pos).hasUnit())
+			throw new IllegalStateException();
+
+		List<Building.Factory.UnitSale> sales = factory.getAvailableUnits();
+		Building.Factory.UnitSale sale = null;
+		for (Building.Factory.UnitSale s : sales)
+			if (s.type == unitType)
+				sale = s;
+		if (sale == null)
+			throw new IllegalStateException();
+		Team team = factory.getTeam();
+		TeamData data = teamData.get(team);
+		if (data.money < sale.price)
+			throw new IllegalStateException();
+
+		data.money -= sale.price;
+		Unit unit = arena.createUnit(UnitDesc.of(unitType, team), pos);
+		arena.at(pos).setUnit(unit);
+
+		onMoneyChange.notify(new DataEvent.MoneyChange(this, team, data.money));
+		onNewUnit.notify(new DataEvent.NewUnit(this, unit));
 	}
 
 }

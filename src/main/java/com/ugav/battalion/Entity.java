@@ -9,9 +9,12 @@ abstract class Entity implements Drawable {
 	private Team team;
 	private boolean active;
 
+	final DataChangeNotifier<DataEvent> onChange;
+
 	Entity(Team team) {
 		this.team = Objects.requireNonNull(team);
 		active = false;
+		onChange = new DataChangeNotifier<>();
 	}
 
 	Team getTeam() {
@@ -20,6 +23,7 @@ abstract class Entity implements Drawable {
 
 	void setTeam(Team team) {
 		this.team = Objects.requireNonNull(team);
+		onChange.notify(new DataEvent(this));
 	}
 
 	boolean isActive() {
@@ -28,6 +32,11 @@ abstract class Entity implements Drawable {
 
 	void setActive(boolean active) {
 		this.active = active;
+		onChange.notify(new DataEvent(this));
+	}
+
+	void clear() {
+		onChange.clear();
 	}
 
 }

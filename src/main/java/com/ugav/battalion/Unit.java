@@ -1,16 +1,18 @@
 package com.ugav.battalion;
 
 import java.util.Arrays;
+import java.util.function.Consumer;
 
 abstract class Unit extends Entity {
 
 	final Type type;
-	private int health;
+	final Arena arena;
 	private Position pos;
-	private Arena arena;
+	private int health;
 
-	Unit(Type type, Team team) {
+	Unit(Arena arena, Type type, Team team) {
 		super(team);
+		this.arena = arena;
 		this.type = type;
 		health = type.health;
 	}
@@ -26,6 +28,7 @@ abstract class Unit extends Entity {
 
 	void setHealth(int health) {
 		this.health = health;
+		onChange.notify(new DataEvent(this));
 	}
 
 	boolean isDead() {
@@ -34,18 +37,11 @@ abstract class Unit extends Entity {
 
 	void setPos(Position pos) {
 		this.pos = pos;
+		onChange.notify(new DataEvent(this));
 	}
 
 	Position getPos() {
 		return pos;
-	}
-
-	void setArena(Arena arena) {
-		this.arena = arena;
-	}
-
-	Arena getArena() {
-		return arena;
 	}
 
 	abstract int getDamge(Unit target);
@@ -76,7 +72,7 @@ abstract class Unit extends Entity {
 	};
 
 	enum Type {
-		Soldier(Category.Land, 50, 22, 3, 1), Tank(Category.Land, 70, 35, 6, 1);
+		Soldier(Category.Land, 50, 22, 3, 1), Tank(Category.Land, 70, 35, 6, 1), Tank2(Category.Land, 70, 35, 6, 1);
 
 		final Category category;
 		final int health;
@@ -94,30 +90,29 @@ abstract class Unit extends Entity {
 	}
 
 	static abstract class CloseRangeUnitAbstract extends Unit {
-		CloseRangeUnitAbstract(Type type, Team team) {
-			super(type, team);
+		CloseRangeUnitAbstract(Arena arena, Type type, Team team) {
+			super(arena, type, team);
 		}
 
 		@Override
 		Position.Bitmap getAttackableMap() {
-			Arena arena = getArena();
 			Position.Bitmap reachableMap = getReachableMap();
 			boolean[][] attackableMap = new boolean[arena.getWidth()][arena.getHeight()];
 
-			/* Touchable map */
-			for (Position pos : arena.positions()) {
-				if (!arena.at(pos).hasUnit())
-					continue;
-				Unit other = arena.at(pos).getUnit();
-				if (other.getTeam() == getTeam())
-					continue;
+			Consumer<Position> checkNeighbors = pos -> {
 				for (Position neighbor : pos.neighbors()) {
-					if (arena.isValidPos(neighbor) && reachableMap.at(neighbor)) {
-						attackableMap[pos.x][pos.y] = true;
-						break;
-					}
+					if (!arena.isValidPos(neighbor) || !arena.at(neighbor).hasUnit())
+						continue;
+					Unit other = arena.at(neighbor).getUnit();
+					if (other.getTeam() == getTeam())
+						continue;
+					attackableMap[neighbor.x][neighbor.y] = true;
 				}
-			}
+			};
+
+			checkNeighbors.accept(getPos());
+			for (Position pos : reachableMap)
+				checkNeighbors.accept(pos);
 
 			return new Position.Bitmap(attackableMap);
 		}
@@ -126,7 +121,7 @@ abstract class Unit extends Entity {
 		Position getMovePositionToAttack(Position target) {
 			Position.Bitmap reachableMap = getReachableMap();
 			for (Position neighbor : target.neighbors())
-				if (reachableMap.at(neighbor))
+				if (neighbor.equals(getPos()) || reachableMap.at(neighbor))
 					return neighbor;
 			return null;
 		}
@@ -135,8 +130,8 @@ abstract class Unit extends Entity {
 
 	static class Soldier extends CloseRangeUnitAbstract {
 
-		Soldier(Team team) {
-			super(Type.Soldier, team);
+		Soldier(Arena arena, Team team) {
+			super(arena, Type.Soldier, team);
 		}
 
 		@Override
@@ -148,8 +143,8 @@ abstract class Unit extends Entity {
 
 	static class Tank extends CloseRangeUnitAbstract {
 
-		Tank(Team team) {
-			super(Type.Tank, team);
+		Tank(Arena arena, Team team) {
+			super(arena, Type.Tank, team);
 		}
 
 		@Override
@@ -160,9 +155,7 @@ abstract class Unit extends Entity {
 	}
 
 	Position.Bitmap getReachableMap() {
-		Arena arena = getArena();
 		int width = arena.getWidth(), height = arena.getHeight();
-		boolean[][] reachableMap = new boolean[width][height];
 
 		int[][] reachableMap0 = new int[width][height];
 		for (int x = 0; x < width; x++)
@@ -189,10 +182,11 @@ abstract class Unit extends Entity {
 				}
 			}
 		}
-		/* Convert distance map to boolean map */
+
+		/* Convert distance map to bitmap */
+		boolean[][] reachableMap = new boolean[width][height];
 		for (Position pos : arena.positions())
 			reachableMap[pos.x][pos.y] = reachableMap0[pos.x][pos.y] > 0;
-
 		return new Position.Bitmap(reachableMap);
 	}
 
