@@ -107,38 +107,46 @@ class Arena {
 	private Building createBuilding(BuildingDesc desc, Position pos) {
 		if (desc == null)
 			return null;
-		Building building;
-		switch (desc.type) {
-		case OilRefinery:
-			building = new Building.OilRefinery(desc.team);
-			break;
-		case Factory:
-			building = new Building.Factory(desc.team);
-			break;
-		default:
-			throw new InternalError();
-		}
+		Building building = createBuilding0(desc);
 		building.setArena(this);
 		building.setPos(pos);
 		return building;
 	}
 
+	private static Building createBuilding0(BuildingDesc desc) {
+		switch (desc.type) {
+		case OilRefinery:
+			return new Building.OilRefinery(desc.team);
+		case Factory:
+			return new Building.Factory(desc.team);
+		default:
+			throw new InternalError("Unsupported building description: " + desc);
+		}
+	}
+
 	Unit createUnit(UnitDesc desc, Position pos) {
 		if (desc == null)
 			return null;
-		Unit unit;
-		switch (desc.type) {
-		case Soldier:
-			unit = new Unit.Soldier(this, desc.team);
-			break;
-		case Tank:
-			unit = new Unit.Tank(this, desc.team);
-			break;
-		default:
-			throw new InternalError();
-		}
+		Unit unit = createUnit0(desc);
 		unit.setPos(pos);
 		return unit;
+	}
+
+	Unit createUnit0(UnitDesc desc) {
+		switch (desc.type) {
+		case Soldier:
+			return new Unit.Soldier(this, desc.team);
+		case Tank:
+			return new Unit.Tank(this, desc.team);
+		case Artillery:
+			return new Unit.Artillery(this, desc.team);
+		case Ship:
+			return new Unit.Ship(this, desc.team);
+		case Airplane:
+			return new Unit.Airplane(this, desc.team);
+		default:
+			throw new InternalError("Unsupported unit description: " + desc);
+		}
 	}
 
 	@Override

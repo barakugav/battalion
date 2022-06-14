@@ -1,6 +1,9 @@
 package com.ugav.battalion;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Consumer;
 
 abstract class Unit extends Entity {
@@ -44,7 +47,9 @@ abstract class Unit extends Entity {
 		return pos;
 	}
 
-	abstract int getDamge(Unit target);
+	int getDamge(Unit target) {
+		return type.damage;
+	}
 
 	boolean isTerrainPassable(Terrain terrain) {
 		switch (terrain.type.category) {
@@ -63,35 +68,58 @@ abstract class Unit extends Entity {
 		return getReachableMap().at(target);
 	}
 
-	boolean isAttackValid(Position target) {
-		return getAttackableMap().at(target);
+	boolean isAttackValid(Unit target) {
+		return target.getTeam() != getTeam() && getAttackableMap().at(target.getPos())
+				&& type.attackable.contains(target.type.category);
 	}
 
 	enum Category {
 		Land, Water, Air
 	};
 
+	enum Weapon {
+		CloseRange, LongRange
+	};
+
 	enum Type {
-		Soldier(Category.Land, 50, 22, 3, 1), Tank(Category.Land, 70, 35, 6, 1), Tank2(Category.Land, 70, 35, 6, 1);
+		Soldier(Category.Land, Weapon.CloseRange, List.of(Category.Land, Category.Water), 50, 22, 3, 1, 1),
+		Tank(Category.Land, Weapon.CloseRange, List.of(Category.Land, Category.Water), 70, 35, 6, 1, 1),
+		Artillery(Category.Land, Weapon.LongRange, List.of(Category.Land, Category.Water, Category.Air), 70, 35, 3, 3,
+				5),
+
+		Ship(Category.Water, Weapon.CloseRange, List.of(Category.Land, Category.Water), 70, 35, 6, 1, 1),
+
+		Airplane(Category.Air, Weapon.CloseRange, List.of(Category.Land, Category.Water, Category.Air), 70, 35, 6, 1,
+				1);
 
 		final Category category;
+		final Weapon weapon;
+		final List<Category> attackable;
 		final int health;
 		final int damage;
 		final int moveLimit;
-		final int range;
+		final int rangeMin;
+		final int rangeMax;
 
-		Type(Category category, int health, int damage, int moveLimit, int range) {
+		Type(Category category, Weapon weapon, List<Category> attackable, int health, int damage, int moveLimit,
+				int rangeMin, int rangeMax) {
 			this.category = category;
+			this.weapon = weapon;
+			this.attackable = Collections.unmodifiableList(new ArrayList<>(attackable));
 			this.health = health;
 			this.damage = damage;
 			this.moveLimit = moveLimit;
-			this.range = range;
+			this.rangeMin = rangeMin;
+			this.rangeMax = rangeMax;
 		}
 	}
 
-	static abstract class CloseRangeUnitAbstract extends Unit {
-		CloseRangeUnitAbstract(Arena arena, Type type, Team team) {
+	static abstract class UnitCloseRange extends Unit {
+
+		UnitCloseRange(Arena arena, Type type, Team team) {
 			super(arena, type, team);
+			if (type.weapon != Weapon.CloseRange)
+				throw new InternalError();
 		}
 
 		@Override
@@ -104,9 +132,8 @@ abstract class Unit extends Entity {
 					if (!arena.isValidPos(neighbor) || !arena.at(neighbor).hasUnit())
 						continue;
 					Unit other = arena.at(neighbor).getUnit();
-					if (other.getTeam() == getTeam())
-						continue;
-					attackableMap[neighbor.x][neighbor.y] = true;
+					attackableMap[neighbor.x][neighbor.y] = other.getTeam() != getTeam()
+							&& type.attackable.contains(other.type.category);
 				}
 			};
 
@@ -128,28 +155,75 @@ abstract class Unit extends Entity {
 
 	}
 
-	static class Soldier extends CloseRangeUnitAbstract {
+	static abstract class UnitLongRange extends Unit {
+
+		UnitLongRange(Arena arena, Type type, Team team) {
+			super(arena, type, team);
+			if (type.weapon != Weapon.LongRange)
+				throw new InternalError();
+		}
+
+		@Override
+		Position.Bitmap getAttackableMap() {
+			boolean[][] attackableMap = new boolean[arena.getWidth()][arena.getHeight()];
+			for (Position pos : arena.positions()) {
+				int distance = distance1Norm(getPos(), pos);
+				if (!arena.at(pos).hasUnit() || !(type.rangeMin <= distance && distance <= type.rangeMax))
+					continue;
+				Unit other = arena.at(pos).getUnit();
+				attackableMap[pos.x][pos.y] = other.getTeam() != getTeam()
+						&& type.attackable.contains(other.type.category);
+			}
+			return new Position.Bitmap(attackableMap);
+		}
+
+		private static int distance1Norm(Position p1, Position p2) {
+			return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
+		}
+
+		@Override
+		Position getMovePositionToAttack(Position target) {
+			return getPos();
+		}
+
+	}
+
+	static class Soldier extends UnitCloseRange {
 
 		Soldier(Arena arena, Team team) {
 			super(arena, Type.Soldier, team);
 		}
 
-		@Override
-		int getDamge(Unit target) {
-			return type.damage;
-		}
-
 	}
 
-	static class Tank extends CloseRangeUnitAbstract {
+	static class Tank extends UnitCloseRange {
 
 		Tank(Arena arena, Team team) {
 			super(arena, Type.Tank, team);
 		}
 
-		@Override
-		int getDamge(Unit target) {
-			return type.damage;
+	}
+
+	static class Artillery extends UnitLongRange {
+
+		Artillery(Arena arena, Team team) {
+			super(arena, Type.Artillery, team);
+		}
+
+	}
+
+	static class Ship extends UnitCloseRange {
+
+		Ship(Arena arena, Team team) {
+			super(arena, Type.Ship, team);
+		}
+
+	}
+
+	static class Airplane extends UnitCloseRange {
+
+		Airplane(Arena arena, Team team) {
+			super(arena, Type.Airplane, team);
 		}
 
 	}
@@ -157,26 +231,22 @@ abstract class Unit extends Entity {
 	Position.Bitmap getReachableMap() {
 		int width = arena.getWidth(), height = arena.getHeight();
 
-		int[][] reachableMap0 = new int[width][height];
+		int[][] passableBitmap = new int[width][height];
 		for (int x = 0; x < width; x++)
-			Arrays.fill(reachableMap0[x], -1);
-		reachableMap0[pos.x][pos.y] = 0;
+			Arrays.fill(passableBitmap[x], -1);
+		passableBitmap[pos.x][pos.y] = 0;
 
 		int maxMove = type.moveLimit;
 		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
 			for (Position pos : arena.positions()) {
-				/* Already can move here */
-				if (reachableMap0[pos.x][pos.y] >= 0)
+				Tile tile = arena.at(pos);
+				if (passableBitmap[pos.x][pos.y] >= 0 || !isTerrainPassable(tile.getTerrain())
+						|| (tile.hasUnit() && tile.getUnit().getTeam() != getTeam()))
 					continue;
-				/* Other unit in the way */
-				if (arena.at(pos).hasUnit())
-					continue;
-				if (!isTerrainPassable(arena.at(pos).getTerrain()))
-					continue;
-				/* Check if we reached any near tiles last moveLen */
+
 				for (Position neighbor : pos.neighbors()) {
-					if (arena.isValidPos(neighbor) && reachableMap0[neighbor.x][neighbor.y] == moveLen - 1) {
-						reachableMap0[pos.x][pos.y] = moveLen;
+					if (arena.isValidPos(neighbor) && passableBitmap[neighbor.x][neighbor.y] == moveLen - 1) {
+						passableBitmap[pos.x][pos.y] = moveLen;
 						break;
 					}
 				}
@@ -186,7 +256,7 @@ abstract class Unit extends Entity {
 		/* Convert distance map to bitmap */
 		boolean[][] reachableMap = new boolean[width][height];
 		for (Position pos : arena.positions())
-			reachableMap[pos.x][pos.y] = reachableMap0[pos.x][pos.y] > 0;
+			reachableMap[pos.x][pos.y] = passableBitmap[pos.x][pos.y] > 0 && !arena.at(pos).hasUnit();
 		return new Position.Bitmap(reachableMap);
 	}
 

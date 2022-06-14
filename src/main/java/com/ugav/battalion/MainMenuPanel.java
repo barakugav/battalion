@@ -11,6 +11,8 @@ class MainMenuPanel extends JPanel {
 	private final GameFrame gameFrame;
 	private final Levels levels;
 
+	private static final long serialVersionUID = 1L;
+
 	MainMenuPanel(GameFrame gameFrame) {
 		this.gameFrame = Objects.requireNonNull(gameFrame);
 		levels = new Levels();
@@ -32,6 +34,8 @@ class MainMenuPanel extends JPanel {
 	private class LevelButton extends JButton {
 
 		private final int levelIdx;
+
+		private static final long serialVersionUID = 1L;
 
 		LevelButton(int levelIdx) {
 			if (levelIdx < 0)

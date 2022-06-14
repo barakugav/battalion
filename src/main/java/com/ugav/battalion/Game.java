@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.ugav.battalion.Level.UnitDesc;
-import com.ugav.battalion.Unit.Category;
+import com.ugav.battalion.Unit.Weapon;
 
 class Game {
 
@@ -157,8 +157,8 @@ class Game {
 	void moveAndAttack(Position attackerPos, /* Position moveTarget, */ Position attackedPos) {
 		Unit attacker = arena.at(attackerPos).getUnit();
 		Unit target = arena.at(attackedPos).getUnit();
-		if (!(attacker.type.category == Category.Land))
-			throw new UnsupportedOperationException();
+		if (attacker.type.weapon != Weapon.CloseRange)
+			throw new UnsupportedOperationException("Only close range weapon are supported");
 
 		if (!isAttackValid(attackerPos, attackedPos))
 			throw new IllegalStateException();
@@ -182,8 +182,9 @@ class Game {
 	void attackRange(Position attackerPos, Position targetPos) {
 		Unit attacker = arena.at(attackerPos).getUnit();
 		Unit target = arena.at(targetPos).getUnit();
-//		if (!(attacker instanceof LongRangeUnit))
-//			throw new UnsupportedOperationException();
+		if (attacker.type.weapon != Weapon.LongRange)
+			throw new UnsupportedOperationException("Only long range weapon are supported");
+
 		if (!isAttackValid(attackerPos, targetPos))
 			throw new IllegalStateException();
 		doDamage(attacker, target);
@@ -196,8 +197,8 @@ class Game {
 		if (!attackerTile.hasUnit() || !targetTile.hasUnit())
 			return false;
 		Unit attacker = attackerTile.getUnit();
-		return attacker.getTeam() == turn && attacker.isActive() && attacker.getTeam() != targetTile.getUnit().getTeam()
-				&& attacker.isAttackValid(targetPos);
+		Unit target = targetTile.getUnit();
+		return attacker.getTeam() == turn && attacker.isActive() && attacker.isAttackValid(target);
 	}
 
 	private void doDamage(Unit attacker, Unit target) {

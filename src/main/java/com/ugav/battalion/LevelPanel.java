@@ -27,6 +27,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import com.ugav.battalion.Unit.Weapon;
+
 class LevelPanel extends JPanel {
 
 	private final GameFrame gameFrame;
@@ -38,6 +40,8 @@ class LevelPanel extends JPanel {
 	private final DebugPrintsManager debug;
 
 	private static final int TILE_SIZE_PIXEL = 64;
+
+	private static final long serialVersionUID = 1L;
 
 	LevelPanel(GameFrame gameFrame) {
 		this.gameFrame = Objects.requireNonNull(gameFrame);
@@ -82,6 +86,8 @@ class LevelPanel extends JPanel {
 		private final JButton buttonEndTurn;
 		private final DataChangeRegister register;
 
+		private static final long serialVersionUID = 1L;
+
 		Menu() {
 			labelMoney = new HashMap<>();
 			for (Team team : Team.values())
@@ -124,6 +130,8 @@ class LevelPanel extends JPanel {
 		private Position.Bitmap reachableMap = Position.Bitmap.empty;
 		private Position.Bitmap attackableMap = Position.Bitmap.empty;
 		private final DataChangeRegister register;
+
+		private static final long serialVersionUID = 1L;
 
 		ArenaPanel() {
 			tiles = new HashMap<>();
@@ -258,10 +266,17 @@ class LevelPanel extends JPanel {
 				}
 			} else if (game.isAttackValid(selection, tileComp.pos)) {
 				debug.println("Attack ", selection, " ", tileComp.pos);
-				Unit target = tileComp.tile().getUnit();
-				game.moveAndAttack(selection, tileComp.pos);
-				if (target.isDead())
-					units.remove(target);
+				Unit attacker = tiles.get(selection).tile().getUnit();
+
+				if (attacker.type.weapon == Weapon.CloseRange) {
+					game.moveAndAttack(attacker.getPos(), tileComp.pos);
+
+				} else if (attacker.type.weapon == Weapon.LongRange) {
+					game.attackRange(attacker.getPos(), tileComp.pos);
+
+				} else {
+					throw new InternalError("Unknown unit weapon type: " + attacker.type.weapon);
+				}
 			}
 		}
 
@@ -288,7 +303,7 @@ class LevelPanel extends JPanel {
 				Composite oldComp = g2.getComposite();
 				if (unit.getTeam() == game.getTurn() && !unit.isActive())
 					g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-				drawImage(g, Images.Label.of(unit), unit.getPos());
+				drawImage(g, Images.Label.valueOf(unit), unit.getPos());
 				g2.setComposite(oldComp);
 
 				int x = (int) ((unit.getPos().x + 0.5) * TILE_SIZE_PIXEL - HealthBarWidth * 0.5);
@@ -314,7 +329,7 @@ class LevelPanel extends JPanel {
 			}
 
 			void paintComponent(Graphics g) {
-				drawImage(g, Images.Label.of(building), building.getPos());
+				drawImage(g, Images.Label.valueOf(building), building.getPos());
 			}
 
 			void clear() {
@@ -343,7 +358,7 @@ class LevelPanel extends JPanel {
 			}
 
 			void paintComponent(Graphics g) {
-				drawImage(g, Images.Label.of(tile().getTerrain()));
+				drawImage(g, Images.Label.valueOf(tile().getTerrain()));
 			}
 
 			private Tile tile() {
@@ -376,6 +391,8 @@ class LevelPanel extends JPanel {
 
 		private final Building.Factory factory;
 
+		private static final long serialVersionUID = 1L;
+
 		FactoryMenu(JFrame parent, Building.Factory factory) {
 			super(parent);
 			this.factory = factory;
@@ -403,7 +420,7 @@ class LevelPanel extends JPanel {
 				JComponent lowerComp;
 
 				if (unitSale != null) {
-					upperComp = new JLabel(new ImageIcon(images.getImage(Images.Label.of(unit, Team.Red))));
+					upperComp = new JLabel(new ImageIcon(images.getImage(Images.Label.valueOf(unit, Team.Red))));
 					lowerComp = new JLabel("" + unitSale.price);
 				} else {
 					upperComp = new JLabel(new ImageIcon(images.getImage(Images.Label.UnitLocked)));
@@ -437,6 +454,8 @@ class LevelPanel extends JPanel {
 		}
 
 		private void buyNewUnit(Building.Factory.UnitSale sale) {
+			if (sale.price > game.getMoney(factory.getTeam()))
+				return;
 			game.buildUnit(factory, sale.type);
 			dispose();
 		}

@@ -13,15 +13,6 @@ import java.util.function.Function;
 
 import javax.imageio.ImageIO;
 
-import com.ugav.battalion.Building.Factory;
-import com.ugav.battalion.Building.OilRefinery;
-import com.ugav.battalion.Terrain.ClearWater;
-import com.ugav.battalion.Terrain.FlatLand;
-import com.ugav.battalion.Terrain.Mountain;
-import com.ugav.battalion.Unit.Soldier;
-import com.ugav.battalion.Unit.Tank;
-import com.ugav.battalion.Unit.Type;
-
 class Images {
 
 	private final Map<Label, BufferedImage> images;
@@ -33,6 +24,7 @@ class Images {
 			try {
 				return ImageIO.read(new File(path));
 			} catch (IOException e) {
+				System.err.println("Failed to load img file: " + path);
 				throw new UncheckedIOException(e);
 			}
 		};
@@ -54,11 +46,14 @@ class Images {
 		/* Terrains */
 		addImg.accept(Label.FlatLand, "img/terrain/flat_land.png");
 		addImg.accept(Label.Mountain, "img/terrain/mountain.png");
-		addImg.accept(Label.ClearWater, "img/terrain/clear_water.png");
+		addImg.accept(Label.ClearWater, "img/terrain/water_clear.png");
 
 		/* Units */
 		addImgRedBlue.accept(Pair.of(Label.SoldierRed, Label.SoldierBlue), "img/unit/soldier.png");
 		addImgRedBlue.accept(Pair.of(Label.TankRed, Label.TankBlue), "img/unit/tank.png");
+		addImgRedBlue.accept(Pair.of(Label.ArtilleryRed, Label.ArtilleryBlue), "img/unit/artillery.png");
+		addImgRedBlue.accept(Pair.of(Label.ShipRed, Label.ShipBlue), "img/unit/ship_close_range.png");
+		addImgRedBlue.accept(Pair.of(Label.AirplaneRed, Label.AirplaneBlue), "img/unit/airplane.png");
 
 		/* Buildings */
 		addImgRedBlue.accept(Pair.of(Label.FactoryRed, Label.FactoryBlue), "img/building/facotry.png");
@@ -83,7 +78,8 @@ class Images {
 		FlatLand, Mountain, ClearWater,
 
 		/* Units */
-		SoldierRed, SoldierBlue, TankRed, TankBlue,
+		SoldierRed, SoldierBlue, TankRed, TankBlue, ArtilleryRed, ArtilleryBlue, ShipRed, ShipBlue, AirplaneRed,
+		AirplaneBlue,
 
 		/* Buildings */
 		FactoryRed, FactoryBlue, OilRefineryRed, OilRefineryBlue,
@@ -91,38 +87,63 @@ class Images {
 		/* GUI */
 		Selection, Reachable, Attackable, UnitLocked;
 
-		static Label of(Drawable obj) {
+		static Label valueOf(Drawable obj) {
 			if (obj instanceof Terrain) {
 				Terrain terrain = (Terrain) obj;
-				if (terrain instanceof FlatLand)
-					return FlatLand;
-				else if (terrain instanceof Mountain)
-					return Mountain;
-				else if (terrain instanceof ClearWater)
-					return ClearWater;
+				return valueOf(terrain.type);
 
 			} else if (obj instanceof Unit) {
 				Unit unit = (Unit) obj;
-				return of(unit.type, unit.getTeam());
+				return valueOf(unit.type, unit.getTeam());
 
 			} else if (obj instanceof Building) {
 				Building building = (Building) obj;
-				Team team = building.getTeam();
-				if (building instanceof OilRefinery)
-					return team == Team.Red ? OilRefineryRed : OilRefineryBlue;
-				else if (building instanceof Factory)
-					return team == Team.Red ? FactoryRed : FactoryBlue;
-				return FactoryRed;
+				return valueOf(building.type, building.getTeam());
+
+			} else {
+				throw new InternalError("Unsupported drawable object: " + obj);
 			}
-			throw new InternalError();
 		}
 
-		static Label of(Unit.Type unitType, Team team) {
-			if (unitType == Type.Soldier)
+		static Label valueOf(Terrain.Type terrainType) {
+			switch (terrainType) {
+			case FlatLand:
+				return FlatLand;
+			case Mountain:
+				return Mountain;
+			case ClearWater:
+				return ClearWater;
+			default:
+				throw new InternalError("Unsupported terrain type: " + terrainType);
+			}
+		}
+
+		static Label valueOf(Unit.Type unitType, Team team) {
+			switch (unitType) {
+			case Soldier:
 				return team == Team.Red ? SoldierRed : SoldierBlue;
-			else if (unitType == Type.Tank)
+			case Tank:
 				return team == Team.Red ? TankRed : TankBlue;
-			throw new InternalError();
+			case Artillery:
+				return team == Team.Red ? ArtilleryRed : ArtilleryBlue;
+			case Ship:
+				return team == Team.Red ? ShipRed : ShipBlue;
+			case Airplane:
+				return team == Team.Red ? AirplaneRed : AirplaneBlue;
+			default:
+				throw new InternalError("Unsupported unit type: " + unitType);
+			}
+		}
+
+		static Label valueOf(Building.Type buildingType, Team team) {
+			switch (buildingType) {
+			case Factory:
+				return team == Team.Red ? FactoryRed : FactoryBlue;
+			case OilRefinery:
+				return team == Team.Red ? OilRefineryRed : OilRefineryBlue;
+			default:
+				throw new InternalError("Unsupported building type: " + buildingType);
+			}
 		}
 	}
 

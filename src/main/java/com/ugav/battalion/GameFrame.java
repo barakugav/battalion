@@ -17,6 +17,8 @@ class GameFrame extends JFrame {
 	private final LevelPanel gamePanel;
 	private final Collection<Component> windows;
 
+	private static final long serialVersionUID = 1L;
+
 	GameFrame() {
 		super(TITLE);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
