@@ -13,6 +13,7 @@ import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -36,6 +37,7 @@ class LevelPanel extends JPanel {
 	private final ArenaPanel arenaPanel;
 
 	private Game game;
+	private Position selection;
 	private final Images images = new Images();
 	private final DebugPrintsManager debug;
 
@@ -69,7 +71,7 @@ class LevelPanel extends JPanel {
 
 	private void endTurn() {
 		debug.println("End turn");
-		arenaPanel.clearSelection();
+		clearSelection();
 		game.turnEnd();
 		if (game.isFinished()) {
 			debug.println("Game finished");
@@ -78,6 +80,16 @@ class LevelPanel extends JPanel {
 			game.turnBegin();
 		}
 		repaint();
+	}
+
+	void clearSelection() {
+		if (selection == null)
+			return;
+		debug.println("clearSelection ", selection);
+		selection = null;
+		arenaPanel.reachableMap = Position.Bitmap.empty;
+		arenaPanel.attackableMap = Position.Bitmap.empty;
+		arenaPanel.movePath.clear();
 	}
 
 	private class Menu extends JPanel {
@@ -126,9 +138,12 @@ class LevelPanel extends JPanel {
 		private final Map<Position, TileComp> tiles;
 		private final Map<Unit, UnitComp> units;
 		private final Map<Building, BuildingComp> buildings;
-		private Position selection;
+
 		private Position.Bitmap reachableMap = Position.Bitmap.empty;
 		private Position.Bitmap attackableMap = Position.Bitmap.empty;
+		private Position hovered;
+		private final List<Position> movePath;
+
 		private final DataChangeRegister register;
 
 		private static final long serialVersionUID = 1L;
@@ -137,7 +152,7 @@ class LevelPanel extends JPanel {
 			tiles = new HashMap<>();
 			units = new IdentityHashMap<>();
 			buildings = new IdentityHashMap<>();
-			selection = null;
+			movePath = new ArrayList<>();
 			register = new DataChangeRegister();
 
 			addMouseListener(new MouseAdapter() {
@@ -146,6 +161,46 @@ class LevelPanel extends JPanel {
 					tileClicked(new Position(e.getX() / TILE_SIZE_PIXEL, e.getY() / TILE_SIZE_PIXEL));
 				}
 			});
+			addMouseMotionListener(new MouseAdapter() {
+				@Override
+				public void mouseMoved(MouseEvent e) {
+					int x = e.getX() / TILE_SIZE_PIXEL, y = e.getY() / TILE_SIZE_PIXEL;
+					if (hovered == null || hovered.x != x || hovered.y != y) {
+						hovered = new Position(x, y);
+						hoveredUpdated();
+					}
+				}
+			});
+		}
+
+		void hoveredUpdated() {
+			if (!isUnitSelected())
+				return;
+			Unit unit = game.arena.at(selection).getUnit();
+
+			if (reachableMap.at(hovered)) {
+				/* Update move path from unit position to hovered position */
+				Position last = movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1);
+
+				if (movePath.contains(hovered)) {
+					/* Already contained in path, remove all unnecessary steps */
+					while (!movePath.isEmpty()) {
+						if (movePath.get(movePath.size() - 1).equals(hovered))
+							break;
+						movePath.remove(movePath.size() - 1);
+					}
+
+				} else if (movePath.size() < unit.type.moveLimit && last.neighbors().contains(hovered)) {
+					/* Append to the end of the move path */
+					movePath.add(hovered);
+
+				} else {
+					/* Unable to append to end of current move path, calculate new route */
+					movePath.clear();
+					movePath.addAll(unit.calcPath(hovered));
+				}
+				repaint();
+			}
 		}
 
 		void initGame() {
@@ -202,6 +257,29 @@ class LevelPanel extends JPanel {
 					tiles.get(pos).drawImage(g, Images.Label.Reachable);
 				for (Position pos : attackableMap)
 					tiles.get(pos).drawImage(g, Images.Label.Attackable);
+
+			}
+			if (isUnitSelected()) {
+				Unit unit = game.arena.at(selection).getUnit();
+				g.setColor(new Color(100, 0, 0));
+				Position prev = unit.getPos();
+				for (Position pos : movePath) {
+					int prevX = prev.x * TILE_SIZE_PIXEL, prevY = prev.y * TILE_SIZE_PIXEL;
+					int pX = pos.x * TILE_SIZE_PIXEL, pY = pos.y * TILE_SIZE_PIXEL;
+
+					int ovalRadius = TILE_SIZE_PIXEL / 2;
+					int ovalOffset = (TILE_SIZE_PIXEL - ovalRadius) / 2;
+					g.fillOval(prevX + ovalOffset, prevY + ovalOffset, ovalRadius, ovalRadius);
+					g.fillOval(pX + ovalOffset, pY + ovalOffset, ovalRadius, ovalRadius);
+
+					int rCenterX = (prevX + pX) / 2 + TILE_SIZE_PIXEL / 2;
+					int rCenterY = (prevY + pY) / 2 + TILE_SIZE_PIXEL / 2;
+					int rWidth = prevX == pX ? ovalRadius : TILE_SIZE_PIXEL;
+					int rHeight = prevY == pY ? ovalRadius : TILE_SIZE_PIXEL;
+					g.fillRect(rCenterX - rWidth / 2, rCenterY - rHeight / 2, rWidth, rHeight);
+
+					prev = pos;
+				}
 			}
 		}
 
@@ -210,34 +288,29 @@ class LevelPanel extends JPanel {
 			return new Dimension(TILE_SIZE_PIXEL * game.arena.getWidth(), TILE_SIZE_PIXEL * game.arena.getHeight());
 		}
 
-		void clearSelection() {
-			if (selection == null)
-				return;
-			debug.println("clearSelection ", selection);
-			selection = null;
-			reachableMap = Position.Bitmap.empty;
-			attackableMap = Position.Bitmap.empty;
+		private boolean isUnitSelected() {
+			return selection != null && game.arena.at(selection).hasUnit();
 		}
 
 		private void tileClicked(Position pos) {
 			if (game == null)
 				return;
-			TileComp tileComp = tiles.get(pos);
 			if (selection == null) {
-				trySelect(tileComp);
+				trySelect(pos);
 
-			} else {
-				actionAfterSelection(tileComp);
+			} else if (isUnitSelected()) {
+				unitSecondSelection(pos);
 				clearSelection();
 			}
 			repaint();
 		}
 
-		private void trySelect(TileComp tileComp) {
+		private void trySelect(Position pos) {
+			TileComp tileComp = tiles.get(pos);
 			if (!tileComp.canSelect())
 				return;
-			debug.println("Selected ", tileComp.pos);
-			selection = tileComp.pos;
+			debug.println("Selected ", pos);
+			selection = pos;
 			Tile tile = tileComp.tile();
 
 			if (tile.hasUnit()) {
@@ -258,24 +331,33 @@ class LevelPanel extends JPanel {
 			}
 		}
 
-		private void actionAfterSelection(TileComp tileComp) {
-			if (!tileComp.tile().hasUnit()) {
-				if (game.isMoveValid(selection, tileComp.pos)) {
-					debug.println("Move ", selection, " ", tileComp.pos);
-					game.move(selection, tileComp.pos);
+		private void unitSecondSelection(Position pos) {
+			Tile tile = game.arena.at(pos);
+			Unit unit = tiles.get(selection).tile().getUnit();
+			Unit target;
+			if (!tile.hasUnit()) {
+				if (!pos.equals(movePath.get(movePath.size() - 1))) {
+					movePath.clear();
+					movePath.addAll(unit.calcPath(hovered));
 				}
-			} else if (game.isAttackValid(selection, tileComp.pos)) {
-				debug.println("Attack ", selection, " ", tileComp.pos);
-				Unit attacker = tiles.get(selection).tile().getUnit();
+				if (game.isMoveValid(unit, movePath)) {
+					debug.println("Move ", unit.getPos(), " ", pos);
+					game.move(unit, movePath);
+				}
+				return;
+			} else if (game.isAttackValid(unit, target = tile.getUnit())) {
+				debug.println("Attack ", unit.getPos(), " ", pos);
 
-				if (attacker.type.weapon == Weapon.CloseRange) {
-					game.moveAndAttack(attacker.getPos(), tileComp.pos);
+				if (unit.type.weapon == Weapon.CloseRange) {
+					assert (movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1)).neighbors()
+							.contains(target.getPos());
+					game.moveAndAttack(unit, movePath, target);
 
-				} else if (attacker.type.weapon == Weapon.LongRange) {
-					game.attackRange(attacker.getPos(), tileComp.pos);
+				} else if (unit.type.weapon == Weapon.LongRange) {
+					game.attackRange(unit, target);
 
 				} else {
-					throw new InternalError("Unknown unit weapon type: " + attacker.type.weapon);
+					throw new InternalError("Unknown unit weapon type: " + unit.type.weapon);
 				}
 			}
 		}
@@ -457,6 +539,7 @@ class LevelPanel extends JPanel {
 			if (sale.price > game.getMoney(factory.getTeam()))
 				return;
 			game.buildUnit(factory, sale.type);
+			clearSelection();
 			dispose();
 		}
 	}

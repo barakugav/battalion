@@ -64,8 +64,17 @@ abstract class Unit extends Entity {
 		}
 	}
 
-	boolean isMoveValid(Position target) {
-		return getReachableMap().at(target);
+	boolean isMoveValid(List<Position> path) {
+		if (path.isEmpty() || path.size() > type.moveLimit)
+			return false;
+		int[][] distanceMap = calcDistanceMap();
+		Position prev = getPos();
+		for (Position pos : path) {
+			if (!prev.neighbors().contains(pos) || distanceMap[pos.x][pos.y] < 0)
+				return false;
+			prev = pos;
+		}
+		return true;
 	}
 
 	boolean isAttackValid(Unit target) {
@@ -144,15 +153,6 @@ abstract class Unit extends Entity {
 			return new Position.Bitmap(attackableMap);
 		}
 
-		@Override
-		Position getMovePositionToAttack(Position target) {
-			Position.Bitmap reachableMap = getReachableMap();
-			for (Position neighbor : target.neighbors())
-				if (neighbor.equals(getPos()) || reachableMap.at(neighbor))
-					return neighbor;
-			return null;
-		}
-
 	}
 
 	static abstract class UnitLongRange extends Unit {
@@ -179,11 +179,6 @@ abstract class Unit extends Entity {
 
 		private static int distance1Norm(Position p1, Position p2) {
 			return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
-		}
-
-		@Override
-		Position getMovePositionToAttack(Position target) {
-			return getPos();
 		}
 
 	}
@@ -229,40 +224,61 @@ abstract class Unit extends Entity {
 	}
 
 	Position.Bitmap getReachableMap() {
+		int[][] distanceMap = calcDistanceMap();
+
+		/* Convert distance map to bitmap */
+		boolean[][] reachableMap = new boolean[arena.getWidth()][arena.getHeight()];
+		for (Position pos : arena.positions())
+			reachableMap[pos.x][pos.y] = distanceMap[pos.x][pos.y] > 0 && !arena.at(pos).hasUnit();
+		return new Position.Bitmap(reachableMap);
+	}
+
+	private int[][] calcDistanceMap() {
 		int width = arena.getWidth(), height = arena.getHeight();
 
-		int[][] passableBitmap = new int[width][height];
+		int[][] distanceMap = new int[width][height];
 		for (int x = 0; x < width; x++)
-			Arrays.fill(passableBitmap[x], -1);
-		passableBitmap[pos.x][pos.y] = 0;
+			Arrays.fill(distanceMap[x], -1);
+		distanceMap[pos.x][pos.y] = 0;
 
 		int maxMove = type.moveLimit;
 		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
 			for (Position pos : arena.positions()) {
 				Tile tile = arena.at(pos);
-				if (passableBitmap[pos.x][pos.y] >= 0 || !isTerrainPassable(tile.getTerrain())
+				if (distanceMap[pos.x][pos.y] >= 0 || !isTerrainPassable(tile.getTerrain())
 						|| (tile.hasUnit() && tile.getUnit().getTeam() != getTeam()))
 					continue;
 
 				for (Position neighbor : pos.neighbors()) {
-					if (arena.isValidPos(neighbor) && passableBitmap[neighbor.x][neighbor.y] == moveLen - 1) {
-						passableBitmap[pos.x][pos.y] = moveLen;
+					if (arena.isValidPos(neighbor) && distanceMap[neighbor.x][neighbor.y] == moveLen - 1) {
+						distanceMap[pos.x][pos.y] = moveLen;
 						break;
 					}
 				}
 			}
 		}
+		return distanceMap;
+	}
 
-		/* Convert distance map to bitmap */
-		boolean[][] reachableMap = new boolean[width][height];
-		for (Position pos : arena.positions())
-			reachableMap[pos.x][pos.y] = passableBitmap[pos.x][pos.y] > 0 && !arena.at(pos).hasUnit();
-		return new Position.Bitmap(reachableMap);
+	List<Position> calcPath(Position destination) {
+		int[][] distanceMap = calcDistanceMap();
+		if (distanceMap[destination.x][destination.y] < 0)
+			throw new IllegalArgumentException("Can't reach " + destination);
+		List<Position> path = new ArrayList<>(distanceMap[destination.x][destination.y]);
+		for (Position pos = destination; !pos.equals(getPos());) {
+			path.add(pos);
+			for (Position next : pos.neighbors()) {
+				if (arena.isValidPos(next) && distanceMap[next.x][next.y] == distanceMap[pos.x][pos.y] - 1) {
+					pos = next;
+					break;
+				}
+			}
+		}
+		Collections.reverse(path);
+		return path;
 	}
 
 	abstract Position.Bitmap getAttackableMap();
-
-	abstract Position getMovePositionToAttack(Position target);
 
 	@Override
 	public String toString() {

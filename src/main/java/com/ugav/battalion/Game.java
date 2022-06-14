@@ -130,74 +130,52 @@ class Game {
 		return winner;
 	}
 
-	void move(Position source, Position target) {
-		if (!isMoveValid(source, target))
+	void move(Unit unit, List<Position> path) {
+		if (!isMoveValid(unit, path))
 			throw new IllegalStateException();
-		move0(source, target);
-		arena.at(target).getUnit().setActive(false);
+		move0(unit, path);
+		unit.setActive(false);
 	}
 
-	private void move0(Position source, Position target) {
-		Tile from = arena.at(source);
-		Unit unit = from.getUnit();
-		from.removeUnit();
-		arena.at(target).setUnit(unit);
-		unit.setPos(target);
+	private void move0(Unit unit, List<Position> path) {
+		Position source = unit.getPos();
+		Position destination = path.get(path.size() - 1);
+		arena.at(source).removeUnit();
+		arena.at(destination).setUnit(unit);
+		unit.setPos(destination);
 	}
 
-	boolean isMoveValid(Position source, Position target) {
-		Tile from = arena.at(source);
-		Tile to = arena.at(target);
-		if (!from.hasUnit() || to.hasUnit())
-			return false;
-		Unit unit = from.getUnit();
-		return unit.getTeam() == turn && unit.isActive() && unit.isMoveValid(target);
+	boolean isMoveValid(Unit unit, List<Position> path) {
+		return unit.getTeam() == turn && unit.isActive() && unit.isMoveValid(path);
 	}
 
-	void moveAndAttack(Position attackerPos, /* Position moveTarget, */ Position attackedPos) {
-		Unit attacker = arena.at(attackerPos).getUnit();
-		Unit target = arena.at(attackedPos).getUnit();
+	void moveAndAttack(Unit attacker, List<Position> path, Unit target) {
 		if (attacker.type.weapon != Weapon.CloseRange)
 			throw new UnsupportedOperationException("Only close range weapon are supported");
 
-		if (!isAttackValid(attackerPos, attackedPos))
+		if (!path.isEmpty() && !attacker.isMoveValid(path))
 			throw new IllegalStateException();
-		Position moveTarget = attacker.getMovePositionToAttack(attackedPos);
+		if (!isAttackValid(attacker, target))
+			throw new IllegalStateException();
 
-		boolean moveNearTarget = false;
-		for (Position neighbor : attackedPos.neighbors()) {
-			if (arena.isValidPos(neighbor) && neighbor.equals(moveTarget)) {
-				moveNearTarget = true;
-				break;
-			}
-		}
-		if (!moveNearTarget)
-			throw new UnsupportedOperationException();
-
-		move0(attackerPos, moveTarget);
+		if (!path.isEmpty())
+			move0(attacker, path);
 		doDamage(attacker, target);
 		attacker.setActive(false);
 	}
 
-	void attackRange(Position attackerPos, Position targetPos) {
-		Unit attacker = arena.at(attackerPos).getUnit();
-		Unit target = arena.at(targetPos).getUnit();
+	void attackRange(Unit attacker, Unit target) {
 		if (attacker.type.weapon != Weapon.LongRange)
 			throw new UnsupportedOperationException("Only long range weapon are supported");
 
-		if (!isAttackValid(attackerPos, targetPos))
+		if (!isAttackValid(attacker, target))
 			throw new IllegalStateException();
+
 		doDamage(attacker, target);
 		attacker.setActive(false);
 	}
 
-	boolean isAttackValid(Position attackerPos, Position targetPos) {
-		Tile attackerTile = arena.at(attackerPos);
-		Tile targetTile = arena.at(targetPos);
-		if (!attackerTile.hasUnit() || !targetTile.hasUnit())
-			return false;
-		Unit attacker = attackerTile.getUnit();
-		Unit target = targetTile.getUnit();
+	boolean isAttackValid(Unit attacker, Unit target) {
 		return attacker.getTeam() == turn && attacker.isActive() && attacker.isAttackValid(target);
 	}
 
