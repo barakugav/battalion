@@ -74,11 +74,11 @@ abstract class Unit extends Entity {
 				return false;
 			prev = pos;
 		}
-		return true;
+		return !arena.at(path.get(path.size() - 1)).hasUnit();
 	}
 
 	boolean isAttackValid(Unit target) {
-		return target.getTeam() != getTeam() && getAttackableMap().at(target.getPos())
+		return target.getTeam() != getTeam() && getAttackableMap().contains(target.getPos())
 				&& type.attackable.contains(target.type.category);
 	}
 
@@ -224,12 +224,22 @@ abstract class Unit extends Entity {
 	}
 
 	Position.Bitmap getReachableMap() {
+		Position.Bitmap passableMap = getPassableMap();
+
+		/* Convert distance map to bitmap */
+		boolean[][] reachableMap = new boolean[arena.getWidth()][arena.getHeight()];
+		for (Position pos : arena.positions())
+			reachableMap[pos.x][pos.y] = passableMap.contains(pos) && !arena.at(pos).hasUnit();
+		return new Position.Bitmap(reachableMap);
+	}
+
+	Position.Bitmap getPassableMap() {
 		int[][] distanceMap = calcDistanceMap();
 
 		/* Convert distance map to bitmap */
 		boolean[][] reachableMap = new boolean[arena.getWidth()][arena.getHeight()];
 		for (Position pos : arena.positions())
-			reachableMap[pos.x][pos.y] = distanceMap[pos.x][pos.y] > 0 && !arena.at(pos).hasUnit();
+			reachableMap[pos.x][pos.y] = distanceMap[pos.x][pos.y] > 0;
 		return new Position.Bitmap(reachableMap);
 	}
 

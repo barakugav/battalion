@@ -27,6 +27,7 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.Timer;
 
 import com.ugav.battalion.Unit.Weapon;
 
@@ -40,6 +41,8 @@ class LevelPanel extends JPanel {
 	private Position selection;
 	private final Images images = new Images();
 	private final DebugPrintsManager debug;
+
+	private boolean actionsSuspended;
 
 	private static final int TILE_SIZE_PIXEL = 64;
 
@@ -92,6 +95,18 @@ class LevelPanel extends JPanel {
 		arenaPanel.movePath.clear();
 	}
 
+	boolean isActionSuspended() {
+		return actionsSuspended;
+	}
+
+	void suspendActions() {
+		actionsSuspended = true;
+	}
+
+	void resumeActions() {
+		actionsSuspended = false;
+	}
+
 	private class Menu extends JPanel {
 
 		private final Map<Team, JLabel> labelMoney;
@@ -106,7 +121,10 @@ class LevelPanel extends JPanel {
 				labelMoney.put(team, new JLabel());
 			buttonEndTurn = new JButton("End Turn");
 
-			buttonEndTurn.addActionListener(e -> endTurn());
+			buttonEndTurn.addActionListener(e -> {
+				if (!isActionSuspended())
+					endTurn();
+			});
 
 			setLayout(new GridLayout(0, 1));
 			for (JLabel label : labelMoney.values())
@@ -139,6 +157,7 @@ class LevelPanel extends JPanel {
 		private final Map<Unit, UnitComp> units;
 		private final Map<Building, BuildingComp> buildings;
 
+		private Position.Bitmap passableMap = Position.Bitmap.empty;
 		private Position.Bitmap reachableMap = Position.Bitmap.empty;
 		private Position.Bitmap attackableMap = Position.Bitmap.empty;
 		private Position hovered;
@@ -174,11 +193,37 @@ class LevelPanel extends JPanel {
 		}
 
 		void hoveredUpdated() {
-			if (!isUnitSelected())
+			if (!isUnitSelected() || isActionSuspended())
 				return;
 			Unit unit = game.arena.at(selection).getUnit();
 
-			if (reachableMap.at(hovered)) {
+			if (attackableMap.contains(hovered)) {
+				if (unit.type.weapon == Weapon.LongRange) {
+					movePath.clear();
+					repaint();
+					return;
+				}
+				Position targetPos = hovered;
+				Position last = movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1);
+				if (targetPos.neighbors().contains(last))
+					return;
+				movePath.clear();
+
+				List<Position> bestPath = null;
+				for (Position p : targetPos.neighbors()) {
+					if (!reachableMap.contains(p))
+						continue;
+					List<Position> path = unit.calcPath(p);
+					if (bestPath == null || path.size() < bestPath.size())
+						bestPath = path;
+				}
+				assert bestPath != null;
+				movePath.addAll(bestPath);
+				repaint();
+				return;
+			}
+
+			if (passableMap.contains(hovered)) {
 				/* Update move path from unit position to hovered position */
 				Position last = movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1);
 
@@ -293,7 +338,7 @@ class LevelPanel extends JPanel {
 		}
 
 		private void tileClicked(Position pos) {
-			if (game == null)
+			if (game == null || isActionSuspended())
 				return;
 			if (selection == null) {
 				trySelect(pos);
@@ -315,6 +360,7 @@ class LevelPanel extends JPanel {
 
 			if (tile.hasUnit()) {
 				Unit unit = tile.getUnit();
+				passableMap = unit.getPassableMap();
 				reachableMap = unit.getReachableMap();
 				attackableMap = unit.getAttackableMap();
 
@@ -331,27 +377,54 @@ class LevelPanel extends JPanel {
 			}
 		}
 
+		private static <E> List<E> list(E e, List<? extends E> l) {
+			List<E> ll = new ArrayList<>();
+			ll.add(e);
+			ll.addAll(l);
+			return ll;
+		}
+
 		private void unitSecondSelection(Position pos) {
 			Tile tile = game.arena.at(pos);
 			Unit unit = tiles.get(selection).tile().getUnit();
 			Unit target;
 			if (!tile.hasUnit()) {
-				if (!pos.equals(movePath.get(movePath.size() - 1))) {
-					movePath.clear();
-					movePath.addAll(unit.calcPath(hovered));
-				}
-				if (game.isMoveValid(unit, movePath)) {
+				if (reachableMap.contains(pos)) {
+					if (!pos.equals(movePath.get(movePath.size() - 1))) {
+						movePath.clear();
+						movePath.addAll(unit.calcPath(pos));
+					}
 					debug.println("Move ", unit.getPos(), " ", pos);
-					game.move(unit, movePath);
+					List<Position> animationPath = list(unit.getPos(), movePath);
+					List<Position> curreMovePath = new ArrayList<>(movePath);
+					units.get(unit).moveAnimation(animationPath, () -> game.move(unit, curreMovePath));
 				}
+
 				return;
 			} else if (game.isAttackValid(unit, target = tile.getUnit())) {
 				debug.println("Attack ", unit.getPos(), " ", pos);
 
 				if (unit.type.weapon == Weapon.CloseRange) {
-					assert (movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1)).neighbors()
-							.contains(target.getPos());
-					game.moveAndAttack(unit, movePath, target);
+					Position moveToPos = movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1);
+					Position targetPos = target.getPos();
+					if (!moveToPos.neighbors().contains(targetPos)) {
+						movePath.clear();
+						if (!unit.getPos().neighbors().contains(targetPos)) {
+							List<Position> bestPath = null;
+							for (Position p : targetPos.neighbors()) {
+								if (!reachableMap.contains(p))
+									continue;
+								List<Position> path = unit.calcPath(p);
+								if (bestPath == null || path.size() < bestPath.size())
+									bestPath = path;
+							}
+							assert bestPath != null;
+							movePath.addAll(bestPath);
+						}
+					}
+					List<Position> animationPath = list(unit.getPos(), movePath);
+					List<Position> curreMovePath = new ArrayList<>(movePath);
+					units.get(unit).moveAnimation(animationPath, () -> game.moveAndAttack(unit, curreMovePath, target));
 
 				} else if (unit.type.weapon == Weapon.LongRange) {
 					game.attackRange(unit, target);
@@ -370,6 +443,11 @@ class LevelPanel extends JPanel {
 			private final int HealthBarHeight = 4;
 			private final int HealthBarBottomMargin = 3;
 
+			private List<Position> animationMovePath;
+			private int animationCursor;
+			private static final int animationResolution = 16;
+			private static final int animationDelay = 12;
+
 			UnitComp(Unit unit) {
 				this.unit = unit;
 				register = new DataChangeRegister();
@@ -382,23 +460,81 @@ class LevelPanel extends JPanel {
 
 			void paintComponent(Graphics g) {
 				Graphics2D g2 = (Graphics2D) g;
+
+				double x, y;
+				if (isMoveAnimationActive()) {
+					int idx = animationCursor / animationResolution;
+					double frac = (animationCursor % animationResolution + 1) / (double) animationResolution;
+					Position p1 = animationMovePath.get(idx);
+					Position p2 = animationMovePath.get(idx + 1);
+					x = p1.x + (p2.x - p1.x) * frac;
+					y = p1.y + (p2.y - p1.y) * frac;
+
+				} else {
+					x = unit.getPos().x;
+					y = unit.getPos().y;
+				}
+
+				/* Draw unit */
 				Composite oldComp = g2.getComposite();
 				if (unit.getTeam() == game.getTurn() && !unit.isActive())
 					g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-				drawImage(g, Images.Label.valueOf(unit), unit.getPos());
+				int unitImgX = (int) (x * TILE_SIZE_PIXEL);
+				int unitImgY = (int) (y * TILE_SIZE_PIXEL);
+				BufferedImage unitImg = images.getImage(Images.Label.valueOf(unit));
+				g.drawImage(unitImg, unitImgX, unitImgY, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, null);
 				g2.setComposite(oldComp);
 
-				int x = (int) ((unit.getPos().x + 0.5) * TILE_SIZE_PIXEL - HealthBarWidth * 0.5);
-				int y = (unit.getPos().y + 1) * TILE_SIZE_PIXEL - HealthBarHeight - HealthBarBottomMargin;
+				/* Draw health bar */
+				int healthBarX = (int) ((x + 0.5) * TILE_SIZE_PIXEL - HealthBarWidth * 0.5);
+				int healthBarY = (int) ((y + 1) * TILE_SIZE_PIXEL - HealthBarHeight - HealthBarBottomMargin);
 				g2.setColor(Color.GREEN);
-				g2.fillRect(x + 1, y, (int) ((double) (HealthBarWidth - 1) * unit.getHealth() / unit.type.health),
-						HealthBarHeight);
+				g2.fillRect(healthBarX + 1, healthBarY,
+						(int) ((double) (HealthBarWidth - 1) * unit.getHealth() / unit.type.health), HealthBarHeight);
 				g2.setColor(Color.BLACK);
-				g2.drawRect(x, y, HealthBarWidth, HealthBarHeight);
+				g2.drawRect(healthBarX, healthBarY, HealthBarWidth, HealthBarHeight);
 			}
 
 			void clear() {
 				register.unregisterAllListeners(unit.onChange);
+			}
+
+			void moveAnimation(List<Position> animationPath, Runnable onFinish) {
+				suspendActions();
+				UnitComp unitC = units.get(unit);
+
+				assert animationPath.size() >= 2;
+				animationMovePath = new ArrayList<>(animationPath);
+				animationCursor = 0;
+
+				Timer animationTimer = new Timer(animationDelay, null);
+				animationTimer.addActionListener(e -> {
+					repaint();
+					unitC.advanceMoveAnimation();
+					if (!unitC.isMoveAnimationActive()) {
+						animationTimer.stop();
+						onFinish.run();
+						repaint();
+						resumeActions();
+					}
+				});
+				animationTimer.setRepeats(true);
+				animationTimer.start();
+			}
+
+			boolean isMoveAnimationActive() {
+				return animationMovePath != null;
+			}
+
+			void advanceMoveAnimation() {
+				if (animationMovePath == null)
+					return;
+				assert animationCursor < animationMovePath.size() * animationResolution;
+				animationCursor++;
+				if (animationCursor == (animationMovePath.size() - 1) * animationResolution) {
+					animationMovePath = null;
+					animationCursor = 0;
+				}
 			}
 
 		}

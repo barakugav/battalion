@@ -50,6 +50,7 @@ class Position {
 	};
 
 	List<Position> neighbors() {
+		/* TODO return view instead of actually creating an array list each time */
 		List<Position> neighbors = new ArrayList<>(Direction.values().length);
 		for (Direction dir : Direction.values())
 			neighbors.add(new Position(x + dir.dx, y + dir.dy));
@@ -98,13 +99,13 @@ class Position {
 			this.map = map;
 		}
 
-		boolean at(Position pos) {
+		boolean contains(Position pos) {
 			return 0 <= pos.x && pos.x < map.length && 0 <= pos.y && pos.y < map[pos.x].length && map[pos.x][pos.y];
 		}
 
 		@Override
 		public boolean test(Position pos) {
-			return at(pos);
+			return contains(pos);
 		}
 
 		@Override
