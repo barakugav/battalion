@@ -10,8 +10,12 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,6 +49,8 @@ class LevelPanel extends JPanel {
 	private boolean actionsSuspended;
 
 	private static final int TILE_SIZE_PIXEL = 64;
+	private static final int DISPLAYED_ARENA_WIDTH = 8;
+	private static final int DISPLAYED_ARENA_HEIGHT = 8;
 
 	private static final long serialVersionUID = 1L;
 
@@ -65,6 +71,8 @@ class LevelPanel extends JPanel {
 			arenaPanel.clearGame();
 		}
 
+		if (game.getWidth() < DISPLAYED_ARENA_WIDTH || game.getHeight() < DISPLAYED_ARENA_HEIGHT)
+			throw new IllegalArgumentException("game size is too small");
 		this.game = Objects.requireNonNull(game);
 		menu.initGame();
 		arenaPanel.initGame();
@@ -163,8 +171,13 @@ class LevelPanel extends JPanel {
 		private Position hovered;
 		private final List<Position> movePath;
 
+		private Position mapPos;
+		private double mapPosX, mapPosY;
+
 		private final DataChangeRegister register;
 
+		private static final int MapMoveTimerDelay = 10;
+		private static final int MapMoveSpeed = 4;
 		private static final long serialVersionUID = 1L;
 
 		ArenaPanel() {
@@ -174,22 +187,98 @@ class LevelPanel extends JPanel {
 			movePath = new ArrayList<>();
 			register = new DataChangeRegister();
 
+			mapPos = new Position(0, 0);
+			mapPosX = mapPosY = 0;
+
 			addMouseListener(new MouseAdapter() {
 				@Override
 				public void mousePressed(MouseEvent e) {
-					tileClicked(new Position(e.getX() / TILE_SIZE_PIXEL, e.getY() / TILE_SIZE_PIXEL));
+					requestFocusInWindow();
+					tileClicked(new Position(displayedXInv(e.getX()) / TILE_SIZE_PIXEL,
+							displayedYInv(e.getY()) / TILE_SIZE_PIXEL));
 				}
 			});
 			addMouseMotionListener(new MouseAdapter() {
 				@Override
 				public void mouseMoved(MouseEvent e) {
-					int x = e.getX() / TILE_SIZE_PIXEL, y = e.getY() / TILE_SIZE_PIXEL;
+					int x = displayedXInv(e.getX()) / TILE_SIZE_PIXEL, y = displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
 					if (hovered == null || hovered.x != x || hovered.y != y) {
 						hovered = new Position(x, y);
 						hoveredUpdated();
 					}
 				}
 			});
+			addKeyListener(new KeyAdapter() {
+				@Override
+				public void keyPressed(KeyEvent e) {
+					Position.Direction dir = keyToDir(e.getKeyCode());
+					if (dir != null)
+						mapMove(dir);
+				}
+
+				private Position.Direction keyToDir(int keyCode) {
+					switch (keyCode) {
+					case KeyEvent.VK_LEFT:
+					case KeyEvent.VK_A:
+						return Position.Direction.XNeg;
+					case KeyEvent.VK_RIGHT:
+					case KeyEvent.VK_D:
+						return Position.Direction.XPos;
+					case KeyEvent.VK_UP:
+					case KeyEvent.VK_W:
+						return Position.Direction.YNeg;
+					case KeyEvent.VK_DOWN:
+					case KeyEvent.VK_S:
+						return Position.Direction.YPos;
+					default:
+						return null;
+					}
+
+				}
+			});
+			setFocusable(true);
+			requestFocusInWindow();
+
+			Timer mapMoveTimer = new Timer(MapMoveTimerDelay, e -> {
+				double dx = mapPos.x * TILE_SIZE_PIXEL - mapPosX;
+				double dy = mapPos.y * TILE_SIZE_PIXEL - mapPosY;
+				if (dx == 0 && dy == 0)
+					return;
+				int speed = MapMoveSpeed;
+				double cx = dx / Math.sqrt(dx * dx + dy * dy) * speed;
+				double cy = dy / Math.sqrt(dx * dx + dy * dy) * speed;
+				mapPosX += Math.abs(cx) >= Math.abs(dx) ? dx : cx;
+				mapPosY += Math.abs(cy) >= Math.abs(dy) ? dy : cy;
+				repaint();
+			});
+			mapMoveTimer.setRepeats(true);
+			mapMoveTimer.start();
+		}
+
+		void mapMove(Position.Direction dir) {
+			Position mapPosNew = mapPos.add(dir);
+			if (!mapPosNew.isInRect(0, 0, game.getWidth() - DISPLAYED_ARENA_WIDTH,
+					game.getWidth() - DISPLAYED_ARENA_HEIGHT))
+				return;
+			System.out.println(mapPosNew);
+			mapPos = mapPosNew;
+			repaint();
+		}
+
+		int displayedX(double x) {
+			return (int) (x - mapPosX);
+		}
+
+		int displayedY(double y) {
+			return (int) (y - mapPosY);
+		}
+
+		int displayedXInv(int x) {
+			return (int) (x + mapPosX);
+		}
+
+		int displayedYInv(int y) {
+			return (int) (y + mapPosY);
 		}
 
 		void hoveredUpdated() {
@@ -267,6 +356,9 @@ class LevelPanel extends JPanel {
 				addUnitComp(e.unit);
 				repaint();
 			});
+
+			mapPos = new Position(0, 0);
+			mapPosX = mapPosY = 0;
 		}
 
 		void clearGame() {
@@ -309,8 +401,8 @@ class LevelPanel extends JPanel {
 				g.setColor(new Color(100, 0, 0));
 				Position prev = unit.getPos();
 				for (Position pos : movePath) {
-					int prevX = prev.x * TILE_SIZE_PIXEL, prevY = prev.y * TILE_SIZE_PIXEL;
-					int pX = pos.x * TILE_SIZE_PIXEL, pY = pos.y * TILE_SIZE_PIXEL;
+					int prevX = displayedX(prev.x * TILE_SIZE_PIXEL), prevY = displayedY(prev.y * TILE_SIZE_PIXEL);
+					int pX = displayedX(pos.x * TILE_SIZE_PIXEL), pY = displayedY(pos.y * TILE_SIZE_PIXEL);
 
 					int ovalRadius = TILE_SIZE_PIXEL / 2;
 					int ovalOffset = (TILE_SIZE_PIXEL - ovalRadius) / 2;
@@ -330,7 +422,7 @@ class LevelPanel extends JPanel {
 
 		@Override
 		public Dimension getPreferredSize() {
-			return new Dimension(TILE_SIZE_PIXEL * game.arena.getWidth(), TILE_SIZE_PIXEL * game.arena.getHeight());
+			return new Dimension(TILE_SIZE_PIXEL * DISPLAYED_ARENA_WIDTH, TILE_SIZE_PIXEL * DISPLAYED_ARENA_HEIGHT);
 		}
 
 		private boolean isUnitSelected() {
@@ -369,6 +461,13 @@ class LevelPanel extends JPanel {
 				if (building instanceof Building.Factory) {
 					Building.Factory factory = (Building.Factory) building;
 					FactoryMenu factoryMenu = new FactoryMenu(gameFrame, factory);
+					factoryMenu.addWindowListener(new WindowAdapter() {
+						@Override
+						public void windowClosing(WindowEvent e) {
+							clearSelection();
+							repaint();
+						}
+					});
 					factoryMenu.setVisible(true);
 				}
 
@@ -467,27 +566,27 @@ class LevelPanel extends JPanel {
 					double frac = (animationCursor % animationResolution + 1) / (double) animationResolution;
 					Position p1 = animationMovePath.get(idx);
 					Position p2 = animationMovePath.get(idx + 1);
-					x = p1.x + (p2.x - p1.x) * frac;
-					y = p1.y + (p2.y - p1.y) * frac;
+					x = displayedX((p1.x + (p2.x - p1.x) * frac) * TILE_SIZE_PIXEL);
+					y = displayedY((p1.y + (p2.y - p1.y) * frac) * TILE_SIZE_PIXEL);
 
 				} else {
-					x = unit.getPos().x;
-					y = unit.getPos().y;
+					x = displayedX(unit.getPos().x * TILE_SIZE_PIXEL);
+					y = displayedY(unit.getPos().y * TILE_SIZE_PIXEL);
 				}
 
 				/* Draw unit */
 				Composite oldComp = g2.getComposite();
 				if (unit.getTeam() == game.getTurn() && !unit.isActive())
 					g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-				int unitImgX = (int) (x * TILE_SIZE_PIXEL);
-				int unitImgY = (int) (y * TILE_SIZE_PIXEL);
+				int unitImgX = (int) x;
+				int unitImgY = (int) y;
 				BufferedImage unitImg = images.getImage(Images.Label.valueOf(unit));
 				g.drawImage(unitImg, unitImgX, unitImgY, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, null);
 				g2.setComposite(oldComp);
 
 				/* Draw health bar */
-				int healthBarX = (int) ((x + 0.5) * TILE_SIZE_PIXEL - HealthBarWidth * 0.5);
-				int healthBarY = (int) ((y + 1) * TILE_SIZE_PIXEL - HealthBarHeight - HealthBarBottomMargin);
+				int healthBarX = (int) (x + 0.5 * TILE_SIZE_PIXEL - HealthBarWidth * 0.5);
+				int healthBarY = (int) (y + TILE_SIZE_PIXEL - HealthBarHeight - HealthBarBottomMargin);
 				g2.setColor(Color.GREEN);
 				g2.fillRect(healthBarX + 1, healthBarY,
 						(int) ((double) (HealthBarWidth - 1) * unit.getHealth() / unit.type.health), HealthBarHeight);
@@ -599,8 +698,8 @@ class LevelPanel extends JPanel {
 
 		private void drawImage(Graphics g, Images.Label label, Position pos) {
 			BufferedImage unitImg = images.getImage(label);
-			g.drawImage(unitImg, pos.x * TILE_SIZE_PIXEL, pos.y * TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL,
-					this);
+			g.drawImage(unitImg, displayedX(pos.x * TILE_SIZE_PIXEL), displayedY(pos.y * TILE_SIZE_PIXEL),
+					TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, this);
 		}
 
 	}

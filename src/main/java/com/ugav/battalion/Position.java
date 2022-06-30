@@ -36,6 +36,22 @@ class Position {
 		return x == o.x && y == o.y;
 	}
 
+	Position add(Direction dir) {
+		return new Position(x + dir.dx, y + dir.dy);
+	}
+
+	List<Position> neighbors() {
+		/* TODO return view instead of actually creating an array list each time */
+		List<Position> neighbors = new ArrayList<>(Direction.values().length);
+		for (Direction dir : Direction.values())
+			neighbors.add(add(dir));
+		return neighbors;
+	}
+
+	boolean isInRect(int x1, int y1, int x2, int y2) {
+		return x1 <= x && x <= x2 && y1 <= y && y <= y2;
+	}
+
 	static enum Direction {
 
 		XPos(1, 0), XNeg(-1, 0), YPos(0, 1), YNeg(0, -1);
@@ -48,14 +64,6 @@ class Position {
 		}
 
 	};
-
-	List<Position> neighbors() {
-		/* TODO return view instead of actually creating an array list each time */
-		List<Position> neighbors = new ArrayList<>(Direction.values().length);
-		for (Direction dir : Direction.values())
-			neighbors.add(new Position(x + dir.dx, y + dir.dy));
-		return neighbors;
-	}
 
 	static class Iterator2D implements Iterator<Position> {
 

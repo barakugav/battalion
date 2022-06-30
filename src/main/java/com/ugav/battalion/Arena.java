@@ -48,7 +48,7 @@ class Arena {
 	}
 
 	boolean isValidPos(Position pos) {
-		return 0 <= pos.x && pos.x < width && 0 <= pos.y && pos.y < height;
+		return pos.isInRect(0, 0, width - 1, height - 1);
 	}
 
 	Collection<Position> positions() {
