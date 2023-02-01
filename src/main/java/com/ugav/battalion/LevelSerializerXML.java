@@ -65,10 +65,10 @@ class LevelSerializerXML implements LevelSerializer {
 
 				addValueChild(dom, tileElm, "terrain", tile.terrain.type.name());
 
-				if (tile.buiding != null) {
+				if (tile.building != null) {
 					Element buildingElm = dom.createElement("building");
-					addValueChild(dom, buildingElm, "type", tile.buiding.type.name());
-					addValueChild(dom, buildingElm, "team", tile.buiding.team.name());
+					addValueChild(dom, buildingElm, "type", tile.building.type.name());
+					addValueChild(dom, buildingElm, "team", tile.building.team.name());
 					tileElm.appendChild(buildingElm);
 				}
 
@@ -178,6 +178,11 @@ class LevelSerializerXML implements LevelSerializer {
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public String getFileType() {
+		return "xml";
 	}
 
 }

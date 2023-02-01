@@ -13,6 +13,9 @@ import java.util.function.Function;
 
 import javax.imageio.ImageIO;
 
+import com.ugav.battalion.Level.BuildingDesc;
+import com.ugav.battalion.Level.UnitDesc;
+
 class Images {
 
 	private final Map<Label, BufferedImage> images;
@@ -99,6 +102,14 @@ class Images {
 			} else if (obj instanceof Building) {
 				Building building = (Building) obj;
 				return valueOf(building.type, building.getTeam());
+
+			} else if (obj instanceof UnitDesc) {
+				UnitDesc unit = (UnitDesc) obj;
+				return valueOf(unit.type, unit.team);
+
+			} else if (obj instanceof BuildingDesc) {
+				BuildingDesc building = (BuildingDesc) obj;
+				return valueOf(building.type, building.team);
 
 			} else {
 				throw new InternalError("Unsupported drawable object: " + obj);

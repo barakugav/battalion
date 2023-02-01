@@ -2,6 +2,8 @@ package com.ugav.battalion;
 
 import java.util.Objects;
 
+import com.ugav.battalion.Images.Drawable;
+
 class Level {
 
 	private final int width;
@@ -10,17 +12,33 @@ class Level {
 
 	static class TileDesc {
 		final Terrain terrain;
-		final BuildingDesc buiding;
+		final BuildingDesc building;
 		final UnitDesc unit;
 
-		TileDesc(Terrain terrain, BuildingDesc buiding, UnitDesc unit) {
+		TileDesc(Terrain terrain, BuildingDesc building, UnitDesc unit) {
 			this.terrain = Objects.requireNonNull(terrain);
-			this.buiding = buiding;
+			this.building = building;
 			this.unit = unit;
 		}
 
-		static TileDesc of(Terrain terrain, BuildingDesc buiding, UnitDesc unit) {
-			return new TileDesc(terrain, buiding, unit);
+		static TileDesc of(Terrain terrain, BuildingDesc building, UnitDesc unit) {
+			return new TileDesc(terrain, building, unit);
+		}
+
+		boolean hasUnit() {
+			return unit != null;
+		}
+
+		UnitDesc getUnit() {
+			return unit;
+		}
+
+		boolean hasBuilding() {
+			return building != null;
+		}
+
+		BuildingDesc getBuilding() {
+			return building;
 		}
 
 		@Override
@@ -31,17 +49,17 @@ class Level {
 				return false;
 			TileDesc other = (TileDesc) o;
 
-			return Objects.equals(terrain, other.terrain) && Objects.equals(buiding, other.buiding)
+			return Objects.equals(terrain, other.terrain) && Objects.equals(building, other.building)
 					&& Objects.equals(unit, other.unit);
 		}
 
 		@Override
 		public int hashCode() {
-			return Objects.hash(terrain, buiding, unit);
+			return Objects.hash(terrain, building, unit);
 		}
 	}
 
-	static class BuildingDesc {
+	static class BuildingDesc implements Drawable {
 		final Building.Type type;
 		final Team team;
 
@@ -71,7 +89,7 @@ class Level {
 		}
 	}
 
-	static class UnitDesc {
+	static class UnitDesc implements Drawable {
 		final Unit.Type type;
 		final Team team;
 
@@ -106,7 +124,7 @@ class Level {
 		this.height = tiles[0].length;
 		this.tiles = new TileDesc[width][height];
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			this.tiles[pos.x][pos.y] = tiles[pos.x][pos.y];
+			this.tiles[pos.x][pos.y] = Objects.requireNonNull(tiles[pos.x][pos.y]);
 	}
 
 	int getWidth() {

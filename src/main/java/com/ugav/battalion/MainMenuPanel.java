@@ -18,10 +18,15 @@ class MainMenuPanel extends JPanel implements Clearable {
 		levels = new Levels();
 
 		int levelCount = levels.getLevels().size();
-		setLayout(new GridLayout(levelCount, 1));
+		setLayout(new GridLayout(0, 1));
 
 		for (int levelIdx = 0; levelIdx < levelCount; levelIdx++)
 			add(new LevelButton(levelIdx));
+
+		JButton lvlBuilderButton = new JButton("Level Builder");
+		lvlBuilderButton.setSize(100, 100);
+		lvlBuilderButton.addActionListener(e -> gameFrame.loadLevelBuilder());
+		add(lvlBuilderButton);
 	}
 
 	void selectLevel(int levelIdx) {
@@ -45,9 +50,7 @@ class MainMenuPanel extends JPanel implements Clearable {
 
 			setText(String.format("Level %2d", Integer.valueOf(levelIdx)));
 			setSize(100, 100);
-			addActionListener(e -> {
-				selectLevel(this.levelIdx);
-			});
+			addActionListener(e -> selectLevel(this.levelIdx));
 		}
 
 	}

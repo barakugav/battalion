@@ -99,7 +99,7 @@ class Arena {
 
 	private Tile createTile(TileDesc desc, Position pos) {
 		Terrain terrain = desc.terrain;
-		Building building = createBuilding(desc.buiding, pos);
+		Building building = createBuilding(desc.building, pos);
 		Unit unit = createUnit(desc.unit, pos);
 		return new Tile(terrain, building, unit);
 	}

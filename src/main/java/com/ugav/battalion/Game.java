@@ -20,7 +20,8 @@ class Game {
 	private Team winner;
 	private final List<Unit> deadQueue;
 
-	final DataChangeNotifier<DataEvent.NewUnit> onNewUnit;
+	final DataChangeNotifier<DataEvent.UnitAdd> onUnitAdd;
+	final DataChangeNotifier<DataEvent.UnitRemove> onUnitRemove;
 	final DataChangeNotifier<DataEvent.MoneyChange> onMoneyChange;
 
 	private static class TeamData {
@@ -34,7 +35,8 @@ class Game {
 		turn = turnIterator.next();
 		winner = null;
 		deadQueue = new ArrayList<>();
-		onNewUnit = new DataChangeNotifier<>();
+		onUnitAdd = new DataChangeNotifier<>();
+		onUnitRemove = new DataChangeNotifier<>();
 		onMoneyChange = new DataChangeNotifier<>();
 
 		for (Position pos : arena.positions()) {
@@ -185,6 +187,7 @@ class Game {
 			arena.at(target.getPos()).removeUnit();
 			target.setHealth(0);
 			deadQueue.add(target);
+			onUnitRemove.notify(new DataEvent.UnitRemove(this, target));
 		} else {
 			target.setHealth(target.getHealth() - damage);
 		}
@@ -212,7 +215,7 @@ class Game {
 		arena.at(pos).setUnit(unit);
 
 		onMoneyChange.notify(new DataEvent.MoneyChange(this, team, data.money));
-		onNewUnit.notify(new DataEvent.NewUnit(this, unit));
+		onUnitAdd.notify(new DataEvent.UnitAdd(this, unit));
 	}
 
 }

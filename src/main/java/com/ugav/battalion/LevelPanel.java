@@ -273,7 +273,6 @@ class LevelPanel extends JPanel implements Clearable {
 			if (!mapPosNew.isInRect(0, 0, game.getWidth() - DISPLAYED_ARENA_WIDTH,
 					game.getWidth() - DISPLAYED_ARENA_HEIGHT))
 				return;
-			System.out.println(mapPosNew);
 			mapPos = mapPosNew;
 			repaint();
 		}
@@ -365,7 +364,7 @@ class LevelPanel extends JPanel implements Clearable {
 
 			setPreferredSize(getPreferredSize());
 
-			register.registerListener(game.onNewUnit, e -> {
+			register.registerListener(game.onUnitAdd, e -> {
 				addUnitComp(e.unit);
 				repaint();
 			});
@@ -386,7 +385,7 @@ class LevelPanel extends JPanel implements Clearable {
 			units.clear();
 			buildings.clear();
 
-			register.unregisterAllListeners(game.onNewUnit);
+			register.unregisterAllListeners(game.onUnitAdd);
 		}
 
 		private void addUnitComp(Unit unit) {

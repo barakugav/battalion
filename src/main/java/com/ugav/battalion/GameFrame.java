@@ -32,6 +32,10 @@ class GameFrame extends JFrame {
 		displayWindow(new LevelPanel(this, level));
 	}
 
+	void loadLevelBuilder() {
+		displayWindow(new LevelBuilderWindow(this));
+	}
+
 	private void displayWindow(JComponent window) {
 		if (activeWindow != null) {
 			((Clearable) activeWindow).clear();

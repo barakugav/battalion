@@ -6,4 +6,6 @@ interface LevelSerializer {
 
 	Level levelRead(String path);
 
+	String getFileType();
+
 }

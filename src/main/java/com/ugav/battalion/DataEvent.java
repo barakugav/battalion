@@ -7,11 +7,22 @@ class DataEvent {
 		this.source = source;
 	}
 
-	static class NewUnit extends DataEvent {
+	static class UnitAdd extends DataEvent {
 
 		final Unit unit;
 
-		NewUnit(Game source, Unit unit) {
+		UnitAdd(Game source, Unit unit) {
+			super(source);
+			this.unit = unit;
+		}
+
+	}
+
+	static class UnitRemove extends DataEvent {
+
+		final Unit unit;
+
+		UnitRemove(Game source, Unit unit) {
 			super(source);
 			this.unit = unit;
 		}
@@ -27,6 +38,17 @@ class DataEvent {
 			super(source);
 			this.team = team;
 			this.newAmount = newAmount;
+		}
+
+	}
+
+	static class TileChange extends DataEvent {
+
+		final Position pos;
+
+		TileChange(LevelBuilder source, Position pos) {
+			super(source);
+			this.pos = pos;
 		}
 
 	}
