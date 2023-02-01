@@ -182,9 +182,9 @@ class Game {
 	private void doDamage(Unit attacker, Unit target) {
 		int damage = attacker.getDamge(target);
 		if (target.getHealth() <= damage) {
+			arena.at(target.getPos()).removeUnit();
 			target.setHealth(0);
 			deadQueue.add(target);
-			arena.at(target.getPos()).removeUnit();
 		} else {
 			target.setHealth(target.getHealth() - damage);
 		}

@@ -6,7 +6,7 @@ import java.util.Objects;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
-class MainMenuPanel extends JPanel {
+class MainMenuPanel extends JPanel implements Clearable {
 
 	private final GameFrame gameFrame;
 	private final Levels levels;
@@ -25,10 +25,11 @@ class MainMenuPanel extends JPanel {
 	}
 
 	void selectLevel(int levelIdx) {
-		Game game = new Game(levels.getLevels().get(levelIdx).e2);
-		game.start();
-		gameFrame.getGamePlane().setGame(game);
-		gameFrame.displayGame();
+		gameFrame.loadLevel(levels.getLevels().get(levelIdx).e2);
+	}
+
+	@Override
+	public void clear() {
 	}
 
 	private class LevelButton extends JButton {

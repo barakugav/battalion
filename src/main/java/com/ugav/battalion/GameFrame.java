@@ -1,21 +1,15 @@
 package com.ugav.battalion;
 
-import java.awt.Component;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Objects;
-
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 
 class GameFrame extends JFrame {
 
+	private JComponent activeWindow;
+
 	private static final String TITLE = "Battalion";
 	private static final int FRAME_WIDTH = 2500;
 	private static final int FRAME_HEIGHT = 2500;
-
-	private final MainMenuPanel mainMenuPanel;
-	private final LevelPanel gamePanel;
-	private final Collection<Component> windows;
 
 	private static final long serialVersionUID = 1L;
 
@@ -26,39 +20,28 @@ class GameFrame extends JFrame {
 		setResizable(false);
 		setSize(FRAME_WIDTH, FRAME_HEIGHT);
 
-		windows = new ArrayList<>();
-		windows.add(mainMenuPanel = new MainMenuPanel(this));
-		windows.add(gamePanel = new LevelPanel(this));
-
 		/* By default display main menu */
-//		displayMainMenu();
-//		displayGame();
-		mainMenuPanel.selectLevel(0);
+		displayMainMenu();
 	}
 
 	void displayMainMenu() {
-		displayWindow(mainMenuPanel);
+		displayWindow(new MainMenuPanel(this));
 	}
 
-	void displayGame() {
-		displayWindow(gamePanel);
+	void loadLevel(Level level) {
+		displayWindow(new LevelPanel(this, level));
 	}
 
-	private void displayWindow(Component window) {
-		if (!windows.contains(Objects.requireNonNull(window)))
-			throw new IllegalArgumentException();
-		removeAllWindows();
-		add(window);
+	private void displayWindow(JComponent window) {
+		if (activeWindow != null) {
+			((Clearable) activeWindow).clear();
+			remove(activeWindow);
+		}
+		assert window instanceof Clearable;
+		add(activeWindow = window);
+		pack();
 		invalidate();
 		repaint();
-	}
-
-	LevelPanel getGamePlane() {
-		return gamePanel;
-	}
-
-	private void removeAllWindows() {
-		windows.forEach(this::remove);
 	}
 
 }

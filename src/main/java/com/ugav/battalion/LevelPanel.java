@@ -10,6 +10,7 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -30,18 +31,19 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
 import com.ugav.battalion.Unit.Weapon;
 
-class LevelPanel extends JPanel {
+class LevelPanel extends JPanel implements Clearable {
 
 	private final GameFrame gameFrame;
 	private final Menu menu;
 	private final ArenaPanel arenaPanel;
 
-	private Game game;
+	private final Game game;
 	private Position selection;
 	private final Images images = new Images();
 	private final DebugPrintsManager debug;
@@ -51,11 +53,14 @@ class LevelPanel extends JPanel {
 	private static final int TILE_SIZE_PIXEL = 64;
 	private static final int DISPLAYED_ARENA_WIDTH = 8;
 	private static final int DISPLAYED_ARENA_HEIGHT = 8;
-
 	private static final long serialVersionUID = 1L;
 
-	LevelPanel(GameFrame gameFrame) {
+	LevelPanel(GameFrame gameFrame, Level level) {
 		this.gameFrame = Objects.requireNonNull(gameFrame);
+
+		if (level.getWidth() < DISPLAYED_ARENA_WIDTH || level.getHeight() < DISPLAYED_ARENA_HEIGHT)
+			throw new IllegalArgumentException("level size is too small");
+		this.game = new Game(level);
 		menu = new Menu();
 		arenaPanel = new ArenaPanel();
 		debug = new DebugPrintsManager(true); // TODO
@@ -63,37 +68,31 @@ class LevelPanel extends JPanel {
 		setLayout(new FlowLayout());
 		add(menu);
 		add(arenaPanel);
-	}
 
-	void setGame(Game game) {
-		if (this.game != null) {
-			menu.clearGame();
-			arenaPanel.clearGame();
-		}
+		game.start();
 
-		if (game.getWidth() < DISPLAYED_ARENA_WIDTH || game.getHeight() < DISPLAYED_ARENA_HEIGHT)
-			throw new IllegalArgumentException("game size is too small");
-		this.game = Objects.requireNonNull(game);
 		menu.initGame();
 		arenaPanel.initGame();
 		invalidate();
 		repaint();
 	}
 
+	@Override
+	public void clear() {
+		menu.clear();
+		arenaPanel.clear();
+	}
+
 	private void endTurn() {
 		debug.println("End turn");
 		clearSelection();
 		game.turnEnd();
-		if (game.isFinished()) {
-			debug.println("Game finished");
-			// TODO
-		} else {
-			game.turnBegin();
-		}
+		assert !game.isFinished();
+		game.turnBegin();
 		repaint();
 	}
 
-	void clearSelection() {
+	private void clearSelection() {
 		if (selection == null)
 			return;
 		debug.println("clearSelection ", selection);
@@ -103,43 +102,49 @@ class LevelPanel extends JPanel {
 		arenaPanel.movePath.clear();
 	}
 
-	boolean isActionSuspended() {
+	private boolean isActionSuspended() {
 		return actionsSuspended;
 	}
 
-	void suspendActions() {
+	private void suspendActions() {
 		actionsSuspended = true;
 	}
 
-	void resumeActions() {
+	private void resumeActions() {
 		actionsSuspended = false;
 	}
 
-	private class Menu extends JPanel {
+	private void checkGameStatus() {
+		if (game.isFinished()) {
+			debug.println("Game finished");
+			JOptionPane.showMessageDialog(this, "tttt");
+			suspendActions();
+		}
+	}
+
+	private class Menu extends JPanel implements Clearable {
 
 		private final Map<Team, JLabel> labelMoney;
-		private final JButton buttonEndTurn;
 		private final DataChangeRegister register;
 
 		private static final long serialVersionUID = 1L;
 
 		Menu() {
 			labelMoney = new HashMap<>();
+			register = new DataChangeRegister();
 			for (Team team : Team.values())
 				labelMoney.put(team, new JLabel());
-			buttonEndTurn = new JButton("End Turn");
 
-			buttonEndTurn.addActionListener(e -> {
-				if (!isActionSuspended())
-					endTurn();
-			});
+			JButton buttonEndTurn = new JButton("End Turn");
+			buttonEndTurn.addActionListener(onActiveActions(e -> endTurn()));
+			JButton buttonMainMenu = new JButton("Main Menu");
+			buttonMainMenu.addActionListener(onActiveActions(e -> gameFrame.displayMainMenu()));
 
 			setLayout(new GridLayout(0, 1));
 			for (JLabel label : labelMoney.values())
 				add(label);
 			add(buttonEndTurn);
-
-			register = new DataChangeRegister();
+			add(buttonMainMenu);
 
 			for (Team team : Team.values())
 				updateMoneyLabel(team, 0);
@@ -149,7 +154,8 @@ class LevelPanel extends JPanel {
 			register.registerListener(game.onMoneyChange, e -> updateMoneyLabel(e.team, e.newAmount));
 		}
 
-		void clearGame() {
+		@Override
+		public void clear() {
 			register.unregisterAllListeners(game.onMoneyChange);
 		}
 
@@ -157,9 +163,16 @@ class LevelPanel extends JPanel {
 			labelMoney.get(team).setText(team.toString() + ": " + money);
 		}
 
+		private ActionListener onActiveActions(ActionListener l) {
+			return e -> {
+				if (!isActionSuspended())
+					l.actionPerformed(e);
+			};
+		}
+
 	}
 
-	private class ArenaPanel extends JPanel {
+	private class ArenaPanel extends JPanel implements Clearable {
 
 		private final Map<Position, TileComp> tiles;
 		private final Map<Unit, UnitComp> units;
@@ -361,7 +374,8 @@ class LevelPanel extends JPanel {
 			mapPosX = mapPosY = 0;
 		}
 
-		void clearGame() {
+		@Override
+		public void clear() {
 			for (TileComp tile : tiles.values())
 				tile.clear();
 			for (BuildingComp building : buildings.values())
@@ -506,7 +520,7 @@ class LevelPanel extends JPanel {
 				if (unit.type.weapon == Weapon.CloseRange) {
 					Position moveToPos = movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1);
 					Position targetPos = target.getPos();
-					if (!moveToPos.neighbors().contains(targetPos)) {
+					if (!moveToPos.neighbors().contains(targetPos) || !reachableMap.contains(moveToPos)) {
 						movePath.clear();
 						if (!unit.getPos().neighbors().contains(targetPos)) {
 							List<Position> bestPath = null;
@@ -521,9 +535,14 @@ class LevelPanel extends JPanel {
 							movePath.addAll(bestPath);
 						}
 					}
-					List<Position> animationPath = list(unit.getPos(), movePath);
-					List<Position> curreMovePath = new ArrayList<>(movePath);
-					units.get(unit).moveAnimation(animationPath, () -> game.moveAndAttack(unit, curreMovePath, target));
+					if (movePath.isEmpty()) {
+						game.moveAndAttack(unit, movePath, target);
+					} else {
+						List<Position> animationPath = list(unit.getPos(), movePath);
+						List<Position> curreMovePath = new ArrayList<>(movePath);
+						units.get(unit).moveAnimation(animationPath,
+								() -> game.moveAndAttack(unit, curreMovePath, target));
+					}
 
 				} else if (unit.type.weapon == Weapon.LongRange) {
 					game.attackRange(unit, target);
@@ -534,7 +553,7 @@ class LevelPanel extends JPanel {
 			}
 		}
 
-		private class UnitComp {
+		private class UnitComp implements Clearable {
 			private final Unit unit;
 			private final DataChangeRegister register;
 
@@ -552,8 +571,10 @@ class LevelPanel extends JPanel {
 				register = new DataChangeRegister();
 
 				register.registerListener(unit.onChange, e -> {
-					if (unit.isDead())
+					if (unit.isDead()) {
 						units.remove(unit);
+						checkGameStatus();
+					}
 				});
 			}
 
@@ -594,7 +615,8 @@ class LevelPanel extends JPanel {
 				g2.drawRect(healthBarX, healthBarY, HealthBarWidth, HealthBarHeight);
 			}
 
-			void clear() {
+			@Override
+			public void clear() {
 				register.unregisterAllListeners(unit.onChange);
 			}
 
@@ -638,7 +660,7 @@ class LevelPanel extends JPanel {
 
 		}
 
-		private class BuildingComp {
+		private class BuildingComp implements Clearable {
 			private final Building building;
 
 			BuildingComp(Building building) {
@@ -649,12 +671,13 @@ class LevelPanel extends JPanel {
 				drawImage(g, Images.Label.valueOf(building), building.getPos());
 			}
 
-			void clear() {
+			@Override
+			public void clear() {
 			}
 
 		}
 
-		private class TileComp {
+		private class TileComp implements Clearable {
 
 			private final Position pos;
 
@@ -691,7 +714,8 @@ class LevelPanel extends JPanel {
 				return pos.toString();
 			}
 
-			void clear() {
+			@Override
+			public void clear() {
 			}
 
 		}
