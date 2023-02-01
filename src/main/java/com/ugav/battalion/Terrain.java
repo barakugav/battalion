@@ -95,4 +95,17 @@ class Terrain implements Drawable {
 
 	}
 
+	static Terrain valueOf(String s) {
+		switch (Type.valueOf(s)) {
+		case FlatLand:
+			return FLAT_LAND;
+		case Mountain:
+			return MOUNTAIN;
+		case ClearWater:
+			return CLEAR_WATER;
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + s);
+		}
+	}
+
 }
