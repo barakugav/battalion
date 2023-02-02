@@ -35,6 +35,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import com.ugav.battalion.Images.Drawable;
+import com.ugav.battalion.Level.UnitDesc;
 import com.ugav.battalion.Unit.Weapon;
 
 class LevelPanel extends JPanel implements Clearable {
@@ -600,7 +602,7 @@ class LevelPanel extends JPanel implements Clearable {
 					g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
 				int unitImgX = (int) x;
 				int unitImgY = (int) y;
-				BufferedImage unitImg = images.getImage(Images.Label.valueOf(unit));
+				BufferedImage unitImg = images.getImage(unit);
 				g.drawImage(unitImg, unitImgX, unitImgY, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, null);
 				g2.setComposite(oldComp);
 
@@ -667,7 +669,7 @@ class LevelPanel extends JPanel implements Clearable {
 			}
 
 			void paintComponent(Graphics g) {
-				drawImage(g, Images.Label.valueOf(building), building.getPos());
+				drawImage(g, building, building.getPos());
 			}
 
 			@Override
@@ -697,7 +699,7 @@ class LevelPanel extends JPanel implements Clearable {
 			}
 
 			void paintComponent(Graphics g) {
-				drawImage(g, Images.Label.valueOf(tile().getTerrain()));
+				ArenaPanel.this.drawImage(g, tile().getTerrain(), pos);
 			}
 
 			private Tile tile() {
@@ -717,6 +719,10 @@ class LevelPanel extends JPanel implements Clearable {
 			public void clear() {
 			}
 
+		}
+
+		private void drawImage(Graphics g, Drawable obj, Position pos) {
+			drawImage(g, Images.Label.valueOf(obj), pos);
 		}
 
 		private void drawImage(Graphics g, Images.Label label, Position pos) {
@@ -760,7 +766,7 @@ class LevelPanel extends JPanel implements Clearable {
 				JComponent lowerComp;
 
 				if (unitSale != null) {
-					upperComp = new JLabel(new ImageIcon(images.getImage(Images.Label.valueOf(unit, Team.Red))));
+					upperComp = new JLabel(new ImageIcon(images.getImage(UnitDesc.of(unit, Team.Red))));
 					lowerComp = new JLabel("" + unitSale.price);
 				} else {
 					upperComp = new JLabel(new ImageIcon(images.getImage(Images.Label.UnitLocked)));

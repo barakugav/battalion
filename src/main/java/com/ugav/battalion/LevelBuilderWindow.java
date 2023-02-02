@@ -6,17 +6,22 @@ import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -26,7 +31,10 @@ import javax.swing.JTextField;
 import javax.swing.Timer;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import com.ugav.battalion.Images.Drawable;
+import com.ugav.battalion.Level.BuildingDesc;
 import com.ugav.battalion.Level.TileDesc;
+import com.ugav.battalion.Level.UnitDesc;
 
 class LevelBuilderWindow extends JPanel implements Clearable {
 
@@ -38,6 +46,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 	private final ArenaPanel arenaPanel;
 	private final Images images = new Images();
 	private final DebugPrintsManager debug;
+	private Object menuSelectedObj;
 	private Position selection;
 	private final LevelSerializer serializer;
 
@@ -76,13 +85,87 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 	private class Menu extends JPanel implements Clearable {
 
 		private static final long serialVersionUID = 1L;
+		private static final int ImgButtonSize = 50;
 
 		Menu() {
-			setLayout(new GridLayout(0, 1));
+			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+
+			add(createTerrainButtons());
+			add(createBuildingButtons());
+			add(createUnitButtons());
+			add(createGeneralButtons());
+		}
+
+		private JButton createImgButton(Drawable drawable) {
+			Image img = images.getImage(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize,
+					java.awt.Image.SCALE_SMOOTH);
+			JButton button = new JButton(new ImageIcon(img));
+//			button.setBorder(BorderFactory.createEmptyBorder());
+			button.setContentAreaFilled(false);
+			button.setPreferredSize(new Dimension(ImgButtonSize, ImgButtonSize));
+			return button;
+		}
+
+		private JPanel createTerrainButtons() {
+			JPanel panel = new JPanel(new GridLayout(0, 2));
+
+			Terrain[] terrains = { Terrain.FLAT_LAND, Terrain.CLEAR_WATER, Terrain.MOUNTAIN };
+
+			for (Terrain terrain : terrains) {
+				JButton button = createImgButton(terrain);
+				button.addActionListener(e -> selectObject(terrain));
+				panel.add(button);
+			}
+
+			return panel;
+		}
+
+		private JPanel createBuildingButtons() {
+			JPanel panel = new JPanel(new GridLayout(0, 2));
+
+			List<BuildingDesc> buildings = new ArrayList<>();
+			for (Team team : Team.values())
+				for (Building.Type type : Building.Type.values())
+					buildings.add(BuildingDesc.of(type, team));
+
+			for (BuildingDesc building : buildings) {
+				JButton button = createImgButton(building);
+				button.addActionListener(e -> selectObject(building));
+				panel.add(button);
+			}
+//			int rows = panel.getComponentCount() / 2;
+//			panel.setPreferredSize(new Dimension());
+
+			return panel;
+		}
+
+		private JPanel createUnitButtons() {
+			JPanel panel = new JPanel(new GridLayout(0, 2));
+
+			List<UnitDesc> units = new ArrayList<>();
+			for (Team team : Team.values())
+				for (Unit.Type type : Unit.Type.values())
+					units.add(UnitDesc.of(type, team));
+
+			for (UnitDesc unit : units) {
+				JButton button = createImgButton(unit);
+				button.addActionListener(e -> selectObject(unit));
+				panel.add(button);
+			}
+
+			return panel;
+		}
+
+		private void selectObject(Object obj) {
+			menuSelectedObj = obj;
+		}
+
+		private JPanel createGeneralButtons() {
+			JPanel panel = new JPanel(new GridLayout(0, 1));
 
 			JButton buttonReset = new JButton("Reset");
 			buttonReset.addActionListener(e -> new ResetDialog().setVisible(true));
-			add(buttonReset);
+			panel.add(buttonReset);
 
 			JButton buttonLoad = new JButton("Load");
 			buttonLoad.addActionListener(e -> {
@@ -102,7 +185,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					}
 				}
 			});
-			add(buttonLoad);
+			panel.add(buttonLoad);
 
 			JButton buttonSave = new JButton("Save");
 			buttonSave.addActionListener(e -> {
@@ -121,7 +204,9 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					}
 				}
 			});
-			add(buttonSave);
+			panel.add(buttonSave);
+
+			return panel;
 		}
 
 		@Override
@@ -355,12 +440,50 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		}
 
 		private void tileClicked(Position pos) {
-			if (selection == null) {
-				trySelect(pos);
-			} else if (isUnitSelected()) {
-				clearSelection();
+			if (menuSelectedObj != null) {
+				TileDesc tile = builder.at(pos);
+				if (menuSelectedObj instanceof Terrain) {
+					Terrain terrain = (Terrain) menuSelectedObj;
+
+					BuildingDesc building = null;
+					if (tile.hasBuilding()) {
+						BuildingDesc oldBuilding = tile.building;
+						if (oldBuilding.canBuildOnTerrain(terrain.type.category))
+							building = oldBuilding;
+					}
+
+					UnitDesc unit = null;
+					if (tile.hasUnit()) {
+						UnitDesc oldUnit = tile.unit;
+						if (oldUnit.canBuildOnTerrain(terrain.type.category))
+							unit = oldUnit;
+					}
+
+					builder.setTile(pos.x, pos.y, terrain, building, unit);
+
+				} else if (menuSelectedObj instanceof BuildingDesc) {
+					BuildingDesc building = (BuildingDesc) menuSelectedObj;
+					if (building.canBuildOnTerrain(tile.terrain.type.category))
+						builder.setTile(pos.x, pos.y, tile.terrain, building, tile.unit);
+					// TODO else user message
+
+				} else if (menuSelectedObj instanceof UnitDesc) {
+					UnitDesc unit = (UnitDesc) menuSelectedObj;
+					if (unit.canBuildOnTerrain(tile.terrain.type.category))
+						builder.setTile(pos.x, pos.y, tile.terrain, tile.building, unit);
+					// TODO else user message
+
+				} else {
+					throw new InternalError("Unknown menu selected object: " + menuSelectedObj);
+				}
+			} else {
+				if (selection == null) {
+					trySelect(pos);
+				} else if (isUnitSelected()) {
+					clearSelection();
+				}
 			}
-			repaint();
+//			repaint();
 		}
 
 		private void trySelect(Position pos) {
@@ -393,12 +516,12 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			}
 
 			void paintComponent(Graphics g) {
-				drawImage(g, Images.Label.valueOf(tile().terrain.type), pos);
+				drawImage(g, tile().terrain, pos);
 
 				if (tile().hasBuilding())
-					drawImage(g, Images.Label.valueOf(builder.at(pos).building), pos);
+					drawImage(g, builder.at(pos).building, pos);
 				if (tile().hasUnit())
-					drawImage(g, Images.Label.valueOf(builder.at(pos).unit), pos);
+					drawImage(g, builder.at(pos).unit, pos);
 
 			}
 
@@ -417,8 +540,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		}
 
-		private void drawImage(Graphics g, Images.Label label, Position pos) {
-			BufferedImage unitImg = images.getImage(label);
+		private void drawImage(Graphics g, Drawable obj, Position pos) {
+			BufferedImage unitImg = images.getImage(obj);
 			g.drawImage(unitImg, displayedX(pos.x * TILE_SIZE_PIXEL), displayedY(pos.y * TILE_SIZE_PIXEL),
 					TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, this);
 		}

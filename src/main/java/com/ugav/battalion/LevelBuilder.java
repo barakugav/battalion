@@ -47,7 +47,7 @@ class LevelBuilder {
 	}
 
 	LevelBuilder setTile(int x, int y, TileDesc tile) {
-		tiles[x][y] = Objects.requireNonNull(tile);
+		tiles[x][y] = checkValidTile(tile);
 		onTileChange.notify(new DataEvent.TileChange(this, new Position(x, y)));
 		return this;
 	}
@@ -65,7 +65,21 @@ class LevelBuilder {
 	}
 
 	Level buildLevel() {
+		int width = getWidth(), height = getHeight();
+		for (int x = 0; x < width; x++)
+			for (int y = 0; y < height; y++)
+				checkValidTile(tiles[x][y]);
 		return new Level(tiles);
+	}
+
+	private static TileDesc checkValidTile(TileDesc tile) {
+		if (tile.hasBuilding())
+			if (!tile.building.canBuildOnTerrain(tile.terrain.type.category))
+				throw new IllegalArgumentException();
+		if (tile.hasUnit())
+			if (!tile.unit.canBuildOnTerrain(tile.terrain.type.category))
+				throw new IllegalArgumentException();
+		return tile;
 	}
 
 }

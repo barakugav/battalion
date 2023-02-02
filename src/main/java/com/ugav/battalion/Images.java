@@ -69,6 +69,10 @@ class Images {
 		addImg.accept(Label.UnitLocked, "img/gui/unit_locked.png");
 	}
 
+	BufferedImage getImage(Drawable obj) {
+		return getImage(Label.valueOf(obj));
+	}
+
 	BufferedImage getImage(Label label) {
 		BufferedImage image = images.get(label);
 		if (image == null)
@@ -116,7 +120,7 @@ class Images {
 			}
 		}
 
-		static Label valueOf(Terrain.Type terrainType) {
+		private static Label valueOf(Terrain.Type terrainType) {
 			switch (terrainType) {
 			case FlatLand:
 				return FlatLand;
@@ -129,7 +133,7 @@ class Images {
 			}
 		}
 
-		static Label valueOf(Unit.Type unitType, Team team) {
+		private static Label valueOf(Unit.Type unitType, Team team) {
 			switch (unitType) {
 			case Soldier:
 				return team == Team.Red ? SoldierRed : SoldierBlue;
@@ -146,7 +150,7 @@ class Images {
 			}
 		}
 
-		static Label valueOf(Building.Type buildingType, Team team) {
+		private static Label valueOf(Building.Type buildingType, Team team) {
 			switch (buildingType) {
 			case Factory:
 				return team == Team.Red ? FactoryRed : FactoryBlue;
