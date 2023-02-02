@@ -271,7 +271,7 @@ class LevelPanel extends JPanel implements Clearable {
 		void mapMove(Position.Direction dir) {
 			Position mapPosNew = mapPos.add(dir);
 			if (!mapPosNew.isInRect(0, 0, game.getWidth() - DISPLAYED_ARENA_WIDTH,
-					game.getWidth() - DISPLAYED_ARENA_HEIGHT))
+					game.getHeight() - DISPLAYED_ARENA_HEIGHT))
 				return;
 			mapPos = mapPosNew;
 			repaint();

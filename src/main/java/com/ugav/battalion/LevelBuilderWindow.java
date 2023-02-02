@@ -3,6 +3,8 @@ package com.ugav.battalion;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -11,6 +13,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
@@ -44,17 +47,17 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 	LevelBuilderWindow(GameFrame gameFrame) {
 		this.gameFrame = Objects.requireNonNull(gameFrame);
-		menu = new Menu();
-		arenaPanel = new ArenaPanel();
 		debug = new DebugPrintsManager(true); // TODO
 		builder = new LevelBuilder(8, 8); // TODO change default
 		serializer = new LevelSerializerXML();
+		menu = new Menu();
+		arenaPanel = new ArenaPanel();
 
 		setLayout(new FlowLayout());
 		add(menu);
 		add(arenaPanel);
 
-		arenaPanel.initArena();
+		arenaPanel.reset();
 		invalidate();
 		repaint();
 	}
@@ -93,7 +96,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					try {
 						Level level = serializer.levelRead(selectedFile);
 						builder.reset(level);
-						repaint();
 					} catch (RuntimeException ex) {
 						debug.print("failed to load file from: ", selectedFile);
 						ex.printStackTrace();
@@ -132,17 +134,48 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		private static final long serialVersionUID = 1L;
 
+		private static GridBagConstraints gbConstraints(int x, int y, int width, int height) {
+			GridBagConstraints c = new GridBagConstraints();
+			c.gridx = x;
+			c.gridy = y;
+			c.gridwidth = width;
+			c.gridheight = height;
+			return c;
+		}
+
 		ResetDialog() {
 			super(gameFrame, "Reset level");
 			JPanel panel = new JPanel();
-			panel.add(new JLabel("Would you like to reset the level?"));
-			panel.add(new JLabel("new level width:"));
-			panel.add(new JTextField());
-			panel.add(new JLabel("new level height:"));
-			panel.add(new JTextField());
-			panel.add(new JButton("reset"));
-			panel.add(new JButton("cancel"));
+
+			JTextField widthText = new JTextField("8", 12);
+			JTextField heightText = new JTextField("8", 12);
+			JButton resetButton = new JButton("reset");
+			JButton cancelButton = new JButton("cancel");
+
+			resetButton.addActionListener(e -> {
+				int width = -1, height = -1;
+				try {
+					width = Integer.parseInt(widthText.getText());
+					height = Integer.parseInt(heightText.getText());
+				} catch (NumberFormatException ex) {
+				}
+				if (!(1 <= width && width < 100 && 1 <= height && height < 100))
+					return; /* TODO print message to user */
+				dispose();
+				builder.reset(width, height);
+			});
+			cancelButton.addActionListener(e -> dispose());
+
+			panel.setLayout(new GridBagLayout());
+			panel.add(new JLabel("Would you like to reset the level?"), gbConstraints(0, 0, 2, 1));
+			panel.add(new JLabel("new level width:"), gbConstraints(0, 1, 1, 1));
+			panel.add(widthText, gbConstraints(1, 1, 1, 1));
+			panel.add(new JLabel("new level height:"), gbConstraints(0, 2, 1, 1));
+			panel.add(heightText, gbConstraints(1, 2, 1, 1));
+			panel.add(resetButton, gbConstraints(0, 3, 1, 1));
+			panel.add(cancelButton, gbConstraints(1, 3, 1, 1));
 			add(panel);
+			pack();
 		}
 
 		@Override
@@ -236,12 +269,21 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			});
 			mapMoveTimer.setRepeats(true);
 			mapMoveTimer.start();
+
+			register.registerListener(builder.onTileChange, e -> {
+				/* TODO find a way to repaint only the changed tile */
+				// tiles.get(e.pos).repaint();
+				repaint();
+			});
+			register.registerListener(builder.onResetChange, e -> reset());
+
+			setPreferredSize(getPreferredSize());
 		}
 
 		void mapMove(Position.Direction dir) {
 			Position mapPosNew = mapPos.add(dir);
 			if (!mapPosNew.isInRect(0, 0, builder.getWidth() - DISPLAYED_ARENA_WIDTH,
-					builder.getWidth() - DISPLAYED_ARENA_HEIGHT))
+					builder.getHeight() - DISPLAYED_ARENA_HEIGHT))
 				return;
 			mapPos = mapPosNew;
 			repaint();
@@ -267,18 +309,19 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		}
 
-		void initArena() {
+		void reset() {
+			for (Iterator<TileComp> it = tiles.values().iterator(); it.hasNext();) {
+				TileComp tile = it.next();
+				if (tile.pos.x >= builder.getWidth() || tile.pos.y >= builder.getHeight())
+					it.remove();
+			}
 			for (Position pos : Utils.iterable(new Position.Iterator2D(builder.getWidth(), builder.getHeight())))
-				tiles.put(pos, new TileComp(pos));
-
-			setPreferredSize(getPreferredSize());
-
-			register.registerListener(builder.onTileChange, e -> {
-				repaint();
-			});
+				tiles.computeIfAbsent(pos, p -> new TileComp(pos));
 
 			mapPos = new Position(0, 0);
 			mapPosX = mapPosY = 0;
+
+			repaint();
 		}
 
 		@Override
@@ -288,12 +331,14 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			tiles.clear();
 
 			register.unregisterAllListeners(builder.onTileChange);
+			register.unregisterAllListeners(builder.onResetChange);
 		}
 
 		@Override
 		protected void paintComponent(Graphics g) {
 			for (TileComp tile : tiles.values())
 				tile.paintComponent(g);
+			gameFrame.pack();
 
 //			if (selection != null) {
 //				tiles.get(selection).drawImage(g, Images.Label.Selection);

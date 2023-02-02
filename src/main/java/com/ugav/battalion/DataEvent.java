@@ -53,4 +53,12 @@ class DataEvent {
 
 	}
 
+	static class LevelReset extends DataEvent {
+
+		LevelReset(LevelBuilder source) {
+			super(source);
+		}
+
+	}
+
 }

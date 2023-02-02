@@ -10,26 +10,28 @@ class LevelBuilder {
 
 	private TileDesc[][] tiles;
 	final DataChangeNotifier<DataEvent.TileChange> onTileChange;
+	final DataChangeNotifier<DataEvent.LevelReset> onResetChange;
 
 	LevelBuilder(int width, int height) {
-		if (width <= 1 || height <= 1)
-			throw new IllegalArgumentException();
 		onTileChange = new DataChangeNotifier<>();
+		onResetChange = new DataChangeNotifier<>();
 		reset(width, height);
 	}
 
 	LevelBuilder(Level level) {
 		onTileChange = new DataChangeNotifier<>();
+		onResetChange = new DataChangeNotifier<>();
 		reset(level);
 	}
 
 	void reset(int width, int height) {
+		if (!(1 <= width && width < 100 && 1 <= height && height < 100))
+			throw new IllegalArgumentException();
 		tiles = new TileDesc[width][height];
 		for (int x = 0; x < width; x++)
 			for (int y = 0; y < height; y++)
 				tiles[x][y] = TileDesc.of(Terrain.FLAT_LAND, null, null);
-		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			onTileChange.notify(new DataEvent.TileChange(this, pos));
+		onResetChange.notify(new DataEvent.LevelReset(this));
 	}
 
 	void reset(Level level) {
@@ -37,8 +39,7 @@ class LevelBuilder {
 		tiles = new TileDesc[width][height];
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
 			tiles[pos.x][pos.y] = Objects.requireNonNull(level.tileDesc(pos));
-		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			onTileChange.notify(new DataEvent.TileChange(this, pos));
+		onResetChange.notify(new DataEvent.LevelReset(this));
 	}
 
 	TileDesc at(Position pos) {
