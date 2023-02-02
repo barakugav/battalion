@@ -7,11 +7,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,7 +23,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.Timer;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.ugav.battalion.Images.Drawable;
@@ -44,15 +38,10 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 	private final GameFrame gameFrame;
 	private final Menu menu;
 	private final ArenaPanel arenaPanel;
-	private final Images images = new Images();
 	private final DebugPrintsManager debug;
 	private Object menuSelectedObj;
 	private Position selection;
 	private final LevelSerializer serializer;
-
-	private static final int TILE_SIZE_PIXEL = 64;
-	private static final int DISPLAYED_ARENA_WIDTH = 8;
-	private static final int DISPLAYED_ARENA_HEIGHT = 8;
 
 	LevelBuilderWindow(GameFrame gameFrame) {
 		this.gameFrame = Objects.requireNonNull(gameFrame);
@@ -97,7 +86,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		}
 
 		private JButton createImgButton(Drawable drawable) {
-			Image img = images.getImage(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize,
+			Image img = Images.getImage(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize,
 					java.awt.Image.SCALE_SMOOTH);
 			JButton button = new JButton(new ImageIcon(img));
 //			button.setBorder(BorderFactory.createEmptyBorder());
@@ -206,6 +195,13 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			});
 			panel.add(buttonSave);
 
+			JButton buttonMainMenu = new JButton("Main Menu");
+			buttonMainMenu.addActionListener(e -> {
+				// TODO ask the user if he sure, does he want to save?
+				gameFrame.displayMainMenu();
+			});
+			panel.add(buttonMainMenu);
+
 			return panel;
 		}
 
@@ -232,8 +228,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			super(gameFrame, "Reset level");
 			JPanel panel = new JPanel();
 
-			JTextField widthText = new JTextField("8", 12);
-			JTextField heightText = new JTextField("8", 12);
+			JTextField widthText = new JTextField(Integer.toString(builder.getWidth()), 12);
+			JTextField heightText = new JTextField(Integer.toString(builder.getHeight()), 12);
 			JButton resetButton = new JButton("reset");
 			JButton cancelButton = new JButton("cancel");
 
@@ -269,91 +265,16 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 	}
 
-	private class ArenaPanel extends JPanel implements Clearable {
+	private class ArenaPanel extends AbstractArenaPanel implements Clearable {
 
 		private final Map<Position, TileComp> tiles;
-
-		private Position hovered;
-
-		private Position mapPos;
-		private double mapPosX, mapPosY;
-
 		private final DataChangeRegister register;
 
-		private static final int MapMoveTimerDelay = 10;
-		private static final int MapMoveSpeed = 4;
 		private static final long serialVersionUID = 1L;
 
 		ArenaPanel() {
 			tiles = new HashMap<>();
 			register = new DataChangeRegister();
-
-			mapPos = new Position(0, 0);
-			mapPosX = mapPosY = 0;
-
-			addMouseListener(new MouseAdapter() {
-				@Override
-				public void mousePressed(MouseEvent e) {
-					requestFocusInWindow();
-					tileClicked(new Position(displayedXInv(e.getX()) / TILE_SIZE_PIXEL,
-							displayedYInv(e.getY()) / TILE_SIZE_PIXEL));
-				}
-			});
-			addMouseMotionListener(new MouseAdapter() {
-				@Override
-				public void mouseMoved(MouseEvent e) {
-					int x = displayedXInv(e.getX()) / TILE_SIZE_PIXEL, y = displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
-					if (hovered == null || hovered.x != x || hovered.y != y) {
-						hovered = new Position(x, y);
-						hoveredUpdated();
-					}
-				}
-			});
-			addKeyListener(new KeyAdapter() {
-				@Override
-				public void keyPressed(KeyEvent e) {
-					Position.Direction dir = keyToDir(e.getKeyCode());
-					if (dir != null)
-						mapMove(dir);
-				}
-
-				private Position.Direction keyToDir(int keyCode) {
-					switch (keyCode) {
-					case KeyEvent.VK_LEFT:
-					case KeyEvent.VK_A:
-						return Position.Direction.XNeg;
-					case KeyEvent.VK_RIGHT:
-					case KeyEvent.VK_D:
-						return Position.Direction.XPos;
-					case KeyEvent.VK_UP:
-					case KeyEvent.VK_W:
-						return Position.Direction.YNeg;
-					case KeyEvent.VK_DOWN:
-					case KeyEvent.VK_S:
-						return Position.Direction.YPos;
-					default:
-						return null;
-					}
-
-				}
-			});
-			setFocusable(true);
-			requestFocusInWindow();
-
-			Timer mapMoveTimer = new Timer(MapMoveTimerDelay, e -> {
-				double dx = mapPos.x * TILE_SIZE_PIXEL - mapPosX;
-				double dy = mapPos.y * TILE_SIZE_PIXEL - mapPosY;
-				if (dx == 0 && dy == 0)
-					return;
-				int speed = MapMoveSpeed;
-				double cx = dx / Math.sqrt(dx * dx + dy * dy) * speed;
-				double cy = dy / Math.sqrt(dx * dx + dy * dy) * speed;
-				mapPosX += Math.abs(cx) >= Math.abs(dx) ? dx : cx;
-				mapPosY += Math.abs(cy) >= Math.abs(dy) ? dy : cy;
-				repaint();
-			});
-			mapMoveTimer.setRepeats(true);
-			mapMoveTimer.start();
 
 			register.registerListener(builder.onTileChange, e -> {
 				/* TODO find a way to repaint only the changed tile */
@@ -361,37 +282,17 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				repaint();
 			});
 			register.registerListener(builder.onResetChange, e -> reset());
-
-			setPreferredSize(getPreferredSize());
+			register.registerListener(onTileClick, e -> tileClicked(e.pos));
 		}
 
-		void mapMove(Position.Direction dir) {
-			Position mapPosNew = mapPos.add(dir);
-			if (!mapPosNew.isInRect(0, 0, builder.getWidth() - DISPLAYED_ARENA_WIDTH,
-					builder.getHeight() - DISPLAYED_ARENA_HEIGHT))
-				return;
-			mapPos = mapPosNew;
-			repaint();
+		@Override
+		int getArenaWidth() {
+			return builder.getWidth();
 		}
 
-		int displayedX(double x) {
-			return (int) (x - mapPosX);
-		}
-
-		int displayedY(double y) {
-			return (int) (y - mapPosY);
-		}
-
-		int displayedXInv(int x) {
-			return (int) (x + mapPosX);
-		}
-
-		int displayedYInv(int y) {
-			return (int) (y + mapPosY);
-		}
-
-		void hoveredUpdated() {
-
+		@Override
+		int getArenaHeight() {
+			return builder.getHeight();
 		}
 
 		void reset() {
@@ -403,24 +304,26 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			for (Position pos : Utils.iterable(new Position.Iterator2D(builder.getWidth(), builder.getHeight())))
 				tiles.computeIfAbsent(pos, p -> new TileComp(pos));
 
-			mapPos = new Position(0, 0);
-			mapPosX = mapPosY = 0;
-
+			mapViewSet(new Position(0, 0));
 			repaint();
 		}
 
 		@Override
 		public void clear() {
+			register.unregisterAllListeners(builder.onTileChange);
+			register.unregisterAllListeners(builder.onResetChange);
+			register.unregisterAllListeners(onTileClick);
+
 			for (TileComp tile : tiles.values())
 				tile.clear();
 			tiles.clear();
 
-			register.unregisterAllListeners(builder.onTileChange);
-			register.unregisterAllListeners(builder.onResetChange);
+			super.clear();
 		}
 
 		@Override
 		protected void paintComponent(Graphics g) {
+			super.paintComponent(g);
 			for (TileComp tile : tiles.values())
 				tile.paintComponent(g);
 			gameFrame.pack();
@@ -428,11 +331,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 //			if (selection != null) {
 //				tiles.get(selection).drawImage(g, Images.Label.Selection);
 //			}
-		}
-
-		@Override
-		public Dimension getPreferredSize() {
-			return new Dimension(TILE_SIZE_PIXEL * DISPLAYED_ARENA_WIDTH, TILE_SIZE_PIXEL * DISPLAYED_ARENA_HEIGHT);
 		}
 
 		private boolean isUnitSelected() {
@@ -538,12 +436,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			public void clear() {
 			}
 
-		}
-
-		private void drawImage(Graphics g, Drawable obj, Position pos) {
-			BufferedImage unitImg = images.getImage(obj);
-			g.drawImage(unitImg, displayedX(pos.x * TILE_SIZE_PIXEL), displayedY(pos.y * TILE_SIZE_PIXEL),
-					TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, this);
 		}
 
 	}

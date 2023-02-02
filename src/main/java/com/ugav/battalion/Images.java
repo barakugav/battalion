@@ -6,6 +6,7 @@ import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -18,10 +19,9 @@ import com.ugav.battalion.Level.UnitDesc;
 
 class Images {
 
-	private final Map<Label, BufferedImage> images;
-
-	Images() {
-		images = new HashMap<>();
+	private static final Map<Label, BufferedImage> images;
+	static {
+		Map<Label, BufferedImage> images0 = new HashMap<>();
 
 		Function<String, BufferedImage> loadImg = path -> {
 			try {
@@ -32,7 +32,7 @@ class Images {
 			}
 		};
 		BiConsumer<Label, String> addImg = (label, path) -> {
-			images.put(label, loadImg.apply(path));
+			images0.put(label, loadImg.apply(path));
 		};
 		BiConsumer<Pair<Label, Label>, String> addImgRedBlue = (labels, path) -> {
 			BufferedImage imgRed = loadImg.apply(path);
@@ -42,8 +42,8 @@ class Images {
 					0, 0, new int[] { 2, 1, 0, 3 });
 			BufferedImage imgBlue = new BufferedImage(colorModel, swapped, colorModel.isAlphaPremultiplied(), null);
 
-			images.put(labels.e1, imgRed);
-			images.put(labels.e2, imgBlue);
+			images0.put(labels.e1, imgRed);
+			images0.put(labels.e2, imgBlue);
 		};
 
 		/* Terrains */
@@ -67,13 +67,18 @@ class Images {
 		addImg.accept(Label.Reachable, "img/gui/reachable.png");
 		addImg.accept(Label.Attackable, "img/gui/attackabe.png");
 		addImg.accept(Label.UnitLocked, "img/gui/unit_locked.png");
+		images = Collections.unmodifiableMap(images0);
 	}
 
-	BufferedImage getImage(Drawable obj) {
+	private Images() {
+		throw new InternalError();
+	}
+
+	static BufferedImage getImage(Drawable obj) {
 		return getImage(Label.valueOf(obj));
 	}
 
-	BufferedImage getImage(Label label) {
+	static BufferedImage getImage(Label label) {
 		BufferedImage image = images.get(label);
 		if (image == null)
 			throw new InternalError("Image not found for label: " + label);

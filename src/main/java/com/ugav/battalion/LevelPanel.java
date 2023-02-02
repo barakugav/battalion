@@ -11,8 +11,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
@@ -35,7 +33,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
-import com.ugav.battalion.Images.Drawable;
 import com.ugav.battalion.Level.UnitDesc;
 import com.ugav.battalion.Unit.Weapon;
 
@@ -47,7 +44,6 @@ class LevelPanel extends JPanel implements Clearable {
 
 	private final Game game;
 	private Position selection;
-	private final Images images = new Images();
 	private final DebugPrintsManager debug;
 
 	private boolean actionsSuspended;
@@ -174,7 +170,7 @@ class LevelPanel extends JPanel implements Clearable {
 
 	}
 
-	private class ArenaPanel extends JPanel implements Clearable {
+	private class ArenaPanel extends AbstractArenaPanel implements Clearable {
 
 		private final Map<Position, TileComp> tiles;
 		private final Map<Unit, UnitComp> units;
@@ -183,16 +179,10 @@ class LevelPanel extends JPanel implements Clearable {
 		private Position.Bitmap passableMap = Position.Bitmap.empty;
 		private Position.Bitmap reachableMap = Position.Bitmap.empty;
 		private Position.Bitmap attackableMap = Position.Bitmap.empty;
-		private Position hovered;
 		private final List<Position> movePath;
-
-		private Position mapPos;
-		private double mapPosX, mapPosY;
 
 		private final DataChangeRegister register;
 
-		private static final int MapMoveTimerDelay = 10;
-		private static final int MapMoveSpeed = 4;
 		private static final long serialVersionUID = 1L;
 
 		ArenaPanel() {
@@ -202,100 +192,21 @@ class LevelPanel extends JPanel implements Clearable {
 			movePath = new ArrayList<>();
 			register = new DataChangeRegister();
 
-			mapPos = new Position(0, 0);
-			mapPosX = mapPosY = 0;
-
-			addMouseListener(new MouseAdapter() {
-				@Override
-				public void mousePressed(MouseEvent e) {
-					requestFocusInWindow();
-					tileClicked(new Position(displayedXInv(e.getX()) / TILE_SIZE_PIXEL,
-							displayedYInv(e.getY()) / TILE_SIZE_PIXEL));
-				}
-			});
-			addMouseMotionListener(new MouseAdapter() {
-				@Override
-				public void mouseMoved(MouseEvent e) {
-					int x = displayedXInv(e.getX()) / TILE_SIZE_PIXEL, y = displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
-					if (hovered == null || hovered.x != x || hovered.y != y) {
-						hovered = new Position(x, y);
-						hoveredUpdated();
-					}
-				}
-			});
-			addKeyListener(new KeyAdapter() {
-				@Override
-				public void keyPressed(KeyEvent e) {
-					Position.Direction dir = keyToDir(e.getKeyCode());
-					if (dir != null)
-						mapMove(dir);
-				}
-
-				private Position.Direction keyToDir(int keyCode) {
-					switch (keyCode) {
-					case KeyEvent.VK_LEFT:
-					case KeyEvent.VK_A:
-						return Position.Direction.XNeg;
-					case KeyEvent.VK_RIGHT:
-					case KeyEvent.VK_D:
-						return Position.Direction.XPos;
-					case KeyEvent.VK_UP:
-					case KeyEvent.VK_W:
-						return Position.Direction.YNeg;
-					case KeyEvent.VK_DOWN:
-					case KeyEvent.VK_S:
-						return Position.Direction.YPos;
-					default:
-						return null;
-					}
-
-				}
-			});
-			setFocusable(true);
-			requestFocusInWindow();
-
-			Timer mapMoveTimer = new Timer(MapMoveTimerDelay, e -> {
-				double dx = mapPos.x * TILE_SIZE_PIXEL - mapPosX;
-				double dy = mapPos.y * TILE_SIZE_PIXEL - mapPosY;
-				if (dx == 0 && dy == 0)
-					return;
-				int speed = MapMoveSpeed;
-				double cx = dx / Math.sqrt(dx * dx + dy * dy) * speed;
-				double cy = dy / Math.sqrt(dx * dx + dy * dy) * speed;
-				mapPosX += Math.abs(cx) >= Math.abs(dx) ? dx : cx;
-				mapPosY += Math.abs(cy) >= Math.abs(dy) ? dy : cy;
-				repaint();
-			});
-			mapMoveTimer.setRepeats(true);
-			mapMoveTimer.start();
+			register.registerListener(onTileClick, e -> tileClicked(e.pos));
+			register.registerListener(onHoverChange, e -> hoveredUpdated(e.pos));
 		}
 
-		void mapMove(Position.Direction dir) {
-			Position mapPosNew = mapPos.add(dir);
-			if (!mapPosNew.isInRect(0, 0, game.getWidth() - DISPLAYED_ARENA_WIDTH,
-					game.getHeight() - DISPLAYED_ARENA_HEIGHT))
-				return;
-			mapPos = mapPosNew;
-			repaint();
+		@Override
+		int getArenaWidth() {
+			return game.arena.getWidth();
 		}
 
-		int displayedX(double x) {
-			return (int) (x - mapPosX);
+		@Override
+		int getArenaHeight() {
+			return game.arena.getHeight();
 		}
 
-		int displayedY(double y) {
-			return (int) (y - mapPosY);
-		}
-
-		int displayedXInv(int x) {
-			return (int) (x + mapPosX);
-		}
-
-		int displayedYInv(int y) {
-			return (int) (y + mapPosY);
-		}
-
-		void hoveredUpdated() {
+		void hoveredUpdated(Position hovered) {
 			if (!isUnitSelected() || isActionSuspended())
 				return;
 			Unit unit = game.arena.at(selection).getUnit();
@@ -371,12 +282,15 @@ class LevelPanel extends JPanel implements Clearable {
 				repaint();
 			});
 
-			mapPos = new Position(0, 0);
-			mapPosX = mapPosY = 0;
+			mapViewSet(new Position(0, 0));
 		}
 
 		@Override
 		public void clear() {
+			register.unregisterAllListeners(game.onUnitAdd);
+			register.unregisterAllListeners(onTileClick);
+			register.unregisterAllListeners(onHoverChange);
+
 			for (TileComp tile : tiles.values())
 				tile.clear();
 			for (BuildingComp building : buildings.values())
@@ -387,7 +301,7 @@ class LevelPanel extends JPanel implements Clearable {
 			units.clear();
 			buildings.clear();
 
-			register.unregisterAllListeners(game.onUnitAdd);
+			super.clear();
 		}
 
 		private void addUnitComp(Unit unit) {
@@ -602,7 +516,7 @@ class LevelPanel extends JPanel implements Clearable {
 					g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
 				int unitImgX = (int) x;
 				int unitImgY = (int) y;
-				BufferedImage unitImg = images.getImage(unit);
+				BufferedImage unitImg = Images.getImage(unit);
 				g.drawImage(unitImg, unitImgX, unitImgY, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, null);
 				g2.setComposite(oldComp);
 
@@ -721,16 +635,6 @@ class LevelPanel extends JPanel implements Clearable {
 
 		}
 
-		private void drawImage(Graphics g, Drawable obj, Position pos) {
-			drawImage(g, Images.Label.valueOf(obj), pos);
-		}
-
-		private void drawImage(Graphics g, Images.Label label, Position pos) {
-			BufferedImage unitImg = images.getImage(label);
-			g.drawImage(unitImg, displayedX(pos.x * TILE_SIZE_PIXEL), displayedY(pos.y * TILE_SIZE_PIXEL),
-					TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, this);
-		}
-
 	}
 
 	private class FactoryMenu extends JDialog {
@@ -766,10 +670,10 @@ class LevelPanel extends JPanel implements Clearable {
 				JComponent lowerComp;
 
 				if (unitSale != null) {
-					upperComp = new JLabel(new ImageIcon(images.getImage(UnitDesc.of(unit, Team.Red))));
+					upperComp = new JLabel(new ImageIcon(Images.getImage(UnitDesc.of(unit, Team.Red))));
 					lowerComp = new JLabel("" + unitSale.price);
 				} else {
-					upperComp = new JLabel(new ImageIcon(images.getImage(Images.Label.UnitLocked)));
+					upperComp = new JLabel(new ImageIcon(Images.getImage(Images.Label.UnitLocked)));
 					lowerComp = new JLabel("none");
 				}
 
