@@ -33,15 +33,15 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 	private static final long serialVersionUID = 1L;
 
 	private final LevelBuilder builder;
-	private final GameFrame gameFrame;
+	private final Globals globals;
 	private final Menu menu;
 	private final ArenaPanel arenaPanel;
 	private final DebugPrintsManager debug;
 	private Object menuSelectedObj;
 	private Position selection;
 
-	LevelBuilderWindow(GameFrame gameFrame) {
-		this.gameFrame = Objects.requireNonNull(gameFrame);
+	LevelBuilderWindow(Globals globals) {
+		this.globals = Objects.requireNonNull(globals);
 		debug = new DebugPrintsManager(true); // TODO
 		builder = new LevelBuilder(8, 8); // TODO change default
 		menu = new Menu();
@@ -218,14 +218,14 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			JButton buttonLoad = new JButton("Load");
 			buttonLoad.addActionListener(e -> {
-				JFileChooser fileChooser = Levels.createFileChooser(gameFrame.serializer.getFileType());
-				int result = fileChooser.showOpenDialog(gameFrame);
+				JFileChooser fileChooser = Levels.createFileChooser(globals.serializer.getFileType());
+				int result = fileChooser.showOpenDialog(globals.frame);
 				if (result == JFileChooser.APPROVE_OPTION) {
 					Cookies.setCookieValue(Cookies.LEVEL_DISK_LAST_DIR,
 							fileChooser.getCurrentDirectory().getAbsolutePath());
 					String selectedFile = fileChooser.getSelectedFile().getAbsolutePath();
 					try {
-						Level level = gameFrame.serializer.levelRead(selectedFile);
+						Level level = globals.serializer.levelRead(selectedFile);
 						builder.reset(level);
 					} catch (RuntimeException ex) {
 						debug.print("failed to load file from: ", selectedFile);
@@ -237,14 +237,14 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			JButton buttonSave = new JButton("Save");
 			buttonSave.addActionListener(e -> {
-				JFileChooser fileChooser = Levels.createFileChooser(gameFrame.serializer.getFileType());
-				int result = fileChooser.showSaveDialog(gameFrame);
+				JFileChooser fileChooser = Levels.createFileChooser(globals.serializer.getFileType());
+				int result = fileChooser.showSaveDialog(globals.frame);
 				if (result == JFileChooser.APPROVE_OPTION) {
 					Cookies.setCookieValue(Cookies.LEVEL_DISK_LAST_DIR,
 							fileChooser.getCurrentDirectory().getAbsolutePath());
 					String selectedFile = fileChooser.getSelectedFile().getAbsolutePath();
 					try {
-						gameFrame.serializer.levelWrite(builder.buildLevel(), selectedFile);
+						globals.serializer.levelWrite(builder.buildLevel(), selectedFile);
 					} catch (RuntimeException ex) {
 						debug.print("failed to save level to file: ", selectedFile);
 						ex.printStackTrace();
@@ -256,7 +256,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			JButton buttonMainMenu = new JButton("Main Menu");
 			buttonMainMenu.addActionListener(e -> {
 				// TODO ask the user if he sure, does he want to save?
-				gameFrame.displayMainMenu();
+				globals.frame.displayMainMenu();
 			});
 			panel.add(buttonMainMenu);
 
@@ -283,7 +283,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		}
 
 		ResetDialog() {
-			super(gameFrame, "Reset level");
+			super(globals.frame, "Reset level");
 			JPanel panel = new JPanel();
 
 			JTextField widthText = new JTextField(Integer.toString(builder.getWidth()), 12);
@@ -384,7 +384,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			super.paintComponent(g);
 			for (TileComp tile : tiles.values())
 				tile.paintComponent(g);
-			gameFrame.pack();
+			globals.frame.pack();
 
 //			if (selection != null) {
 //				tiles.get(selection).drawImage(g, Images.Label.Selection);

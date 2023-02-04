@@ -6,8 +6,7 @@ import javax.swing.JFrame;
 class GameFrame extends JFrame {
 
 	private JComponent activeWindow;
-
-	final LevelSerializer serializer;
+	private final Globals globals;
 
 	private static final String TITLE = "Battalion";
 	private static final int FRAME_WIDTH = 2500;
@@ -18,7 +17,7 @@ class GameFrame extends JFrame {
 	GameFrame() {
 		super(TITLE);
 
-		serializer = new LevelSerializerXML();
+		this.globals = new Globals(this);
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationByPlatform(true);
@@ -30,15 +29,15 @@ class GameFrame extends JFrame {
 	}
 
 	void displayMainMenu() {
-		displayWindow(new MainMenuPanel(this));
+		displayWindow(new MainMenuPanel(globals));
 	}
 
 	void loadLevel(Level level) {
-		displayWindow(new LevelPanel(this, level));
+		displayWindow(new LevelPanel(globals, level));
 	}
 
 	void loadLevelBuilder() {
-		displayWindow(new LevelBuilderWindow(this));
+		displayWindow(new LevelBuilderWindow(globals));
 	}
 
 	private void displayWindow(JComponent window) {

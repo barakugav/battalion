@@ -38,7 +38,7 @@ import com.ugav.battalion.Unit.Weapon;
 
 class LevelPanel extends JPanel implements Clearable {
 
-	private final GameFrame gameFrame;
+	private final Globals globals;
 	private final Menu menu;
 	private final ArenaPanel arenaPanel;
 
@@ -53,8 +53,8 @@ class LevelPanel extends JPanel implements Clearable {
 	private static final int DISPLAYED_ARENA_HEIGHT = 8;
 	private static final long serialVersionUID = 1L;
 
-	LevelPanel(GameFrame gameFrame, Level level) {
-		this.gameFrame = Objects.requireNonNull(gameFrame);
+	LevelPanel(Globals globals, Level level) {
+		this.globals = Objects.requireNonNull(globals);
 
 		if (level.getWidth() < DISPLAYED_ARENA_WIDTH || level.getHeight() < DISPLAYED_ARENA_HEIGHT)
 			throw new IllegalArgumentException("level size is too small");
@@ -136,7 +136,7 @@ class LevelPanel extends JPanel implements Clearable {
 			JButton buttonEndTurn = new JButton("End Turn");
 			buttonEndTurn.addActionListener(onActiveActions(e -> endTurn()));
 			JButton buttonMainMenu = new JButton("Main Menu");
-			buttonMainMenu.addActionListener(onActiveActions(e -> gameFrame.displayMainMenu()));
+			buttonMainMenu.addActionListener(onActiveActions(e -> globals.frame.displayMainMenu()));
 
 			setLayout(new GridLayout(0, 1));
 			for (JLabel label : labelMoney.values())
@@ -389,7 +389,7 @@ class LevelPanel extends JPanel implements Clearable {
 				Building building = tile.getBuilding();
 				if (building instanceof Building.Factory) {
 					Building.Factory factory = (Building.Factory) building;
-					FactoryMenu factoryMenu = new FactoryMenu(gameFrame, factory);
+					FactoryMenu factoryMenu = new FactoryMenu(globals.frame, factory);
 					factoryMenu.addWindowListener(new WindowAdapter() {
 						@Override
 						public void windowClosing(WindowEvent e) {
