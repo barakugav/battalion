@@ -149,6 +149,17 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			menuSelectedObj = obj;
 		}
 
+		private JFileChooser createFileChooser() {
+			JFileChooser fileChooser = new JFileChooser();
+			String lvlType = serializer.getFileType();
+			fileChooser.setFileFilter(new FileNameExtensionFilter("Level file (*." + lvlType + ")", lvlType));
+			String dialogDir = Cookies.getCookieValue("LEVEL_BUILDER_DISK_LAST_DIR");
+			if (dialogDir == null || !(new File(dialogDir).isDirectory()))
+				dialogDir = System.getProperty("user.home");
+			fileChooser.setCurrentDirectory(new File(dialogDir));
+			return fileChooser;
+		}
+
 		private JPanel createGeneralButtons() {
 			JPanel panel = new JPanel(new GridLayout(0, 1));
 
@@ -158,12 +169,11 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			JButton buttonLoad = new JButton("Load");
 			buttonLoad.addActionListener(e -> {
-				JFileChooser fileChooser = new JFileChooser();
-				String lvlType = serializer.getFileType();
-				fileChooser.setFileFilter(new FileNameExtensionFilter("Level file (*." + lvlType + ")", lvlType));
-				fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+				JFileChooser fileChooser = createFileChooser();
 				int result = fileChooser.showOpenDialog(gameFrame);
 				if (result == JFileChooser.APPROVE_OPTION) {
+					Cookies.setCookieValue("LEVEL_BUILDER_DISK_LAST_DIR",
+							fileChooser.getCurrentDirectory().getAbsolutePath());
 					String selectedFile = fileChooser.getSelectedFile().getAbsolutePath();
 					try {
 						Level level = serializer.levelRead(selectedFile);
@@ -178,12 +188,11 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			JButton buttonSave = new JButton("Save");
 			buttonSave.addActionListener(e -> {
-				JFileChooser fileChooser = new JFileChooser();
-				String lvlType = serializer.getFileType();
-				fileChooser.setFileFilter(new FileNameExtensionFilter("Level file (*." + lvlType + ")", lvlType));
-				fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+				JFileChooser fileChooser = createFileChooser();
 				int result = fileChooser.showSaveDialog(gameFrame);
 				if (result == JFileChooser.APPROVE_OPTION) {
+					Cookies.setCookieValue("LEVEL_BUILDER_DISK_LAST_DIR",
+							fileChooser.getCurrentDirectory().getAbsolutePath());
 					String selectedFile = fileChooser.getSelectedFile().getAbsolutePath();
 					try {
 						serializer.levelWrite(builder.buildLevel(), selectedFile);

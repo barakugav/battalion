@@ -1,7 +1,14 @@
 package com.ugav.battalion;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 
@@ -124,6 +131,23 @@ class Utils {
 				return b.append(']').toString();
 			b.append(", ");
 		}
+	}
+
+	static String buildPath(String base, String... names) {
+		String path = new File(base).getAbsolutePath();
+		for (String name : names)
+			path = new File(path, name).getAbsolutePath();
+		return path;
+	}
+
+	static List<String> readLines(String filename) throws FileNotFoundException, IOException {
+		List<String> lines = new ArrayList<>();
+		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+			for (String line; (line = br.readLine()) != null;) {
+				lines.add(line);
+			}
+		}
+		return lines;
 	}
 
 }
