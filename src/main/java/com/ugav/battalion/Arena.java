@@ -117,6 +117,10 @@ class Arena {
 		switch (desc.type) {
 		case OilRefinery:
 			return new Building.OilRefinery(desc.team);
+		case OilRefinery2:
+			return new Building.OilRefinery2(desc.team);
+		case OilRig:
+			return new Building.OilRig(desc.team);
 		case Factory:
 			return new Building.Factory(desc.team);
 		default:

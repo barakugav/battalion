@@ -9,6 +9,10 @@ abstract class Building extends Entity {
 	enum Type {
 		OilRefinery(List.of(Terrain.Category.Land)),
 
+		OilRefinery2(List.of(Terrain.Category.Land)),
+
+		OilRig(List.of(Terrain.Category.Water)),
+
 		Factory(List.of(Terrain.Category.Land));
 
 		final List<Terrain.Category> canBuildOn;
@@ -106,6 +110,32 @@ abstract class Building extends Entity {
 		@Override
 		int getMoneyGain() {
 			return 100;
+		}
+
+	}
+
+	static class OilRefinery2 extends BuildingNonActive {
+
+		OilRefinery2(Team team) {
+			super(Type.OilRefinery2, team);
+		}
+
+		@Override
+		int getMoneyGain() {
+			return 200;
+		}
+
+	}
+
+	static class OilRig extends BuildingNonActive {
+
+		OilRig(Team team) {
+			super(Type.OilRig, team);
+		}
+
+		@Override
+		int getMoneyGain() {
+			return 400;
 		}
 
 	}

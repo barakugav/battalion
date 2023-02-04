@@ -62,6 +62,9 @@ class Images {
 		/* Buildings */
 		addImgRedBlue.accept(Pair.of(Label.FactoryRed, Label.FactoryBlue), "img/building/facotry.png");
 		addImgRedBlue.accept(Pair.of(Label.OilRefineryRed, Label.OilRefineryBlue), "img/building/oil_refinery.png");
+		addImgRedBlue.accept(Pair.of(Label.OilRefinery2Red, Label.OilRefinery2Blue),
+				"img/building/oil_refinery_big.png");
+		addImgRedBlue.accept(Pair.of(Label.OilRigRed, Label.OilRigBlue), "img/building/oil_rig.png");
 
 		/* GUI */
 		addImg.accept(Label.Selection, "img/gui/selection.png");
@@ -95,7 +98,8 @@ class Images {
 		ShipBlue, AirplaneRed, AirplaneBlue,
 
 		/* Buildings */
-		FactoryRed, FactoryBlue, OilRefineryRed, OilRefineryBlue,
+		FactoryRed, FactoryBlue, OilRefineryRed, OilRefineryBlue, OilRefinery2Red, OilRefinery2Blue, OilRigRed,
+		OilRigBlue,
 
 		/* GUI */
 		Selection, Reachable, Attackable, UnitLocked;
@@ -164,6 +168,10 @@ class Images {
 				return team == Team.Red ? FactoryRed : FactoryBlue;
 			case OilRefinery:
 				return team == Team.Red ? OilRefineryRed : OilRefineryBlue;
+			case OilRefinery2:
+				return team == Team.Red ? OilRefinery2Red : OilRefinery2Blue;
+			case OilRig:
+				return team == Team.Red ? OilRigRed : OilRigBlue;
 			default:
 				throw new InternalError("Unsupported building type: " + buildingType);
 			}
