@@ -74,18 +74,48 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 	private class Menu extends JPanel implements Clearable {
 
 		private static final long serialVersionUID = 1L;
-		private static final int ImgButtonSize = 50;
+
+		private final JPanel terrainTab;
+		private final Map<Team, JPanel> buildlingsTabs;
+		private final Map<Team, JPanel> unitsTabs;
 
 		Menu() {
 			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
-			add(createTerrainButtons());
-			add(createBuildingButtons());
-			add(createUnitButtons());
+			terrainTab = createTerrainPanel();
+			buildlingsTabs = createBuildingsPanels();
+			unitsTabs = createUnitsPanels();
+
+			add(createEntitiesTabsButtons());
+			add(createEntitiesPanel());
 			add(createGeneralButtons());
+
+			selectEntitiesTab(terrainTab);
 		}
 
-		private JButton createImgButton(Drawable drawable) {
+		private List<JPanel> getEntitiesTabs() {
+			List<JPanel> tabs = new ArrayList<>(1 + buildlingsTabs.size() + unitsTabs.size());
+			tabs.add(terrainTab);
+			tabs.addAll(buildlingsTabs.values());
+			tabs.addAll(unitsTabs.values());
+			return tabs;
+		}
+
+		private JPanel createEntitiesPanel() {
+			JPanel panel = new JPanel();
+			Dimension panelSize = panel.getPreferredSize();
+			for (JPanel tab : getEntitiesTabs()) {
+				panel.add(tab);
+				Dimension tabSize = tab.getPreferredSize();
+				panelSize = new Dimension(Math.max(panelSize.width, tabSize.width),
+						Math.max(panelSize.height, tabSize.height));
+			}
+			panel.setPreferredSize(panelSize);
+			return panel;
+		}
+
+		private JButton createEntityTabButton(Drawable drawable) {
+			final int ImgButtonSize = 20;
 			Image img = Images.getImage(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize,
 					java.awt.Image.SCALE_SMOOTH);
 			JButton button = new JButton(new ImageIcon(img));
@@ -95,13 +125,53 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			return button;
 		}
 
-		private JPanel createTerrainButtons() {
+		private void selectEntitiesTab(JPanel tab) {
+			for (JPanel otherTab : getEntitiesTabs())
+				otherTab.setVisible(false);
+			tab.setVisible(true);
+			repaint();
+		};
+
+		private JPanel createEntitiesTabsButtons() {
+			JPanel panel = new JPanel(new GridLayout(1, 0));
+
+			JButton terrainButton = createEntityTabButton(Terrain.MOUNTAIN);
+			terrainButton.addActionListener(e -> selectEntitiesTab(terrainTab));
+			panel.add(terrainButton);
+
+			for (Team team : Team.values()) {
+				JButton buildingsButton = createEntityTabButton(BuildingDesc.of(Building.Type.Factory, team));
+				buildingsButton.addActionListener(e -> selectEntitiesTab(buildlingsTabs.get(team)));
+				panel.add(buildingsButton);
+			}
+
+			for (Team team : Team.values()) {
+				JButton unitsButton = createEntityTabButton(UnitDesc.of(Unit.Type.Soldier, team));
+				unitsButton.addActionListener(e -> selectEntitiesTab(unitsTabs.get(team)));
+				panel.add(unitsButton);
+			}
+
+			return panel;
+		}
+
+		private JButton createEntityButton(Drawable drawable) {
+			final int ImgButtonSize = 50;
+			Image img = Images.getImage(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize,
+					java.awt.Image.SCALE_SMOOTH);
+			JButton button = new JButton(new ImageIcon(img));
+//			button.setBorder(BorderFactory.createEmptyBorder());
+			button.setContentAreaFilled(false);
+			button.setPreferredSize(new Dimension(ImgButtonSize, ImgButtonSize));
+			return button;
+		}
+
+		private JPanel createTerrainPanel() {
 			JPanel panel = new JPanel(new GridLayout(0, 2));
 
 			Terrain[] terrains = { Terrain.FLAT_LAND, Terrain.CLEAR_WATER, Terrain.MOUNTAIN };
 
 			for (Terrain terrain : terrains) {
-				JButton button = createImgButton(terrain);
+				JButton button = createEntityButton(terrain);
 				button.addActionListener(e -> selectObject(terrain));
 				panel.add(button);
 			}
@@ -109,40 +179,34 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			return panel;
 		}
 
-		private JPanel createBuildingButtons() {
-			JPanel panel = new JPanel(new GridLayout(0, 2));
-
-			List<BuildingDesc> buildings = new ArrayList<>();
-			for (Team team : Team.values())
-				for (Building.Type type : Building.Type.values())
-					buildings.add(BuildingDesc.of(type, team));
-
-			for (BuildingDesc building : buildings) {
-				JButton button = createImgButton(building);
-				button.addActionListener(e -> selectObject(building));
-				panel.add(button);
+		private Map<Team, JPanel> createBuildingsPanels() {
+			Map<Team, JPanel> panels = new HashMap<>(Team.values().length);
+			for (Team team : Team.values()) {
+				JPanel panel = new JPanel(new GridLayout(0, 2));
+				for (Building.Type type : Building.Type.values()) {
+					BuildingDesc building = BuildingDesc.of(type, team);
+					JButton button = createEntityButton(building);
+					button.addActionListener(e -> selectObject(building));
+					panel.add(button);
+				}
+				panels.put(team, panel);
 			}
-//			int rows = panel.getComponentCount() / 2;
-//			panel.setPreferredSize(new Dimension());
-
-			return panel;
+			return panels;
 		}
 
-		private JPanel createUnitButtons() {
-			JPanel panel = new JPanel(new GridLayout(0, 2));
-
-			List<UnitDesc> units = new ArrayList<>();
-			for (Team team : Team.values())
-				for (Unit.Type type : Unit.Type.values())
-					units.add(UnitDesc.of(type, team));
-
-			for (UnitDesc unit : units) {
-				JButton button = createImgButton(unit);
-				button.addActionListener(e -> selectObject(unit));
-				panel.add(button);
+		private Map<Team, JPanel> createUnitsPanels() {
+			Map<Team, JPanel> panels = new HashMap<>(Team.values().length);
+			for (Team team : Team.values()) {
+				JPanel panel = new JPanel(new GridLayout(0, 2));
+				for (Unit.Type type : Unit.Type.values()) {
+					UnitDesc unit = UnitDesc.of(type, team);
+					JButton button = createEntityButton(unit);
+					button.addActionListener(e -> selectObject(unit));
+					panel.add(button);
+				}
+				panels.put(team, panel);
 			}
-
-			return panel;
+			return panels;
 		}
 
 		private void selectObject(Object obj) {
