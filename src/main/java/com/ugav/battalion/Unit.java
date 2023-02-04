@@ -247,7 +247,8 @@ abstract class Unit extends Entity {
 		/* Convert distance map to bitmap */
 		boolean[][] reachableMap = new boolean[arena.getWidth()][arena.getHeight()];
 		for (Position pos : arena.positions())
-			reachableMap[pos.x][pos.y] = passableMap.contains(pos) && !arena.at(pos).hasUnit();
+			reachableMap[pos.x][pos.y] = passableMap.contains(pos)
+					&& (!arena.at(pos).hasUnit() || arena.at(pos).getUnit() == this);
 		return new Position.Bitmap(reachableMap);
 	}
 
@@ -257,7 +258,7 @@ abstract class Unit extends Entity {
 		/* Convert distance map to bitmap */
 		boolean[][] reachableMap = new boolean[arena.getWidth()][arena.getHeight()];
 		for (Position pos : arena.positions())
-			reachableMap[pos.x][pos.y] = distanceMap[pos.x][pos.y] > 0;
+			reachableMap[pos.x][pos.y] = distanceMap[pos.x][pos.y] >= 0;
 		return new Position.Bitmap(reachableMap);
 	}
 

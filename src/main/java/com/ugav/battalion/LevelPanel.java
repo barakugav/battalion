@@ -219,7 +219,8 @@ class LevelPanel extends JPanel implements Clearable {
 				}
 				Position targetPos = hovered;
 				Position last = movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1);
-				if (targetPos.neighbors().contains(last))
+				if (targetPos.neighbors().contains(last)
+						&& (!game.arena.at(last).hasUnit() || game.arena.at(last).getUnit() == unit))
 					return;
 				movePath.clear();
 
