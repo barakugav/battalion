@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 import javax.imageio.ImageIO;
 
@@ -19,166 +18,118 @@ import com.ugav.battalion.Level.UnitDesc;
 
 class Images {
 
-	private static final Map<Label, BufferedImage> images;
-	static {
-		Map<Label, BufferedImage> images0 = new HashMap<>();
-
-		Function<String, BufferedImage> loadImg = path -> {
-			try {
-				return ImageIO.read(new File(path));
-			} catch (IOException e) {
-				System.err.println("Failed to load img file: " + path);
-				throw new UncheckedIOException(e);
-			}
-		};
-		BiConsumer<Label, String> addImg = (label, path) -> {
-			images0.put(label, loadImg.apply(path));
-		};
-		BiConsumer<Pair<Label, Label>, String> addImgRedBlue = (labels, path) -> {
-			BufferedImage imgRed = loadImg.apply(path);
-
-			ColorModel colorModel = imgRed.getColorModel();
-			WritableRaster swapped = imgRed.getRaster().createWritableChild(0, 0, imgRed.getWidth(), imgRed.getHeight(),
-					0, 0, new int[] { 2, 1, 0, 3 });
-			BufferedImage imgBlue = new BufferedImage(colorModel, swapped, colorModel.isAlphaPremultiplied(), null);
-
-			images0.put(labels.e1, imgRed);
-			images0.put(labels.e2, imgBlue);
-		};
-
-		/* Terrains */
-		addImg.accept(Label.FlatLand, "img/terrain/flat_land.png");
-		addImg.accept(Label.Mountain, "img/terrain/mountain.png");
-		addImg.accept(Label.ClearWater, "img/terrain/water_clear.png");
-
-		/* Units */
-		addImgRedBlue.accept(Pair.of(Label.SoldierRed, Label.SoldierBlue), "img/unit/soldier.png");
-		addImgRedBlue.accept(Pair.of(Label.TankRed, Label.TankBlue), "img/unit/tank.png");
-		addImgRedBlue.accept(Pair.of(Label.ArtilleryRed, Label.ArtilleryBlue), "img/unit/artillery.png");
-		addImgRedBlue.accept(Pair.of(Label.TurrentRed, Label.TurrentBlue), "img/unit/turrent.png");
-		addImgRedBlue.accept(Pair.of(Label.ShipRed, Label.ShipBlue), "img/unit/ship_close_range.png");
-		addImgRedBlue.accept(Pair.of(Label.AirplaneRed, Label.AirplaneBlue), "img/unit/airplane.png");
-
-		/* Buildings */
-		addImgRedBlue.accept(Pair.of(Label.FactoryRed, Label.FactoryBlue), "img/building/facotry.png");
-		addImgRedBlue.accept(Pair.of(Label.OilRefineryRed, Label.OilRefineryBlue), "img/building/oil_refinery.png");
-		addImgRedBlue.accept(Pair.of(Label.OilRefinery2Red, Label.OilRefinery2Blue),
-				"img/building/oil_refinery_big.png");
-		addImgRedBlue.accept(Pair.of(Label.OilRigRed, Label.OilRigBlue), "img/building/oil_rig.png");
-
-		/* GUI */
-		addImg.accept(Label.Selection, "img/gui/selection.png");
-		addImg.accept(Label.Reachable, "img/gui/reachable.png");
-		addImg.accept(Label.Attackable, "img/gui/attackabe.png");
-		addImg.accept(Label.UnitLocked, "img/gui/unit_locked.png");
-		images = Collections.unmodifiableMap(images0);
-	}
-
 	private Images() {
-		throw new InternalError();
 	}
 
-	static BufferedImage getImage(Drawable obj) {
-		return getImage(Label.valueOf(obj));
-	}
-
-	static BufferedImage getImage(Label label) {
-		BufferedImage image = images.get(label);
-		if (image == null)
-			throw new InternalError("Image not found for label: " + label);
-		return image;
-	}
-
-	static enum Label {
-		/* Terrains */
-		FlatLand, Mountain, ClearWater,
-
-		/* Units */
-		SoldierRed, SoldierBlue, TankRed, TankBlue, ArtilleryRed, ArtilleryBlue, TurrentRed, TurrentBlue, ShipRed,
-		ShipBlue, AirplaneRed, AirplaneBlue,
-
-		/* Buildings */
-		FactoryRed, FactoryBlue, OilRefineryRed, OilRefineryBlue, OilRefinery2Red, OilRefinery2Blue, OilRigRed,
-		OilRigBlue,
+	enum Label {
 
 		/* GUI */
 		Selection, Reachable, Attackable, UnitLocked;
+	}
 
-		static Label valueOf(Drawable obj) {
-			if (obj instanceof Terrain) {
-				Terrain terrain = (Terrain) obj;
-				return valueOf(terrain.type);
+	private static final Map<Terrain.Type, BufferedImage> terrains;
+	private static final Map<Unit.Type, Map<Team, BufferedImage>> units;
+	private static final Map<Building.Type, Map<Team, BufferedImage>> buildings;
+	private static final Map<Label, BufferedImage> ect;
+	static {
+		/* Terrain */
+		Map<Terrain.Type, BufferedImage> terrains0 = new HashMap<>();
+		terrains0.put(Terrain.Type.FlatLand, loadImg("img/terrain/flat_land.png"));
+		terrains0.put(Terrain.Type.Mountain, loadImg("img/terrain/mountain.png"));
+		terrains0.put(Terrain.Type.ClearWater, loadImg("img/terrain/water_clear.png"));
+		terrains = Collections.unmodifiableMap(terrains0);
 
-			} else if (obj instanceof Unit) {
-				Unit unit = (Unit) obj;
-				return valueOf(unit.type, unit.getTeam());
+		/* Units */
+		Map<Unit.Type, Map<Team, BufferedImage>> units0 = new HashMap<>();
+		BiConsumer<Unit.Type, String> addUnit = (type, path) -> {
+			BufferedImage redImg = loadImg(path);
+			BufferedImage blueImg = toBlue(redImg);
+			units0.put(type, Map.of(Team.Red, redImg, Team.Blue, blueImg));
+		};
+		addUnit.accept(Unit.Type.Soldier, "img/unit/soldier.png");
+		addUnit.accept(Unit.Type.Tank, "img/unit/tank.png");
+		addUnit.accept(Unit.Type.Artillery, "img/unit/artillery.png");
+		addUnit.accept(Unit.Type.Turrent, "img/unit/turrent.png");
+		addUnit.accept(Unit.Type.Ship, "img/unit/ship_close_range.png");
+		addUnit.accept(Unit.Type.Airplane, "img/unit/airplane.png");
+		units = Collections.unmodifiableMap(units0);
 
-			} else if (obj instanceof Building) {
-				Building building = (Building) obj;
-				return valueOf(building.type, building.getTeam());
+		/* Buildings */
+		Map<Building.Type, Map<Team, BufferedImage>> buildings0 = new HashMap<>();
+		BiConsumer<Building.Type, String> addBuilding = (type, path) -> {
+			BufferedImage redImg = loadImg(path);
+			BufferedImage blueImg = toBlue(redImg);
+			buildings0.put(type, Map.of(Team.Red, redImg, Team.Blue, blueImg));
+		};
+		addBuilding.accept(Building.Type.Factory, "img/building/facotry.png");
+		addBuilding.accept(Building.Type.OilRefinery, "img/building/oil_refinery.png");
+		addBuilding.accept(Building.Type.OilRefinery2, "img/building/oil_refinery_big.png");
+		addBuilding.accept(Building.Type.OilRig, "img/building/oil_rig.png");
+		buildings = Collections.unmodifiableMap(buildings0);
 
-			} else if (obj instanceof UnitDesc) {
-				UnitDesc unit = (UnitDesc) obj;
-				return valueOf(unit.type, unit.team);
+		/* Ect */
+		Map<Label, BufferedImage> ect0 = new HashMap<>();
+		ect0.put(Label.Selection, loadImg("img/gui/selection.png"));
+		ect0.put(Label.Reachable, loadImg("img/gui/reachable.png"));
+		ect0.put(Label.Attackable, loadImg("img/gui/attackabe.png"));
+		ect0.put(Label.UnitLocked, loadImg("img/gui/unit_locked.png"));
+		ect = Collections.unmodifiableMap(ect0);
+	}
 
-			} else if (obj instanceof BuildingDesc) {
-				BuildingDesc building = (BuildingDesc) obj;
-				return valueOf(building.type, building.team);
-
-			} else {
-				throw new InternalError("Unsupported drawable object: " + obj);
-			}
+	private static BufferedImage loadImg(String path) {
+		try {
+			return ImageIO.read(new File(path));
+		} catch (IOException e) {
+			System.err.println("Failed to load img file: " + path);
+			throw new UncheckedIOException(e);
 		}
+	};
 
-		private static Label valueOf(Terrain.Type terrainType) {
-			switch (terrainType) {
-			case FlatLand:
-				return FlatLand;
-			case Mountain:
-				return Mountain;
-			case ClearWater:
-				return ClearWater;
-			default:
-				throw new InternalError("Unsupported terrain type: " + terrainType);
-			}
-		}
+	private static BufferedImage toBlue(BufferedImage redImg) {
+		ColorModel colorModel = redImg.getColorModel();
+		WritableRaster swapped = redImg.getRaster().createWritableChild(0, 0, redImg.getWidth(), redImg.getHeight(), 0,
+				0, new int[] { 2, 1, 0, 3 });
+		return new BufferedImage(colorModel, swapped, colorModel.isAlphaPremultiplied(), null);
+	}
 
-		private static Label valueOf(Unit.Type unitType, Team team) {
-			switch (unitType) {
-			case Soldier:
-				return team == Team.Red ? SoldierRed : SoldierBlue;
-			case Tank:
-				return team == Team.Red ? TankRed : TankBlue;
-			case Artillery:
-				return team == Team.Red ? ArtilleryRed : ArtilleryBlue;
-			case Turrent:
-				return team == Team.Red ? TurrentRed : TurrentBlue;
-			case Ship:
-				return team == Team.Red ? ShipRed : ShipBlue;
-			case Airplane:
-				return team == Team.Red ? AirplaneRed : AirplaneBlue;
-			default:
-				throw new InternalError("Unsupported unit type: " + unitType);
-			}
-		}
+	static BufferedImage getImage(Object obj) {
+		BufferedImage img = getImage0(obj);
+		if (img == null)
+			throw new IllegalArgumentException("No image found for object: " + obj);
+		return img;
+	}
 
-		private static Label valueOf(Building.Type buildingType, Team team) {
-			switch (buildingType) {
-			case Factory:
-				return team == Team.Red ? FactoryRed : FactoryBlue;
-			case OilRefinery:
-				return team == Team.Red ? OilRefineryRed : OilRefineryBlue;
-			case OilRefinery2:
-				return team == Team.Red ? OilRefinery2Red : OilRefinery2Blue;
-			case OilRig:
-				return team == Team.Red ? OilRigRed : OilRigBlue;
-			default:
-				throw new InternalError("Unsupported building type: " + buildingType);
-			}
+	private static BufferedImage getImage0(Object obj) {
+		if (obj instanceof Terrain) {
+			Terrain terrain = (Terrain) obj;
+			return terrains.get(terrain.type);
+
+		} else if (obj instanceof Unit) {
+			Unit unit = (Unit) obj;
+			return units.get(unit.type).get(unit.getTeam());
+
+		} else if (obj instanceof UnitDesc) {
+			UnitDesc unit = (UnitDesc) obj;
+			return units.get(unit.type).get(unit.team);
+
+		} else if (obj instanceof Building) {
+			Building building = (Building) obj;
+			return buildings.get(building.type).get(building.getTeam());
+
+		} else if (obj instanceof BuildingDesc) {
+			BuildingDesc building = (BuildingDesc) obj;
+			return buildings.get(building.type).get(building.team);
+
+		} else if (obj instanceof Label) {
+			Label label = (Label) obj;
+			return ect.get(label);
+
+		} else {
+			throw new InternalError("Unsupported drawable object: " + obj);
 		}
 	}
 
-	interface Drawable {
+	static interface Drawable {
 	}
 
 }

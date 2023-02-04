@@ -621,8 +621,8 @@ class LevelPanel extends JPanel implements Clearable {
 				return game.getTile(pos);
 			}
 
-			void drawImage(Graphics g, Images.Label label) {
-				ArenaPanel.this.drawImage(g, label, pos);
+			void drawImage(Graphics g, Object obj) {
+				ArenaPanel.this.drawImage(g, obj, pos);
 			}
 
 			@Override

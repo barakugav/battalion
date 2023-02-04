@@ -7,13 +7,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.util.Objects;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
-
-import com.ugav.battalion.Images.Drawable;
-import com.ugav.battalion.Images.Label;
 
 abstract class AbstractArenaPanel extends JPanel implements Clearable {
 
@@ -181,15 +177,10 @@ abstract class AbstractArenaPanel extends JPanel implements Clearable {
 	}
 
 	void drawImage(Graphics g, Object obj, Position pos) {
-		BufferedImage img;
-		if (obj instanceof Label)
-			img = Images.getImage((Label) obj);
-		else if (obj instanceof Drawable)
-			img = Images.getImage((Drawable) obj);
-		else
-			throw new IllegalArgumentException(Objects.toString(obj));
-		g.drawImage(img, displayedX(pos.x * TILE_SIZE_PIXEL), displayedY(pos.y * TILE_SIZE_PIXEL), TILE_SIZE_PIXEL,
-				TILE_SIZE_PIXEL, this);
+		BufferedImage img = Images.getImage(obj);
+		int x = displayedX(pos.x * TILE_SIZE_PIXEL);
+		int y = displayedY(pos.y * TILE_SIZE_PIXEL);
+		g.drawImage(img, x, y, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, this);
 	}
 
 }

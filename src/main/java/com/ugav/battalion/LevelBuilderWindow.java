@@ -112,8 +112,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		private JButton createEntityTabButton(Drawable drawable) {
 			final int ImgButtonSize = 20;
-			Image img = Images.getImage(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize,
-					java.awt.Image.SCALE_SMOOTH);
+			Image img = Images.getImage(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize, Image.SCALE_SMOOTH);
 			JButton button = new JButton(new ImageIcon(img));
 //			button.setBorder(BorderFactory.createEmptyBorder());
 			button.setContentAreaFilled(false);
@@ -152,8 +151,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		private JButton createEntityButton(Drawable drawable) {
 			final int ImgButtonSize = 50;
-			Image img = Images.getImage(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize,
-					java.awt.Image.SCALE_SMOOTH);
+			Image img = Images.getImage(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize, Image.SCALE_SMOOTH);
 			JButton button = new JButton(new ImageIcon(img));
 //			button.setBorder(BorderFactory.createEmptyBorder());
 			button.setContentAreaFilled(false);

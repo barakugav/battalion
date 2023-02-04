@@ -57,6 +57,11 @@ class Level {
 		public int hashCode() {
 			return Objects.hash(terrain, building, unit);
 		}
+
+		@Override
+		public String toString() {
+			return "(" + terrain + ", " + building + ", " + unit + ")";
+		}
 	}
 
 	static class BuildingDesc implements Drawable {
@@ -87,6 +92,11 @@ class Level {
 		public int hashCode() {
 			return Objects.hash(type, team);
 		}
+
+		@Override
+		public String toString() {
+			return "(" + type + ", " + team + ")";
+		}
 	}
 
 	static class UnitDesc implements Drawable {
@@ -116,6 +126,11 @@ class Level {
 		@Override
 		public int hashCode() {
 			return Objects.hash(type, team);
+		}
+
+		@Override
+		public String toString() {
+			return "(" + type + ", " + team + ")";
 		}
 	}
 
