@@ -9,6 +9,8 @@ import java.util.Map;
 
 class Cookies {
 
+	static final String LEVEL_DISK_LAST_DIR = "LEVEL_DISK_LAST_DIR";
+
 	private Cookies() {
 	}
 

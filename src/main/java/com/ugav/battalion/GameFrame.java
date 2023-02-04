@@ -7,6 +7,8 @@ class GameFrame extends JFrame {
 
 	private JComponent activeWindow;
 
+	final LevelSerializer serializer;
+
 	private static final String TITLE = "Battalion";
 	private static final int FRAME_WIDTH = 2500;
 	private static final int FRAME_HEIGHT = 2500;
@@ -15,6 +17,9 @@ class GameFrame extends JFrame {
 
 	GameFrame() {
 		super(TITLE);
+
+		serializer = new LevelSerializerXML();
+
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationByPlatform(true);
 		setResizable(false);

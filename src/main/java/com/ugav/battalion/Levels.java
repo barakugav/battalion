@@ -1,9 +1,13 @@
 package com.ugav.battalion;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.ugav.battalion.Level.BuildingDesc;
 import com.ugav.battalion.Level.UnitDesc;
@@ -247,5 +251,15 @@ class Levels {
 	        .setTile(8, 7, Terrain.FLAT_LAND, null, null)
 	        .setTile(8, 8, Terrain.CLEAR_WATER, null, UnitDesc.of(Unit.Type.Ship, Team.Blue))
 	        .buildLevel();
+
+	static JFileChooser createFileChooser(String fileType) {
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setFileFilter(new FileNameExtensionFilter("Level file (*." + fileType + ")", fileType));
+		String dialogDir = Cookies.getCookieValue(Cookies.LEVEL_DISK_LAST_DIR);
+		if (dialogDir == null || !(new File(dialogDir).isDirectory()))
+			dialogDir = System.getProperty("user.home");
+		fileChooser.setCurrentDirectory(new File(dialogDir));
+		return fileChooser;
+	}
 
 }

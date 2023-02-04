@@ -7,7 +7,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -23,7 +22,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.ugav.battalion.Images.Drawable;
 import com.ugav.battalion.Level.BuildingDesc;
@@ -41,13 +39,11 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 	private final DebugPrintsManager debug;
 	private Object menuSelectedObj;
 	private Position selection;
-	private final LevelSerializer serializer;
 
 	LevelBuilderWindow(GameFrame gameFrame) {
 		this.gameFrame = Objects.requireNonNull(gameFrame);
 		debug = new DebugPrintsManager(true); // TODO
 		builder = new LevelBuilder(8, 8); // TODO change default
-		serializer = new LevelSerializerXML();
 		menu = new Menu();
 		arenaPanel = new ArenaPanel();
 
@@ -213,17 +209,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			menuSelectedObj = obj;
 		}
 
-		private JFileChooser createFileChooser() {
-			JFileChooser fileChooser = new JFileChooser();
-			String lvlType = serializer.getFileType();
-			fileChooser.setFileFilter(new FileNameExtensionFilter("Level file (*." + lvlType + ")", lvlType));
-			String dialogDir = Cookies.getCookieValue("LEVEL_BUILDER_DISK_LAST_DIR");
-			if (dialogDir == null || !(new File(dialogDir).isDirectory()))
-				dialogDir = System.getProperty("user.home");
-			fileChooser.setCurrentDirectory(new File(dialogDir));
-			return fileChooser;
-		}
-
 		private JPanel createGeneralButtons() {
 			JPanel panel = new JPanel(new GridLayout(0, 1));
 
@@ -233,14 +218,14 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			JButton buttonLoad = new JButton("Load");
 			buttonLoad.addActionListener(e -> {
-				JFileChooser fileChooser = createFileChooser();
+				JFileChooser fileChooser = Levels.createFileChooser(gameFrame.serializer.getFileType());
 				int result = fileChooser.showOpenDialog(gameFrame);
 				if (result == JFileChooser.APPROVE_OPTION) {
-					Cookies.setCookieValue("LEVEL_BUILDER_DISK_LAST_DIR",
+					Cookies.setCookieValue(Cookies.LEVEL_DISK_LAST_DIR,
 							fileChooser.getCurrentDirectory().getAbsolutePath());
 					String selectedFile = fileChooser.getSelectedFile().getAbsolutePath();
 					try {
-						Level level = serializer.levelRead(selectedFile);
+						Level level = gameFrame.serializer.levelRead(selectedFile);
 						builder.reset(level);
 					} catch (RuntimeException ex) {
 						debug.print("failed to load file from: ", selectedFile);
@@ -252,14 +237,14 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			JButton buttonSave = new JButton("Save");
 			buttonSave.addActionListener(e -> {
-				JFileChooser fileChooser = createFileChooser();
+				JFileChooser fileChooser = Levels.createFileChooser(gameFrame.serializer.getFileType());
 				int result = fileChooser.showSaveDialog(gameFrame);
 				if (result == JFileChooser.APPROVE_OPTION) {
-					Cookies.setCookieValue("LEVEL_BUILDER_DISK_LAST_DIR",
+					Cookies.setCookieValue(Cookies.LEVEL_DISK_LAST_DIR,
 							fileChooser.getCurrentDirectory().getAbsolutePath());
 					String selectedFile = fileChooser.getSelectedFile().getAbsolutePath();
 					try {
-						serializer.levelWrite(builder.buildLevel(), selectedFile);
+						gameFrame.serializer.levelWrite(builder.buildLevel(), selectedFile);
 					} catch (RuntimeException ex) {
 						debug.print("failed to save level to file: ", selectedFile);
 						ex.printStackTrace();
@@ -419,14 +404,14 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					BuildingDesc building = null;
 					if (tile.hasBuilding()) {
 						BuildingDesc oldBuilding = tile.building;
-						if (oldBuilding.canBuildOnTerrain(terrain.type.category))
+						if (oldBuilding.type.canBuildOn.contains(terrain.type.category))
 							building = oldBuilding;
 					}
 
 					UnitDesc unit = null;
 					if (tile.hasUnit()) {
 						UnitDesc oldUnit = tile.unit;
-						if (oldUnit.canBuildOnTerrain(terrain.type.category))
+						if (oldUnit.type.canStand.contains(terrain.type.category))
 							unit = oldUnit;
 					}
 
@@ -434,13 +419,13 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 				} else if (menuSelectedObj instanceof BuildingDesc) {
 					BuildingDesc building = (BuildingDesc) menuSelectedObj;
-					if (building.canBuildOnTerrain(tile.terrain.type.category))
+					if (building.type.canBuildOn.contains(tile.terrain.type.category))
 						builder.setTile(pos.x, pos.y, tile.terrain, building, tile.unit);
 					// TODO else user message
 
 				} else if (menuSelectedObj instanceof UnitDesc) {
 					UnitDesc unit = (UnitDesc) menuSelectedObj;
-					if (unit.canBuildOnTerrain(tile.terrain.type.category))
+					if (unit.type.canStand.contains(tile.terrain.type.category))
 						builder.setTile(pos.x, pos.y, tile.terrain, tile.building, unit);
 					// TODO else user message
 

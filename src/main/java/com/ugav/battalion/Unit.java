@@ -79,7 +79,7 @@ abstract class Unit extends Entity {
 
 	boolean isAttackValid(Unit target) {
 		return target.getTeam() != getTeam() && getAttackableMap().contains(target.getPos())
-				&& type.attackable.contains(target.type.category);
+				&& type.canAttack.contains(target.type.category);
 	}
 
 	enum Category {
@@ -91,30 +91,40 @@ abstract class Unit extends Entity {
 	};
 
 	enum Type {
-		Soldier(Category.Land, Weapon.CloseRange, List.of(Category.Land, Category.Water), 50, 22, 3, 1, 1),
-		Tank(Category.Land, Weapon.CloseRange, List.of(Category.Land, Category.Water), 70, 35, 6, 1, 1),
-		Artillery(Category.Land, Weapon.LongRange, List.of(Category.Land, Category.Water, Category.Air), 70, 35, 3, 3,
-				5),
+		Soldier(Category.Land, Weapon.CloseRange,
+				List.of(Terrain.Category.Land, Terrain.Category.Mountain, Terrain.Category.Shore),
+				List.of(Category.Land, Category.Water), 50, 22, 3, 1, 1),
+		Tank(Category.Land, Weapon.CloseRange, List.of(Terrain.Category.Land, Terrain.Category.Shore),
+				List.of(Category.Land, Category.Water), 70, 35, 6, 1, 1),
+		Artillery(Category.Land, Weapon.LongRange, List.of(Terrain.Category.Land, Terrain.Category.Shore),
+				List.of(Category.Land, Category.Water, Category.Air), 70, 35, 3, 3, 5),
+		Turrent(Category.Land, Weapon.LongRange, List.of(Terrain.Category.Land),
+				List.of(Category.Land, Category.Water, Category.Air), 100, 30, 0, 2, 7),
 
-		Ship(Category.Water, Weapon.CloseRange, List.of(Category.Land, Category.Water), 70, 35, 6, 1, 1),
+		Ship(Category.Water, Weapon.CloseRange, List.of(Terrain.Category.Water), List.of(Category.Land, Category.Water),
+				70, 35, 6, 1, 1),
 
-		Airplane(Category.Air, Weapon.CloseRange, List.of(Category.Land, Category.Water, Category.Air), 70, 35, 6, 1,
-				1);
+		Airplane(
+				Category.Air, Weapon.CloseRange, List.of(Terrain.Category.Land, Terrain.Category.Mountain,
+						Terrain.Category.Shore, Terrain.Category.Water),
+				List.of(Category.Land, Category.Water, Category.Air), 70, 35, 6, 1, 1);
 
 		final Category category;
 		final Weapon weapon;
-		final List<Category> attackable;
+		final List<Terrain.Category> canStand;
+		final List<Category> canAttack;
 		final int health;
 		final int damage;
 		final int moveLimit;
 		final int rangeMin;
 		final int rangeMax;
 
-		Type(Category category, Weapon weapon, List<Category> attackable, int health, int damage, int moveLimit,
-				int rangeMin, int rangeMax) {
+		Type(Category category, Weapon weapon, List<Terrain.Category> canStand, List<Category> canAttack, int health,
+				int damage, int moveLimit, int rangeMin, int rangeMax) {
 			this.category = category;
 			this.weapon = weapon;
-			this.attackable = Collections.unmodifiableList(new ArrayList<>(attackable));
+			this.canStand = Collections.unmodifiableList(new ArrayList<>(canStand));
+			this.canAttack = Collections.unmodifiableList(new ArrayList<>(canAttack));
 			this.health = health;
 			this.damage = damage;
 			this.moveLimit = moveLimit;
@@ -142,7 +152,7 @@ abstract class Unit extends Entity {
 						continue;
 					Unit other = arena.at(neighbor).getUnit();
 					attackableMap[neighbor.x][neighbor.y] = other.getTeam() != getTeam()
-							&& type.attackable.contains(other.type.category);
+							&& type.canAttack.contains(other.type.category);
 				}
 			};
 
@@ -172,7 +182,7 @@ abstract class Unit extends Entity {
 					continue;
 				Unit other = arena.at(pos).getUnit();
 				attackableMap[pos.x][pos.y] = other.getTeam() != getTeam()
-						&& type.attackable.contains(other.type.category);
+						&& type.canAttack.contains(other.type.category);
 			}
 			return new Position.Bitmap(attackableMap);
 		}
@@ -203,6 +213,14 @@ abstract class Unit extends Entity {
 
 		Artillery(Arena arena, Team team) {
 			super(arena, Type.Artillery, team);
+		}
+
+	}
+
+	static class Turrent extends UnitLongRange {
+
+		Turrent(Arena arena, Team team) {
+			super(arena, Type.Turrent, team);
 		}
 
 	}

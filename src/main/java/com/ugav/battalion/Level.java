@@ -1,6 +1,5 @@
 package com.ugav.battalion;
 
-import java.util.List;
 import java.util.Objects;
 
 import com.ugav.battalion.Images.Drawable;
@@ -73,21 +72,6 @@ class Level {
 			return new BuildingDesc(type, team);
 		}
 
-		boolean canBuildOnTerrain(Terrain.Category terrain) {
-			switch (terrain) {
-			case Land:
-				return List.of(Building.Type.OilRefinery, Building.Type.Factory).contains(type);
-			case Mountain:
-				return List.of().contains(type);
-			case Shore:
-				return List.of().contains(type);
-			case Water:
-				return List.of().contains(type);
-			default:
-				throw new IllegalArgumentException("Unexpected value: " + terrain);
-			}
-		}
-
 		@Override
 		public boolean equals(Object o) {
 			if (o == this)
@@ -116,23 +100,6 @@ class Level {
 
 		static UnitDesc of(Unit.Type type, Team team) {
 			return new UnitDesc(type, team);
-		}
-
-		boolean canBuildOnTerrain(Terrain.Category terrain) {
-			switch (terrain) {
-			case Land:
-				return List.of(Unit.Type.Soldier, Unit.Type.Tank, Unit.Type.Artillery, Unit.Type.Airplane)
-						.contains(type);
-			case Mountain:
-				return List.of(Unit.Type.Soldier, Unit.Type.Airplane).contains(type);
-			case Shore:
-				return List.of(Unit.Type.Soldier, Unit.Type.Tank, Unit.Type.Artillery, Unit.Type.Airplane)
-						.contains(type);
-			case Water:
-				return List.of(Unit.Type.Ship, Unit.Type.Airplane).contains(type);
-			default:
-				throw new IllegalArgumentException("Unexpected value: " + terrain);
-			}
 		}
 
 		@Override

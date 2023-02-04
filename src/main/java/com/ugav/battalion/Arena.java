@@ -140,6 +140,8 @@ class Arena {
 			return new Unit.Tank(this, desc.team);
 		case Artillery:
 			return new Unit.Artillery(this, desc.team);
+		case Turrent:
+			return new Unit.Turrent(this, desc.team);
 		case Ship:
 			return new Unit.Ship(this, desc.team);
 		case Airplane:

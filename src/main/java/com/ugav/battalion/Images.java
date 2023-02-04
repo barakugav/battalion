@@ -55,6 +55,7 @@ class Images {
 		addImgRedBlue.accept(Pair.of(Label.SoldierRed, Label.SoldierBlue), "img/unit/soldier.png");
 		addImgRedBlue.accept(Pair.of(Label.TankRed, Label.TankBlue), "img/unit/tank.png");
 		addImgRedBlue.accept(Pair.of(Label.ArtilleryRed, Label.ArtilleryBlue), "img/unit/artillery.png");
+		addImgRedBlue.accept(Pair.of(Label.TurrentRed, Label.TurrentBlue), "img/unit/turrent.png");
 		addImgRedBlue.accept(Pair.of(Label.ShipRed, Label.ShipBlue), "img/unit/ship_close_range.png");
 		addImgRedBlue.accept(Pair.of(Label.AirplaneRed, Label.AirplaneBlue), "img/unit/airplane.png");
 
@@ -90,8 +91,8 @@ class Images {
 		FlatLand, Mountain, ClearWater,
 
 		/* Units */
-		SoldierRed, SoldierBlue, TankRed, TankBlue, ArtilleryRed, ArtilleryBlue, ShipRed, ShipBlue, AirplaneRed,
-		AirplaneBlue,
+		SoldierRed, SoldierBlue, TankRed, TankBlue, ArtilleryRed, ArtilleryBlue, TurrentRed, TurrentBlue, ShipRed,
+		ShipBlue, AirplaneRed, AirplaneBlue,
 
 		/* Buildings */
 		FactoryRed, FactoryBlue, OilRefineryRed, OilRefineryBlue,
@@ -146,6 +147,8 @@ class Images {
 				return team == Team.Red ? TankRed : TankBlue;
 			case Artillery:
 				return team == Team.Red ? ArtilleryRed : ArtilleryBlue;
+			case Turrent:
+				return team == Team.Red ? TurrentRed : TurrentBlue;
 			case Ship:
 				return team == Team.Red ? ShipRed : ShipBlue;
 			case Airplane:

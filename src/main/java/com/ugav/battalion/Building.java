@@ -1,12 +1,21 @@
 package com.ugav.battalion;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 abstract class Building extends Entity {
 
 	enum Type {
-		OilRefinery, Factory
+		OilRefinery(List.of(Terrain.Category.Land)),
+
+		Factory(List.of(Terrain.Category.Land));
+
+		final List<Terrain.Category> canBuildOn;
+
+		Type(List<Terrain.Category> canBuildOn) {
+			this.canBuildOn = Collections.unmodifiableList(new ArrayList<>(canBuildOn));
+		}
 	}
 
 	final Type type;

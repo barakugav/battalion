@@ -74,10 +74,10 @@ class LevelBuilder {
 
 	private static TileDesc checkValidTile(TileDesc tile) {
 		if (tile.hasBuilding())
-			if (!tile.building.canBuildOnTerrain(tile.terrain.type.category))
+			if (!tile.building.type.canBuildOn.contains(tile.terrain.type.category))
 				throw new IllegalArgumentException();
 		if (tile.hasUnit())
-			if (!tile.unit.canBuildOnTerrain(tile.terrain.type.category))
+			if (!tile.unit.type.canStand.contains(tile.terrain.type.category))
 				throw new IllegalArgumentException();
 		return tile;
 	}
