@@ -31,7 +31,7 @@ class Game {
 	Game(Level level) {
 		arena = new Arena(level);
 		teamData = new HashMap<>();
-		turnIterator = Utils.iteratorRepeatInfty(List.of(Team.values()));
+		turnIterator = Utils.iteratorRepeatInfty(Team.realTeams);
 		turn = turnIterator.next();
 		winner = null;
 		deadQueue = new ArrayList<>();
@@ -47,7 +47,7 @@ class Game {
 			u.setPos(pos);
 		}
 
-		for (Team team : Team.values())
+		for (Team team : Team.realTeams)
 			teamData.put(team, new TeamData());
 	}
 
@@ -76,6 +76,11 @@ class Game {
 	}
 
 	void turnBegin() {
+		/* Conquer buildings */
+		for (Tile tile : arena.tiles())
+			if (tile.hasBuilding() && tile.hasUnit() && tile.getUnit().getTeam() == turn)
+				tile.getBuilding().tryConquer(tile.getUnit().getTeam());
+
 		for (Tile tile : arena.tiles()) {
 			if (tile.hasBuilding()) {
 				Building building = tile.getBuilding();
@@ -104,7 +109,7 @@ class Game {
 			if (tile.hasBuilding()) {
 				Building building = tile.getBuilding();
 				int gain = building.getMoneyGain();
-				if (gain != 0) {
+				if (gain != 0 && teamData.containsKey(building.getTeam())) {
 					teamData.get(building.getTeam()).money += gain;
 					moneyChanged.add(building.getTeam());
 				}

@@ -1,5 +1,8 @@
 package com.ugav.battalion;
 
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.WritableRaster;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -10,6 +13,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 class Utils {
@@ -148,6 +152,25 @@ class Utils {
 			}
 		}
 		return lines;
+	}
+
+	static BufferedImage imgDeepCopy(BufferedImage img) {
+		ColorModel cm = img.getColorModel();
+		boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
+		WritableRaster raster = img.copyData(null);
+		return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
+	}
+
+	static BufferedImage imgTransform(BufferedImage img, Consumer<int[]> op) {
+		int[] pixel = new int[img.getRaster().getNumBands()];
+		for (int x = 0; x < img.getWidth(); x++) {
+			for (int y = 0; y < img.getHeight(); y++) {
+				pixel = img.getRaster().getPixel(x, y, pixel);
+				op.accept(pixel);
+				img.getRaster().setPixel(x, y, pixel);
+			}
+		}
+		return img;
 	}
 
 }

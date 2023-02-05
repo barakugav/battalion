@@ -140,7 +140,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				panel.add(buildingsButton);
 			}
 
-			for (Team team : Team.values()) {
+			for (Team team : Team.realTeams) {
 				JButton unitsButton = createEntityTabButton(UnitDesc.of(Unit.Type.Soldier, team));
 				unitsButton.addActionListener(e -> selectEntitiesTab(unitsTabs.get(team)));
 				panel.add(unitsButton);
@@ -189,8 +189,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		}
 
 		private Map<Team, JPanel> createUnitsPanels() {
-			Map<Team, JPanel> panels = new HashMap<>(Team.values().length);
-			for (Team team : Team.values()) {
+			Map<Team, JPanel> panels = new HashMap<>(Team.realTeams.size());
+			for (Team team : Team.realTeams) {
 				JPanel panel = new JPanel(new GridLayout(0, 2));
 				for (Unit.Type type : Unit.Type.values()) {
 					UnitDesc unit = UnitDesc.of(type, team);

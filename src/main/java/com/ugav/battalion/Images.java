@@ -1,8 +1,6 @@
 package com.ugav.battalion;
 
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -59,7 +57,8 @@ class Images {
 		BiConsumer<Building.Type, String> addBuilding = (type, path) -> {
 			BufferedImage redImg = loadImg(path);
 			BufferedImage blueImg = toBlue(redImg);
-			buildings0.put(type, Map.of(Team.Red, redImg, Team.Blue, blueImg));
+			BufferedImage whiteImg = toWhite(redImg);
+			buildings0.put(type, Map.of(Team.Red, redImg, Team.Blue, blueImg, Team.None, whiteImg));
 		};
 		addBuilding.accept(Building.Type.Factory, "img/building/facotry.png");
 		addBuilding.accept(Building.Type.OilRefinery, "img/building/oil_refinery.png");
@@ -86,10 +85,22 @@ class Images {
 	};
 
 	private static BufferedImage toBlue(BufferedImage redImg) {
-		ColorModel colorModel = redImg.getColorModel();
-		WritableRaster swapped = redImg.getRaster().createWritableChild(0, 0, redImg.getWidth(), redImg.getHeight(), 0,
-				0, new int[] { 2, 1, 0, 3 });
-		return new BufferedImage(colorModel, swapped, colorModel.isAlphaPremultiplied(), null);
+		if (redImg.getRaster().getNumBands() != 4)
+			throw new IllegalArgumentException("expected rgba format");
+		return Utils.imgTransform(Utils.imgDeepCopy(redImg), rgba -> {
+			int r = rgba[0], b = rgba[2];
+			rgba[0] = b;
+			rgba[2] = r;
+		});
+	}
+
+	private static BufferedImage toWhite(BufferedImage redImg) {
+		if (redImg.getRaster().getNumBands() != 4)
+			throw new IllegalArgumentException("expected rgba format");
+		return Utils.imgTransform(Utils.imgDeepCopy(redImg), rgba -> {
+			int r = rgba[0];
+			rgba[1] = rgba[2] = r;
+		});
 	}
 
 	static BufferedImage getImage(Object obj) {

@@ -25,6 +25,11 @@ abstract class Building extends Entity {
 	final Type type;
 	private Position pos;
 	private Arena arena;
+	private Team conquerTeam;
+	private int conquerProgress;
+
+	private static final int CONQUER_DURATION_FROM_NONE = 2;
+	private static final int CONQUER_DURATION_FROM_OTHER = 3;
 
 	Building(Type type, Team team) {
 		super(team);
@@ -45,6 +50,19 @@ abstract class Building extends Entity {
 
 	Arena getArena() {
 		return arena;
+	}
+
+	void tryConquer(Team conquerer) {
+		if (conquerer != conquerTeam) {
+			conquerTeam = null;
+			conquerProgress = 0;
+		}
+		if (conquerer != null && conquerer != getTeam()) {
+			conquerTeam = conquerer;
+			int conquer_duration = getTeam() == Team.None ? CONQUER_DURATION_FROM_NONE : CONQUER_DURATION_FROM_OTHER;
+			if (++conquerProgress == conquer_duration)
+				setTeam(conquerer);
+		}
 	}
 
 	abstract int getMoneyGain();
