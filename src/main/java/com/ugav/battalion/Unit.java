@@ -3,7 +3,11 @@ package com.ugav.battalion;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 abstract class Unit extends Entity {
@@ -84,30 +88,72 @@ abstract class Unit extends Entity {
 
 	enum Category {
 		Land, Water, Air
-	};
+	}
 
 	enum Weapon {
 		CloseRange, LongRange
-	};
+	}
+
+	private static class TypeBuilder {
+		final Set<Terrain.Category> canStand = new HashSet<>();
+		final Set<Category> canAttack = new HashSet<>();
+		boolean canConquer = false;
+
+		void canStand(Terrain.Category... categories) {
+			canStand.addAll(List.of(categories));
+		}
+
+		void canAttack(Category... categories) {
+			canAttack.addAll(List.of(categories));
+		}
+
+	}
+
+	private enum Tech {
+		StandOnFlatLand(TypeBuilder::canStand, Terrain.Category.Land),
+
+		StandOnLand(TypeBuilder::canStand, Terrain.Category.Land, Terrain.Category.Shore),
+
+		StandOnHardLand(TypeBuilder::canStand, Terrain.Category.Land, Terrain.Category.Shore,
+				Terrain.Category.Mountain),
+
+		StandOnWater(TypeBuilder::canStand, Terrain.Category.Water),
+
+		StandOnAny(TypeBuilder::canStand, Terrain.Category.values()),
+
+		AttLand(TypeBuilder::canAttack, Unit.Category.Land),
+
+		AttWater(TypeBuilder::canAttack, Unit.Category.Water),
+
+		AttAir(TypeBuilder::canAttack, Unit.Category.Air),
+
+		AttAny(TypeBuilder::canAttack, Unit.Category.values()),
+
+		Conquerer(t -> t.canConquer = true);
+
+		final Consumer<TypeBuilder> op;
+
+		Tech(Consumer<TypeBuilder> op) {
+			this.op = Objects.requireNonNull(op);
+		}
+
+		@SuppressWarnings("unchecked")
+		<T> Tech(BiConsumer<TypeBuilder, T[]> op, T... args) {
+			this(t -> op.accept(t, args));
+		}
+	}
 
 	enum Type {
-		Soldier(Category.Land, Weapon.CloseRange,
-				List.of(Terrain.Category.Land, Terrain.Category.Mountain, Terrain.Category.Shore),
-				List.of(Category.Land, Category.Water), 50, 22, 3, 1, 1),
-		Tank(Category.Land, Weapon.CloseRange, List.of(Terrain.Category.Land, Terrain.Category.Shore),
-				List.of(Category.Land, Category.Water), 70, 35, 6, 1, 1),
-		Artillery(Category.Land, Weapon.LongRange, List.of(Terrain.Category.Land, Terrain.Category.Shore),
-				List.of(Category.Land, Category.Water, Category.Air), 70, 35, 3, 3, 5),
-		Turrent(Category.Land, Weapon.LongRange, List.of(Terrain.Category.Land),
-				List.of(Category.Land, Category.Water, Category.Air), 100, 30, 0, 2, 7),
+		Soldier(Category.Land, Weapon.CloseRange, 50, 22, 3, 1, 1,
+				List.of(Tech.StandOnHardLand, Tech.AttLand, Tech.AttWater, Tech.Conquerer)),
+		Tank(Category.Land, Weapon.CloseRange, 70, 35, 6, 1, 1, List.of(Tech.StandOnLand, Tech.AttLand, Tech.AttWater)),
+		Artillery(Category.Land, Weapon.LongRange, 70, 35, 3, 3, 5, List.of(Tech.StandOnLand, Tech.AttAny)),
+		Turrent(Category.Land, Weapon.LongRange, 100, 30, 0, 2, 7, List.of(Tech.StandOnFlatLand, Tech.AttAny)),
 
-		Ship(Category.Water, Weapon.CloseRange, List.of(Terrain.Category.Water), List.of(Category.Land, Category.Water),
-				70, 35, 6, 1, 1),
+		Ship(Category.Water, Weapon.CloseRange, 70, 35, 6, 1, 1,
+				List.of(Tech.StandOnWater, Tech.AttLand, Tech.AttWater)),
 
-		Airplane(
-				Category.Air, Weapon.CloseRange, List.of(Terrain.Category.Land, Terrain.Category.Mountain,
-						Terrain.Category.Shore, Terrain.Category.Water),
-				List.of(Category.Land, Category.Water, Category.Air), 70, 35, 6, 1, 1);
+		Airplane(Category.Air, Weapon.CloseRange, 70, 35, 6, 1, 1, List.of(Tech.StandOnAny, Tech.AttAny));
 
 		final Category category;
 		final Weapon weapon;
@@ -118,18 +164,24 @@ abstract class Unit extends Entity {
 		final int moveLimit;
 		final int rangeMin;
 		final int rangeMax;
+		final boolean canConquer;
 
-		Type(Category category, Weapon weapon, List<Terrain.Category> canStand, List<Category> canAttack, int health,
-				int damage, int moveLimit, int rangeMin, int rangeMax) {
+		Type(Category category, Weapon weapon, int health, int damage, int moveLimit, int rangeMin, int rangeMax,
+				List<Tech> techs) {
+			TypeBuilder builder = new TypeBuilder();
+			for (Tech tech : techs)
+				tech.op.accept(builder);
+
 			this.category = category;
 			this.weapon = weapon;
-			this.canStand = Collections.unmodifiableList(new ArrayList<>(canStand));
-			this.canAttack = Collections.unmodifiableList(new ArrayList<>(canAttack));
+			this.canStand = Collections.unmodifiableList(new ArrayList<>(builder.canStand));
+			this.canAttack = Collections.unmodifiableList(new ArrayList<>(builder.canAttack));
 			this.health = health;
 			this.damage = damage;
 			this.moveLimit = moveLimit;
 			this.rangeMin = rangeMin;
 			this.rangeMax = rangeMax;
+			this.canConquer = builder.canConquer;
 		}
 	}
 

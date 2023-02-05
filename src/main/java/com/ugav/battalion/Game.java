@@ -78,7 +78,8 @@ class Game {
 	void turnBegin() {
 		/* Conquer buildings */
 		for (Tile tile : arena.tiles())
-			if (tile.hasBuilding() && tile.hasUnit() && tile.getUnit().getTeam() == turn)
+			if (tile.hasBuilding() && tile.hasUnit() && tile.getUnit().type.canConquer
+					&& tile.getUnit().getTeam() == turn)
 				tile.getBuilding().tryConquer(tile.getUnit().getTeam());
 
 		for (Tile tile : arena.tiles()) {

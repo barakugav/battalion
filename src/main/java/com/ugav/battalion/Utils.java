@@ -173,4 +173,16 @@ class Utils {
 		return img;
 	}
 
+	static class Holder<T> {
+		T val;
+
+		Holder() {
+			this(null);
+		}
+
+		Holder(T val) {
+			this.val = val;
+		}
+	}
+
 }
