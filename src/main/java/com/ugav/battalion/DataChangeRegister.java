@@ -13,12 +13,12 @@ class DataChangeRegister {
 		listeners = new HashMap<>();
 	}
 
-	<E extends DataEvent> void registerListener(DataChangeNotifier<E> notifier, DataListener<? super E> listener) {
+	<E extends DataEvent> void register(DataChangeNotifier<E> notifier, DataListener<? super E> listener) {
 		notifier.addListener(listener);
 		listeners.computeIfAbsent(notifier, k -> new ArrayList<>()).add(listener);
 	}
 
-	<E extends DataEvent> void unregisterListener(DataChangeNotifier<E> notifier, DataListener<? super E> listener) {
+	<E extends DataEvent> void unregister(DataChangeNotifier<E> notifier, DataListener<? super E> listener) {
 		notifier.removeListener(listener);
 
 		List<DataListener<?>> l = listeners.get(notifier);
@@ -28,13 +28,23 @@ class DataChangeRegister {
 			listeners.remove(notifier);
 	}
 
-	<E extends DataEvent> void unregisterAllListeners(DataChangeNotifier<E> notifier) {
+	<E extends DataEvent> void unregisterAll(DataChangeNotifier<E> notifier) {
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		List<DataListener<? super E>> l = (List) listeners.get(notifier);
 		for (DataListener<? super E> listener : l)
 			notifier.removeListener(listener);
 		l.clear();
 		listeners.remove(notifier);
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	void unregisterAll() {
+		for (Map.Entry<DataChangeNotifier<?>, List<DataListener<?>>> entry : listeners.entrySet()) {
+			for (DataListener listener : entry.getValue())
+				entry.getKey().removeListener(listener);
+			entry.getValue().clear();
+		}
+		listeners.clear();
 	}
 
 }

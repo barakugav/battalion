@@ -314,12 +314,12 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		ArenaPanel() {
 			register = new DataChangeRegister();
 
-			register.registerListener(builder.onTileChange, e -> {
+			register.register(builder.onTileChange, e -> {
 				tiles.computeIfAbsent(e.pos, TileComp::new).tileUpdate();
 				repaint(); /* TODO find a way to repaint only the changed tile */
 			});
-			register.registerListener(builder.onResetChange, e -> reset());
-			register.registerListener(onTileClick, e -> tileClicked(e.pos));
+			register.register(builder.onResetChange, e -> reset());
+			register.register(onTileClick, e -> tileClicked(e.pos));
 		}
 
 		@Override
@@ -344,10 +344,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		@Override
 		public void clear() {
-			register.unregisterAllListeners(builder.onTileChange);
-			register.unregisterAllListeners(builder.onResetChange);
-			register.unregisterAllListeners(onTileClick);
-
+			register.unregisterAll();
 			super.clear();
 		}
 

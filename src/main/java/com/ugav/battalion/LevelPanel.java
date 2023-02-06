@@ -144,12 +144,12 @@ class LevelPanel extends JPanel implements Clearable {
 		}
 
 		void initGame() {
-			register.registerListener(game.onMoneyChange, e -> updateMoneyLabel(e.team, e.newAmount));
+			register.register(game.onMoneyChange, e -> updateMoneyLabel(e.team, e.newAmount));
 		}
 
 		@Override
 		public void clear() {
-			register.unregisterAllListeners(game.onMoneyChange);
+			register.unregisterAll();
 		}
 
 		private void updateMoneyLabel(Team team, int money) {
@@ -182,8 +182,8 @@ class LevelPanel extends JPanel implements Clearable {
 			movePath = new ArrayList<>();
 			register = new DataChangeRegister();
 
-			register.registerListener(onTileClick, e -> tileClicked(e.pos));
-			register.registerListener(onHoverChange, e -> hoveredUpdated(e.pos));
+			register.register(onTileClick, e -> tileClicked(e.pos));
+			register.register(onHoverChange, e -> hoveredUpdated(e.pos));
 		}
 
 		@Override
@@ -269,7 +269,7 @@ class LevelPanel extends JPanel implements Clearable {
 
 			setPreferredSize(getPreferredSize());
 
-			register.registerListener(game.onUnitAdd, e -> {
+			register.register(game.onUnitAdd, e -> {
 				addUnitComp(e.unit);
 				repaint();
 			});
@@ -279,9 +279,7 @@ class LevelPanel extends JPanel implements Clearable {
 
 		@Override
 		public void clear() {
-			register.unregisterAllListeners(game.onUnitAdd);
-			register.unregisterAllListeners(onTileClick);
-			register.unregisterAllListeners(onHoverChange);
+			register.unregisterAll();
 
 			for (TileComp tile : tiles.values())
 				tile.clear();
@@ -488,9 +486,10 @@ class LevelPanel extends JPanel implements Clearable {
 				this.unit = unit;
 				register = new DataChangeRegister();
 
-				register.registerListener(unit.onChange, e -> {
+				register.register(unit.onChange, e -> {
 					if (unit.isDead()) {
 						units.remove(unit);
+						clear();
 						checkGameStatus();
 					} else {
 						pos = unit.getPos();
@@ -537,7 +536,7 @@ class LevelPanel extends JPanel implements Clearable {
 
 			@Override
 			public void clear() {
-				register.unregisterAllListeners(unit.onChange);
+				register.unregisterAll();
 			}
 
 			void moveAnimation(List<Position> animationPath, Runnable onFinish) {
