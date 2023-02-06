@@ -48,15 +48,13 @@ class LevelPanel extends JPanel implements Clearable {
 
 	private boolean actionsSuspended;
 
-	private static final int TILE_SIZE_PIXEL = 64;
-	private static final int DISPLAYED_ARENA_WIDTH = 8;
-	private static final int DISPLAYED_ARENA_HEIGHT = 8;
 	private static final long serialVersionUID = 1L;
 
 	LevelPanel(Globals globals, Level level) {
 		this.globals = Objects.requireNonNull(globals);
 
-		if (level.getWidth() < DISPLAYED_ARENA_WIDTH || level.getHeight() < DISPLAYED_ARENA_HEIGHT)
+		if (level.getWidth() < ArenaPanel.DISPLAYED_ARENA_WIDTH
+				|| level.getHeight() < ArenaPanel.DISPLAYED_ARENA_HEIGHT)
 			throw new IllegalArgumentException("level size is too small");
 		this.game = new Game(level);
 		menu = new Menu();
@@ -518,7 +516,7 @@ class LevelPanel extends JPanel implements Clearable {
 				int unitImgX = (int) x;
 				int unitImgY = (int) y;
 				BufferedImage unitImg = Images.getImage(unit);
-				g.drawImage(unitImg, unitImgX, unitImgY, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, null);
+				drawImage(g, unitImg, unitImgX, unitImgY);
 				g2.setComposite(oldComp);
 
 				/* Draw health bar */

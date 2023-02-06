@@ -42,9 +42,9 @@ abstract class AbstractArenaPanel extends JPanel implements Clearable {
 
 	}
 
-	private static final int TILE_SIZE_PIXEL = 64;
-	private static final int DISPLAYED_ARENA_WIDTH = 8;
-	private static final int DISPLAYED_ARENA_HEIGHT = 8;
+	static final int TILE_SIZE_PIXEL = 56;
+	static final int DISPLAYED_ARENA_WIDTH = 8;
+	static final int DISPLAYED_ARENA_HEIGHT = 8;
 
 	private static final int MapMoveTimerDelay = 10;
 	private static final int MapMoveSpeed = 4;
@@ -177,10 +177,14 @@ abstract class AbstractArenaPanel extends JPanel implements Clearable {
 	}
 
 	void drawImage(Graphics g, Object obj, Position pos) {
-		BufferedImage img = Images.getImage(obj);
 		int x = displayedX(pos.x * TILE_SIZE_PIXEL);
 		int y = displayedY(pos.y * TILE_SIZE_PIXEL);
-		g.drawImage(img, x, y, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL, this);
+		drawImage(g, obj, x, y);
+	}
+
+	void drawImage(Graphics g, Object obj, int x, int y) {
+		BufferedImage img = Images.getImage(obj);
+		g.drawImage(img, x, y, img.getWidth(), img.getHeight(), this);
 	}
 
 }

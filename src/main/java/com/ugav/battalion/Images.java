@@ -32,7 +32,7 @@ class Images {
 	static {
 		/* Terrain */
 		Map<Terrain.Type, BufferedImage> terrains0 = new HashMap<>();
-		terrains0.put(Terrain.Type.FlatLand, loadImg("img/terrain/flat_land.png"));
+		terrains0.put(Terrain.Type.FlatLand, loadImg("img/terrain/flat_land_01.png"));
 		terrains0.put(Terrain.Type.Mountain, loadImg("img/terrain/mountain.png"));
 		terrains0.put(Terrain.Type.ClearWater, loadImg("img/terrain/water_clear.png"));
 		terrains = Collections.unmodifiableMap(terrains0);
@@ -79,8 +79,7 @@ class Images {
 		try {
 			return ImageIO.read(new File(path));
 		} catch (IOException e) {
-			System.err.println("Failed to load img file: " + path);
-			throw new UncheckedIOException(e);
+			throw new UncheckedIOException("Failed to load img file: " + path, e);
 		}
 	};
 
