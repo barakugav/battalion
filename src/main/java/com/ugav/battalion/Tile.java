@@ -51,7 +51,7 @@ class Tile {
 
 	@Override
 	public String toString() {
-		String tStr = terrain.type.category.shortName();
+		String tStr = terrain.category.shortName();
 		String bStr = building != null ? building.toString() : "none";
 		String uStr = unit != null ? unit.toString() : "none";
 		return "<" + tStr + ", " + bStr + ", " + uStr + ">";

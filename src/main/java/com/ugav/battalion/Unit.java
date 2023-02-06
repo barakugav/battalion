@@ -56,7 +56,7 @@ abstract class Unit extends Entity {
 	}
 
 	boolean isTerrainPassable(Terrain terrain) {
-		switch (terrain.type.category) {
+		switch (terrain.category) {
 		case Land:
 			return type.category != Category.Water;
 		case Mountain:

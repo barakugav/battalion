@@ -25,16 +25,16 @@ class Images {
 		Selection, Reachable, Attackable, UnitLocked;
 	}
 
-	private static final Map<Terrain.Type, BufferedImage> terrains;
+	private static final Map<Terrain, BufferedImage> terrains;
 	private static final Map<Unit.Type, Map<Team, BufferedImage>> units;
 	private static final Map<Building.Type, Map<Team, BufferedImage>> buildings;
 	private static final Map<Label, BufferedImage> ect;
 	static {
 		/* Terrain */
-		Map<Terrain.Type, BufferedImage> terrains0 = new HashMap<>();
-		terrains0.put(Terrain.Type.FlatLand, loadImg("img/terrain/flat_land_01.png"));
-		terrains0.put(Terrain.Type.Mountain, loadImg("img/terrain/mountain.png"));
-		terrains0.put(Terrain.Type.ClearWater, loadImg("img/terrain/water_clear.png"));
+		Map<Terrain, BufferedImage> terrains0 = new HashMap<>();
+		terrains0.put(Terrain.FlatLand, loadImg("img/terrain/flat_land_01.png"));
+		terrains0.put(Terrain.Mountain, loadImg("img/terrain/mountain.png"));
+		terrains0.put(Terrain.ClearWater, loadImg("img/terrain/water_clear.png"));
 		terrains = Collections.unmodifiableMap(terrains0);
 
 		/* Units */
@@ -112,7 +112,7 @@ class Images {
 	private static BufferedImage getImage0(Object obj) {
 		if (obj instanceof Terrain) {
 			Terrain terrain = (Terrain) obj;
-			return terrains.get(terrain.type);
+			return terrains.get(terrain);
 
 		} else if (obj instanceof Unit) {
 			Unit unit = (Unit) obj;

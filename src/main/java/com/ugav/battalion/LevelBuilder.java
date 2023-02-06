@@ -30,7 +30,7 @@ class LevelBuilder {
 		tiles = new TileDesc[width][height];
 		for (int x = 0; x < width; x++)
 			for (int y = 0; y < height; y++)
-				tiles[x][y] = TileDesc.of(Terrain.FLAT_LAND, null, null);
+				tiles[x][y] = TileDesc.of(Terrain.FlatLand, null, null);
 		onResetChange.notify(new DataEvent.LevelReset(this));
 	}
 
@@ -74,10 +74,10 @@ class LevelBuilder {
 
 	private static TileDesc checkValidTile(TileDesc tile) {
 		if (tile.hasBuilding())
-			if (!tile.building.type.canBuildOn.contains(tile.terrain.type.category))
+			if (!tile.building.type.canBuildOn.contains(tile.terrain.category))
 				throw new IllegalArgumentException();
 		if (tile.hasUnit())
-			if (!tile.unit.type.canStand.contains(tile.terrain.type.category))
+			if (!tile.unit.type.canStand.contains(tile.terrain.category))
 				throw new IllegalArgumentException();
 		return tile;
 	}

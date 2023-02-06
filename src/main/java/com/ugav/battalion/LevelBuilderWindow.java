@@ -124,7 +124,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		private JPanel createEntitiesTabsButtons() {
 			JPanel panel = new JPanel(new GridLayout(1, 0));
 
-			JButton terrainButton = createEntityTabButton(Terrain.MOUNTAIN);
+			JButton terrainButton = createEntityTabButton(Terrain.Mountain);
 			terrainButton.addActionListener(e -> selectEntitiesTab(terrainTab));
 			panel.add(terrainButton);
 
@@ -156,9 +156,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		private JPanel createTerrainPanel() {
 			JPanel panel = new JPanel(new GridLayout(0, 2));
 
-			Terrain[] terrains = { Terrain.FLAT_LAND, Terrain.CLEAR_WATER, Terrain.MOUNTAIN };
-
-			for (Terrain terrain : terrains) {
+			for (Terrain terrain : Terrain.values()) {
 				JButton button = createEntityButton(terrain);
 				button.addActionListener(e -> selectObject(terrain));
 				panel.add(button);
@@ -367,14 +365,14 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					BuildingDesc building = null;
 					if (tile.hasBuilding()) {
 						BuildingDesc oldBuilding = tile.building;
-						if (oldBuilding.type.canBuildOn.contains(terrain.type.category))
+						if (oldBuilding.type.canBuildOn.contains(terrain.category))
 							building = oldBuilding;
 					}
 
 					UnitDesc unit = null;
 					if (tile.hasUnit()) {
 						UnitDesc oldUnit = tile.unit;
-						if (oldUnit.type.canStand.contains(terrain.type.category))
+						if (oldUnit.type.canStand.contains(terrain.category))
 							unit = oldUnit;
 					}
 
@@ -382,13 +380,13 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 				} else if (menuSelectedObj instanceof BuildingDesc) {
 					BuildingDesc building = new BuildingDesc((BuildingDesc) menuSelectedObj);
-					if (building.type.canBuildOn.contains(tile.terrain.type.category))
+					if (building.type.canBuildOn.contains(tile.terrain.category))
 						builder.setTile(pos.x, pos.y, tile.terrain, building, tile.unit);
 					// TODO else user message
 
 				} else if (menuSelectedObj instanceof UnitDesc) {
 					UnitDesc unit = new UnitDesc((UnitDesc) menuSelectedObj);
-					if (unit.type.canStand.contains(tile.terrain.type.category))
+					if (unit.type.canStand.contains(tile.terrain.category))
 						builder.setTile(pos.x, pos.y, tile.terrain, tile.building, unit);
 					// TODO else user message
 

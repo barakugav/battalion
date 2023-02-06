@@ -63,7 +63,7 @@ class LevelSerializerXML implements LevelSerializer {
 				addValueChild(dom, tileElm, "x", Integer.toString(pos.x));
 				addValueChild(dom, tileElm, "y", Integer.toString(pos.y));
 
-				addValueChild(dom, tileElm, "terrain", tile.terrain.type.name());
+				addValueChild(dom, tileElm, "terrain", tile.terrain.name());
 
 				if (tile.building != null) {
 					Element buildingElm = dom.createElement("building");
