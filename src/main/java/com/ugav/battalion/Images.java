@@ -20,15 +20,6 @@ class Images {
 	}
 
 	enum Label {
-
-		/* Roads */
-		Road_xxxx, Road_vxxx, Road_xvxx, Road_xxvx, Road_xxxv, Road_vvxx, Road_vxvx, Road_vxxv, Road_xvvx, Road_xvxv,
-		Road_xxvv, Road_vvvx, Road_vvxv, Road_vxvv, Road_xvvv, Road_vvvv,
-
-		/* Water edge */
-		WaterEdge00, WaterEdge01, WaterEdge02, WaterEdge03, WaterEdge10, WaterEdge11, WaterEdge12, WaterEdge13,
-		WaterEdge20, WaterEdge21, WaterEdge22, WaterEdge23, WaterEdge30, WaterEdge31, WaterEdge32, WaterEdge33,
-
 		/* GUI */
 		Selection, Reachable, Attackable, UnitLocked;
 	}
@@ -36,7 +27,7 @@ class Images {
 	private static final Map<Terrain, BufferedImage> terrains;
 	private static final Map<Unit.Type, Map<Team, BufferedImage>> units;
 	private static final Map<Building.Type, Map<Team, BufferedImage>> buildings;
-	private static final Map<Label, BufferedImage> ect;
+	private static final Map<Object, BufferedImage> ect;
 	static {
 		/* Terrain */
 		Map<Terrain, BufferedImage> terrains0 = new HashMap<>();
@@ -47,6 +38,8 @@ class Images {
 		terrains0.put(Terrain.Mountain, loadImg("img/terrain/mountain.png"));
 		terrains0.put(Terrain.MountainBig, loadImg("img/terrain/mountain_high.png"));
 		terrains0.put(Terrain.Road, loadImg("img/terrain/road_vxvx.png"));
+		terrains0.put(Terrain.BridgeLow, loadImg("img/terrain/bridge_low.png"));
+		terrains0.put(Terrain.BridgeHigh, loadImg("img/terrain/bridge_high.png"));
 		terrains0.put(Terrain.ClearWater, loadImg("img/terrain/water_clear.png"));
 		terrains = Collections.unmodifiableMap(terrains0);
 
@@ -80,18 +73,27 @@ class Images {
 		buildings = Collections.unmodifiableMap(buildings0);
 
 		/* Ect */
-		Map<Label, BufferedImage> ect0 = new HashMap<>();
+		Map<Object, BufferedImage> ect0 = new HashMap<>();
 		for (int quadrant = 0; quadrant < 4; quadrant++) {
 			for (int variant = 0; variant < 4; variant++) {
 				String suffix = "" + quadrant + variant;
-				ect0.put(Label.valueOf("WaterEdge" + suffix), loadImg("img/terrain/water_edge_" + suffix + ".png"));
+				ect0.put("WaterEdge" + suffix, loadImg("img/terrain/water_edge_" + suffix + ".png"));
 			}
 		}
 		for (int variant = 0; variant < 16; variant++) {
 			String suffix = "";
 			for (int b = 0; b < 4; b++)
 				suffix += ((variant & (1 << b)) != 0) ? "v" : "x";
-			ect0.put(Label.valueOf("Road_" + suffix), loadImg("img/terrain/road_" + suffix + ".png"));
+			ect0.put("Road_" + suffix, loadImg("img/terrain/road_" + suffix + ".png"));
+		}
+		for (boolean high : new boolean[] { true, false }) {
+			for (int dir = 0; dir < 4; dir++) {
+				for (boolean end : new boolean[] { true, false }) {
+					String label = "bridge_" + (high ? "high" : "low");
+					label += "_" + dir + (end ? "x" : "v");
+					ect0.put(label, loadImg("img/terrain/" + label + ".png"));
+				}
+			}
 		}
 
 		ect0.put(Label.Selection, loadImg("img/gui/selection.png"));
@@ -156,12 +158,8 @@ class Images {
 			BuildingDesc building = (BuildingDesc) obj;
 			return buildings.get(building.type).get(building.team);
 
-		} else if (obj instanceof Label) {
-			Label label = (Label) obj;
-			return ect.get(label);
-
 		} else {
-			throw new InternalError("Unsupported drawable object: " + obj);
+			return ect.get(obj);
 		}
 	}
 

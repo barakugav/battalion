@@ -387,7 +387,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				tileComp.tileUpdate();
 			}
 
-			mapViewSet(new Position(0, 0));
+			mapViewSet(Position.of(0, 0));
 			repaint();
 		}
 

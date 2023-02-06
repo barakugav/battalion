@@ -17,6 +17,10 @@ class Position implements Comparable<Position> {
 		this.y = y;
 	}
 
+	static Position of(int x, int y) {
+		return new Position(x, y);
+	}
+
 	@Override
 	public String toString() {
 		return "(" + x + ", " + y + ")";
@@ -38,7 +42,7 @@ class Position implements Comparable<Position> {
 	}
 
 	Position add(Direction dir) {
-		return new Position(x + dir.dx, y + dir.dy);
+		return Position.of(x + dir.dx, y + dir.dy);
 	}
 
 	List<Position> neighbors() {
@@ -47,6 +51,10 @@ class Position implements Comparable<Position> {
 		for (Direction dir : Direction.values())
 			neighbors.add(add(dir));
 		return neighbors;
+	}
+
+	boolean isInRect(int width, int height) {
+		return isInRect(0, 0, width, height);
 	}
 
 	boolean isInRect(int x1, int y1, int x2, int y2) {
@@ -88,7 +96,7 @@ class Position implements Comparable<Position> {
 		public Position next() {
 			if (!hasNext())
 				throw new NoSuchElementException();
-			Position pos = new Position(x, y);
+			Position pos = Position.of(x, y);
 			if (++y >= height) {
 				y = 0;
 				x++;

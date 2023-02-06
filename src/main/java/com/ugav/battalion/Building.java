@@ -2,23 +2,25 @@ package com.ugav.battalion;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 abstract class Building extends Entity {
 
 	enum Type {
-		OilRefinery(List.of(Terrain.Category.FlatLand)),
+		OilRefinery(Terrain.Category.FlatLand),
 
-		OilRefineryBig(List.of(Terrain.Category.FlatLand)),
+		OilRefineryBig(Terrain.Category.FlatLand),
 
-		OilRig(List.of(Terrain.Category.Water)),
+		OilRig(Terrain.Category.Water),
 
-		Factory(List.of(Terrain.Category.FlatLand));
+		Factory(Terrain.Category.FlatLand);
 
-		final List<Terrain.Category> canBuildOn;
+		final Set<Terrain.Category> canBuildOn;
 
-		Type(List<Terrain.Category> canBuildOn) {
-			this.canBuildOn = Collections.unmodifiableList(new ArrayList<>(canBuildOn));
+		Type(Terrain.Category... canBuildOn) {
+			this.canBuildOn = Collections.unmodifiableSet(EnumSet.copyOf(List.of(canBuildOn)));
 		}
 	}
 

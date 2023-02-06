@@ -274,7 +274,7 @@ class LevelPanel extends JPanel implements Clearable {
 				repaint();
 			});
 
-			mapViewSet(new Position(0, 0));
+			mapViewSet(Position.of(0, 0));
 		}
 
 		@Override

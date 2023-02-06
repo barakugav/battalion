@@ -3,7 +3,7 @@ package com.ugav.battalion;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -82,8 +82,8 @@ abstract class Unit extends Entity {
 	}
 
 	private static class TypeBuilder {
-		final Set<Terrain.Category> canStand = new HashSet<>();
-		final Set<Category> canAttack = new HashSet<>();
+		final Set<Terrain.Category> canStand = EnumSet.noneOf(Terrain.Category.class);
+		final Set<Category> canAttack = EnumSet.noneOf(Category.class);
 		boolean canConquer = false;
 
 		void canStand(Terrain.Category... categories) {
@@ -97,15 +97,20 @@ abstract class Unit extends Entity {
 	}
 
 	private enum Tech {
-		StandOnLandFlat(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.Road),
+		StandOnLandFlat(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.Road,
+				Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh),
 
 		StandOnLandRough(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.RoughLand,
-				Terrain.Category.Shore, Terrain.Category.Road),
+				Terrain.Category.Shore, Terrain.Category.Road, Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh),
 
 		StandOnLandExtreme(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.RoughLand,
-				Terrain.Category.Shore, Terrain.Category.ExtremeLand, Terrain.Category.Road),
+				Terrain.Category.Shore, Terrain.Category.ExtremeLand, Terrain.Category.Road, Terrain.Category.BridgeLow,
+				Terrain.Category.BridgeHigh),
 
-		StandOnWater(TypeBuilder::canStand, Terrain.Category.Water),
+		StandOnWater(TypeBuilder::canStand, Terrain.Category.Water, Terrain.Category.BridgeHigh),
+
+		StandOnWaterDeep(TypeBuilder::canStand, Terrain.Category.Water, Terrain.Category.BridgeLow,
+				Terrain.Category.BridgeHigh),
 
 		StandOnAny(TypeBuilder::canStand, Terrain.Category.values()),
 
@@ -133,21 +138,21 @@ abstract class Unit extends Entity {
 
 	enum Type {
 		Soldier(Category.Land, Weapon.CloseRange, 50, 22, 3, 1, 1,
-				List.of(Tech.StandOnLandExtreme, Tech.AttLand, Tech.AttWater, Tech.Conquerer)),
+				EnumSet.of(Tech.StandOnLandExtreme, Tech.AttLand, Tech.AttWater, Tech.Conquerer)),
 		Tank(Category.Land, Weapon.CloseRange, 70, 35, 6, 1, 1,
-				List.of(Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater)),
-		Artillery(Category.Land, Weapon.LongRange, 70, 35, 3, 3, 5, List.of(Tech.StandOnLandFlat, Tech.AttAny)),
-		Turrent(Category.Land, Weapon.LongRange, 100, 30, 0, 2, 7, List.of(Tech.StandOnLandFlat, Tech.AttAny)),
+				EnumSet.of(Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater)),
+		Artillery(Category.Land, Weapon.LongRange, 70, 35, 3, 3, 5, EnumSet.of(Tech.StandOnLandFlat, Tech.AttAny)),
+		Turrent(Category.Land, Weapon.LongRange, 100, 30, 0, 2, 7, EnumSet.of(Tech.StandOnLandFlat, Tech.AttAny)),
 
 		Ship(Category.Water, Weapon.CloseRange, 70, 35, 6, 1, 1,
-				List.of(Tech.StandOnWater, Tech.AttLand, Tech.AttWater)),
+				EnumSet.of(Tech.StandOnWater, Tech.AttLand, Tech.AttWater)),
 
-		Airplane(Category.Air, Weapon.CloseRange, 70, 35, 6, 1, 1, List.of(Tech.StandOnAny, Tech.AttAny));
+		Airplane(Category.Air, Weapon.CloseRange, 70, 35, 6, 1, 1, EnumSet.of(Tech.StandOnAny, Tech.AttAny));
 
 		final Category category;
 		final Weapon weapon;
-		final List<Terrain.Category> canStand;
-		final List<Category> canAttack;
+		final Set<Terrain.Category> canStand;
+		final Set<Category> canAttack;
 		final int health;
 		final int damage;
 		final int moveLimit;
@@ -156,15 +161,15 @@ abstract class Unit extends Entity {
 		final boolean canConquer;
 
 		Type(Category category, Weapon weapon, int health, int damage, int moveLimit, int rangeMin, int rangeMax,
-				List<Tech> techs) {
+				Set<Tech> techs) {
 			TypeBuilder builder = new TypeBuilder();
 			for (Tech tech : techs)
 				tech.op.accept(builder);
 
 			this.category = category;
 			this.weapon = weapon;
-			this.canStand = Collections.unmodifiableList(new ArrayList<>(builder.canStand));
-			this.canAttack = Collections.unmodifiableList(new ArrayList<>(builder.canAttack));
+			this.canStand = Collections.unmodifiableSet(EnumSet.copyOf(builder.canStand));
+			this.canAttack = Collections.unmodifiableSet(EnumSet.copyOf(builder.canAttack));
 			this.health = health;
 			this.damage = damage;
 			this.moveLimit = moveLimit;

@@ -11,17 +11,18 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
-import com.ugav.battalion.Images.Label;
 import com.ugav.battalion.Position.Direction;
 
 abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileComp, BuildingCompImpl extends AbstractArenaPanel.BuildingComp, UnitCompImpl extends AbstractArenaPanel.UnitComp>
@@ -81,7 +82,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		onHoverChange = new DataChangeNotifier<>();
 		onTileClick = new DataChangeNotifier<>();
 
-		mapPos = new Position(0, 0);
+		mapPos = Position.of(0, 0);
 		mapPosX = mapPosY = 0;
 
 		addMouseListener(mouseListener = new MouseAdapter() {
@@ -90,7 +91,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 				requestFocusInWindow();
 				int clickx = displayedXInv(e.getX()) / TILE_SIZE_PIXEL;
 				int clicky = displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
-				onTileClick.notify(new TileClickEvent(AbstractArenaPanel.this, new Position(clickx, clicky)));
+				onTileClick.notify(new TileClickEvent(AbstractArenaPanel.this, Position.of(clickx, clicky)));
 			}
 		});
 		addMouseMotionListener(mouseMotionListener = new MouseAdapter() {
@@ -98,7 +99,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 			public void mouseMoved(MouseEvent e) {
 				int x = displayedXInv(e.getX()) / TILE_SIZE_PIXEL, y = displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
 				if (hovered == null || hovered.x != x || hovered.y != y) {
-					hovered = new Position(x, y);
+					hovered = Position.of(x, y);
 					onHoverChange.notify(new HoverChangeEvent(AbstractArenaPanel.this, hovered));
 				}
 			}
@@ -158,15 +159,14 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 	void mapViewMove(Position.Direction dir) {
 		Position mapPosNew = mapPos.add(dir);
-		if (!mapPosNew.isInRect(0, 0, getArenaWidth() - DISPLAYED_ARENA_WIDTH,
-				getArenaHeight() - DISPLAYED_ARENA_HEIGHT))
+		if (!mapPosNew.isInRect(getArenaWidth() - DISPLAYED_ARENA_WIDTH, getArenaHeight() - DISPLAYED_ARENA_HEIGHT))
 			return;
 		mapPos = mapPosNew;
 		repaint();
 	}
 
 	void mapViewSet(Position pos) {
-		if (!pos.isInRect(0, 0, getArenaWidth() - DISPLAYED_ARENA_WIDTH, getArenaHeight() - DISPLAYED_ARENA_HEIGHT))
+		if (!pos.isInRect(getArenaWidth() - DISPLAYED_ARENA_WIDTH, getArenaHeight() - DISPLAYED_ARENA_HEIGHT))
 			return;
 		mapPos = pos;
 		mapPosX = pos.x;
@@ -274,10 +274,12 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 			super(arena, pos);
 		}
 
+		private boolean isArena(Position p) {
+			return p.isInRect(arena.getArenaWidth() - 1, arena.getArenaHeight() - 1);
+		}
+
 		@Override
 		void paintComponent(Graphics g) {
-			Predicate<Position> isArena = p -> p.isInRect(0, 0, arena.getArenaWidth() - 1, arena.getArenaHeight() - 1);
-
 			Terrain terrain = arena.getTerrain(pos);
 			if (terrain == Terrain.ClearWater) {
 				arena.drawImage(g, terrain, pos);
@@ -304,13 +306,14 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 						throw new InternalError();
 					}
 					Position p1 = pos.add(d1), p2 = pos.add(d2), p3 = pos.add(d1).add(d2);
-					Predicate<Position> hasWater = isArena
-							.and(p -> arena.getTerrain(p).category != Terrain.Category.Water);
+					Set<Terrain.Category> waters = EnumSet.of(Terrain.Category.Water, Terrain.Category.BridgeLow,
+							Terrain.Category.BridgeHigh);
+					Predicate<Position> hasWater = p -> isArena(p) && !waters.contains(arena.getTerrain(p).category);
 					boolean b1 = hasWater.test(p1), b2 = hasWater.test(p2), b3 = hasWater.test(p3);
 
 					if (b1 || b2 || b3) {
 						int variant = (b1 ? 1 : 0) + (b2 ? 2 : 0);
-						arena.drawImage(g, Label.valueOf("WaterEdge" + quadrant + variant), pos);
+						arena.drawImage(g, "WaterEdge" + quadrant + variant, pos);
 
 					}
 				}
@@ -319,9 +322,35 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 				String variant = "";
 				for (Direction dir : List.of(Direction.XPos, Direction.YNeg, Direction.XNeg, Direction.YPos)) {
 					Position p = pos.add(dir);
-					variant += (isArena.test(p) && arena.getTerrain(p) == Terrain.Road) ? "v" : "x";
+					Set<Terrain.Category> roads = EnumSet.of(Terrain.Category.Road, Terrain.Category.BridgeLow,
+							Terrain.Category.BridgeHigh);
+					variant += isArena(p) && roads.contains(arena.getTerrain(p).category) ? "v" : "x";
 				}
-				arena.drawImage(g, Images.Label.valueOf("Road_" + variant), pos);
+				arena.drawImage(g, "Road_" + variant, pos);
+
+			} else if (EnumSet.of(Terrain.BridgeLow, Terrain.BridgeHigh).contains(terrain)) {
+				Set<Direction> ends = EnumSet.noneOf(Direction.class);
+				for (Direction dir : EnumSet.of(Direction.XPos, Direction.YNeg, Direction.XNeg, Direction.YPos)) {
+					Position p = pos.add(dir);
+					Set<Terrain.Category> endCategoties = EnumSet.of(Terrain.Category.Road, Terrain.Category.FlatLand,
+							Terrain.Category.RoughLand, Terrain.Category.ExtremeLand);
+					if (isArena(p) && endCategoties.contains(arena.getTerrain(p).category))
+						ends.add(dir);
+				}
+
+				boolean horizontal = Objects.requireNonNull(Terrain.isBridgeVertical(pos, p -> arena.getTerrain(p),
+						arena.getArenaWidth(), arena.getArenaHeight()), "Can't determine bridge orientation")
+						.booleanValue();
+				Set<Direction> orientation = horizontal ? EnumSet.of(Direction.XPos, Direction.XNeg)
+						: EnumSet.of(Direction.YPos, Direction.YNeg);
+				for (Direction dir : orientation) {
+					String label = "bridge_" + (terrain == Terrain.BridgeHigh ? "high" : "low");
+					label += "_"
+							+ Map.of(Direction.XPos, "0", Direction.YNeg, "1", Direction.XNeg, "2", Direction.YPos, "3")
+									.get(dir);
+					label += ends.contains(dir) ? "x" : "v";
+					arena.drawImage(g, label, pos);
+				}
 
 			} else {
 				arena.drawImage(g, terrain, pos);
