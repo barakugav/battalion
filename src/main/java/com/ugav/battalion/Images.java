@@ -21,6 +21,10 @@ class Images {
 
 	enum Label {
 
+		/* Water edge */
+		WaterEdge00, WaterEdge01, WaterEdge02, WaterEdge03, WaterEdge10, WaterEdge11, WaterEdge12, WaterEdge13,
+		WaterEdge20, WaterEdge21, WaterEdge22, WaterEdge23, WaterEdge30, WaterEdge31, WaterEdge32, WaterEdge33,
+
 		/* GUI */
 		Selection, Reachable, Attackable, UnitLocked;
 	}
@@ -68,6 +72,12 @@ class Images {
 
 		/* Ect */
 		Map<Label, BufferedImage> ect0 = new HashMap<>();
+		for (int quadrant = 0; quadrant < 4; quadrant++) {
+			for (int variant = 0; variant < 4; variant++) {
+				String suffix = "" + quadrant + variant;
+				ect0.put(Label.valueOf("WaterEdge" + suffix), loadImg("img/terrain/water_edge_" + suffix + ".png"));
+			}
+		}
 		ect0.put(Label.Selection, loadImg("img/gui/selection.png"));
 		ect0.put(Label.Reachable, loadImg("img/gui/reachable.png"));
 		ect0.put(Label.Attackable, loadImg("img/gui/attackabe.png"));

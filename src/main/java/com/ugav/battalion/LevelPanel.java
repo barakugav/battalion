@@ -454,7 +454,7 @@ class LevelPanel extends JPanel implements Clearable {
 		}
 
 		@Override
-		Object getTerrain(Position pos) {
+		Terrain getTerrain(Position pos) {
 			return game.arena.at(pos).getTerrain();
 		}
 

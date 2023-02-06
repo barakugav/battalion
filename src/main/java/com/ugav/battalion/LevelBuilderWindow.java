@@ -394,7 +394,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		}
 
 		@Override
-		Object getTerrain(Position pos) {
+		Terrain getTerrain(Position pos) {
 			return builder.at(pos).terrain;
 		}
 

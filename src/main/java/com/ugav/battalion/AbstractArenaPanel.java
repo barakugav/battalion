@@ -15,9 +15,13 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
+
+import com.ugav.battalion.Images.Label;
+import com.ugav.battalion.Position.Direction;
 
 abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileComp, BuildingCompImpl extends AbstractArenaPanel.BuildingComp, UnitCompImpl extends AbstractArenaPanel.UnitComp>
 		extends JPanel implements Clearable {
@@ -242,7 +246,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		g.drawImage(img, x, y + TILE_SIZE_PIXEL - img.getHeight(), img.getWidth(), img.getHeight(), this);
 	}
 
-	abstract Object getTerrain(Position pos);
+	abstract Terrain getTerrain(Position pos);
 
 	abstract Object getBuilding(Position pos);
 
@@ -259,7 +263,47 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		}
 
 		void paintComponent(Graphics g) {
-			arena.drawImage(g, arena.getTerrain(pos), pos);
+			Terrain terrain = arena.getTerrain(pos);
+			if (terrain == Terrain.ClearWater) {
+				arena.drawImage(g, terrain, pos);
+				for (int quadrant = 0; quadrant < 4; quadrant++) {
+					Direction d1, d2;
+					switch (quadrant) {
+					case 0:
+						d1 = Direction.XPos;
+						d2 = Direction.YNeg;
+						break;
+					case 1:
+						d1 = Direction.YNeg;
+						d2 = Direction.XNeg;
+						break;
+					case 2:
+						d1 = Direction.XNeg;
+						d2 = Direction.YPos;
+						break;
+					case 3:
+						d1 = Direction.YPos;
+						d2 = Direction.XPos;
+						break;
+					default:
+						throw new InternalError();
+					}
+					Position p1 = pos.add(d1), p2 = pos.add(d2), p3 = pos.add(d1).add(d2);
+					Predicate<Position> hasWater = p -> p.isInRect(0, 0, arena.getArenaWidth() - 1,
+							arena.getArenaHeight() - 1) && arena.getTerrain(p).category != Terrain.Category.Water;
+					boolean b1 = hasWater.test(p1), b2 = hasWater.test(p2), b3 = hasWater.test(p3);
+
+					if (b1 || b2 || b3) {
+						int variant = (b1 ? 1 : 0) + (b2 ? 2 : 0);
+						arena.drawImage(g, Label.valueOf("WaterEdge" + quadrant + variant), pos);
+
+					}
+				}
+
+			} else {
+				arena.drawImage(g, terrain, pos);
+			}
+
 		}
 
 		void drawImage(Graphics g, Object obj) {
