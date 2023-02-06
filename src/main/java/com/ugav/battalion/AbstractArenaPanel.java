@@ -221,7 +221,11 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		comps.addAll(units.values());
 		comps.sort((o1, o2) -> o1.pos.compareTo(o2.pos));
 		for (EntityComp comp : comps)
-			comp.paintComponent(g);
+			if (!comp.isPaintDelayed())
+				comp.paintComponent(g);
+		for (EntityComp comp : comps)
+			if (comp.isPaintDelayed())
+				comp.paintComponent(g);
 	}
 
 	@Override
@@ -258,6 +262,10 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		}
 
 		abstract void paintComponent(Graphics g);
+
+		boolean isPaintDelayed() {
+			return false;
+		}
 	}
 
 	static class TileComp extends EntityComp {

@@ -566,6 +566,11 @@ class LevelPanel extends JPanel implements Clearable {
 				return animationMovePath != null;
 			}
 
+			@Override
+			boolean isPaintDelayed() {
+				return isMoveAnimationActive();
+			}
+
 			void advanceMoveAnimation() {
 				if (animationMovePath == null)
 					return;

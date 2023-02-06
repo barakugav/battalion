@@ -315,7 +315,7 @@ abstract class Unit extends Entity {
 		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
 			for (Position pos : arena.positions()) {
 				Tile tile = arena.at(pos);
-				if (distanceMap[pos.x][pos.y] >= 0 || type.canStand.contains(tile.getTerrain().category)
+				if (distanceMap[pos.x][pos.y] >= 0 || !type.canStand.contains(tile.getTerrain().category)
 						|| (tile.hasUnit() && tile.getUnit().getTeam() != getTeam()))
 					continue;
 
