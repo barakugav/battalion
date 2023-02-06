@@ -21,7 +21,7 @@ class Images {
 
 	enum Label {
 		/* GUI */
-		Selection, Reachable, Attackable, UnitLocked;
+		Selection, Reachable, Attackable, UnitLocked, Delete;
 	}
 
 	private static final Map<Terrain, BufferedImage> terrains;
@@ -100,6 +100,7 @@ class Images {
 		ect0.put(Label.Reachable, loadImg("img/gui/reachable.png"));
 		ect0.put(Label.Attackable, loadImg("img/gui/attackabe.png"));
 		ect0.put(Label.UnitLocked, loadImg("img/gui/unit_locked.png"));
+		ect0.put(Label.Delete, loadImg("img/gui/delete.png"));
 		ect = Collections.unmodifiableMap(ect0);
 	}
 

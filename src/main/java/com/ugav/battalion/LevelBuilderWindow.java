@@ -72,6 +72,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		private EntityTab selectedTab;
 		private EntityButton selectedButton;
+		private static final Object removeBuildingObj = new Object();
+		private static final Object removeUnitObj = new Object();
 
 		Menu() {
 			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -85,6 +87,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				EntityTab tab = new EntityTab();
 				for (Building.Type type : Building.Type.values())
 					tab.addEntityButton(BuildingDesc.of(type, team));
+				tab.addEntityButton(new EntityButton(removeBuildingObj, Images.Label.Delete));
 				buildlingsTabs.put(team, tab);
 			}
 
@@ -93,6 +96,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				EntityTab tab = new EntityTab();
 				for (Unit.Type type : Unit.Type.values())
 					tab.addEntityButton(UnitDesc.of(type, team));
+				tab.addEntityButton(new EntityButton(removeUnitObj, Images.Label.Delete));
 				unitsTabs.put(team, tab);
 			}
 
@@ -174,11 +178,15 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			private static final int IconHeight = 72;
 
 			EntityButton(Object entity) {
+				this(entity, entity);
+			}
+
+			EntityButton(Object entity, Object iconTag) {
 				super();
 
 				this.entity = Objects.requireNonNull(entity);
 
-				setIcons();
+				setIcons(iconTag);
 
 				setBorder(BorderFactory.createEmptyBorder());
 				setContentAreaFilled(false);
@@ -187,12 +195,12 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				addActionListener(e -> selectButton(EntityButton.this));
 			}
 
-			void setIcons() {
-				BufferedImage img = Images.getImage(entity);
+			void setIcons(Object iconTag) {
+				BufferedImage img = Images.getImage(iconTag);
 				BufferedImage selectImg = Images.getImage(Images.Label.Selection);
 				for (BufferedImage i : List.of(img, selectImg))
 					if (i.getWidth() != IconWidth || i.getHeight() > IconHeight)
-						throw new IllegalArgumentException("icon too big for entity: " + entity);
+						throw new IllegalArgumentException("icon too big for entity: " + iconTag);
 				Graphics g;
 
 				/* Regular icon */
@@ -224,7 +232,11 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			}
 
 			void addEntityButton(Object entity) {
-				EntityButton button = new EntityButton(entity);
+				addEntityButton(new EntityButton(entity));
+
+			}
+
+			void addEntityButton(EntityButton button) {
 				add(button);
 				buttons.add(button);
 			}
@@ -437,6 +449,14 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					if (unit.type.canStand.contains(tile.terrain.category))
 						builder.setTile(pos.x, pos.y, tile.terrain, tile.building, unit);
 					// TODO else user message
+
+				} else if (selectedObj == Menu.removeBuildingObj) {
+					if (tile.hasBuilding())
+						builder.setTile(pos.x, pos.y, tile.terrain, null, tile.unit);
+
+				} else if (selectedObj == Menu.removeUnitObj) {
+					if (tile.hasUnit())
+						builder.setTile(pos.x, pos.y, tile.terrain, tile.building, null);
 
 				} else {
 					throw new InternalError("Unknown menu selected object: " + selectedObj);
