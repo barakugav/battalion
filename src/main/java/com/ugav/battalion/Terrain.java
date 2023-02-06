@@ -11,6 +11,8 @@ enum Terrain implements Drawable {
 
 	Mountain(Category.ExtremeLand), MountainBig(Category.ExtremeLand),
 
+	Road(Category.Road),
+
 	ClearWater(Category.Water);
 
 	final Category category;
@@ -20,7 +22,7 @@ enum Terrain implements Drawable {
 	}
 
 	enum Category {
-		FlatLand, RoughLand, ExtremeLand, Shore, Water;
+		FlatLand, RoughLand, ExtremeLand, Shore, Road, Water;
 	}
 
 }

@@ -381,8 +381,11 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		void reset() {
 			removeEnteriesComp();
 
-			for (Position pos : Utils.iterable(new Position.Iterator2D(builder.getWidth(), builder.getHeight())))
-				tiles.put(pos, new TileComp(pos));
+			for (Position pos : Utils.iterable(new Position.Iterator2D(builder.getWidth(), builder.getHeight()))) {
+				TileComp tileComp = new TileComp(pos);
+				tiles.put(pos, tileComp);
+				tileComp.tileUpdate();
+			}
 
 			mapViewSet(new Position(0, 0));
 			repaint();

@@ -276,6 +276,8 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 		@Override
 		void paintComponent(Graphics g) {
+			Predicate<Position> isArena = p -> p.isInRect(0, 0, arena.getArenaWidth() - 1, arena.getArenaHeight() - 1);
+
 			Terrain terrain = arena.getTerrain(pos);
 			if (terrain == Terrain.ClearWater) {
 				arena.drawImage(g, terrain, pos);
@@ -302,8 +304,8 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 						throw new InternalError();
 					}
 					Position p1 = pos.add(d1), p2 = pos.add(d2), p3 = pos.add(d1).add(d2);
-					Predicate<Position> hasWater = p -> p.isInRect(0, 0, arena.getArenaWidth() - 1,
-							arena.getArenaHeight() - 1) && arena.getTerrain(p).category != Terrain.Category.Water;
+					Predicate<Position> hasWater = isArena
+							.and(p -> arena.getTerrain(p).category != Terrain.Category.Water);
 					boolean b1 = hasWater.test(p1), b2 = hasWater.test(p2), b3 = hasWater.test(p3);
 
 					if (b1 || b2 || b3) {
@@ -312,6 +314,14 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 					}
 				}
+
+			} else if (terrain == Terrain.Road) {
+				String variant = "";
+				for (Direction dir : List.of(Direction.XPos, Direction.YNeg, Direction.XNeg, Direction.YPos)) {
+					Position p = pos.add(dir);
+					variant += (isArena.test(p) && arena.getTerrain(p) == Terrain.Road) ? "v" : "x";
+				}
+				arena.drawImage(g, Images.Label.valueOf("Road_" + variant), pos);
 
 			} else {
 				arena.drawImage(g, terrain, pos);

@@ -97,13 +97,13 @@ abstract class Unit extends Entity {
 	}
 
 	private enum Tech {
-		StandOnLandFlat(TypeBuilder::canStand, Terrain.Category.FlatLand),
+		StandOnLandFlat(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.Road),
 
 		StandOnLandRough(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.RoughLand,
-				Terrain.Category.Shore),
+				Terrain.Category.Shore, Terrain.Category.Road),
 
 		StandOnLandExtreme(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.RoughLand,
-				Terrain.Category.Shore, Terrain.Category.ExtremeLand),
+				Terrain.Category.Shore, Terrain.Category.ExtremeLand, Terrain.Category.Road),
 
 		StandOnWater(TypeBuilder::canStand, Terrain.Category.Water),
 

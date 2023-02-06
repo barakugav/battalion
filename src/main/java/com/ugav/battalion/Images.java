@@ -21,6 +21,10 @@ class Images {
 
 	enum Label {
 
+		/* Roads */
+		Road_xxxx, Road_vxxx, Road_xvxx, Road_xxvx, Road_xxxv, Road_vvxx, Road_vxvx, Road_vxxv, Road_xvvx, Road_xvxv,
+		Road_xxvv, Road_vvvx, Road_vvxv, Road_vxvv, Road_xvvv, Road_vvvv,
+
 		/* Water edge */
 		WaterEdge00, WaterEdge01, WaterEdge02, WaterEdge03, WaterEdge10, WaterEdge11, WaterEdge12, WaterEdge13,
 		WaterEdge20, WaterEdge21, WaterEdge22, WaterEdge23, WaterEdge30, WaterEdge31, WaterEdge32, WaterEdge33,
@@ -42,6 +46,7 @@ class Images {
 		terrains0.put(Terrain.Hills, loadImg("img/terrain/land_hills.png"));
 		terrains0.put(Terrain.Mountain, loadImg("img/terrain/mountain.png"));
 		terrains0.put(Terrain.MountainBig, loadImg("img/terrain/mountain_high.png"));
+		terrains0.put(Terrain.Road, loadImg("img/terrain/road_vxvx.png"));
 		terrains0.put(Terrain.ClearWater, loadImg("img/terrain/water_clear.png"));
 		terrains = Collections.unmodifiableMap(terrains0);
 
@@ -82,6 +87,13 @@ class Images {
 				ect0.put(Label.valueOf("WaterEdge" + suffix), loadImg("img/terrain/water_edge_" + suffix + ".png"));
 			}
 		}
+		for (int variant = 0; variant < 16; variant++) {
+			String suffix = "";
+			for (int b = 0; b < 4; b++)
+				suffix += ((variant & (1 << b)) != 0) ? "v" : "x";
+			ect0.put(Label.valueOf("Road_" + suffix), loadImg("img/terrain/road_" + suffix + ".png"));
+		}
+
 		ect0.put(Label.Selection, loadImg("img/gui/selection.png"));
 		ect0.put(Label.Reachable, loadImg("img/gui/reachable.png"));
 		ect0.put(Label.Attackable, loadImg("img/gui/attackabe.png"));
