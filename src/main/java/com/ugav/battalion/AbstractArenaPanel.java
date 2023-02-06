@@ -184,7 +184,8 @@ abstract class AbstractArenaPanel extends JPanel implements Clearable {
 
 	void drawImage(Graphics g, Object obj, int x, int y) {
 		BufferedImage img = Images.getImage(obj);
-		g.drawImage(img, x, y, img.getWidth(), img.getHeight(), this);
+		assert img.getWidth() == TILE_SIZE_PIXEL;
+		g.drawImage(img, x, y + TILE_SIZE_PIXEL - img.getHeight(), img.getWidth(), img.getHeight(), this);
 	}
 
 }

@@ -8,6 +8,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -380,13 +381,12 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		@Override
 		protected void paintComponent(Graphics g) {
 			super.paintComponent(g);
-			for (TileComp tile : tiles.values())
+
+			Comparator<Position> posCmp = Position.comparator();
+			Comparator<TileComp> tileCmp = (t1, t2) -> posCmp.compare(t1.pos, t2.pos);
+			for (TileComp tile : Utils.sorted(tiles.values(), tileCmp))
 				tile.paintComponent(g);
 			globals.frame.pack();
-
-//			if (selection != null) {
-//				tiles.get(selection).drawImage(g, Images.Label.Selection);
-//			}
 		}
 
 		private boolean isUnitSelected() {

@@ -17,6 +17,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -309,11 +310,21 @@ class LevelPanel extends JPanel implements Clearable {
 
 		@Override
 		protected void paintComponent(Graphics g) {
-			for (TileComp tile : tiles.values())
+			super.paintComponent(g);
+
+			Comparator<Position> posCmp = Position.comparator();
+
+			Comparator<TileComp> tileCmp = (t1, t2) -> posCmp.compare(t1.pos, t2.pos);
+			for (TileComp tile : Utils.sorted(tiles.values(), tileCmp))
 				tile.paintComponent(g);
-			for (BuildingComp building : buildings.values())
+
+			Comparator<BuildingComp> buildingCmp = (b1, b2) -> posCmp.compare(b1.building.getPos(),
+					b2.building.getPos());
+			for (BuildingComp building : Utils.sorted(buildings.values(), buildingCmp))
 				building.paintComponent(g);
-			for (UnitComp unit : units.values())
+
+			Comparator<UnitComp> unitCmp = (u1, u2) -> posCmp.compare(u1.unit.getPos(), u2.unit.getPos());
+			for (UnitComp unit : Utils.sorted(units.values(), unitCmp))
 				unit.paintComponent(g);
 
 			if (selection != null) {

@@ -2,6 +2,7 @@ package com.ugav.battalion;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -123,6 +124,22 @@ class Position {
 			return Utils.iteratorIf(new Iterator2D(map.length, map[0].length), this);
 		}
 
+	}
+
+	static <T extends Position> Comparator<T> comparator() {
+		return comparator(false, false);
+	}
+
+	static <T extends Position> Comparator<T> comparator(boolean xreverse, boolean yreverse) {
+		int xmul = xreverse ? -1 : 1;
+		int ymul = yreverse ? -1 : 1;
+		return (p1, p2) -> {
+			if (p1.x != p2.x)
+				return Integer.compare(p1.x, p2.x) * xmul;
+			if (p1.y != p2.y)
+				return Integer.compare(p1.y, p2.y) * ymul;
+			return 0;
+		};
 	}
 
 }

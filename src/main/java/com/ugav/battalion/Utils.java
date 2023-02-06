@@ -10,6 +10,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -183,6 +185,16 @@ class Utils {
 		Holder(T val) {
 			this.val = val;
 		}
+	}
+
+	static <T> List<T> sorted(Collection<T> c) {
+		return sorted(c, null);
+	}
+
+	static <T> List<T> sorted(Collection<T> c, Comparator<? super T> cmp) {
+		List<T> l = new ArrayList<>(c);
+		l.sort(cmp);
+		return l;
 	}
 
 }
