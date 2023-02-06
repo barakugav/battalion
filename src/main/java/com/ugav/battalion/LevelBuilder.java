@@ -30,7 +30,7 @@ class LevelBuilder {
 		tiles = new TileDesc[width][height];
 		for (int x = 0; x < width; x++)
 			for (int y = 0; y < height; y++)
-				tiles[x][y] = TileDesc.of(Terrain.FlatLand, null, null);
+				tiles[x][y] = TileDesc.of(Terrain.FlatLand1, null, null);
 		onResetChange.notify(new DataEvent.LevelReset(this));
 	}
 

@@ -4,7 +4,14 @@ import com.ugav.battalion.Images.Drawable;
 
 enum Terrain implements Drawable {
 
-	FlatLand(Category.Land), Mountain(Category.Mountain), ClearWater(Category.Water);
+	FlatLand1(Category.FlatLand), FlatLand2(Category.FlatLand), FlatLand3(Category.FlatLand),
+	FlatLand4(Category.FlatLand), FlatLand5(Category.FlatLand),
+
+	Trees(Category.RoughLand), Hills(Category.RoughLand),
+
+	Mountain(Category.ExtremeLand), MountainBig(Category.ExtremeLand),
+
+	ClearWater(Category.Water);
 
 	final Category category;
 
@@ -13,22 +20,7 @@ enum Terrain implements Drawable {
 	}
 
 	enum Category {
-		Land, Mountain, Shore, Water;
-
-		String shortName() {
-			switch (this) {
-			case Land:
-				return "L";
-			case Mountain:
-				return "M";
-			case Shore:
-				return "S";
-			case Water:
-				return "W";
-			default:
-				throw new InternalError();
-			}
-		}
+		FlatLand, RoughLand, ExtremeLand, Shore, Water;
 	}
 
 }

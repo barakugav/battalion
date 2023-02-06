@@ -36,8 +36,12 @@ class Images {
 	static {
 		/* Terrain */
 		Map<Terrain, BufferedImage> terrains0 = new HashMap<>();
-		terrains0.put(Terrain.FlatLand, loadImg("img/terrain/flat_land_01.png"));
+		for (int type = 1; type <= 5; type++)
+			terrains0.put(Terrain.valueOf("FlatLand" + type), loadImg("img/terrain/flat_land_0" + type + ".png"));
+		terrains0.put(Terrain.Trees, loadImg("img/terrain/forest.png"));
+		terrains0.put(Terrain.Hills, loadImg("img/terrain/land_hills.png"));
 		terrains0.put(Terrain.Mountain, loadImg("img/terrain/mountain.png"));
+		terrains0.put(Terrain.MountainBig, loadImg("img/terrain/mountain_high.png"));
 		terrains0.put(Terrain.ClearWater, loadImg("img/terrain/water_clear.png"));
 		terrains = Collections.unmodifiableMap(terrains0);
 
@@ -66,7 +70,7 @@ class Images {
 		};
 		addBuilding.accept(Building.Type.Factory, "img/building/facotry.png");
 		addBuilding.accept(Building.Type.OilRefinery, "img/building/oil_refinery.png");
-		addBuilding.accept(Building.Type.OilRefinery2, "img/building/oil_refinery_big.png");
+		addBuilding.accept(Building.Type.OilRefineryBig, "img/building/oil_refinery_big.png");
 		addBuilding.accept(Building.Type.OilRig, "img/building/oil_rig.png");
 		buildings = Collections.unmodifiableMap(buildings0);
 

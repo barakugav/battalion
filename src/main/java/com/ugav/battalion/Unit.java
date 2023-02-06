@@ -55,19 +55,6 @@ abstract class Unit extends Entity {
 		return type.damage;
 	}
 
-	boolean isTerrainPassable(Terrain terrain) {
-		switch (terrain.category) {
-		case Land:
-			return type.category != Category.Water;
-		case Mountain:
-			return type == Type.Soldier;
-		case Water:
-			return type.category != Category.Land;
-		default:
-			throw new InternalError();
-		}
-	}
-
 	boolean isMoveValid(List<Position> path) {
 		if (path.isEmpty() || path.size() > type.moveLimit)
 			return false;
@@ -110,12 +97,13 @@ abstract class Unit extends Entity {
 	}
 
 	private enum Tech {
-		StandOnFlatLand(TypeBuilder::canStand, Terrain.Category.Land),
+		StandOnLandFlat(TypeBuilder::canStand, Terrain.Category.FlatLand),
 
-		StandOnLand(TypeBuilder::canStand, Terrain.Category.Land, Terrain.Category.Shore),
+		StandOnLandRough(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.RoughLand,
+				Terrain.Category.Shore),
 
-		StandOnHardLand(TypeBuilder::canStand, Terrain.Category.Land, Terrain.Category.Shore,
-				Terrain.Category.Mountain),
+		StandOnLandExtreme(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.RoughLand,
+				Terrain.Category.Shore, Terrain.Category.ExtremeLand),
 
 		StandOnWater(TypeBuilder::canStand, Terrain.Category.Water),
 
@@ -145,10 +133,11 @@ abstract class Unit extends Entity {
 
 	enum Type {
 		Soldier(Category.Land, Weapon.CloseRange, 50, 22, 3, 1, 1,
-				List.of(Tech.StandOnHardLand, Tech.AttLand, Tech.AttWater, Tech.Conquerer)),
-		Tank(Category.Land, Weapon.CloseRange, 70, 35, 6, 1, 1, List.of(Tech.StandOnLand, Tech.AttLand, Tech.AttWater)),
-		Artillery(Category.Land, Weapon.LongRange, 70, 35, 3, 3, 5, List.of(Tech.StandOnLand, Tech.AttAny)),
-		Turrent(Category.Land, Weapon.LongRange, 100, 30, 0, 2, 7, List.of(Tech.StandOnFlatLand, Tech.AttAny)),
+				List.of(Tech.StandOnLandExtreme, Tech.AttLand, Tech.AttWater, Tech.Conquerer)),
+		Tank(Category.Land, Weapon.CloseRange, 70, 35, 6, 1, 1,
+				List.of(Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater)),
+		Artillery(Category.Land, Weapon.LongRange, 70, 35, 3, 3, 5, List.of(Tech.StandOnLandFlat, Tech.AttAny)),
+		Turrent(Category.Land, Weapon.LongRange, 100, 30, 0, 2, 7, List.of(Tech.StandOnLandFlat, Tech.AttAny)),
 
 		Ship(Category.Water, Weapon.CloseRange, 70, 35, 6, 1, 1,
 				List.of(Tech.StandOnWater, Tech.AttLand, Tech.AttWater)),
@@ -326,7 +315,7 @@ abstract class Unit extends Entity {
 		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
 			for (Position pos : arena.positions()) {
 				Tile tile = arena.at(pos);
-				if (distanceMap[pos.x][pos.y] >= 0 || !isTerrainPassable(tile.getTerrain())
+				if (distanceMap[pos.x][pos.y] >= 0 || type.canStand.contains(tile.getTerrain().category)
 						|| (tile.hasUnit() && tile.getUnit().getTeam() != getTeam()))
 					continue;
 

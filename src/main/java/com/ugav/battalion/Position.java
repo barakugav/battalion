@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 
-class Position {
+class Position implements Comparable<Position> {
 
 	final int x, y;
 
@@ -124,6 +124,15 @@ class Position {
 			return Utils.iteratorIf(new Iterator2D(map.length, map[0].length), this);
 		}
 
+	}
+
+	@Override
+	public int compareTo(Position o) {
+		if (x != o.x)
+			return Integer.compare(x, o.x);
+		if (y != o.y)
+			return Integer.compare(y, o.y);
+		return 0;
 	}
 
 	static <T extends Position> Comparator<T> comparator() {

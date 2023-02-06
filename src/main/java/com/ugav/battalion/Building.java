@@ -7,13 +7,13 @@ import java.util.List;
 abstract class Building extends Entity {
 
 	enum Type {
-		OilRefinery(List.of(Terrain.Category.Land)),
+		OilRefinery(List.of(Terrain.Category.FlatLand)),
 
-		OilRefinery2(List.of(Terrain.Category.Land)),
+		OilRefineryBig(List.of(Terrain.Category.FlatLand)),
 
 		OilRig(List.of(Terrain.Category.Water)),
 
-		Factory(List.of(Terrain.Category.Land));
+		Factory(List.of(Terrain.Category.FlatLand));
 
 		final List<Terrain.Category> canBuildOn;
 
@@ -132,10 +132,10 @@ abstract class Building extends Entity {
 
 	}
 
-	static class OilRefinery2 extends BuildingNonActive {
+	static class OilRefineryBig extends BuildingNonActive {
 
-		OilRefinery2(Team team) {
-			super(Type.OilRefinery2, team);
+		OilRefineryBig(Team team) {
+			super(Type.OilRefineryBig, team);
 		}
 
 		@Override

@@ -10,9 +10,10 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
-import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -214,19 +215,13 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 	@Override
 	protected void paintComponent(Graphics g) {
-		Comparator<Position> posCmp = Position.comparator();
-
-		Comparator<TileCompImpl> tileCmp = (t1, t2) -> posCmp.compare(t1.pos, t2.pos);
-		for (TileCompImpl tile : Utils.sorted(tiles.values(), tileCmp))
-			tile.paintComponent(g);
-
-		Comparator<BuildingCompImpl> buildingCmp = (b1, b2) -> posCmp.compare(b1.pos, b2.pos);
-		for (BuildingCompImpl building : Utils.sorted(buildings.values(), buildingCmp))
-			building.paintComponent(g);
-
-		Comparator<UnitCompImpl> unitCmp = (u1, u2) -> posCmp.compare(u1.pos, u2.pos);
-		for (UnitCompImpl unit : Utils.sorted(units.values(), unitCmp))
-			unit.paintComponent(g);
+		List<EntityComp> comps = new ArrayList<>(tiles.size() + buildings.size() + units.size());
+		comps.addAll(tiles.values());
+		comps.addAll(buildings.values());
+		comps.addAll(units.values());
+		comps.sort((o1, o2) -> o1.pos.compareTo(o2.pos));
+		for (EntityComp comp : comps)
+			comp.paintComponent(g);
 	}
 
 	@Override
@@ -252,16 +247,26 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 	abstract Object getUnit(Position pos);
 
-	static class TileComp implements Clearable {
+	abstract static class EntityComp implements Clearable {
 
-		private final AbstractArenaPanel<?, ?, ?> arena;
-		final Position pos;
+		final AbstractArenaPanel<?, ?, ?> arena;
+		Position pos;
 
-		TileComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
+		EntityComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
 			this.arena = Objects.requireNonNull(arena);
 			this.pos = Objects.requireNonNull(pos);
 		}
 
+		abstract void paintComponent(Graphics g);
+	}
+
+	static class TileComp extends EntityComp {
+
+		TileComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
+			super(arena, pos);
+		}
+
+		@Override
 		void paintComponent(Graphics g) {
 			Terrain terrain = arena.getTerrain(pos);
 			if (terrain == Terrain.ClearWater) {
@@ -321,16 +326,13 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 	}
 
-	static class BuildingComp implements Clearable {
-
-		private final AbstractArenaPanel<?, ?, ?> arena;
-		final Position pos;
+	static class BuildingComp extends EntityComp {
 
 		BuildingComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
-			this.arena = Objects.requireNonNull(arena);
-			this.pos = Objects.requireNonNull(pos);
+			super(arena, pos);
 		}
 
+		@Override
 		void paintComponent(Graphics g) {
 			arena.drawImage(g, arena.getBuilding(pos), pos);
 		}
@@ -341,16 +343,13 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 	}
 
-	static class UnitComp implements Clearable {
-
-		private final AbstractArenaPanel<?, ?, ?> arena;
-		Position pos;
+	static class UnitComp extends EntityComp {
 
 		UnitComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
-			this.arena = Objects.requireNonNull(arena);
-			this.pos = Objects.requireNonNull(pos);
+			super(arena, pos);
 		}
 
+		@Override
 		void paintComponent(Graphics g) {
 			arena.drawImage(g, arena.getUnit(pos), pos);
 		}
