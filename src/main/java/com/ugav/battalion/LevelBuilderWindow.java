@@ -6,12 +6,14 @@ import java.awt.Graphics;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -37,7 +39,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 	private final Menu menu;
 	private final ArenaPanel arenaPanel;
 	private final DebugPrintsManager debug;
-	private Object menuSelectedObj;
 
 	LevelBuilderWindow(Globals globals) {
 		this.globals = Objects.requireNonNull(globals);
@@ -65,33 +66,52 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		private static final long serialVersionUID = 1L;
 
-		private final JPanel terrainTab;
-		private final Map<Team, JPanel> buildlingsTabs;
-		private final Map<Team, JPanel> unitsTabs;
+		private final EntityTab terrainTab;
+		private final Map<Team, EntityTab> buildlingsTabs;
+		private final Map<Team, EntityTab> unitsTabs;
+
+		private EntityTab selectedTab;
+		private EntityButton selectedButton;
 
 		Menu() {
 			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
-			terrainTab = createTerrainPanel();
-			buildlingsTabs = createBuildingsPanels();
-			unitsTabs = createUnitsPanels();
+			terrainTab = new EntityTab();
+			for (Terrain terrain : Terrain.values())
+				terrainTab.addEntityButton(terrain);
+
+			buildlingsTabs = new HashMap<>(Team.values().length);
+			for (Team team : Team.values()) {
+				EntityTab tab = new EntityTab();
+				for (Building.Type type : Building.Type.values())
+					tab.addEntityButton(BuildingDesc.of(type, team));
+				buildlingsTabs.put(team, tab);
+			}
+
+			unitsTabs = new HashMap<>(Team.realTeams.size());
+			for (Team team : Team.realTeams) {
+				EntityTab tab = new EntityTab();
+				for (Unit.Type type : Unit.Type.values())
+					tab.addEntityButton(UnitDesc.of(type, team));
+				unitsTabs.put(team, tab);
+			}
 
 			add(createEntitiesTabsButtons());
-			add(createEntitiesPanel());
+			add(createEntitiesTabsPanel());
 			add(createGeneralButtons());
 
 			selectEntitiesTab(terrainTab);
 		}
 
-		private List<JPanel> getEntitiesTabs() {
-			List<JPanel> tabs = new ArrayList<>(1 + buildlingsTabs.size() + unitsTabs.size());
+		private List<EntityTab> getEntitiesTabs() {
+			List<EntityTab> tabs = new ArrayList<>(1 + buildlingsTabs.size() + unitsTabs.size());
 			tabs.add(terrainTab);
 			tabs.addAll(buildlingsTabs.values());
 			tabs.addAll(unitsTabs.values());
 			return tabs;
 		}
 
-		private JPanel createEntitiesPanel() {
+		private JPanel createEntitiesTabsPanel() {
 			JPanel panel = new JPanel();
 			Dimension panelSize = panel.getPreferredSize();
 			for (JPanel tab : getEntitiesTabs()) {
@@ -114,10 +134,12 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			return button;
 		}
 
-		private void selectEntitiesTab(JPanel tab) {
-			for (JPanel otherTab : getEntitiesTabs())
-				otherTab.setVisible(false);
-			tab.setVisible(true);
+		private void selectEntitiesTab(EntityTab tab) {
+			if (tab == selectedTab)
+				return;
+			if (selectedTab != null)
+				selectedTab.setSelect(false);
+			(selectedTab = tab).setSelect(true);
 			repaint();
 		};
 
@@ -143,60 +165,84 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			return panel;
 		}
 
-		private JButton createEntityButton(Drawable drawable) {
-			final int ImgButtonSize = 50;
-			Image img = Images.getImage(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize, Image.SCALE_SMOOTH);
-			JButton button = new JButton(new ImageIcon(img));
-//			button.setBorder(BorderFactory.createEmptyBorder());
-			button.setContentAreaFilled(false);
-			button.setPreferredSize(new Dimension(ImgButtonSize, ImgButtonSize));
-			return button;
-		}
+		private class EntityButton extends JButton {
 
-		private JPanel createTerrainPanel() {
-			JPanel panel = new JPanel(new GridLayout(0, 2));
+			private static final long serialVersionUID = 1L;
 
-			for (Terrain terrain : Terrain.values()) {
-				JButton button = createEntityButton(terrain);
-				button.addActionListener(e -> selectObject(terrain));
-				panel.add(button);
+			final Object entity;
+			private static final int IconWidth = 56;
+			private static final int IconHeight = 72;
+
+			EntityButton(Object entity) {
+				super();
+
+				this.entity = Objects.requireNonNull(entity);
+
+				setIcons();
+
+				setBorder(BorderFactory.createEmptyBorder());
+				setContentAreaFilled(false);
+
+				setPreferredSize(new Dimension(IconWidth + 2, IconHeight + 2));
+				addActionListener(e -> selectButton(EntityButton.this));
 			}
 
-			return panel;
-		}
+			void setIcons() {
+				BufferedImage img = Images.getImage(entity);
+				BufferedImage selectImg = Images.getImage(Images.Label.Selection);
+				for (BufferedImage i : List.of(img, selectImg))
+					if (i.getWidth() != IconWidth || i.getHeight() > IconHeight)
+						throw new IllegalArgumentException("icon too big for entity: " + entity);
+				Graphics g;
 
-		private Map<Team, JPanel> createBuildingsPanels() {
-			Map<Team, JPanel> panels = new HashMap<>(Team.values().length);
-			for (Team team : Team.values()) {
-				JPanel panel = new JPanel(new GridLayout(0, 2));
-				for (Building.Type type : Building.Type.values()) {
-					BuildingDesc building = BuildingDesc.of(type, team);
-					JButton button = createEntityButton(building);
-					button.addActionListener(e -> selectObject(building));
-					panel.add(button);
-				}
-				panels.put(team, panel);
+				/* Regular icon */
+				BufferedImage icon = new BufferedImage(IconWidth, IconHeight, BufferedImage.TYPE_INT_ARGB);
+				g = icon.getGraphics();
+				g.drawImage(img, 0, IconHeight - img.getHeight(), IconWidth, img.getHeight(), null);
+				setIcon(new ImageIcon(icon));
+
+				/* Selected icon */
+				BufferedImage selectedIcon = new BufferedImage(IconWidth, IconHeight, BufferedImage.TYPE_INT_ARGB);
+				g = selectedIcon.getGraphics();
+				g.drawImage(img, 0, IconHeight - img.getHeight(), IconWidth, img.getHeight(), null);
+				g.drawImage(selectImg, 0, IconHeight - selectImg.getHeight(), IconWidth, IconWidth, null);
+				setSelectedIcon(new ImageIcon(selectedIcon));
 			}
-			return panels;
+
 		}
 
-		private Map<Team, JPanel> createUnitsPanels() {
-			Map<Team, JPanel> panels = new HashMap<>(Team.realTeams.size());
-			for (Team team : Team.realTeams) {
-				JPanel panel = new JPanel(new GridLayout(0, 2));
-				for (Unit.Type type : Unit.Type.values()) {
-					UnitDesc unit = UnitDesc.of(type, team);
-					JButton button = createEntityButton(unit);
-					button.addActionListener(e -> selectObject(unit));
-					panel.add(button);
-				}
-				panels.put(team, panel);
+		private class EntityTab extends JPanel {
+
+			private static final long serialVersionUID = 1L;
+
+			final List<EntityButton> buttons;
+
+			EntityTab() {
+				super(new GridLayout(0, 2));
+				buttons = new ArrayList<>();
+				setVisible(false);
 			}
-			return panels;
+
+			void addEntityButton(Object entity) {
+				EntityButton button = new EntityButton(entity);
+				add(button);
+				buttons.add(button);
+			}
+
+			void setSelect(boolean select) {
+				if (select)
+					selectButton(buttons.isEmpty() ? null : buttons.get(0));
+				setVisible(select);
+			}
+
 		}
 
-		private void selectObject(Object obj) {
-			menuSelectedObj = obj;
+		private void selectButton(EntityButton button) {
+			if (selectedButton != null)
+				selectedButton.setSelected(false);
+			if ((selectedButton = button) != null)
+				button.setSelected(true);
+			repaint();
 		}
 
 		private JPanel createGeneralButtons() {
@@ -354,10 +400,12 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		}
 
 		private void tileClicked(Position pos) {
-			if (menuSelectedObj != null) {
+			Object selectedObj = menu.selectedButton.entity;
+
+			if (selectedObj != null) {
 				TileDesc tile = builder.at(pos);
-				if (menuSelectedObj instanceof Terrain) {
-					Terrain terrain = (Terrain) menuSelectedObj;
+				if (selectedObj instanceof Terrain) {
+					Terrain terrain = (Terrain) selectedObj;
 
 					BuildingDesc building = null;
 					if (tile.hasBuilding()) {
@@ -375,20 +423,20 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 					builder.setTile(pos.x, pos.y, terrain, building, unit);
 
-				} else if (menuSelectedObj instanceof BuildingDesc) {
-					BuildingDesc building = new BuildingDesc((BuildingDesc) menuSelectedObj);
+				} else if (selectedObj instanceof BuildingDesc) {
+					BuildingDesc building = new BuildingDesc((BuildingDesc) selectedObj);
 					if (building.type.canBuildOn.contains(tile.terrain.category))
 						builder.setTile(pos.x, pos.y, tile.terrain, building, tile.unit);
 					// TODO else user message
 
-				} else if (menuSelectedObj instanceof UnitDesc) {
-					UnitDesc unit = new UnitDesc((UnitDesc) menuSelectedObj);
+				} else if (selectedObj instanceof UnitDesc) {
+					UnitDesc unit = new UnitDesc((UnitDesc) selectedObj);
 					if (unit.type.canStand.contains(tile.terrain.category))
 						builder.setTile(pos.x, pos.y, tile.terrain, tile.building, unit);
 					// TODO else user message
 
 				} else {
-					throw new InternalError("Unknown menu selected object: " + menuSelectedObj);
+					throw new InternalError("Unknown menu selected object: " + selectedObj);
 				}
 			}
 		}
