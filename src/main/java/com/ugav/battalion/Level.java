@@ -73,6 +73,11 @@ class Level {
 			this.team = Objects.requireNonNull(team);
 		}
 
+		BuildingDesc(BuildingDesc desc) {
+			this.type = desc.type;
+			this.team = desc.team;
+		}
+
 		static BuildingDesc of(Building.Type type, Team team) {
 			return new BuildingDesc(type, team);
 		}
@@ -97,6 +102,7 @@ class Level {
 		public String toString() {
 			return "(" + type + ", " + team + ")";
 		}
+
 	}
 
 	static class UnitDesc implements Drawable {
@@ -106,6 +112,11 @@ class Level {
 		UnitDesc(Unit.Type type, Team team) {
 			this.type = Objects.requireNonNull(type);
 			this.team = Objects.requireNonNull(team);
+		}
+
+		UnitDesc(UnitDesc desc) {
+			this.type = desc.type;
+			this.team = desc.team;
 		}
 
 		static UnitDesc of(Unit.Type type, Team team) {

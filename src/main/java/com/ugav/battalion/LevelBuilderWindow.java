@@ -3,14 +3,11 @@ package com.ugav.battalion;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
-import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -24,6 +21,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import com.ugav.battalion.AbstractArenaPanel.BuildingComp;
+import com.ugav.battalion.AbstractArenaPanel.UnitComp;
 import com.ugav.battalion.Images.Drawable;
 import com.ugav.battalion.Level.BuildingDesc;
 import com.ugav.battalion.Level.TileDesc;
@@ -39,7 +38,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 	private final ArenaPanel arenaPanel;
 	private final DebugPrintsManager debug;
 	private Object menuSelectedObj;
-	private Position selection;
 
 	LevelBuilderWindow(Globals globals) {
 		this.globals = Objects.requireNonNull(globals);
@@ -59,13 +57,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 	@Override
 	public void clear() {
-	}
-
-	private void clearSelection() {
-		if (selection == null)
-			return;
-		debug.println("clearSelection ", selection);
-		selection = null;
+		menu.clear();
+		arenaPanel.clear();
 	}
 
 	private class Menu extends JPanel implements Clearable {
@@ -272,15 +265,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		private static final long serialVersionUID = 1L;
 
-		private static GridBagConstraints gbConstraints(int x, int y, int width, int height) {
-			GridBagConstraints c = new GridBagConstraints();
-			c.gridx = x;
-			c.gridy = y;
-			c.gridwidth = width;
-			c.gridheight = height;
-			return c;
-		}
-
 		ResetDialog() {
 			super(globals.frame, "Reset level");
 			JPanel panel = new JPanel();
@@ -305,13 +289,13 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			cancelButton.addActionListener(e -> dispose());
 
 			panel.setLayout(new GridBagLayout());
-			panel.add(new JLabel("Would you like to reset the level?"), gbConstraints(0, 0, 2, 1));
-			panel.add(new JLabel("new level width:"), gbConstraints(0, 1, 1, 1));
-			panel.add(widthText, gbConstraints(1, 1, 1, 1));
-			panel.add(new JLabel("new level height:"), gbConstraints(0, 2, 1, 1));
-			panel.add(heightText, gbConstraints(1, 2, 1, 1));
-			panel.add(resetButton, gbConstraints(0, 3, 1, 1));
-			panel.add(cancelButton, gbConstraints(1, 3, 1, 1));
+			panel.add(new JLabel("Would you like to reset the level?"), Utils.gbConstraints(0, 0, 2, 1));
+			panel.add(new JLabel("new level width:"), Utils.gbConstraints(0, 1, 1, 1));
+			panel.add(widthText, Utils.gbConstraints(1, 1, 1, 1));
+			panel.add(new JLabel("new level height:"), Utils.gbConstraints(0, 2, 1, 1));
+			panel.add(heightText, Utils.gbConstraints(1, 2, 1, 1));
+			panel.add(resetButton, Utils.gbConstraints(0, 3, 1, 1));
+			panel.add(cancelButton, Utils.gbConstraints(1, 3, 1, 1));
 			add(panel);
 			pack();
 		}
@@ -322,21 +306,19 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 	}
 
-	private class ArenaPanel extends AbstractArenaPanel implements Clearable {
+	private class ArenaPanel extends AbstractArenaPanel<ArenaPanel.TileComp, BuildingComp, UnitComp>
+			implements Clearable {
 
-		private final Map<Position, TileComp> tiles;
 		private final DataChangeRegister register;
 
 		private static final long serialVersionUID = 1L;
 
 		ArenaPanel() {
-			tiles = new HashMap<>();
 			register = new DataChangeRegister();
 
 			register.registerListener(builder.onTileChange, e -> {
-				/* TODO find a way to repaint only the changed tile */
-				// tiles.get(e.pos).repaint();
-				repaint();
+				tiles.computeIfAbsent(e.pos, TileComp::new).tileUpdate();
+				repaint(); /* TODO find a way to repaint only the changed tile */
 			});
 			register.registerListener(builder.onResetChange, e -> reset());
 			register.registerListener(onTileClick, e -> tileClicked(e.pos));
@@ -353,13 +335,10 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		}
 
 		void reset() {
-			for (Iterator<TileComp> it = tiles.values().iterator(); it.hasNext();) {
-				TileComp tile = it.next();
-				if (tile.pos.x >= builder.getWidth() || tile.pos.y >= builder.getHeight())
-					it.remove();
-			}
+			removeEnteriesComp();
+
 			for (Position pos : Utils.iterable(new Position.Iterator2D(builder.getWidth(), builder.getHeight())))
-				tiles.computeIfAbsent(pos, p -> new TileComp(pos));
+				tiles.put(pos, new TileComp(pos));
 
 			mapViewSet(new Position(0, 0));
 			repaint();
@@ -371,26 +350,12 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			register.unregisterAllListeners(builder.onResetChange);
 			register.unregisterAllListeners(onTileClick);
 
-			for (TileComp tile : tiles.values())
-				tile.clear();
-			tiles.clear();
-
 			super.clear();
 		}
 
 		@Override
 		protected void paintComponent(Graphics g) {
 			super.paintComponent(g);
-
-			Comparator<Position> posCmp = Position.comparator();
-			Comparator<TileComp> tileCmp = (t1, t2) -> posCmp.compare(t1.pos, t2.pos);
-			for (TileComp tile : Utils.sorted(tiles.values(), tileCmp))
-				tile.paintComponent(g);
-			globals.frame.pack();
-		}
-
-		private boolean isUnitSelected() {
-			return selection != null && builder.at(selection).hasUnit();
 		}
 
 		private void tileClicked(Position pos) {
@@ -416,13 +381,13 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					builder.setTile(pos.x, pos.y, terrain, building, unit);
 
 				} else if (menuSelectedObj instanceof BuildingDesc) {
-					BuildingDesc building = (BuildingDesc) menuSelectedObj;
+					BuildingDesc building = new BuildingDesc((BuildingDesc) menuSelectedObj);
 					if (building.type.canBuildOn.contains(tile.terrain.type.category))
 						builder.setTile(pos.x, pos.y, tile.terrain, building, tile.unit);
 					// TODO else user message
 
 				} else if (menuSelectedObj instanceof UnitDesc) {
-					UnitDesc unit = (UnitDesc) menuSelectedObj;
+					UnitDesc unit = new UnitDesc((UnitDesc) menuSelectedObj);
 					if (unit.type.canStand.contains(tile.terrain.type.category))
 						builder.setTile(pos.x, pos.y, tile.terrain, tile.building, unit);
 					// TODO else user message
@@ -430,66 +395,43 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				} else {
 					throw new InternalError("Unknown menu selected object: " + menuSelectedObj);
 				}
-			} else {
-				if (selection == null) {
-					trySelect(pos);
-				} else if (isUnitSelected()) {
-					clearSelection();
-				}
-			}
-//			repaint();
-		}
-
-		private void trySelect(Position pos) {
-			TileComp tileComp = tiles.get(pos);
-			if (!tileComp.canSelect())
-				return;
-			debug.println("Selected ", pos);
-			selection = pos;
-			TileDesc tile = tileComp.tile();
-
-			if (tile.hasUnit()) {
-				// TODO
-			} else if (tile.hasBuilding()) {
-				// TODO
-			} else {
-				throw new InternalError();
 			}
 		}
 
-		private class TileComp implements Clearable {
+		@Override
+		Object getTerrain(Position pos) {
+			return builder.at(pos).terrain;
+		}
 
-			private final Position pos;
+		@Override
+		Object getBuilding(Position pos) {
+			return builder.at(pos).building;
+		}
+
+		@Override
+		Object getUnit(Position pos) {
+			return builder.at(pos).unit;
+		}
+
+		private class TileComp extends AbstractArenaPanel.TileComp {
+
+			BuildingDesc building;
+			UnitDesc unit;
 
 			TileComp(Position pos) {
-				this.pos = pos;
+				super(ArenaPanel.this, pos);
 			}
 
-			private boolean canSelect() {
-				return false;
-			}
-
-			void paintComponent(Graphics g) {
-				drawImage(g, tile().terrain, pos);
-
-				if (tile().hasBuilding())
-					drawImage(g, builder.at(pos).building, pos);
-				if (tile().hasUnit())
-					drawImage(g, builder.at(pos).unit, pos);
-
-			}
-
-			private TileDesc tile() {
-				return builder.at(pos);
-			}
-
-			@Override
-			public String toString() {
-				return pos.toString();
-			}
-
-			@Override
-			public void clear() {
+			void tileUpdate() {
+				TileDesc tile = builder.at(pos);
+				if (tile.building != null && building == null)
+					buildings.put(building = tile.building, new BuildingComp(ArenaPanel.this, pos));
+				if (tile.building == null && building != null)
+					buildings.remove(building).clear();
+				if (tile.unit != null && unit == null)
+					units.put(unit = tile.unit, new UnitComp(ArenaPanel.this, pos));
+				if (tile.unit == null && unit != null)
+					units.remove(unit).clear();
 			}
 
 		}

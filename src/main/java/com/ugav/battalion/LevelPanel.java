@@ -7,7 +7,6 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionListener;
@@ -15,11 +14,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -169,11 +165,9 @@ class LevelPanel extends JPanel implements Clearable {
 
 	}
 
-	private class ArenaPanel extends AbstractArenaPanel implements Clearable {
-
-		private final Map<Position, TileComp> tiles;
-		private final Map<Unit, UnitComp> units;
-		private final Map<Building, BuildingComp> buildings;
+	private class ArenaPanel extends
+			AbstractArenaPanel<AbstractArenaPanel.TileComp, AbstractArenaPanel.BuildingComp, ArenaPanel.UnitComp>
+			implements Clearable {
 
 		private Position.Bitmap passableMap = Position.Bitmap.empty;
 		private Position.Bitmap reachableMap = Position.Bitmap.empty;
@@ -185,9 +179,6 @@ class LevelPanel extends JPanel implements Clearable {
 		private static final long serialVersionUID = 1L;
 
 		ArenaPanel() {
-			tiles = new HashMap<>();
-			units = new IdentityHashMap<>();
-			buildings = new IdentityHashMap<>();
 			movePath = new ArrayList<>();
 			register = new DataChangeRegister();
 
@@ -264,14 +255,15 @@ class LevelPanel extends JPanel implements Clearable {
 
 		void initGame() {
 			for (Position pos : game.arena.positions()) {
-				TileComp tile = new TileComp(pos);
-				tiles.put(pos, tile);
-				if (tile.tile().hasUnit())
-					addUnitComp(tile.tile().getUnit());
+				TileComp tileComp = new TileComp(this, pos);
+				Tile tile = game.arena.at(pos);
+				tiles.put(pos, tileComp);
+				if (tile.hasUnit())
+					addUnitComp(tile.getUnit());
 
-				if (tile.tile().hasBuilding()) {
-					Building building = tile.tile().getBuilding();
-					buildings.put(building, new BuildingComp(building));
+				if (tile.hasBuilding()) {
+					Building building = tile.getBuilding();
+					buildings.put(building, new BuildingComp(this, pos));
 				}
 			}
 
@@ -311,21 +303,6 @@ class LevelPanel extends JPanel implements Clearable {
 		@Override
 		protected void paintComponent(Graphics g) {
 			super.paintComponent(g);
-
-			Comparator<Position> posCmp = Position.comparator();
-
-			Comparator<TileComp> tileCmp = (t1, t2) -> posCmp.compare(t1.pos, t2.pos);
-			for (TileComp tile : Utils.sorted(tiles.values(), tileCmp))
-				tile.paintComponent(g);
-
-			Comparator<BuildingComp> buildingCmp = (b1, b2) -> posCmp.compare(b1.building.getPos(),
-					b2.building.getPos());
-			for (BuildingComp building : Utils.sorted(buildings.values(), buildingCmp))
-				building.paintComponent(g);
-
-			Comparator<UnitComp> unitCmp = (u1, u2) -> posCmp.compare(u1.unit.getPos(), u2.unit.getPos());
-			for (UnitComp unit : Utils.sorted(units.values(), unitCmp))
-				unit.paintComponent(g);
 
 			if (selection != null) {
 				tiles.get(selection).drawImage(g, Images.Label.Selection);
@@ -382,20 +359,23 @@ class LevelPanel extends JPanel implements Clearable {
 		}
 
 		private void trySelect(Position pos) {
-			TileComp tileComp = tiles.get(pos);
-			if (!tileComp.canSelect())
-				return;
-			debug.println("Selected ", pos);
-			selection = pos;
-			Tile tile = tileComp.tile();
+			Tile tile = game.arena.at(pos);
 
 			if (tile.hasUnit()) {
+				if (!tile.getUnit().isActive())
+					return;
+				debug.println("Selected unit ", pos);
+				selection = pos;
 				Unit unit = tile.getUnit();
 				passableMap = unit.getPassableMap();
 				reachableMap = unit.getReachableMap();
 				attackableMap = unit.getAttackableMap();
 
 			} else if (tile.hasBuilding()) {
+				if (!tile.getBuilding().isActive())
+					return;
+				debug.println("Selected building ", pos);
+				selection = pos;
 				Building building = tile.getBuilding();
 				if (building instanceof Building.Factory) {
 					Building.Factory factory = (Building.Factory) building;
@@ -409,9 +389,6 @@ class LevelPanel extends JPanel implements Clearable {
 					});
 					factoryMenu.setVisible(true);
 				}
-
-			} else {
-				throw new InternalError();
 			}
 		}
 
@@ -424,7 +401,7 @@ class LevelPanel extends JPanel implements Clearable {
 
 		private void unitSecondSelection(Position pos) {
 			Tile tile = game.arena.at(pos);
-			Unit unit = tiles.get(selection).tile().getUnit();
+			Unit unit = game.arena.at(selection).getUnit();
 			Unit target;
 			if (!tile.hasUnit()) {
 				if (reachableMap.contains(pos)) {
@@ -478,7 +455,22 @@ class LevelPanel extends JPanel implements Clearable {
 			}
 		}
 
-		private class UnitComp implements Clearable {
+		@Override
+		Object getTerrain(Position pos) {
+			return game.arena.at(pos).getTerrain();
+		}
+
+		@Override
+		Object getBuilding(Position pos) {
+			return game.arena.at(pos).getBuilding();
+		}
+
+		@Override
+		Object getUnit(Position pos) {
+			return game.arena.at(pos).getUnit();
+		}
+
+		private class UnitComp extends AbstractArenaPanel.UnitComp {
 			private final Unit unit;
 			private final DataChangeRegister register;
 
@@ -492,6 +484,7 @@ class LevelPanel extends JPanel implements Clearable {
 			private static final int animationDelay = 12;
 
 			UnitComp(Unit unit) {
+				super(ArenaPanel.this, unit.getPos());
 				this.unit = unit;
 				register = new DataChangeRegister();
 
@@ -499,10 +492,13 @@ class LevelPanel extends JPanel implements Clearable {
 					if (unit.isDead()) {
 						units.remove(unit);
 						checkGameStatus();
+					} else {
+						pos = unit.getPos();
 					}
 				});
 			}
 
+			@Override
 			void paintComponent(Graphics g) {
 				Graphics2D g2 = (Graphics2D) g;
 
@@ -526,8 +522,7 @@ class LevelPanel extends JPanel implements Clearable {
 					g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
 				int unitImgX = (int) x;
 				int unitImgY = (int) y;
-				BufferedImage unitImg = Images.getImage(unit);
-				drawImage(g, unitImg, unitImgX, unitImgY);
+				drawImage(g, unit, unitImgX, unitImgY);
 				g2.setComposite(oldComp);
 
 				/* Draw health bar */
@@ -585,66 +580,6 @@ class LevelPanel extends JPanel implements Clearable {
 
 		}
 
-		private class BuildingComp implements Clearable {
-			private final Building building;
-
-			BuildingComp(Building building) {
-				this.building = building;
-			}
-
-			void paintComponent(Graphics g) {
-				drawImage(g, building, building.getPos());
-			}
-
-			@Override
-			public void clear() {
-			}
-
-		}
-
-		private class TileComp implements Clearable {
-
-			private final Position pos;
-
-			TileComp(Position pos) {
-				this.pos = pos;
-			}
-
-			private boolean canSelect() {
-				if (tile().hasUnit()) {
-					Unit unit = tile().getUnit();
-					return unit.isActive();
-				}
-				if (tile().hasBuilding()) {
-					Building building = tile().getBuilding();
-					return building.isActive();
-				}
-				return false;
-			}
-
-			void paintComponent(Graphics g) {
-				ArenaPanel.this.drawImage(g, tile().getTerrain(), pos);
-			}
-
-			private Tile tile() {
-				return game.getTile(pos);
-			}
-
-			void drawImage(Graphics g, Object obj) {
-				ArenaPanel.this.drawImage(g, obj, pos);
-			}
-
-			@Override
-			public String toString() {
-				return pos.toString();
-			}
-
-			@Override
-			public void clear() {
-			}
-
-		}
-
 	}
 
 	private class FactoryMenu extends JDialog {
@@ -681,20 +616,14 @@ class LevelPanel extends JPanel implements Clearable {
 
 				if (unitSale != null) {
 					upperComp = new JLabel(new ImageIcon(Images.getImage(UnitDesc.of(unit, Team.Red))));
-					lowerComp = new JLabel("" + unitSale.price);
+					lowerComp = new JLabel(Integer.toString(unitSale.price));
 				} else {
 					upperComp = new JLabel(new ImageIcon(Images.getImage(Images.Label.UnitLocked)));
 					lowerComp = new JLabel("none");
 				}
 
-				GridBagConstraints c = new GridBagConstraints();
-				c.gridx = c.gridy = 0;
-				c.gridwidth = 1;
-				c.gridheight = 3;
-				saleComp.add(upperComp, c);
-				c.gridy = 3;
-				c.gridheight = 1;
-				saleComp.add(lowerComp, c);
+				saleComp.add(upperComp, Utils.gbConstraints(0, 0, 1, 3));
+				saleComp.add(lowerComp, Utils.gbConstraints(0, 3, 1, 1));
 
 				if (unitSale != null) {
 					Building.Factory.UnitSale sale = unitSale;

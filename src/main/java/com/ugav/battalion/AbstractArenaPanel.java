@@ -4,18 +4,36 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Objects;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
-abstract class AbstractArenaPanel extends JPanel implements Clearable {
+abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileComp, BuildingCompImpl extends AbstractArenaPanel.BuildingComp, UnitCompImpl extends AbstractArenaPanel.UnitComp>
+		extends JPanel implements Clearable {
+
+	final Map<Position, TileCompImpl> tiles;
+	final Map<Object, BuildingCompImpl> buildings;
+	final Map<Object, UnitCompImpl> units;
 
 	private Position mapPos;
 	private double mapPosX, mapPosY;
+	private final Timer mapMoveTimer;
 	private Position hovered;
+
+	private final MouseListener mouseListener;
+	private final MouseMotionListener mouseMotionListener;
+	private final KeyListener keyListener;
 
 	final DataChangeNotifier<HoverChangeEvent> onHoverChange;
 	final DataChangeNotifier<TileClickEvent> onTileClick;
@@ -24,7 +42,7 @@ abstract class AbstractArenaPanel extends JPanel implements Clearable {
 
 		final Position pos;
 
-		HoverChangeEvent(AbstractArenaPanel source, Position pos) {
+		HoverChangeEvent(AbstractArenaPanel<?, ?, ?> source, Position pos) {
 			super(source);
 			this.pos = pos;
 		}
@@ -35,7 +53,7 @@ abstract class AbstractArenaPanel extends JPanel implements Clearable {
 
 		final Position pos;
 
-		TileClickEvent(AbstractArenaPanel source, Position pos) {
+		TileClickEvent(AbstractArenaPanel<?, ?, ?> source, Position pos) {
 			super(source);
 			this.pos = pos;
 		}
@@ -51,13 +69,17 @@ abstract class AbstractArenaPanel extends JPanel implements Clearable {
 	private static final long serialVersionUID = 1L;
 
 	AbstractArenaPanel() {
+		tiles = new HashMap<>();
+		buildings = new IdentityHashMap<>();
+		units = new IdentityHashMap<>();
+
 		onHoverChange = new DataChangeNotifier<>();
 		onTileClick = new DataChangeNotifier<>();
 
 		mapPos = new Position(0, 0);
 		mapPosX = mapPosY = 0;
 
-		addMouseListener(new MouseAdapter() {
+		addMouseListener(mouseListener = new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent e) {
 				requestFocusInWindow();
@@ -66,7 +88,7 @@ abstract class AbstractArenaPanel extends JPanel implements Clearable {
 				onTileClick.notify(new TileClickEvent(AbstractArenaPanel.this, new Position(clickx, clicky)));
 			}
 		});
-		addMouseMotionListener(new MouseAdapter() {
+		addMouseMotionListener(mouseMotionListener = new MouseAdapter() {
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				int x = displayedXInv(e.getX()) / TILE_SIZE_PIXEL, y = displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
@@ -76,7 +98,7 @@ abstract class AbstractArenaPanel extends JPanel implements Clearable {
 				}
 			}
 		});
-		addKeyListener(new KeyAdapter() {
+		addKeyListener(keyListener = new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				Position.Direction dir = keyToDir(e.getKeyCode());
@@ -107,7 +129,7 @@ abstract class AbstractArenaPanel extends JPanel implements Clearable {
 		setFocusable(true);
 		requestFocusInWindow();
 
-		Timer mapMoveTimer = new Timer(MapMoveTimerDelay, e -> {
+		mapMoveTimer = new Timer(MapMoveTimerDelay, e -> {
 			double dx = mapPos.x * TILE_SIZE_PIXEL - mapPosX;
 			double dy = mapPos.y * TILE_SIZE_PIXEL - mapPosY;
 			if (dx == 0 && dy == 0)
@@ -165,10 +187,42 @@ abstract class AbstractArenaPanel extends JPanel implements Clearable {
 
 	@Override
 	public void clear() {
+		mapMoveTimer.stop();
+
+		removeMouseListener(mouseListener);
+		removeMouseMotionListener(mouseMotionListener);
+		removeKeyListener(keyListener);
+
+		removeEnteriesComp();
+	}
+
+	void removeEnteriesComp() {
+		for (TileCompImpl tile : tiles.values())
+			tile.clear();
+		tiles.clear();
+		for (BuildingCompImpl building : buildings.values())
+			building.clear();
+		buildings.clear();
+		for (UnitCompImpl unit : units.values())
+			unit.clear();
+		units.clear();
 	}
 
 	@Override
 	protected void paintComponent(Graphics g) {
+		Comparator<Position> posCmp = Position.comparator();
+
+		Comparator<TileCompImpl> tileCmp = (t1, t2) -> posCmp.compare(t1.pos, t2.pos);
+		for (TileCompImpl tile : Utils.sorted(tiles.values(), tileCmp))
+			tile.paintComponent(g);
+
+		Comparator<BuildingCompImpl> buildingCmp = (b1, b2) -> posCmp.compare(b1.pos, b2.pos);
+		for (BuildingCompImpl building : Utils.sorted(buildings.values(), buildingCmp))
+			building.paintComponent(g);
+
+		Comparator<UnitCompImpl> unitCmp = (u1, u2) -> posCmp.compare(u1.pos, u2.pos);
+		for (UnitCompImpl unit : Utils.sorted(units.values(), unitCmp))
+			unit.paintComponent(g);
 	}
 
 	@Override
@@ -186,6 +240,81 @@ abstract class AbstractArenaPanel extends JPanel implements Clearable {
 		BufferedImage img = Images.getImage(obj);
 		assert img.getWidth() == TILE_SIZE_PIXEL;
 		g.drawImage(img, x, y + TILE_SIZE_PIXEL - img.getHeight(), img.getWidth(), img.getHeight(), this);
+	}
+
+	abstract Object getTerrain(Position pos);
+
+	abstract Object getBuilding(Position pos);
+
+	abstract Object getUnit(Position pos);
+
+	static class TileComp implements Clearable {
+
+		private final AbstractArenaPanel<?, ?, ?> arena;
+		final Position pos;
+
+		TileComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
+			this.arena = Objects.requireNonNull(arena);
+			this.pos = Objects.requireNonNull(pos);
+		}
+
+		void paintComponent(Graphics g) {
+			arena.drawImage(g, arena.getTerrain(pos), pos);
+		}
+
+		void drawImage(Graphics g, Object obj) {
+			arena.drawImage(g, obj, pos);
+		}
+
+		@Override
+		public String toString() {
+			return pos.toString();
+		}
+
+		@Override
+		public void clear() {
+		}
+
+	}
+
+	static class BuildingComp implements Clearable {
+
+		private final AbstractArenaPanel<?, ?, ?> arena;
+		final Position pos;
+
+		BuildingComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
+			this.arena = Objects.requireNonNull(arena);
+			this.pos = Objects.requireNonNull(pos);
+		}
+
+		void paintComponent(Graphics g) {
+			arena.drawImage(g, arena.getBuilding(pos), pos);
+		}
+
+		@Override
+		public void clear() {
+		}
+
+	}
+
+	static class UnitComp implements Clearable {
+
+		private final AbstractArenaPanel<?, ?, ?> arena;
+		Position pos;
+
+		UnitComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
+			this.arena = Objects.requireNonNull(arena);
+			this.pos = Objects.requireNonNull(pos);
+		}
+
+		void paintComponent(Graphics g) {
+			arena.drawImage(g, arena.getUnit(pos), pos);
+		}
+
+		@Override
+		public void clear() {
+		}
+
 	}
 
 }

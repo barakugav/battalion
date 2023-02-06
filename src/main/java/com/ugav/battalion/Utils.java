@@ -1,5 +1,6 @@
 package com.ugav.battalion;
 
+import java.awt.GridBagConstraints;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
@@ -195,6 +196,15 @@ class Utils {
 		List<T> l = new ArrayList<>(c);
 		l.sort(cmp);
 		return l;
+	}
+
+	static GridBagConstraints gbConstraints(int x, int y, int width, int height) {
+		GridBagConstraints c = new GridBagConstraints();
+		c.gridx = x;
+		c.gridy = y;
+		c.gridwidth = width;
+		c.gridheight = height;
+		return c;
 	}
 
 }
