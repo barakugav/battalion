@@ -85,7 +85,7 @@ class Game {
 		for (Tile tile : arena.tiles()) {
 			if (tile.hasBuilding()) {
 				Building building = tile.getBuilding();
-				building.setActive(building.getTeam() == turn);
+				building.setActive(building.canBeActive() && building.getTeam() == turn);
 			}
 			if (tile.hasUnit()) {
 				Unit unit = tile.getUnit();
@@ -199,14 +199,14 @@ class Game {
 		}
 	}
 
-	void buildUnit(Building.Factory factory, Unit.Type unitType) {
+	void buildUnit(Building factory, Unit.Type unitType) {
 		Position pos = factory.getPos();
-		if (!factory.isActive() || arena.at(pos).hasUnit())
+		if (!factory.type.canBuildUnits || !factory.isActive() || arena.at(pos).hasUnit())
 			throw new IllegalStateException();
 
-		List<Building.Factory.UnitSale> sales = factory.getAvailableUnits();
-		Building.Factory.UnitSale sale = null;
-		for (Building.Factory.UnitSale s : sales)
+		List<Building.UnitSale> sales = factory.getAvailableUnits();
+		Building.UnitSale sale = null;
+		for (Building.UnitSale s : sales)
 			if (s.type == unitType)
 				sale = s;
 		if (sale == null)

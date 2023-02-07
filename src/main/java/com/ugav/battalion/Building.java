@@ -4,23 +4,70 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
-abstract class Building extends Entity {
+import com.ugav.battalion.Level.BuildingDesc;
+
+class Building extends Entity {
+
+	enum Tech {
+		BuildOnLandFlat(TypeBuilder::canBuildOn, Terrain.Category.FlatLand),
+
+		BuildOnShore(TypeBuilder::canBuildOn, Terrain.Category.Shore),
+
+		BuildOnWater(TypeBuilder::canBuildOn, Terrain.Category.Water),
+
+		UnitBuilder(type -> type.canBuildUnits = true);
+
+		final Consumer<TypeBuilder> op;
+
+		Tech(Consumer<TypeBuilder> op) {
+			this.op = Objects.requireNonNull(op);
+		}
+
+		@SuppressWarnings("unchecked")
+		<T> Tech(BiConsumer<TypeBuilder, T[]> op, T... args) {
+			this(t -> op.accept(t, args));
+		}
+	}
+
+	private static class TypeBuilder {
+		final Set<Terrain.Category> canBuildOn = EnumSet.noneOf(Terrain.Category.class);
+		boolean canBuildUnits = false;
+
+		void canBuildOn(Terrain.Category... categories) {
+			canBuildOn.addAll(List.of(categories));
+		}
+
+	}
 
 	enum Type {
-		OilRefinery(Terrain.Category.FlatLand),
+		OilRefinery(100, Tech.BuildOnLandFlat),
 
-		OilRefineryBig(Terrain.Category.FlatLand),
+		OilRefineryBig(200, Tech.BuildOnLandFlat),
 
-		OilRig(Terrain.Category.Water),
+		OilRig(400, Tech.BuildOnWater),
 
-		Factory(Terrain.Category.FlatLand);
+		Factory(0, Tech.BuildOnLandFlat, Tech.BuildOnShore, Tech.UnitBuilder);
 
 		final Set<Terrain.Category> canBuildOn;
+		final int moneyGain;
+		final boolean canBuildUnits;
 
-		Type(Terrain.Category... canBuildOn) {
-			this.canBuildOn = Collections.unmodifiableSet(EnumSet.copyOf(List.of(canBuildOn)));
+		Type(int moneyGain, Tech... techs) {
+			TypeBuilder builder = new TypeBuilder();
+			for (Tech tech : techs)
+				tech.op.accept(builder);
+
+			if (moneyGain < 0)
+				throw new IllegalArgumentException();
+			this.moneyGain = moneyGain;
+
+			this.canBuildOn = Collections.unmodifiableSet(EnumSet.copyOf(builder.canBuildOn));
+			this.canBuildUnits = builder.canBuildUnits;
 		}
 	}
 
@@ -36,6 +83,12 @@ abstract class Building extends Entity {
 	Building(Type type, Team team) {
 		super(team);
 		this.type = type;
+
+		setActive(canBeActive());
+	}
+
+	static Building valueOf(BuildingDesc desc) {
+		return new Building(desc.type, desc.team);
 	}
 
 	Position getPos() {
@@ -67,97 +120,42 @@ abstract class Building extends Entity {
 		}
 	}
 
-	abstract int getMoneyGain();
-
-	static class Factory extends Building {
-
-		Factory(Team team) {
-			super(Type.Factory, team);
-		}
-
-		@Override
-		int getMoneyGain() {
-			return 0;
-		}
-
-		List<UnitSale> getAvailableUnits() {
-			List<UnitSale> l = new ArrayList<>();
-			l.add(UnitSale.of(Unit.Type.Soldier, 100));
-			l.add(UnitSale.of(Unit.Type.Tank, 300));
-			return l;
-		}
-
-		static class UnitSale {
-			final Unit.Type type;
-			final int price;
-
-			UnitSale(Unit.Type type, int price) {
-				this.type = type;
-				this.price = price;
-			}
-
-			private static UnitSale of(Unit.Type type, int price) {
-				return new UnitSale(type, price);
-			}
-		}
-
+	int getMoneyGain() {
+		return type.moneyGain;
 	}
 
-	private static abstract class BuildingNonActive extends Building {
-
-		BuildingNonActive(Type type, Team team) {
-			super(type, team);
-			super.setActive(false);
-		}
-
-		@Override
-		final boolean isActive() {
-			return false;
-		}
-
-		@Override
-		final void setActive(boolean active) {
-		}
-
+	boolean canBeActive() {
+		return type.canBuildUnits;
 	}
 
-	static class OilRefinery extends BuildingNonActive {
-
-		OilRefinery(Team team) {
-			super(Type.OilRefinery, team);
-		}
-
-		@Override
-		int getMoneyGain() {
-			return 100;
-		}
-
+	@Override
+	void setActive(boolean active) {
+		if (active && !canBeActive())
+			throw new IllegalStateException();
+		super.setActive(active);
 	}
 
-	static class OilRefineryBig extends BuildingNonActive {
-
-		OilRefineryBig(Team team) {
-			super(Type.OilRefineryBig, team);
-		}
-
-		@Override
-		int getMoneyGain() {
-			return 200;
-		}
-
+	List<UnitSale> getAvailableUnits() {
+		if (!type.canBuildUnits)
+			throw new IllegalStateException();
+		List<UnitSale> l = new ArrayList<>();
+		l.add(UnitSale.of(Unit.Type.Soldier, 100));
+		l.add(UnitSale.of(Unit.Type.Tank, 300));
+		return l;
 	}
 
-	static class OilRig extends BuildingNonActive {
+	static class UnitSale {
+		final Unit.Type type;
+		final int price;
 
-		OilRig(Team team) {
-			super(Type.OilRig, team);
+		UnitSale(Unit.Type type, int price) {
+			this.type = type;
+			this.price = price;
 		}
 
-		@Override
-		int getMoneyGain() {
-			return 400;
+		private static UnitSale of(Unit.Type type, int price) {
+			return new UnitSale(type, price);
 		}
-
 	}
 
 	@Override

@@ -125,7 +125,7 @@ class Unit extends Entity {
 
 		AttAny(TypeBuilder::canAttack, Unit.Category.values()),
 
-		Conquerer(t -> t.canConquer = true);
+		Conquerer(type -> type.canConquer = true);
 
 		final Consumer<TypeBuilder> op;
 
@@ -140,17 +140,15 @@ class Unit extends Entity {
 	}
 
 	enum Type {
-		Soldier(Category.Land, Weapon.CloseRange, 50, 22, 3, 1, 1,
-				EnumSet.of(Tech.StandOnLandExtreme, Tech.AttLand, Tech.AttWater, Tech.Conquerer)),
-		Tank(Category.Land, Weapon.CloseRange, 70, 35, 6, 1, 1,
-				EnumSet.of(Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater)),
-		Artillery(Category.Land, Weapon.LongRange, 70, 35, 3, 3, 5, EnumSet.of(Tech.StandOnLandFlat, Tech.AttAny)),
-		Turrent(Category.Land, Weapon.LongRange, 100, 30, 0, 2, 7, EnumSet.of(Tech.StandOnLandFlat, Tech.AttAny)),
+		Soldier(Category.Land, Weapon.CloseRange, 50, 22, 3, 1, 1, Tech.StandOnLandExtreme, Tech.AttLand, Tech.AttWater,
+				Tech.Conquerer),
+		Tank(Category.Land, Weapon.CloseRange, 70, 35, 6, 1, 1, Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater),
+		Artillery(Category.Land, Weapon.LongRange, 70, 35, 3, 3, 5, Tech.StandOnLandFlat, Tech.AttAny),
+		Turrent(Category.Land, Weapon.LongRange, 100, 30, 0, 2, 7, Tech.StandOnLandFlat, Tech.AttAny),
 
-		Ship(Category.Water, Weapon.CloseRange, 70, 35, 6, 1, 1,
-				EnumSet.of(Tech.StandOnWater, Tech.AttLand, Tech.AttWater)),
+		Ship(Category.Water, Weapon.CloseRange, 70, 35, 6, 1, 1, Tech.StandOnWater, Tech.AttLand, Tech.AttWater),
 
-		Airplane(Category.Air, Weapon.CloseRange, 70, 35, 6, 1, 1, EnumSet.of(Tech.StandOnAny, Tech.AttAny));
+		Airplane(Category.Air, Weapon.CloseRange, 70, 35, 6, 1, 1, Tech.StandOnAny, Tech.AttAny);
 
 		final Category category;
 		final Weapon weapon;
@@ -164,7 +162,7 @@ class Unit extends Entity {
 		final boolean canConquer;
 
 		Type(Category category, Weapon weapon, int health, int damage, int moveLimit, int rangeMin, int rangeMax,
-				Set<Tech> techs) {
+				Tech... techs) {
 			TypeBuilder builder = new TypeBuilder();
 			for (Tech tech : techs)
 				tech.op.accept(builder);

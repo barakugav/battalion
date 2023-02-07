@@ -107,25 +107,10 @@ class Arena {
 	private Building createBuilding(BuildingDesc desc, Position pos) {
 		if (desc == null)
 			return null;
-		Building building = createBuilding0(desc);
+		Building building = Building.valueOf(desc);
 		building.setArena(this);
 		building.setPos(pos);
 		return building;
-	}
-
-	private static Building createBuilding0(BuildingDesc desc) {
-		switch (desc.type) {
-		case OilRefinery:
-			return new Building.OilRefinery(desc.team);
-		case OilRefineryBig:
-			return new Building.OilRefineryBig(desc.team);
-		case OilRig:
-			return new Building.OilRig(desc.team);
-		case Factory:
-			return new Building.Factory(desc.team);
-		default:
-			throw new InternalError("Unsupported building description: " + desc);
-		}
 	}
 
 	Unit createUnit(UnitDesc desc, Position pos) {

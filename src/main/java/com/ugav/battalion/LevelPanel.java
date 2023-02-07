@@ -375,9 +375,8 @@ class LevelPanel extends JPanel implements Clearable {
 				debug.println("Selected building ", pos);
 				selection = pos;
 				Building building = tile.getBuilding();
-				if (building instanceof Building.Factory) {
-					Building.Factory factory = (Building.Factory) building;
-					FactoryMenu factoryMenu = new FactoryMenu(globals.frame, factory);
+				if (building.type.canBuildUnits) {
+					FactoryMenu factoryMenu = new FactoryMenu(globals.frame, building);
 					factoryMenu.addWindowListener(new WindowAdapter() {
 						@Override
 						public void windowClosing(WindowEvent e) {
@@ -588,13 +587,17 @@ class LevelPanel extends JPanel implements Clearable {
 
 	private class FactoryMenu extends JDialog {
 
-		private final Building.Factory factory;
+		private final Building factory;
 
 		private static final long serialVersionUID = 1L;
 
-		FactoryMenu(JFrame parent, Building.Factory factory) {
+		FactoryMenu(JFrame parent, Building factory) {
 			super(parent);
+
+			if (!factory.type.canBuildUnits)
+				throw new IllegalArgumentException(factory.type.toString());
 			this.factory = factory;
+
 			initUI();
 		}
 
@@ -604,12 +607,12 @@ class LevelPanel extends JPanel implements Clearable {
 			int unitCount = Unit.Type.values().length;
 			setLayout(new GridLayout(1, unitCount));
 
-			List<Building.Factory.UnitSale> sales = factory.getAvailableUnits();
+			List<Building.UnitSale> sales = factory.getAvailableUnits();
 
 			for (int unitIdx = 0; unitIdx < unitCount; unitIdx++) {
 				Unit.Type unit = Unit.Type.values()[unitIdx];
-				Building.Factory.UnitSale unitSale = null;
-				for (Building.Factory.UnitSale sale : sales)
+				Building.UnitSale unitSale = null;
+				for (Building.UnitSale sale : sales)
 					if (sale.type == unit)
 						unitSale = sale;
 
@@ -630,7 +633,7 @@ class LevelPanel extends JPanel implements Clearable {
 				saleComp.add(lowerComp, Utils.gbConstraints(0, 3, 1, 1));
 
 				if (unitSale != null) {
-					Building.Factory.UnitSale sale = unitSale;
+					Building.UnitSale sale = unitSale;
 					saleComp.addMouseListener(new MouseAdapter() {
 						@Override
 						public void mousePressed(MouseEvent e) {
@@ -646,7 +649,7 @@ class LevelPanel extends JPanel implements Clearable {
 			setLocationRelativeTo(getParent());
 		}
 
-		private void buyNewUnit(Building.Factory.UnitSale sale) {
+		private void buyNewUnit(Building.UnitSale sale) {
 			if (sale.price > game.getMoney(factory.getTeam()))
 				return;
 			game.buildUnit(factory, sale.type);
