@@ -1,6 +1,7 @@
 package com.ugav.battalion;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -100,7 +101,7 @@ class Game {
 		deadQueue.clear();
 
 		if (isFinished()) {
-			Set<Team> alive = getAlive();
+			Set<Team> alive = getAliveTeams();
 			winner = alive.size() == 1 ? alive.iterator().next() : null;
 			return;
 		}
@@ -122,16 +123,16 @@ class Game {
 		turn = turnIterator.next();
 	}
 
-	private Set<Team> getAlive() {
-		Set<Team> alive = new HashSet<>();
-		for (Tile tile : arena.tiles())
-			if (tile.hasUnit())
-				alive.add(tile.getUnit().getTeam());
+	private Set<Team> getAliveTeams() {
+		Set<Team> alive = EnumSet.noneOf(Team.class);
+		for (Team team : Team.realTeams)
+			if (!arena.units(team).isEmpty())
+				alive.add(team);
 		return alive;
 	}
 
 	boolean isFinished() {
-		return getAlive().size() <= 1;
+		return getAliveTeams().size() <= 1;
 	}
 
 	Team getWinner() {

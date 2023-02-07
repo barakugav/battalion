@@ -112,6 +112,18 @@ class Arena {
 		return buildings;
 	}
 
+	Collection<Unit> units(Team team) {
+		return units(u -> team == u.getTeam());
+	}
+
+	Collection<Unit> units(Predicate<? super Unit> filter) {
+		List<Unit> units = new ArrayList<>();
+		for (Tile tile : tiles())
+			if (tile.hasUnit() && filter.test(tile.getUnit()))
+				units.add(tile.getUnit());
+		return units;
+	}
+
 	private Tile createTile(TileDesc desc, Position pos) {
 		Terrain terrain = desc.terrain;
 		Building building = createBuilding(desc.building, pos);
