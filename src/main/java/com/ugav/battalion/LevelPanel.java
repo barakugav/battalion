@@ -622,7 +622,7 @@ class LevelPanel extends JPanel implements Clearable {
 				JComponent lowerComp;
 
 				if (unitSale != null) {
-					upperComp = new JLabel(new ImageIcon(Images.getImage(UnitDesc.of(unit, Team.Red))));
+					upperComp = new JLabel(new ImageIcon(Images.getImage(UnitDesc.of(unit, factory.getTeam()))));
 					lowerComp = new JLabel(Integer.toString(unitSale.price));
 				} else {
 					upperComp = new JLabel(new ImageIcon(Images.getImage(Images.Label.UnitLocked)));

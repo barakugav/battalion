@@ -67,7 +67,11 @@ class Images {
 			BufferedImage whiteImg = toWhite(redImg);
 			buildings0.put(type, Map.of(Team.Red, redImg, Team.Blue, blueImg, Team.None, whiteImg));
 		};
+		addBuilding.accept(Building.Type.Capital, "img/building/capital.png");
 		addBuilding.accept(Building.Type.Factory, "img/building/facotry.png");
+		addBuilding.accept(Building.Type.ControllerLand, "img/building/controller_land.png");
+		addBuilding.accept(Building.Type.ControllerWater, "img/building/controller_water.png");
+		addBuilding.accept(Building.Type.ControllerAir, "img/building/controller_air.png");
 		addBuilding.accept(Building.Type.OilRefinery, "img/building/oil_refinery.png");
 		addBuilding.accept(Building.Type.OilRefineryBig, "img/building/oil_refinery_big.png");
 		addBuilding.accept(Building.Type.OilRig, "img/building/oil_rig.png");

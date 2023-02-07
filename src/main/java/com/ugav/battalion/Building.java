@@ -20,9 +20,13 @@ class Building extends Entity {
 
 		BuildOnWater(TypeBuilder::canBuildOn, Terrain.Category.Water),
 
-		UnitBuilder(type -> type.canBuildUnits = true);
+		UnitBuilder, Capital, AllowUnitBuildLand, AllowUnitBuildWater, AllowUnitBuildAir;
 
 		final Consumer<TypeBuilder> op;
+
+		Tech() {
+			op = null;
+		}
 
 		Tech(Consumer<TypeBuilder> op) {
 			this.op = Objects.requireNonNull(op);
@@ -36,7 +40,14 @@ class Building extends Entity {
 
 	private static class TypeBuilder {
 		final Set<Terrain.Category> canBuildOn = EnumSet.noneOf(Terrain.Category.class);
-		boolean canBuildUnits = false;
+		final Set<Tech> tech;
+
+		TypeBuilder(Tech... techs) {
+			this.tech = techs.length > 0 ? EnumSet.copyOf(List.of(techs)) : EnumSet.noneOf(Tech.class);
+			for (Tech tech : techs)
+				if (tech.op != null)
+					tech.op.accept(this);
+		}
 
 		void canBuildOn(Terrain.Category... categories) {
 			canBuildOn.addAll(List.of(categories));
@@ -51,44 +62,55 @@ class Building extends Entity {
 
 		OilRig(400, Tech.BuildOnWater),
 
-		Factory(0, Tech.BuildOnLandFlat, Tech.BuildOnShore, Tech.UnitBuilder);
+		Factory(0, Tech.BuildOnLandFlat, Tech.BuildOnShore, Tech.UnitBuilder),
+
+		Capital(0, Tech.BuildOnLandFlat, Tech.Capital),
+
+		ControllerLand(0, Tech.BuildOnLandFlat, Tech.AllowUnitBuildLand),
+		ControllerWater(0, Tech.BuildOnLandFlat, Tech.AllowUnitBuildWater),
+		ControllerAir(0, Tech.BuildOnLandFlat, Tech.AllowUnitBuildAir);
 
 		final Set<Terrain.Category> canBuildOn;
 		final int moneyGain;
 		final boolean canBuildUnits;
+		final boolean allowUnitBuildLand;
+		final boolean allowUnitBuildWater;
+		final boolean allowUnitBuildAir;
 
 		Type(int moneyGain, Tech... techs) {
-			TypeBuilder builder = new TypeBuilder();
-			for (Tech tech : techs)
-				tech.op.accept(builder);
+			TypeBuilder builder = new TypeBuilder(techs);
 
 			if (moneyGain < 0)
 				throw new IllegalArgumentException();
 			this.moneyGain = moneyGain;
 
 			this.canBuildOn = Collections.unmodifiableSet(EnumSet.copyOf(builder.canBuildOn));
-			this.canBuildUnits = builder.canBuildUnits;
+			this.canBuildUnits = builder.tech.contains(Tech.UnitBuilder);
+			this.allowUnitBuildLand = builder.tech.contains(Tech.AllowUnitBuildLand);
+			this.allowUnitBuildWater = builder.tech.contains(Tech.AllowUnitBuildWater);
+			this.allowUnitBuildAir = builder.tech.contains(Tech.AllowUnitBuildAir);
 		}
 	}
 
 	final Type type;
+	private final Arena arena;
 	private Position pos;
-	private Arena arena;
 	private Team conquerTeam;
 	private int conquerProgress;
 
 	private static final int CONQUER_DURATION_FROM_NONE = 2;
 	private static final int CONQUER_DURATION_FROM_OTHER = 3;
 
-	Building(Type type, Team team) {
+	Building(Arena arena, Type type, Team team) {
 		super(team);
-		this.type = type;
+		this.arena = Objects.requireNonNull(arena);
+		this.type = Objects.requireNonNull(type);
 
 		setActive(canBeActive());
 	}
 
-	static Building valueOf(BuildingDesc desc) {
-		return new Building(desc.type, desc.team);
+	static Building valueOf(Arena arena, BuildingDesc desc) {
+		return new Building(arena, desc.type, desc.team);
 	}
 
 	Position getPos() {
@@ -97,10 +119,6 @@ class Building extends Entity {
 
 	void setPos(Position pos) {
 		this.pos = pos;
-	}
-
-	void setArena(Arena arena) {
-		this.arena = arena;
 	}
 
 	Arena getArena() {
@@ -139,8 +157,23 @@ class Building extends Entity {
 		if (!type.canBuildUnits)
 			throw new IllegalStateException();
 		List<UnitSale> l = new ArrayList<>();
-		l.add(UnitSale.of(Unit.Type.Soldier, 100));
-		l.add(UnitSale.of(Unit.Type.Tank, 300));
+
+		boolean canBuildLandUnits = !arena.buildings(getTeam(), b -> b.type.allowUnitBuildLand).isEmpty();
+		boolean canBuildWaterUnits = !arena.buildings(getTeam(), b -> b.type.allowUnitBuildWater).isEmpty() && EnumSet
+				.of(Terrain.Category.Water, Terrain.Category.Shore).contains(arena.at(pos).getTerrain().category);
+		boolean canBuildAirUnits = !arena.buildings(getTeam(), b -> b.type.allowUnitBuildAir).isEmpty();
+
+		if (canBuildLandUnits) {
+			l.add(UnitSale.of(Unit.Type.Soldier, 100));
+			l.add(UnitSale.of(Unit.Type.Tank, 300));
+		}
+		if (canBuildWaterUnits) {
+			l.add(UnitSale.of(Unit.Type.Ship, 700));
+		}
+		if (canBuildAirUnits) {
+			l.add(UnitSale.of(Unit.Type.Airplane, 400));
+		}
+
 		return l;
 	}
 

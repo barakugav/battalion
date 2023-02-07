@@ -175,7 +175,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			final Object entity;
 			private static final int IconWidth = 56;
-			private static final int IconHeight = 72;
+			private static final int IconHeight = 75;
 
 			EntityButton(Object entity) {
 				this(entity, entity);

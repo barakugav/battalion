@@ -86,7 +86,14 @@ class Unit extends Entity {
 	private static class TypeBuilder {
 		final Set<Terrain.Category> canStand = EnumSet.noneOf(Terrain.Category.class);
 		final Set<Category> canAttack = EnumSet.noneOf(Category.class);
-		boolean canConquer = false;
+		final Set<Tech> tech;
+
+		TypeBuilder(Tech... techs) {
+			this.tech = techs.length > 0 ? EnumSet.copyOf(List.of(techs)) : EnumSet.noneOf(Tech.class);
+			for (Tech tech : techs)
+				if (tech.op != null)
+					tech.op.accept(this);
+		}
 
 		void canStand(Terrain.Category... categories) {
 			canStand.addAll(List.of(categories));
@@ -125,9 +132,13 @@ class Unit extends Entity {
 
 		AttAny(TypeBuilder::canAttack, Unit.Category.values()),
 
-		Conquerer(type -> type.canConquer = true);
+		Conquerer;
 
 		final Consumer<TypeBuilder> op;
+
+		Tech() {
+			this.op = null;
+		}
 
 		Tech(Consumer<TypeBuilder> op) {
 			this.op = Objects.requireNonNull(op);
@@ -163,9 +174,7 @@ class Unit extends Entity {
 
 		Type(Category category, Weapon weapon, int health, int damage, int moveLimit, int rangeMin, int rangeMax,
 				Tech... techs) {
-			TypeBuilder builder = new TypeBuilder();
-			for (Tech tech : techs)
-				tech.op.accept(builder);
+			TypeBuilder builder = new TypeBuilder(techs);
 
 			this.category = category;
 			this.weapon = weapon;
@@ -176,7 +185,7 @@ class Unit extends Entity {
 			this.moveLimit = moveLimit;
 			this.rangeMin = rangeMin;
 			this.rangeMax = rangeMax;
-			this.canConquer = builder.canConquer;
+			this.canConquer = builder.tech.contains(Tech.Conquerer);
 		}
 	}
 

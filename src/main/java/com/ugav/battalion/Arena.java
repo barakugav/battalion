@@ -1,8 +1,11 @@
 package com.ugav.battalion;
 
 import java.util.AbstractCollection;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
+import java.util.function.Predicate;
 
 import com.ugav.battalion.Level.BuildingDesc;
 import com.ugav.battalion.Level.TileDesc;
@@ -97,6 +100,18 @@ class Arena {
 		};
 	}
 
+	Collection<Building> buildings(Team team, Predicate<Building> filter) {
+		return buildings(filter.and(b -> team == b.getTeam()));
+	}
+
+	Collection<Building> buildings(Predicate<Building> filter) {
+		List<Building> buildings = new ArrayList<>();
+		for (Tile tile : tiles())
+			if (tile.hasBuilding() && filter.test(tile.getBuilding()))
+				buildings.add(tile.getBuilding());
+		return buildings;
+	}
+
 	private Tile createTile(TileDesc desc, Position pos) {
 		Terrain terrain = desc.terrain;
 		Building building = createBuilding(desc.building, pos);
@@ -107,8 +122,7 @@ class Arena {
 	private Building createBuilding(BuildingDesc desc, Position pos) {
 		if (desc == null)
 			return null;
-		Building building = Building.valueOf(desc);
-		building.setArena(this);
+		Building building = Building.valueOf(this, desc);
 		building.setPos(pos);
 		return building;
 	}
