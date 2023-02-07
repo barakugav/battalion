@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 import javax.swing.JPanel;
@@ -274,45 +275,44 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 			super(arena, pos);
 		}
 
-		private boolean isArena(Position p) {
+		private boolean inArena(Position p) {
 			return p.isInRect(arena.getArenaWidth() - 1, arena.getArenaHeight() - 1);
 		}
 
 		@Override
 		void paintComponent(Graphics g) {
+			IntFunction<Pair<Direction, Direction>> quadrantToDirs = quadrant -> {
+				switch (quadrant) {
+				case 0:
+					return Pair.of(Direction.XPos, Direction.YNeg);
+				case 1:
+					return Pair.of(Direction.YNeg, Direction.XNeg);
+				case 2:
+					return Pair.of(Direction.XNeg, Direction.YPos);
+				case 3:
+					return Pair.of(Direction.YPos, Direction.XPos);
+				default:
+					throw new InternalError();
+				}
+			};
+			Predicate<Position> isBridgeHorizontal = bridgePos -> Objects
+					.requireNonNull(Terrain.isBridgeVertical(bridgePos, p -> arena.getTerrain(p), arena.getArenaWidth(),
+							arena.getArenaHeight()), "Can't determine bridge orientation")
+					.booleanValue();
+
 			Terrain terrain = arena.getTerrain(pos);
 			if (terrain == Terrain.ClearWater) {
 				arena.drawImage(g, terrain, pos);
 				for (int quadrant = 0; quadrant < 4; quadrant++) {
-					Direction d1, d2;
-					switch (quadrant) {
-					case 0:
-						d1 = Direction.XPos;
-						d2 = Direction.YNeg;
-						break;
-					case 1:
-						d1 = Direction.YNeg;
-						d2 = Direction.XNeg;
-						break;
-					case 2:
-						d1 = Direction.XNeg;
-						d2 = Direction.YPos;
-						break;
-					case 3:
-						d1 = Direction.YPos;
-						d2 = Direction.XPos;
-						break;
-					default:
-						throw new InternalError();
-					}
-					Position p1 = pos.add(d1), p2 = pos.add(d2), p3 = pos.add(d1).add(d2);
+					Pair<Direction, Direction> dirs = quadrantToDirs.apply(quadrant);
+					Position p1 = pos.add(dirs.e1), p2 = pos.add(dirs.e2), p3 = pos.add(dirs.e1).add(dirs.e2);
 					Set<Terrain.Category> waters = EnumSet.of(Terrain.Category.Water, Terrain.Category.BridgeLow,
-							Terrain.Category.BridgeHigh);
-					Predicate<Position> hasWater = p -> isArena(p) && !waters.contains(arena.getTerrain(p).category);
-					boolean b1 = hasWater.test(p1), b2 = hasWater.test(p2), b3 = hasWater.test(p3);
+							Terrain.Category.BridgeHigh, Terrain.Category.Shore);
+					Predicate<Position> isWater = p -> !inArena(p) || waters.contains(arena.getTerrain(p).category);
+					boolean c1 = !isWater.test(p1), c2 = !isWater.test(p2), c3 = !isWater.test(p3);
 
-					if (b1 || b2 || b3) {
-						int variant = (b1 ? 1 : 0) + (b2 ? 2 : 0);
+					if (c1 || c2 || c3) {
+						int variant = (c1 ? 1 : 0) + (c2 ? 2 : 0);
 						arena.drawImage(g, "WaterEdge" + quadrant + variant, pos);
 
 					}
@@ -324,7 +324,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 					Position p = pos.add(dir);
 					Set<Terrain.Category> roads = EnumSet.of(Terrain.Category.Road, Terrain.Category.BridgeLow,
 							Terrain.Category.BridgeHigh);
-					variant += isArena(p) && roads.contains(arena.getTerrain(p).category) ? "v" : "x";
+					variant += inArena(p) && roads.contains(arena.getTerrain(p).category) ? "v" : "x";
 				}
 				arena.drawImage(g, "Road_" + variant, pos);
 
@@ -333,15 +333,12 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 				for (Direction dir : EnumSet.of(Direction.XPos, Direction.YNeg, Direction.XNeg, Direction.YPos)) {
 					Position p = pos.add(dir);
 					Set<Terrain.Category> endCategoties = EnumSet.of(Terrain.Category.Road, Terrain.Category.FlatLand,
-							Terrain.Category.RoughLand, Terrain.Category.ExtremeLand);
-					if (isArena(p) && endCategoties.contains(arena.getTerrain(p).category))
+							Terrain.Category.RoughLand, Terrain.Category.ExtremeLand, Terrain.Category.Shore);
+					if (inArena(p) && endCategoties.contains(arena.getTerrain(p).category))
 						ends.add(dir);
 				}
 
-				boolean horizontal = Objects.requireNonNull(Terrain.isBridgeVertical(pos, p -> arena.getTerrain(p),
-						arena.getArenaWidth(), arena.getArenaHeight()), "Can't determine bridge orientation")
-						.booleanValue();
-				Set<Direction> orientation = horizontal ? EnumSet.of(Direction.XPos, Direction.XNeg)
+				Set<Direction> orientation = isBridgeHorizontal.test(pos) ? EnumSet.of(Direction.XPos, Direction.XNeg)
 						: EnumSet.of(Direction.YPos, Direction.YNeg);
 				for (Direction dir : orientation) {
 					String label = "bridge_" + (terrain == Terrain.BridgeHigh ? "high" : "low");
@@ -350,6 +347,46 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 									.get(dir);
 					label += ends.contains(dir) ? "x" : "v";
 					arena.drawImage(g, label, pos);
+				}
+
+			} else if (terrain == Terrain.Shore) {
+				if (pos.x == 3 && pos.y == 2)
+					System.out.println();
+				arena.drawImage(g, Terrain.ClearWater, pos);
+				Set<Direction> connections = EnumSet.noneOf(Direction.class);
+
+				for (int quadrant = 0; quadrant < 4; quadrant++) {
+					Pair<Direction, Direction> dirs = quadrantToDirs.apply(quadrant);
+					Position p1 = pos.add(dirs.e1), p2 = pos.add(dirs.e2), p3 = pos.add(dirs.e1).add(dirs.e2);
+					Predicate<Position> isWater = p -> (!inArena(p)
+							|| EnumSet.of(Terrain.Category.Water, Terrain.Category.Shore, Terrain.Category.BridgeLow,
+									Terrain.Category.BridgeHigh).contains(arena.getTerrain(p).category));
+					Predicate<Direction> isBridge = dir -> {
+						Position p = pos.add(dir);
+						if (!inArena(p) || !EnumSet.of(Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh)
+								.contains(arena.getTerrain(p).category))
+							return false;
+						boolean bridgeHorizonal = isBridgeHorizontal.test(p);
+						return bridgeHorizonal ^ EnumSet.of(Direction.YPos, Direction.YNeg).contains(dir);
+					};
+					boolean c1 = !isWater.test(p1), c2 = !isWater.test(p2), c3 = !isWater.test(p3);
+					c1 = c1 || isBridge.test(dirs.e1);
+					c2 = c2 || isBridge.test(dirs.e2);
+					if (c1)
+						connections.add(dirs.e1);
+
+					if (!(c1 || c2) && c3) {
+						arena.drawImage(g, "WaterEdge" + quadrant + 0, pos);
+					} else if (c1 || c2) {
+						int variant = (c1 ? 1 : 0) + (c2 ? 2 : 0);
+						arena.drawImage(g, "Shore" + quadrant + variant, pos);
+					}
+				}
+				if (connections.isEmpty()) {
+					arena.drawImage(g, "Shore03", pos);
+					arena.drawImage(g, "Shore13", pos);
+					arena.drawImage(g, "Shore23", pos);
+					arena.drawImage(g, "Shore33", pos);
 				}
 
 			} else {

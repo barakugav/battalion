@@ -21,6 +21,8 @@ enum Terrain implements Drawable {
 
 	BridgeLow(Category.BridgeLow), BridgeHigh(Category.BridgeHigh),
 
+	Shore(Category.Shore),
+
 	ClearWater(Category.Water);
 
 	final Category category;
@@ -30,7 +32,7 @@ enum Terrain implements Drawable {
 	}
 
 	enum Category {
-		FlatLand, RoughLand, ExtremeLand, Shore, Road, BridgeLow, BridgeHigh, Water;
+		FlatLand, RoughLand, ExtremeLand, Road, BridgeLow, BridgeHigh, Shore, Water;
 	}
 
 	static Set<Direction> getBridgeConnection(Position pos, Function<Position, Terrain> terrain, int width, int high) {

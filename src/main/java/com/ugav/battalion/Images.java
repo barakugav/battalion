@@ -40,6 +40,7 @@ class Images {
 		terrains0.put(Terrain.Road, loadImg("img/terrain/road_vxvx.png"));
 		terrains0.put(Terrain.BridgeLow, loadImg("img/terrain/bridge_low.png"));
 		terrains0.put(Terrain.BridgeHigh, loadImg("img/terrain/bridge_high.png"));
+		terrains0.put(Terrain.Shore, loadImg("img/terrain/shore.png"));
 		terrains0.put(Terrain.ClearWater, loadImg("img/terrain/water_clear.png"));
 		terrains = Collections.unmodifiableMap(terrains0);
 
@@ -95,7 +96,12 @@ class Images {
 				}
 			}
 		}
-
+		for (int quadrant = 0; quadrant < 4; quadrant++) {
+			for (int variant = 1; variant < 4; variant++) {
+				String suffix = "" + quadrant + variant;
+				ect0.put("Shore" + suffix, loadImg("img/terrain/shore_" + suffix + ".png"));
+			}
+		}
 		ect0.put(Label.Selection, loadImg("img/gui/selection.png"));
 		ect0.put(Label.Reachable, loadImg("img/gui/reachable.png"));
 		ect0.put(Label.Attackable, loadImg("img/gui/attackabe.png"));

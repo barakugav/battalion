@@ -107,7 +107,7 @@ abstract class Unit extends Entity {
 				Terrain.Category.Shore, Terrain.Category.ExtremeLand, Terrain.Category.Road, Terrain.Category.BridgeLow,
 				Terrain.Category.BridgeHigh),
 
-		StandOnWater(TypeBuilder::canStand, Terrain.Category.Water, Terrain.Category.BridgeHigh),
+		StandOnWater(TypeBuilder::canStand, Terrain.Category.Water, Terrain.Category.BridgeHigh, Terrain.Category.Shore),
 
 		StandOnWaterDeep(TypeBuilder::canStand, Terrain.Category.Water, Terrain.Category.BridgeLow,
 				Terrain.Category.BridgeHigh),
