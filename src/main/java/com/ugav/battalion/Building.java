@@ -57,11 +57,11 @@ class Building extends Entity {
 	}
 
 	enum Type {
-		OilRefinery(100, Tech.BuildOnLandFlat),
+		OilRefinery(20, Tech.BuildOnLandFlat),
 
-		OilRefineryBig(200, Tech.BuildOnLandFlat),
+		OilRefineryBig(35, Tech.BuildOnLandFlat),
 
-		OilRig(400, Tech.BuildOnWater),
+		OilRig(50, Tech.BuildOnWater),
 
 		Factory(0, Tech.BuildOnLandFlat, Tech.BuildOnShore, Tech.UnitBuilder),
 
