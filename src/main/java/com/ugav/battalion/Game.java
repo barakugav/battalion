@@ -139,7 +139,7 @@ class Game {
 	}
 
 	void move(Unit unit, List<Position> path) {
-		if (!isMoveValid(unit, path))
+		if (path.isEmpty() || !isMoveValid(unit, path))
 			throw new IllegalStateException();
 		move0(unit, path);
 		unit.setActive(false);
@@ -153,8 +153,19 @@ class Game {
 		unit.setPos(destination);
 	}
 
-	boolean isMoveValid(Unit unit, List<Position> path) {
+	private boolean isMoveValid(Unit unit, List<Position> path) {
 		return unit.getTeam() == turn && unit.isActive() && unit.isMoveValid(path);
+	}
+
+	List<Position> calcRealPath(Unit unit, List<Position> path) {
+		Position.Bitmap passableMap = unit.getPassableMap(false);
+		for (int i = 0; i < path.size(); i++) {
+			if (!passableMap.contains(path.get(i))) {
+				path = path.subList(0, i);
+				break;
+			}
+		}
+		return new ArrayList<>(path);
 	}
 
 	void moveAndAttack(Unit attacker, List<Position> path, Unit target) {

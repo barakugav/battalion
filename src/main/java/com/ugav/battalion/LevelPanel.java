@@ -31,7 +31,6 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 
 import com.ugav.battalion.Level.UnitDesc;
-import com.ugav.battalion.Unit.Weapon;
 
 class LevelPanel extends JPanel implements Clearable {
 
@@ -191,58 +190,60 @@ class LevelPanel extends JPanel implements Clearable {
 		void hoveredUpdated(Position hovered) {
 			if (!isUnitSelected() || isActionSuspended())
 				return;
-			Unit unit = game.arena.at(selection).getUnit();
 
 			if (attackableMap.contains(hovered)) {
-				if (unit.type.weapon.type == Weapon.Type.LongRange) {
-					movePath.clear();
-					repaint();
-					return;
-				}
-				Position targetPos = hovered;
-				Position last = movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1);
-				if (targetPos.neighbors().contains(last)
-						&& (!game.arena.at(last).hasUnit() || game.arena.at(last).getUnit() == unit))
-					return;
+				updateAttackMovePath(hovered);
+
+			} else if (passableMap.contains(hovered)) {
+				updateMovePath(hovered);
+			}
+		}
+
+		private void updateAttackMovePath(Position targetPos) {
+			Unit attacker = game.arena.at(selection).getUnit();
+			switch (attacker.type.weapon.type) {
+			case LongRange:
 				movePath.clear();
+				break;
 
-				List<Position> bestPath = null;
-				for (Position p : targetPos.neighbors()) {
-					if (!reachableMap.contains(p))
-						continue;
-					List<Position> path = unit.calcPath(p);
-					if (bestPath == null || path.size() < bestPath.size())
-						bestPath = path;
-				}
-				assert bestPath != null;
-				movePath.addAll(bestPath);
-				repaint();
-				return;
+			case CloseRange:
+				Position last = movePath.isEmpty() ? attacker.getPos() : movePath.get(movePath.size() - 1);
+				if (targetPos.neighbors().contains(last) && (!game.arena.isUnitVisible(last, game.getTurn())
+						|| game.arena.at(last).getUnit() == attacker))
+					break;
+				movePath.clear();
+				movePath.addAll(Objects.requireNonNull(attacker.calcPathForAttack(targetPos)));
+				break;
+			default:
+				throw new IllegalArgumentException("Unexpected value: " + attacker.type.weapon.type);
 			}
+			repaint();
+		}
 
-			if (passableMap.contains(hovered)) {
-				/* Update move path from unit position to hovered position */
-				Position last = movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1);
+		private void updateMovePath(Position targetPos) {
+			Unit unit = game.arena.at(selection).getUnit();
 
-				if (movePath.contains(hovered)) {
-					/* Already contained in path, remove all unnecessary steps */
-					while (!movePath.isEmpty()) {
-						if (movePath.get(movePath.size() - 1).equals(hovered))
-							break;
-						movePath.remove(movePath.size() - 1);
-					}
+			/* Update move path from unit position to hovered position */
+			Position last = movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1);
 
-				} else if (movePath.size() < unit.type.moveLimit && last.neighbors().contains(hovered)) {
-					/* Append to the end of the move path */
-					movePath.add(hovered);
-
-				} else {
-					/* Unable to append to end of current move path, calculate new route */
-					movePath.clear();
-					movePath.addAll(unit.calcPath(hovered));
+			if (movePath.contains(targetPos)) {
+				/* Already contained in path, remove all unnecessary steps */
+				while (!movePath.isEmpty()) {
+					if (movePath.get(movePath.size() - 1).equals(targetPos))
+						break;
+					movePath.remove(movePath.size() - 1);
 				}
-				repaint();
+
+			} else if (movePath.size() < unit.type.moveLimit && last.neighbors().contains(targetPos)) {
+				/* Append to the end of the move path */
+				movePath.add(targetPos);
+
+			} else {
+				/* Unable to append to end of current move path, calculate new route */
+				movePath.clear();
+				movePath.addAll(unit.calcPath(targetPos));
 			}
+			repaint();
 		}
 
 		void initGame() {
@@ -388,59 +389,52 @@ class LevelPanel extends JPanel implements Clearable {
 			return ll;
 		}
 
-		private void unitSecondSelection(Position pos) {
-			Tile tile = game.arena.at(pos);
-			Unit unit = game.arena.at(selection).getUnit();
-			Unit target;
-			if (!tile.hasUnit()) {
-				if (reachableMap.contains(pos)) {
-					if (!pos.equals(movePath.get(movePath.size() - 1))) {
-						movePath.clear();
-						movePath.addAll(unit.calcPath(pos));
+		private void unitMove(Unit unit, Position destination) {
+			if (!destination.equals(movePath.get(movePath.size() - 1))) {
+				movePath.clear();
+				movePath.addAll(unit.calcPath(destination));
+			}
+			debug.println("Move ", unit.getPos(), " ", destination);
+			List<Position> path = game.calcRealPath(unit, movePath);
+			List<Position> animationPath = list(unit.getPos(), path);
+			units.get(unit).moveAnimation(animationPath, () -> game.move(unit, path));
+		}
+
+		private void unitAttack(Unit attacker, Unit target) {
+			debug.println("Attack ", attacker.getPos(), " ", target.getPos());
+			switch (attacker.type.weapon.type) {
+			case CloseRange:
+				Position moveTarget = movePath.isEmpty() ? attacker.getPos() : movePath.get(movePath.size() - 1);
+				Position targetPos = target.getPos();
+				if (!moveTarget.neighbors().contains(targetPos) || !reachableMap.contains(moveTarget)) {
+					movePath.clear();
+					if (!attacker.getPos().neighbors().contains(targetPos)) {
+						movePath.addAll(Objects.requireNonNull(attacker.calcPathForAttack(targetPos)));
 					}
-					debug.println("Move ", unit.getPos(), " ", pos);
-					List<Position> animationPath = list(unit.getPos(), movePath);
-					List<Position> curreMovePath = new ArrayList<>(movePath);
-					units.get(unit).moveAnimation(animationPath, () -> game.move(unit, curreMovePath));
 				}
 
-				return;
-			} else if (game.isAttackValid(unit, target = tile.getUnit())) {
-				debug.println("Attack ", unit.getPos(), " ", pos);
+				List<Position> path = game.calcRealPath(attacker, movePath);
+				List<Position> animationPath = list(attacker.getPos(), path);
+				units.get(attacker).moveAnimation(animationPath, () -> game.moveAndAttack(attacker, path, target));
+				break;
+			case LongRange:
+				game.attackRange(attacker, target);
+				break;
+			default:
+				throw new IllegalArgumentException("Unexpected value: " + attacker.type.weapon.type);
+			}
 
-				if (unit.type.weapon.type == Weapon.Type.CloseRange) {
-					Position moveToPos = movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1);
-					Position targetPos = target.getPos();
-					if (!moveToPos.neighbors().contains(targetPos) || !reachableMap.contains(moveToPos)) {
-						movePath.clear();
-						if (!unit.getPos().neighbors().contains(targetPos)) {
-							List<Position> bestPath = null;
-							for (Position p : targetPos.neighbors()) {
-								if (!reachableMap.contains(p))
-									continue;
-								List<Position> path = unit.calcPath(p);
-								if (bestPath == null || path.size() < bestPath.size())
-									bestPath = path;
-							}
-							assert bestPath != null;
-							movePath.addAll(bestPath);
-						}
-					}
-					if (movePath.isEmpty()) {
-						game.moveAndAttack(unit, movePath, target);
-					} else {
-						List<Position> animationPath = list(unit.getPos(), movePath);
-						List<Position> curreMovePath = new ArrayList<>(movePath);
-						units.get(unit).moveAnimation(animationPath,
-								() -> game.moveAndAttack(unit, curreMovePath, target));
-					}
+		}
 
-				} else if (unit.type.weapon.type == Weapon.Type.LongRange) {
-					game.attackRange(unit, target);
+		private void unitSecondSelection(Position target) {
+			Tile targetTile = game.arena.at(target);
+			Unit selectedUnit = game.arena.at(selection).getUnit();
+			if (!game.arena.isUnitVisible(target, selectedUnit.getTeam())) {
+				if (reachableMap.contains(target))
+					unitMove(selectedUnit, target);
 
-				} else {
-					throw new InternalError("Unknown unit weapon type: " + unit.type.weapon);
-				}
+			} else if (game.isAttackValid(selectedUnit, targetTile.getUnit())) {
+				unitAttack(selectedUnit, targetTile.getUnit());
 			}
 		}
 
@@ -490,6 +484,9 @@ class LevelPanel extends JPanel implements Clearable {
 
 			@Override
 			void paintComponent(Graphics g) {
+				final Team playerTeam = Team.Red;
+				if (!isMoveAnimationActive() && !game.arena.isUnitVisible(pos, playerTeam))
+					return;
 				Graphics2D g2 = (Graphics2D) g;
 
 				double x, y;
@@ -531,18 +528,22 @@ class LevelPanel extends JPanel implements Clearable {
 			}
 
 			void moveAnimation(List<Position> animationPath, Runnable onFinish) {
-				suspendActions();
-				UnitComp unitC = units.get(unit);
+				if (animationPath.size() < 2) {
+					onFinish.run();
+					return;
+				}
 
-				assert animationPath.size() >= 2;
+				suspendActions();
+				UnitComp unitComp = units.get(unit);
+
 				animationMovePath = new ArrayList<>(animationPath);
 				animationCursor = 0;
 
 				Timer animationTimer = new Timer(animationDelay, null);
 				animationTimer.addActionListener(e -> {
 					repaint();
-					unitC.advanceMoveAnimation();
-					if (!unitC.isMoveAnimationActive()) {
+					unitComp.advanceMoveAnimation();
+					if (!unitComp.isMoveAnimationActive()) {
 						animationTimer.stop();
 						onFinish.run();
 						repaint();

@@ -135,6 +135,25 @@ class Arena {
 		return unit;
 	}
 
+	boolean isUnitVisible(Position pos, Team viewer) {
+		if (!isValidPos(pos))
+			throw new IllegalArgumentException();
+		if (!at(pos).hasUnit())
+			return false;
+		Unit unit = at(pos).getUnit();
+
+		if (!unit.type.invisible || unit.getTeam() == viewer)
+			return true;
+		for (Position n : pos.neighbors()) {
+			if (!isValidPos(n))
+				continue;
+			Tile tile = at(n);
+			if (tile.hasUnit() && tile.getUnit().getTeam() == viewer)
+				return true;
+		}
+		return false;
+	}
+
 	@Override
 	public String toString() {
 		return Utils.toString(tiles);

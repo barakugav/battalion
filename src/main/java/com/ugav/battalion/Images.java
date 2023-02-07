@@ -63,6 +63,7 @@ class Images {
 		addUnit.accept(Unit.Type.Ship, "img/unit/ship_close_range.png");
 		addUnit.accept(Unit.Type.ShipAntiAir, "img/unit/ship_anti_air.png");
 		addUnit.accept(Unit.Type.ShipArtillery, "img/unit/ship_artillery.png");
+		addUnit.accept(Unit.Type.Submarine, "img/unit/submarine.png");
 		addUnit.accept(Unit.Type.Airplane, "img/unit/airplane.png");
 		addUnit.accept(Unit.Type.Zeppelin, "img/unit/zeppelin.png");
 		units = Collections.unmodifiableMap(units0);

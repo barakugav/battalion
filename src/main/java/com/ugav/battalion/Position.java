@@ -116,6 +116,21 @@ class Position implements Comparable<Position> {
 			this.map = map;
 		}
 
+		static Bitmap fromPredicate(int width, int height, Predicate<Position> predicate) {
+			boolean[][] map = new boolean[width][height];
+			for (Position pos : Utils.iterable(new Iterator2D(width, height)))
+				map[pos.x][pos.y] = predicate.test(pos);
+			return new Bitmap(map);
+		}
+
+		int width() {
+			return map.length;
+		}
+
+		int height() {
+			return map.length != 0 ? map[0].length : 0;
+		}
+
 		boolean contains(Position pos) {
 			return 0 <= pos.x && pos.x < map.length && 0 <= pos.y && pos.y < map[pos.x].length && map[pos.x][pos.y];
 		}
@@ -127,9 +142,14 @@ class Position implements Comparable<Position> {
 
 		@Override
 		public Iterator<Position> iterator() {
-			if (map.length == 0 || map[0].length == 0)
+			if (width() == 0 || height() == 0)
 				return Collections.emptyIterator();
-			return Utils.iteratorIf(new Iterator2D(map.length, map[0].length), this);
+			return Utils.iteratorIf(new Iterator2D(width(), height()), this);
+		}
+
+		@Override
+		public Bitmap and(Predicate<? super Position> predicate) {
+			return fromPredicate(width(), height(), p -> test(p) && predicate.test(p));
 		}
 
 	}
