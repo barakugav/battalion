@@ -1,14 +1,14 @@
 package com.ugav.battalion;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 class DataChangeNotifier<E extends DataEvent> {
 
 	private final List<DataListener<? super E>> listeners;
 
 	DataChangeNotifier() {
-		listeners = new ArrayList<>();
+		listeners = new CopyOnWriteArrayList<>();
 	}
 
 	void addListener(DataListener<? super E> listener) {
