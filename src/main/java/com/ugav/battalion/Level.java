@@ -145,9 +145,14 @@ class Level {
 		}
 	}
 
+	static final int MINIMUM_WIDTH = 10;
+	static final int MINIMUM_HEIGHT = 10;
+
 	Level(TileDesc[][] tiles) {
 		this.width = tiles.length;
 		this.height = tiles[0].length;
+		if (width < MINIMUM_WIDTH || height < MINIMUM_HEIGHT)
+			throw new IllegalArgumentException("illegal size: " + width + " " + height);
 		this.tiles = new TileDesc[width][height];
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
 			this.tiles[pos.x][pos.y] = Objects.requireNonNull(tiles[pos.x][pos.y]);

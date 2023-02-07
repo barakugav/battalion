@@ -16,7 +16,7 @@ class MainMenuPanel extends JPanel implements Clearable {
 
 	MainMenuPanel(Globals globals) {
 		this.globals = Objects.requireNonNull(globals);
-		levels = new Levels();
+		levels = new Levels(globals);
 
 		int levelCount = levels.getLevels().size();
 		setLayout(new GridLayout(0, 1));
@@ -31,14 +31,14 @@ class MainMenuPanel extends JPanel implements Clearable {
 		JButton customLvlButton = new JButton("Custom Level");
 		customLvlButton.addActionListener(e -> {
 
-			JFileChooser fileChooser = Levels.createFileChooser(globals.serializer.getFileType());
+			JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType());
 			int result = fileChooser.showOpenDialog(globals.frame);
 			if (result == JFileChooser.APPROVE_OPTION) {
 				Cookies.setCookieValue(Cookies.LEVEL_DISK_LAST_DIR,
 						fileChooser.getCurrentDirectory().getAbsolutePath());
 				String selectedFile = fileChooser.getSelectedFile().getAbsolutePath();
 				try {
-					Level level = globals.serializer.levelRead(selectedFile);
+					Level level = globals.levelSerializer.levelRead(selectedFile);
 					this.globals.frame.loadLevel(level);
 				} catch (RuntimeException ex) {
 //					debug.print("failed to load file from: ", selectedFile);

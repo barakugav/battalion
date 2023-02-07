@@ -125,7 +125,7 @@ class LevelPanel extends JPanel implements Clearable {
 		Menu() {
 			labelMoney = new HashMap<>();
 			register = new DataChangeRegister();
-			for (Team team : Team.values())
+			for (Team team : Team.realTeams)
 				labelMoney.put(team, new JLabel());
 
 			JButton buttonEndTurn = new JButton("End Turn");
@@ -139,7 +139,7 @@ class LevelPanel extends JPanel implements Clearable {
 			add(buttonEndTurn);
 			add(buttonMainMenu);
 
-			for (Team team : Team.values())
+			for (Team team : Team.realTeams)
 				updateMoneyLabel(team, 0);
 		}
 
@@ -184,16 +184,8 @@ class LevelPanel extends JPanel implements Clearable {
 
 			register.register(onTileClick, e -> tileClicked(e.pos));
 			register.register(onHoverChange, e -> hoveredUpdated(e.pos));
-		}
 
-		@Override
-		int getArenaWidth() {
-			return game.arena.getWidth();
-		}
-
-		@Override
-		int getArenaHeight() {
-			return game.arena.getHeight();
+			updateArenaSize(game.arena.getWidth(), game.arena.getHeight());
 		}
 
 		void hoveredUpdated(Position hovered) {

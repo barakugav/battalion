@@ -43,7 +43,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 	LevelBuilderWindow(Globals globals) {
 		this.globals = Objects.requireNonNull(globals);
 		debug = new DebugPrintsManager(true); // TODO
-		builder = new LevelBuilder(8, 8); // TODO change default
+		builder = new LevelBuilder(Level.MINIMUM_WIDTH, Level.MINIMUM_HEIGHT);
 		menu = new Menu();
 		arenaPanel = new ArenaPanel();
 
@@ -266,14 +266,14 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			JButton buttonLoad = new JButton("Load");
 			buttonLoad.addActionListener(e -> {
-				JFileChooser fileChooser = Levels.createFileChooser(globals.serializer.getFileType());
+				JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType());
 				int result = fileChooser.showOpenDialog(globals.frame);
 				if (result == JFileChooser.APPROVE_OPTION) {
 					Cookies.setCookieValue(Cookies.LEVEL_DISK_LAST_DIR,
 							fileChooser.getCurrentDirectory().getAbsolutePath());
 					String selectedFile = fileChooser.getSelectedFile().getAbsolutePath();
 					try {
-						Level level = globals.serializer.levelRead(selectedFile);
+						Level level = globals.levelSerializer.levelRead(selectedFile);
 						builder.reset(level);
 					} catch (RuntimeException ex) {
 						debug.print("failed to load file from: ", selectedFile);
@@ -285,14 +285,14 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			JButton buttonSave = new JButton("Save");
 			buttonSave.addActionListener(e -> {
-				JFileChooser fileChooser = Levels.createFileChooser(globals.serializer.getFileType());
+				JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType());
 				int result = fileChooser.showSaveDialog(globals.frame);
 				if (result == JFileChooser.APPROVE_OPTION) {
 					Cookies.setCookieValue(Cookies.LEVEL_DISK_LAST_DIR,
 							fileChooser.getCurrentDirectory().getAbsolutePath());
 					String selectedFile = fileChooser.getSelectedFile().getAbsolutePath();
 					try {
-						globals.serializer.levelWrite(builder.buildLevel(), selectedFile);
+						globals.levelSerializer.levelWrite(builder.buildLevel(), selectedFile);
 					} catch (RuntimeException ex) {
 						debug.print("failed to save level to file: ", selectedFile);
 						ex.printStackTrace();
@@ -337,7 +337,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					height = Integer.parseInt(heightText.getText());
 				} catch (NumberFormatException ex) {
 				}
-				if (!(1 <= width && width < 100 && 1 <= height && height < 100))
+				if (!(Level.MINIMUM_WIDTH <= width && width < 100 && Level.MINIMUM_HEIGHT <= height && height < 100))
 					return; /* TODO print message to user */
 				dispose();
 				builder.reset(width, height);
@@ -380,16 +380,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			register.register(onTileClick, e -> tileClicked(e.pos));
 		}
 
-		@Override
-		int getArenaWidth() {
-			return builder.getWidth();
-		}
-
-		@Override
-		int getArenaHeight() {
-			return builder.getHeight();
-		}
-
 		void reset() {
 			removeEnteriesComp();
 
@@ -399,6 +389,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				tileComp.tileUpdate();
 			}
 
+			updateArenaSize(builder.getWidth(), builder.getHeight());
 			mapViewSet(Position.of(0, 0));
 			repaint();
 		}

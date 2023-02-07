@@ -5,11 +5,11 @@ import java.util.Objects;
 class Globals {
 
 	final GameFrame frame;
-	final LevelSerializer serializer;
+	final LevelSerializer levelSerializer;
 
 	Globals(GameFrame frame) {
 		this.frame = Objects.requireNonNull(frame);
-		serializer = new LevelSerializerXML();
+		levelSerializer = new LevelSerializerXML();
 	}
 
 }

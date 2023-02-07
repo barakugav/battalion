@@ -30,7 +30,7 @@ class LevelBuilder {
 	}
 
 	void reset(int width, int height) {
-		if (!(1 <= width && width < 100 && 1 <= height && height < 100))
+		if (!(Level.MINIMUM_WIDTH <= width && width < 100 && Level.MINIMUM_HEIGHT <= height && height < 100))
 			throw new IllegalArgumentException();
 		tiles = new TileDesc[width][height];
 		for (int x = 0; x < width; x++)

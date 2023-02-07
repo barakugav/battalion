@@ -68,8 +68,8 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 	}
 
 	static final int TILE_SIZE_PIXEL = 56;
-	static final int DISPLAYED_ARENA_WIDTH = 8;
-	static final int DISPLAYED_ARENA_HEIGHT = 8;
+	static final int DISPLAYED_ARENA_WIDTH = Level.MINIMUM_WIDTH;
+	static final int DISPLAYED_ARENA_HEIGHT = Level.MINIMUM_WIDTH;
 
 	private static final int MapMoveTimerDelay = 10;
 	private static final int MapMoveSpeed = 4;
@@ -154,20 +154,26 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		setPreferredSize(getPreferredSize());
 	}
 
-	abstract int getArenaWidth();
+	private int arenaWidth;
+	private int arenaHeight;
 
-	abstract int getArenaHeight();
+	void updateArenaSize(int width, int height) {
+		if (!(DISPLAYED_ARENA_WIDTH <= width && width < 100) || !(DISPLAYED_ARENA_HEIGHT <= height && height < 100))
+			throw new IllegalArgumentException("illegal arena size: " + width + " " + height);
+		this.arenaWidth = width;
+		this.arenaHeight = height;
+	}
 
 	void mapViewMove(Position.Direction dir) {
 		Position mapPosNew = mapPos.add(dir);
-		if (!mapPosNew.isInRect(getArenaWidth() - DISPLAYED_ARENA_WIDTH, getArenaHeight() - DISPLAYED_ARENA_HEIGHT))
+		if (!mapPosNew.isInRect(arenaWidth - DISPLAYED_ARENA_WIDTH, arenaHeight - DISPLAYED_ARENA_HEIGHT))
 			return;
 		mapPos = mapPosNew;
 		repaint();
 	}
 
 	void mapViewSet(Position pos) {
-		if (!pos.isInRect(getArenaWidth() - DISPLAYED_ARENA_WIDTH, getArenaHeight() - DISPLAYED_ARENA_HEIGHT))
+		if (!pos.isInRect(arenaWidth - DISPLAYED_ARENA_WIDTH, arenaHeight - DISPLAYED_ARENA_HEIGHT))
 			return;
 		mapPos = pos;
 		mapPosX = pos.x;
@@ -276,7 +282,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		}
 
 		private boolean inArena(Position p) {
-			return p.isInRect(arena.getArenaWidth() - 1, arena.getArenaHeight() - 1);
+			return p.isInRect(arena.arenaWidth - 1, arena.arenaHeight - 1);
 		}
 
 		@Override
@@ -295,10 +301,9 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 					throw new InternalError();
 				}
 			};
-			Predicate<Position> isBridgeHorizontal = bridgePos -> Objects
-					.requireNonNull(Terrain.isBridgeVertical(bridgePos, p -> arena.getTerrain(p), arena.getArenaWidth(),
-							arena.getArenaHeight()), "Can't determine bridge orientation")
-					.booleanValue();
+			Predicate<Position> isBridgeHorizontal = bridgePos -> Objects.requireNonNull(
+					Terrain.isBridgeVertical(bridgePos, p -> arena.getTerrain(p), arena.arenaWidth, arena.arenaHeight),
+					"Can't determine bridge orientation").booleanValue();
 
 			Terrain terrain = arena.getTerrain(pos);
 			if (terrain == Terrain.ClearWater) {
