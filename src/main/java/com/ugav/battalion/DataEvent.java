@@ -1,5 +1,9 @@
 package com.ugav.battalion;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 class DataEvent {
 	final Object source;
 
@@ -25,6 +29,22 @@ class DataEvent {
 		UnitRemove(Game source, Unit unit) {
 			super(source);
 			this.unit = unit;
+		}
+
+	}
+
+	static class UnitMove extends DataEvent {
+
+		final Unit unit;
+		final List<Position> path;
+
+		UnitMove(Game source, Unit unit, List<Position> path) {
+			super(source);
+			this.unit = unit;
+			List<Position> tempPath = new ArrayList<>(path.size() + 1);
+			tempPath.add(unit.getPos());
+			tempPath.addAll(path);
+			this.path = Collections.unmodifiableList(tempPath);
 		}
 
 	}

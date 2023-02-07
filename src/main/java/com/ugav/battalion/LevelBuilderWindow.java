@@ -365,13 +365,11 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 	private class ArenaPanel extends AbstractArenaPanel<ArenaPanel.TileComp, BuildingComp, UnitComp>
 			implements Clearable {
 
-		private final DataChangeRegister register;
+		private final DataChangeRegister register = new DataChangeRegister();
 
 		private static final long serialVersionUID = 1L;
 
 		ArenaPanel() {
-			register = new DataChangeRegister();
-
 			register.register(builder.onTileChange, e -> {
 				tiles.computeIfAbsent(e.pos, TileComp::new).tileUpdate();
 				repaint(); /* TODO find a way to repaint only the changed tile */

@@ -109,7 +109,7 @@ class LevelPanel extends JPanel implements Clearable {
 	private void checkGameStatus() {
 		if (game.isFinished()) {
 			debug.println("Game finished");
-			JOptionPane.showMessageDialog(this, "tttt");
+			JOptionPane.showMessageDialog(this, "TODO");
 			suspendActions();
 		}
 	}
@@ -117,13 +117,12 @@ class LevelPanel extends JPanel implements Clearable {
 	private class Menu extends JPanel implements Clearable {
 
 		private final Map<Team, JLabel> labelMoney;
-		private final DataChangeRegister register;
+		private final DataChangeRegister register = new DataChangeRegister();
 
 		private static final long serialVersionUID = 1L;
 
 		Menu() {
 			labelMoney = new HashMap<>();
-			register = new DataChangeRegister();
 			for (Team team : Team.realTeams)
 				labelMoney.put(team, new JLabel());
 
@@ -173,16 +172,18 @@ class LevelPanel extends JPanel implements Clearable {
 		private Position.Bitmap attackableMap = Position.Bitmap.empty;
 		private final List<Position> movePath;
 
-		private final DataChangeRegister register;
+		private final DataChangeRegister register = new DataChangeRegister();
 
 		private static final long serialVersionUID = 1L;
 
 		ArenaPanel() {
 			movePath = new ArrayList<>();
-			register = new DataChangeRegister();
 
 			register.register(onTileClick, e -> tileClicked(e.pos));
 			register.register(onHoverChange, e -> hoveredUpdated(e.pos));
+			register.register(game.onBeforeUnitMove, e -> {
+				units.get(e.unit).moveAnimation(e.path);
+			});
 
 			updateArenaSize(game.arena.getWidth(), game.arena.getHeight());
 		}
@@ -382,22 +383,13 @@ class LevelPanel extends JPanel implements Clearable {
 			}
 		}
 
-		private static <E> List<E> list(E e, List<? extends E> l) {
-			List<E> ll = new ArrayList<>();
-			ll.add(e);
-			ll.addAll(l);
-			return ll;
-		}
-
 		private void unitMove(Unit unit, Position destination) {
 			if (!destination.equals(movePath.get(movePath.size() - 1))) {
 				movePath.clear();
 				movePath.addAll(unit.calcPath(destination));
 			}
 			debug.println("Move ", unit.getPos(), " ", destination);
-			List<Position> path = game.calcRealPath(unit, movePath);
-			List<Position> animationPath = list(unit.getPos(), path);
-			units.get(unit).moveAnimation(animationPath, () -> game.move(unit, path));
+			game.move(unit, game.calcRealPath(unit, movePath));
 		}
 
 		private void unitAttack(Unit attacker, Unit target) {
@@ -413,9 +405,7 @@ class LevelPanel extends JPanel implements Clearable {
 					}
 				}
 
-				List<Position> path = game.calcRealPath(attacker, movePath);
-				List<Position> animationPath = list(attacker.getPos(), path);
-				units.get(attacker).moveAnimation(animationPath, () -> game.moveAndAttack(attacker, path, target));
+				game.moveAndAttack(attacker, game.calcRealPath(attacker, movePath), target);
 				break;
 			case LongRange:
 				game.attackRange(attacker, target);
@@ -455,7 +445,7 @@ class LevelPanel extends JPanel implements Clearable {
 
 		private class UnitComp extends AbstractArenaPanel.UnitComp {
 			private final Unit unit;
-			private final DataChangeRegister register;
+			private final DataChangeRegister register = new DataChangeRegister();
 
 			private final int HealthBarWidth = 26;
 			private final int HealthBarHeight = 4;
@@ -469,7 +459,6 @@ class LevelPanel extends JPanel implements Clearable {
 			UnitComp(Unit unit) {
 				super(ArenaPanel.this, unit.getPos());
 				this.unit = unit;
-				register = new DataChangeRegister();
 
 				register.register(unit.onChange, e -> {
 					if (unit.isDead()) {
@@ -527,11 +516,9 @@ class LevelPanel extends JPanel implements Clearable {
 				register.unregisterAll();
 			}
 
-			void moveAnimation(List<Position> animationPath, Runnable onFinish) {
-				if (animationPath.size() < 2) {
-					onFinish.run();
+			void moveAnimation(List<Position> animationPath) {
+				if (animationPath.size() < 2)
 					return;
-				}
 
 				suspendActions();
 				UnitComp unitComp = units.get(unit);
@@ -545,7 +532,6 @@ class LevelPanel extends JPanel implements Clearable {
 					unitComp.advanceMoveAnimation();
 					if (!unitComp.isMoveAnimationActive()) {
 						animationTimer.stop();
-						onFinish.run();
 						repaint();
 						resumeActions();
 					}

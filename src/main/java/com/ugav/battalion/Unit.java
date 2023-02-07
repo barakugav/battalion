@@ -362,7 +362,7 @@ class Unit extends Entity {
 
 	@Override
 	public String toString() {
-		return (getTeam() == Team.Red ? "R" : "B") + type;
+		return "" + getTeam().toString().charAt(0) + type;
 	}
 
 }

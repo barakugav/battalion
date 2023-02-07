@@ -42,8 +42,8 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 	private final MouseMotionListener mouseMotionListener;
 	private final KeyListener keyListener;
 
-	final DataChangeNotifier<HoverChangeEvent> onHoverChange;
-	final DataChangeNotifier<TileClickEvent> onTileClick;
+	final DataChangeNotifier<HoverChangeEvent> onHoverChange = new DataChangeNotifier<>();
+	final DataChangeNotifier<TileClickEvent> onTileClick = new DataChangeNotifier<>();
 
 	static class HoverChangeEvent extends DataEvent {
 
@@ -79,9 +79,6 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		tiles = new HashMap<>();
 		buildings = new IdentityHashMap<>();
 		units = new IdentityHashMap<>();
-
-		onHoverChange = new DataChangeNotifier<>();
-		onTileClick = new DataChangeNotifier<>();
 
 		mapPos = Position.of(0, 0);
 		mapPosX = mapPosY = 0;

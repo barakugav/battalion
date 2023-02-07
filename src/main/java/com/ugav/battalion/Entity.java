@@ -9,12 +9,11 @@ abstract class Entity implements Drawable {
 	private Team team;
 	private boolean active;
 
-	final DataChangeNotifier<DataEvent> onChange;
+	final DataChangeNotifier<DataEvent> onChange = new DataChangeNotifier<>();
 
 	Entity(Team team) {
 		this.team = Objects.requireNonNull(team);
 		active = false;
-		onChange = new DataChangeNotifier<>();
 	}
 
 	Team getTeam() {

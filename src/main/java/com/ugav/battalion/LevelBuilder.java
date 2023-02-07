@@ -14,18 +14,14 @@ import com.ugav.battalion.Position.Direction;
 class LevelBuilder {
 
 	private TileDesc[][] tiles;
-	final DataChangeNotifier<DataEvent.TileChange> onTileChange;
-	final DataChangeNotifier<DataEvent.LevelReset> onResetChange;
+	final DataChangeNotifier<DataEvent.TileChange> onTileChange = new DataChangeNotifier<>();
+	final DataChangeNotifier<DataEvent.LevelReset> onResetChange = new DataChangeNotifier<>();
 
 	LevelBuilder(int width, int height) {
-		onTileChange = new DataChangeNotifier<>();
-		onResetChange = new DataChangeNotifier<>();
 		reset(width, height);
 	}
 
 	LevelBuilder(Level level) {
-		onTileChange = new DataChangeNotifier<>();
-		onResetChange = new DataChangeNotifier<>();
 		reset(level);
 	}
 

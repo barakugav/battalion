@@ -21,9 +21,10 @@ class Game {
 	private Team winner;
 	private final List<Unit> deadQueue;
 
-	final DataChangeNotifier<DataEvent.UnitAdd> onUnitAdd;
-	final DataChangeNotifier<DataEvent.UnitRemove> onUnitRemove;
-	final DataChangeNotifier<DataEvent.MoneyChange> onMoneyChange;
+	final DataChangeNotifier<DataEvent.UnitAdd> onUnitAdd = new DataChangeNotifier<>();
+	final DataChangeNotifier<DataEvent.UnitRemove> onUnitRemove = new DataChangeNotifier<>();
+	final DataChangeNotifier<DataEvent.UnitMove> onBeforeUnitMove = new DataChangeNotifier<>();
+	final DataChangeNotifier<DataEvent.MoneyChange> onMoneyChange = new DataChangeNotifier<>();
 
 	private static class TeamData {
 		int money;
@@ -36,10 +37,6 @@ class Game {
 		turn = turnIterator.next();
 		winner = null;
 		deadQueue = new ArrayList<>();
-		onUnitAdd = new DataChangeNotifier<>();
-		onUnitRemove = new DataChangeNotifier<>();
-		onMoneyChange = new DataChangeNotifier<>();
-
 		for (Position pos : arena.positions()) {
 			Tile tile = arena.at(pos);
 			if (!tile.hasUnit())
@@ -147,6 +144,7 @@ class Game {
 	}
 
 	private void move0(Unit unit, List<Position> path) {
+		onBeforeUnitMove.notify(new DataEvent.UnitMove(this, unit, path));
 		Position source = unit.getPos();
 		Position destination = path.get(path.size() - 1);
 		arena.at(source).removeUnit();
