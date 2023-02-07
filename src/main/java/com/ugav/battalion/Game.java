@@ -158,7 +158,7 @@ class Game {
 	}
 
 	void moveAndAttack(Unit attacker, List<Position> path, Unit target) {
-		if (attacker.type.weapon != Weapon.CloseRange)
+		if (attacker.type.weapon.type != Weapon.Type.CloseRange)
 			throw new UnsupportedOperationException("Only close range weapon are supported");
 
 		if (!path.isEmpty() && !attacker.isMoveValid(path))
@@ -173,7 +173,7 @@ class Game {
 	}
 
 	void attackRange(Unit attacker, Unit target) {
-		if (attacker.type.weapon != Weapon.LongRange)
+		if (attacker.type.weapon.type != Weapon.Type.LongRange)
 			throw new UnsupportedOperationException("Only long range weapon are supported");
 
 		if (!isAttackValid(attacker, target))

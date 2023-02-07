@@ -52,11 +52,19 @@ class Images {
 			units0.put(type, Map.of(Team.Red, redImg, Team.Blue, blueImg));
 		};
 		addUnit.accept(Unit.Type.Soldier, "img/unit/soldier.png");
+		addUnit.accept(Unit.Type.Bazooka, "img/unit/bazooka.png");
 		addUnit.accept(Unit.Type.Tank, "img/unit/tank.png");
+		addUnit.accept(Unit.Type.TankBig, "img/unit/tank_big.png");
+		addUnit.accept(Unit.Type.TankAntiAir, "img/unit/tank_anti_air.png");
 		addUnit.accept(Unit.Type.Artillery, "img/unit/artillery.png");
+		addUnit.accept(Unit.Type.Mortar, "img/unit/mortar.png");
 		addUnit.accept(Unit.Type.Turrent, "img/unit/turrent.png");
+		addUnit.accept(Unit.Type.SpeedBoat, "img/unit/speed_boat.png");
 		addUnit.accept(Unit.Type.Ship, "img/unit/ship_close_range.png");
+		addUnit.accept(Unit.Type.ShipAntiAir, "img/unit/ship_anti_air.png");
+		addUnit.accept(Unit.Type.ShipArtillery, "img/unit/ship_artillery.png");
 		addUnit.accept(Unit.Type.Airplane, "img/unit/airplane.png");
+		addUnit.accept(Unit.Type.Zeppelin, "img/unit/zeppelin.png");
 		units = Collections.unmodifiableMap(units0);
 
 		/* Buildings */

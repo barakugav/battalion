@@ -79,8 +79,31 @@ class Unit extends Entity {
 		Land, Water, Air
 	}
 
-	enum Weapon {
-		CloseRange, LongRange
+	static class Weapon {
+		enum Type {
+			CloseRange, LongRange
+		}
+
+		final Type type;
+		final int minRange;
+		final int maxRange;
+
+		private Weapon(Type type, int minRange, int maxRange) {
+			this.type = Objects.requireNonNull(type);
+			if (minRange < 0 || minRange > maxRange)
+				throw new IllegalArgumentException();
+			this.minRange = minRange;
+			this.maxRange = maxRange;
+		}
+
+		static Weapon closeRange() {
+			return new Weapon(Type.CloseRange, 1, 1);
+		}
+
+		static Weapon longRange(int minRange, int maxRange) {
+			return new Weapon(Type.LongRange, minRange, maxRange);
+		}
+
 	}
 
 	private static class TypeBuilder {
@@ -151,15 +174,26 @@ class Unit extends Entity {
 	}
 
 	enum Type {
-		Soldier(Category.Land, Weapon.CloseRange, 50, 22, 3, 1, 1, Tech.StandOnLandExtreme, Tech.AttLand, Tech.AttWater,
+		Soldier(Category.Land, Weapon.closeRange(), 50, 22, 3, Tech.StandOnLandExtreme, Tech.AttLand, Tech.AttWater,
 				Tech.Conquerer),
-		Tank(Category.Land, Weapon.CloseRange, 70, 35, 6, 1, 1, Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater),
-		Artillery(Category.Land, Weapon.LongRange, 70, 35, 3, 3, 5, Tech.StandOnLandFlat, Tech.AttAny),
-		Turrent(Category.Land, Weapon.LongRange, 100, 30, 0, 2, 7, Tech.StandOnLandFlat, Tech.AttAny),
+		Bazooka(Category.Land, Weapon.closeRange(), 50, 22, 3, Tech.StandOnLandExtreme, Tech.AttLand, Tech.AttWater,
+				Tech.Conquerer),
+		Tank(Category.Land, Weapon.closeRange(), 70, 35, 6, Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater),
+		TankBig(Category.Land, Weapon.closeRange(), 70, 35, 6, Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater),
+		TankAntiAir(Category.Land, Weapon.closeRange(), 70, 35, 6, Tech.StandOnLandRough, Tech.AttAny),
+		Artillery(Category.Land, Weapon.longRange(3, 5), 70, 35, 3, Tech.StandOnLandFlat, Tech.AttAny),
+		Mortar(Category.Land, Weapon.longRange(3, 5), 70, 35, 3, Tech.StandOnLandFlat, Tech.AttAny),
 
-		Ship(Category.Water, Weapon.CloseRange, 70, 35, 6, 1, 1, Tech.StandOnWater, Tech.AttLand, Tech.AttWater),
+		Turrent(Category.Land, Weapon.longRange(2, 7), 100, 30, 0, Tech.StandOnLandFlat, Tech.AttAny),
 
-		Airplane(Category.Air, Weapon.CloseRange, 70, 35, 6, 1, 1, Tech.StandOnAny, Tech.AttAny);
+		SpeedBoat(Category.Water, Weapon.closeRange(), 70, 0, 6, Tech.StandOnWater, Tech.Conquerer),
+		Ship(Category.Water, Weapon.closeRange(), 70, 35, 6, Tech.StandOnWater, Tech.AttLand, Tech.AttWater),
+		ShipAntiAir(Category.Water, Weapon.closeRange(), 70, 35, 6, Tech.StandOnWater, Tech.AttAny),
+		ShipArtillery(Category.Water, Weapon.longRange(2, 7), 70, 35, 6, Tech.StandOnWater, Tech.AttLand,
+				Tech.AttWater),
+
+		Airplane(Category.Air, Weapon.closeRange(), 70, 35, 6, Tech.StandOnAny, Tech.AttAny),
+		Zeppelin(Category.Air, Weapon.closeRange(), 70, 35, 6, Tech.StandOnAny, Tech.AttAny);
 
 		final Category category;
 		final Weapon weapon;
@@ -168,23 +202,18 @@ class Unit extends Entity {
 		final int health;
 		final int damage;
 		final int moveLimit;
-		final int rangeMin;
-		final int rangeMax;
 		final boolean canConquer;
 
-		Type(Category category, Weapon weapon, int health, int damage, int moveLimit, int rangeMin, int rangeMax,
-				Tech... techs) {
+		Type(Category category, Weapon weapon, int health, int damage, int moveLimit, Tech... techs) {
 			TypeBuilder builder = new TypeBuilder(techs);
 
-			this.category = category;
-			this.weapon = weapon;
+			this.category = Objects.requireNonNull(category);
+			this.weapon = Objects.requireNonNull(weapon);
 			this.canStand = Collections.unmodifiableSet(EnumSet.copyOf(builder.canStand));
 			this.canAttack = Collections.unmodifiableSet(EnumSet.copyOf(builder.canAttack));
 			this.health = health;
 			this.damage = damage;
 			this.moveLimit = moveLimit;
-			this.rangeMin = rangeMin;
-			this.rangeMax = rangeMax;
 			this.canConquer = builder.tech.contains(Tech.Conquerer);
 		}
 	}
@@ -260,7 +289,7 @@ class Unit extends Entity {
 	}
 
 	Position.Bitmap getAttackableMap() {
-		switch (type.weapon) {
+		switch (type.weapon.type) {
 		case CloseRange:
 			return getAttackableMapCloseRange();
 		case LongRange:
@@ -295,7 +324,7 @@ class Unit extends Entity {
 		boolean[][] attackableMap = new boolean[arena.getWidth()][arena.getHeight()];
 		for (Position pos : arena.positions()) {
 			int distance = distance1Norm(getPos(), pos);
-			if (!arena.at(pos).hasUnit() || !(type.rangeMin <= distance && distance <= type.rangeMax))
+			if (!arena.at(pos).hasUnit() || !(type.weapon.minRange <= distance && distance <= type.weapon.maxRange))
 				continue;
 			Unit other = arena.at(pos).getUnit();
 			attackableMap[pos.x][pos.y] = other.getTeam() != getTeam() && type.canAttack.contains(other.type.category);

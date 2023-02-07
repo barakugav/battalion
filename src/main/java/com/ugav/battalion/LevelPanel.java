@@ -194,7 +194,7 @@ class LevelPanel extends JPanel implements Clearable {
 			Unit unit = game.arena.at(selection).getUnit();
 
 			if (attackableMap.contains(hovered)) {
-				if (unit.type.weapon == Weapon.LongRange) {
+				if (unit.type.weapon.type == Weapon.Type.LongRange) {
 					movePath.clear();
 					repaint();
 					return;
@@ -408,7 +408,7 @@ class LevelPanel extends JPanel implements Clearable {
 			} else if (game.isAttackValid(unit, target = tile.getUnit())) {
 				debug.println("Attack ", unit.getPos(), " ", pos);
 
-				if (unit.type.weapon == Weapon.CloseRange) {
+				if (unit.type.weapon.type == Weapon.Type.CloseRange) {
 					Position moveToPos = movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1);
 					Position targetPos = target.getPos();
 					if (!moveToPos.neighbors().contains(targetPos) || !reachableMap.contains(moveToPos)) {
@@ -435,7 +435,7 @@ class LevelPanel extends JPanel implements Clearable {
 								() -> game.moveAndAttack(unit, curreMovePath, target));
 					}
 
-				} else if (unit.type.weapon == Weapon.LongRange) {
+				} else if (unit.type.weapon.type == Weapon.Type.LongRange) {
 					game.attackRange(unit, target);
 
 				} else {
