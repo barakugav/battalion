@@ -131,28 +131,9 @@ class Arena {
 	Unit createUnit(UnitDesc desc, Position pos) {
 		if (desc == null)
 			return null;
-		Unit unit = createUnit0(desc);
+		Unit unit = Unit.valueOf(this, desc);
 		unit.setPos(pos);
 		return unit;
-	}
-
-	Unit createUnit0(UnitDesc desc) {
-		switch (desc.type) {
-		case Soldier:
-			return new Unit.Soldier(this, desc.team);
-		case Tank:
-			return new Unit.Tank(this, desc.team);
-		case Artillery:
-			return new Unit.Artillery(this, desc.team);
-		case Turrent:
-			return new Unit.Turrent(this, desc.team);
-		case Ship:
-			return new Unit.Ship(this, desc.team);
-		case Airplane:
-			return new Unit.Airplane(this, desc.team);
-		default:
-			throw new InternalError("Unsupported unit description: " + desc);
-		}
 	}
 
 	@Override

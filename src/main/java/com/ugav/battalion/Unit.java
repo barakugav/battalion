@@ -10,7 +10,9 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-abstract class Unit extends Entity {
+import com.ugav.battalion.Level.UnitDesc;
+
+class Unit extends Entity {
 
 	final Type type;
 	final Arena arena;
@@ -107,7 +109,8 @@ abstract class Unit extends Entity {
 				Terrain.Category.Shore, Terrain.Category.ExtremeLand, Terrain.Category.Road, Terrain.Category.BridgeLow,
 				Terrain.Category.BridgeHigh),
 
-		StandOnWater(TypeBuilder::canStand, Terrain.Category.Water, Terrain.Category.BridgeHigh, Terrain.Category.Shore),
+		StandOnWater(TypeBuilder::canStand, Terrain.Category.Water, Terrain.Category.BridgeHigh,
+				Terrain.Category.Shore),
 
 		StandOnWaterDeep(TypeBuilder::canStand, Terrain.Category.Water, Terrain.Category.BridgeLow,
 				Terrain.Category.BridgeHigh),
@@ -179,112 +182,8 @@ abstract class Unit extends Entity {
 		}
 	}
 
-	static abstract class UnitCloseRange extends Unit {
-
-		UnitCloseRange(Arena arena, Type type, Team team) {
-			super(arena, type, team);
-			if (type.weapon != Weapon.CloseRange)
-				throw new InternalError();
-		}
-
-		@Override
-		Position.Bitmap getAttackableMap() {
-			Position.Bitmap reachableMap = getReachableMap();
-			boolean[][] attackableMap = new boolean[arena.getWidth()][arena.getHeight()];
-
-			Consumer<Position> checkNeighbors = pos -> {
-				for (Position neighbor : pos.neighbors()) {
-					if (!arena.isValidPos(neighbor) || !arena.at(neighbor).hasUnit())
-						continue;
-					Unit other = arena.at(neighbor).getUnit();
-					attackableMap[neighbor.x][neighbor.y] = other.getTeam() != getTeam()
-							&& type.canAttack.contains(other.type.category);
-				}
-			};
-
-			checkNeighbors.accept(getPos());
-			for (Position pos : reachableMap)
-				checkNeighbors.accept(pos);
-
-			return new Position.Bitmap(attackableMap);
-		}
-
-	}
-
-	static abstract class UnitLongRange extends Unit {
-
-		UnitLongRange(Arena arena, Type type, Team team) {
-			super(arena, type, team);
-			if (type.weapon != Weapon.LongRange)
-				throw new InternalError();
-		}
-
-		@Override
-		Position.Bitmap getAttackableMap() {
-			boolean[][] attackableMap = new boolean[arena.getWidth()][arena.getHeight()];
-			for (Position pos : arena.positions()) {
-				int distance = distance1Norm(getPos(), pos);
-				if (!arena.at(pos).hasUnit() || !(type.rangeMin <= distance && distance <= type.rangeMax))
-					continue;
-				Unit other = arena.at(pos).getUnit();
-				attackableMap[pos.x][pos.y] = other.getTeam() != getTeam()
-						&& type.canAttack.contains(other.type.category);
-			}
-			return new Position.Bitmap(attackableMap);
-		}
-
-		private static int distance1Norm(Position p1, Position p2) {
-			return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
-		}
-
-	}
-
-	static class Soldier extends UnitCloseRange {
-
-		Soldier(Arena arena, Team team) {
-			super(arena, Type.Soldier, team);
-		}
-
-	}
-
-	static class Tank extends UnitCloseRange {
-
-		Tank(Arena arena, Team team) {
-			super(arena, Type.Tank, team);
-		}
-
-	}
-
-	static class Artillery extends UnitLongRange {
-
-		Artillery(Arena arena, Team team) {
-			super(arena, Type.Artillery, team);
-		}
-
-	}
-
-	static class Turrent extends UnitLongRange {
-
-		Turrent(Arena arena, Team team) {
-			super(arena, Type.Turrent, team);
-		}
-
-	}
-
-	static class Ship extends UnitCloseRange {
-
-		Ship(Arena arena, Team team) {
-			super(arena, Type.Ship, team);
-		}
-
-	}
-
-	static class Airplane extends UnitCloseRange {
-
-		Airplane(Arena arena, Team team) {
-			super(arena, Type.Airplane, team);
-		}
-
+	static Unit valueOf(Arena arena, UnitDesc desc) {
+		return new Unit(arena, desc.type, desc.team);
 	}
 
 	Position.Bitmap getReachableMap() {
@@ -353,7 +252,53 @@ abstract class Unit extends Entity {
 		return path;
 	}
 
-	abstract Position.Bitmap getAttackableMap();
+	Position.Bitmap getAttackableMap() {
+		switch (type.weapon) {
+		case CloseRange:
+			return getAttackableMapCloseRange();
+		case LongRange:
+			return getAttackableMapLongRange();
+		default:
+			throw new InternalError();
+		}
+	}
+
+	private Position.Bitmap getAttackableMapCloseRange() {
+		Position.Bitmap reachableMap = getReachableMap();
+		boolean[][] attackableMap = new boolean[arena.getWidth()][arena.getHeight()];
+
+		Consumer<Position> checkNeighbors = pos -> {
+			for (Position neighbor : pos.neighbors()) {
+				if (!arena.isValidPos(neighbor) || !arena.at(neighbor).hasUnit())
+					continue;
+				Unit other = arena.at(neighbor).getUnit();
+				attackableMap[neighbor.x][neighbor.y] = other.getTeam() != getTeam()
+						&& type.canAttack.contains(other.type.category);
+			}
+		};
+
+		checkNeighbors.accept(getPos());
+		for (Position pos : reachableMap)
+			checkNeighbors.accept(pos);
+
+		return new Position.Bitmap(attackableMap);
+	}
+
+	private Position.Bitmap getAttackableMapLongRange() {
+		boolean[][] attackableMap = new boolean[arena.getWidth()][arena.getHeight()];
+		for (Position pos : arena.positions()) {
+			int distance = distance1Norm(getPos(), pos);
+			if (!arena.at(pos).hasUnit() || !(type.rangeMin <= distance && distance <= type.rangeMax))
+				continue;
+			Unit other = arena.at(pos).getUnit();
+			attackableMap[pos.x][pos.y] = other.getTeam() != getTeam() && type.canAttack.contains(other.type.category);
+		}
+		return new Position.Bitmap(attackableMap);
+	}
+
+	private static int distance1Norm(Position p1, Position p2) {
+		return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
+	}
 
 	@Override
 	public String toString() {
