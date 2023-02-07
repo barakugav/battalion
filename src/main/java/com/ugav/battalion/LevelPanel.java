@@ -600,20 +600,25 @@ class LevelPanel extends JPanel implements Clearable {
 			int unitCount = Unit.Type.values().length;
 			setLayout(new GridLayout(1, unitCount));
 
-			List<Building.UnitSale> sales = factory.getAvailableUnits();
+			Map<Unit.Type, Building.UnitSale> sales = factory.getAvailableUnits();
 
-			for (int unitIdx = 0; unitIdx < unitCount; unitIdx++) {
-				Unit.Type unit = Unit.Type.values()[unitIdx];
-				Building.UnitSale unitSale = null;
-				for (Building.UnitSale sale : sales)
-					if (sale.type == unit)
-						unitSale = sale;
+			List<Unit.Type> landUnits = List.of(Unit.Type.Soldier, Unit.Type.Bazooka, Unit.Type.TankAntiAir,
+					Unit.Type.Tank, Unit.Type.Mortar, Unit.Type.Artillery, Unit.Type.TankBig);
+			List<Unit.Type> waterUnits = List.of(Unit.Type.SpeedBoat, Unit.Type.ShipAntiAir, Unit.Type.Ship,
+					Unit.Type.ShipArtillery, Unit.Type.Submarine);
+			List<Unit.Type> airUnits = List.of(Unit.Type.Airplane, Unit.Type.Airplane);
+			List<Unit.Type> unitsOrder = new ArrayList<>();
+			unitsOrder.addAll(landUnits);
+			unitsOrder.addAll(waterUnits);
+			unitsOrder.addAll(airUnits);
 
+			for (Unit.Type unit : unitsOrder) {
 				JPanel saleComp = new JPanel();
 				saleComp.setLayout(new GridBagLayout());
 				JComponent upperComp;
 				JComponent lowerComp;
 
+				Building.UnitSale unitSale = sales.get(unit);
 				if (unitSale != null) {
 					upperComp = new JLabel(new ImageIcon(Images.getImage(UnitDesc.of(unit, factory.getTeam()))));
 					lowerComp = new JLabel(Integer.toString(unitSale.price));

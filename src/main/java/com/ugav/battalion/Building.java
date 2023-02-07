@@ -1,9 +1,10 @@
 package com.ugav.battalion;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -153,10 +154,11 @@ class Building extends Entity {
 		super.setActive(active);
 	}
 
-	List<UnitSale> getAvailableUnits() {
+	Map<Unit.Type, UnitSale> getAvailableUnits() {
 		if (!type.canBuildUnits)
 			throw new IllegalStateException();
-		List<UnitSale> l = new ArrayList<>();
+		Map<Unit.Type, UnitSale> sales = new HashMap<>();
+		Consumer<UnitSale> addSale = sale -> sales.put(sale.type, sale);
 
 		boolean canBuildLandUnits = !arena.buildings(getTeam(), b -> b.type.allowUnitBuildLand).isEmpty();
 		boolean canBuildWaterUnits = !arena.buildings(getTeam(), b -> b.type.allowUnitBuildWater).isEmpty() && EnumSet
@@ -164,17 +166,27 @@ class Building extends Entity {
 		boolean canBuildAirUnits = !arena.buildings(getTeam(), b -> b.type.allowUnitBuildAir).isEmpty();
 
 		if (canBuildLandUnits) {
-			l.add(UnitSale.of(Unit.Type.Soldier, 100));
-			l.add(UnitSale.of(Unit.Type.Tank, 300));
+			addSale.accept(UnitSale.of(Unit.Type.Soldier, 75));
+			addSale.accept(UnitSale.of(Unit.Type.Bazooka, 100));
+			addSale.accept(UnitSale.of(Unit.Type.TankAntiAir, 230));
+			addSale.accept(UnitSale.of(Unit.Type.Tank, 270));
+			addSale.accept(UnitSale.of(Unit.Type.Mortar, 300));
+			addSale.accept(UnitSale.of(Unit.Type.Artillery, 470));
+			addSale.accept(UnitSale.of(Unit.Type.TankBig, 470));
 		}
 		if (canBuildWaterUnits) {
-			l.add(UnitSale.of(Unit.Type.Ship, 700));
+			addSale.accept(UnitSale.of(Unit.Type.SpeedBoat, 200));
+			addSale.accept(UnitSale.of(Unit.Type.ShipAntiAir, 450));
+			addSale.accept(UnitSale.of(Unit.Type.Ship, 500));
+			addSale.accept(UnitSale.of(Unit.Type.ShipArtillery, 800));
+			addSale.accept(UnitSale.of(Unit.Type.Submarine, 475));
 		}
 		if (canBuildAirUnits) {
-			l.add(UnitSale.of(Unit.Type.Airplane, 400));
+			addSale.accept(UnitSale.of(Unit.Type.Airplane, 340));
+			addSale.accept(UnitSale.of(Unit.Type.Airplane, 650));
 		}
 
-		return l;
+		return sales;
 	}
 
 	static class UnitSale {
@@ -184,6 +196,11 @@ class Building extends Entity {
 		UnitSale(Unit.Type type, int price) {
 			this.type = type;
 			this.price = price;
+		}
+
+		@Override
+		public String toString() {
+			return "<" + type + ", " + price + ">";
 		}
 
 		private static UnitSale of(Unit.Type type, int price) {

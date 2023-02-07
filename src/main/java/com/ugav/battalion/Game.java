@@ -216,13 +216,8 @@ class Game {
 		if (!factory.type.canBuildUnits || !factory.isActive() || arena.at(pos).hasUnit())
 			throw new IllegalStateException();
 
-		List<Building.UnitSale> sales = factory.getAvailableUnits();
-		Building.UnitSale sale = null;
-		for (Building.UnitSale s : sales)
-			if (s.type == unitType)
-				sale = s;
-		if (sale == null)
-			throw new IllegalStateException();
+		Map<Unit.Type, Building.UnitSale> sales = factory.getAvailableUnits();
+		Building.UnitSale sale = sales.get(unitType);
 		Team team = factory.getTeam();
 		TeamData data = teamData.get(team);
 		if (data.money < sale.price)

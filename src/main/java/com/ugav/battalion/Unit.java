@@ -178,26 +178,26 @@ class Unit extends Entity {
 	enum Type {
 		Soldier(Category.Land, Weapon.closeRange(), 50, 22, 3, Tech.StandOnLandExtreme, Tech.AttLand, Tech.AttWater,
 				Tech.Conquerer),
-		Bazooka(Category.Land, Weapon.closeRange(), 50, 22, 3, Tech.StandOnLandExtreme, Tech.AttLand, Tech.AttWater,
+		Bazooka(Category.Land, Weapon.closeRange(), 50, 30, 3, Tech.StandOnLandExtreme, Tech.AttLand, Tech.AttWater,
 				Tech.Conquerer),
 		Tank(Category.Land, Weapon.closeRange(), 70, 35, 6, Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater),
-		TankBig(Category.Land, Weapon.closeRange(), 70, 35, 6, Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater),
-		TankAntiAir(Category.Land, Weapon.closeRange(), 70, 35, 6, Tech.StandOnLandRough, Tech.AttAny),
-		Artillery(Category.Land, Weapon.longRange(3, 5), 70, 35, 3, Tech.StandOnLandFlat, Tech.AttAny),
-		Mortar(Category.Land, Weapon.longRange(3, 5), 70, 35, 3, Tech.StandOnLandFlat, Tech.AttAny),
+		TankBig(Category.Land, Weapon.closeRange(), 140, 70, 4, Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater),
+		TankAntiAir(Category.Land, Weapon.closeRange(), 70, 17, 5, Tech.StandOnLandRough, Tech.AttAny),
+		Artillery(Category.Land, Weapon.longRange(3, 5), 40, 40, 4, Tech.StandOnLandFlat, Tech.AttAny),
+		Mortar(Category.Land, Weapon.longRange(2, 3), 50, 40, 5, Tech.StandOnLandFlat, Tech.AttAny),
 
-		Turrent(Category.Land, Weapon.longRange(2, 7), 100, 30, 0, Tech.StandOnLandFlat, Tech.AttAny),
+		Turrent(Category.Land, Weapon.longRange(2, 5), 100, 40, 0, Tech.StandOnLandFlat, Tech.AttAny),
 
-		SpeedBoat(Category.Water, Weapon.closeRange(), 70, 0, 6, Tech.StandOnWater, Tech.Conquerer),
-		Ship(Category.Water, Weapon.closeRange(), 70, 35, 6, Tech.StandOnWater, Tech.AttLand, Tech.AttWater),
-		ShipAntiAir(Category.Water, Weapon.closeRange(), 70, 35, 6, Tech.StandOnWater, Tech.AttAny),
-		ShipArtillery(Category.Water, Weapon.longRange(2, 7), 70, 35, 6, Tech.StandOnWater, Tech.AttLand,
+		SpeedBoat(Category.Water, Weapon.closeRange(), 50, 15, 5, Tech.StandOnWater, Tech.Conquerer),
+		Ship(Category.Water, Weapon.closeRange(), 90, 45, 5, Tech.StandOnWater, Tech.AttLand, Tech.AttWater),
+		ShipAntiAir(Category.Water, Weapon.closeRange(), 90, 17, 5, Tech.StandOnWater, Tech.AttAny),
+		ShipArtillery(Category.Water, Weapon.longRange(3, 6), 140, 50, 4, Tech.StandOnWater, Tech.AttLand,
 				Tech.AttWater),
-		Submarine(Category.DeepWater, Weapon.closeRange(), 70, 35, 6, Tech.StandOnWaterDeep, Tech.AttWater,
+		Submarine(Category.DeepWater, Weapon.closeRange(), 25, 35, 4, Tech.StandOnWaterDeep, Tech.AttWater,
 				Tech.Invisible, Tech.AttDeepWater),
 
-		Airplane(Category.Air, Weapon.closeRange(), 70, 35, 6, Tech.StandOnAny, Tech.AttAny),
-		Zeppelin(Category.Air, Weapon.closeRange(), 70, 35, 6, Tech.StandOnAny, Tech.AttAny);
+		Airplane(Category.Air, Weapon.closeRange(), 50, 30, 7, Tech.StandOnAny, Tech.AttAny),
+		Zeppelin(Category.Air, Weapon.closeRange(), 110, 80, 4, Tech.StandOnAny, Tech.AttAny);
 
 		final Category category;
 		final Weapon weapon;
