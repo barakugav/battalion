@@ -1,5 +1,6 @@
 package com.ugav.battalion;
 
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +31,7 @@ class Images {
 
 	private static final Map<Terrain, BufferedImage> terrains;
 	private static final Map<Unit.Type, Map<Team, BufferedImage>> units;
+	private static final Map<Unit.Type, Map<Team, BufferedImage>> unitsMini;
 	private static final Map<Building.Type, Map<Team, BufferedImage>> buildings;
 	private static final Map<Object, BufferedImage> ect;
 	static {
@@ -50,10 +52,20 @@ class Images {
 
 		/* Units */
 		Map<Unit.Type, Map<Team, BufferedImage>> units0 = new HashMap<>();
+		Map<Unit.Type, Map<Team, BufferedImage>> unitsMini0 = new HashMap<>();
 		BiConsumer<Unit.Type, String> addUnit = (type, path) -> {
 			BufferedImage redImg = loadImg(path);
 			BufferedImage blueImg = toBlue(redImg);
-			units0.put(type, Map.of(Team.Red, redImg, Team.Blue, blueImg));
+			Map<Team, BufferedImage> imgs = Map.of(Team.Red, redImg, Team.Blue, blueImg);
+			units0.put(type, imgs);
+
+			Map<Team, BufferedImage> imgsMini = new HashMap<>(imgs);
+			imgsMini.replaceAll((team, img) -> {
+				final int miniWidth = 28;
+				int height = img.getHeight() * miniWidth / img.getWidth();
+				return Utils.bufferedImageFromImage(img.getScaledInstance(miniWidth, height, Image.SCALE_SMOOTH));
+			});
+			unitsMini0.put(type, imgsMini);
 		};
 		addUnit.accept(Unit.Type.Soldier, "img/unit/soldier.png");
 		addUnit.accept(Unit.Type.Bazooka, "img/unit/bazooka.png");
@@ -68,9 +80,12 @@ class Images {
 		addUnit.accept(Unit.Type.ShipAntiAir, "img/unit/ship_anti_air.png");
 		addUnit.accept(Unit.Type.ShipArtillery, "img/unit/ship_artillery.png");
 		addUnit.accept(Unit.Type.Submarine, "img/unit/submarine.png");
+		addUnit.accept(Unit.Type.ShipTransporter, "img/unit/unit_ship_water.png");
 		addUnit.accept(Unit.Type.Airplane, "img/unit/airplane.png");
 		addUnit.accept(Unit.Type.Zeppelin, "img/unit/zeppelin.png");
+		addUnit.accept(Unit.Type.AirTransporter, "img/unit/unit_ship_air.png");
 		units = Collections.unmodifiableMap(units0);
+		unitsMini = Collections.unmodifiableMap(unitsMini0);
 
 		/* Buildings */
 		Map<Building.Type, Map<Team, BufferedImage>> buildings0 = new HashMap<>();
@@ -162,17 +177,21 @@ class Images {
 	}
 
 	private static BufferedImage getImage0(Object obj) {
+		boolean mini = obj instanceof Mini;
+		if (mini)
+			obj = ((Mini) obj).obj;
+
 		if (obj instanceof Terrain) {
 			Terrain terrain = (Terrain) obj;
 			return terrains.get(terrain);
 
 		} else if (obj instanceof Unit) {
 			Unit unit = (Unit) obj;
-			return units.get(unit.type).get(unit.getTeam());
+			return (mini ? unitsMini : units).get(unit.type).get(unit.getTeam());
 
 		} else if (obj instanceof UnitDesc) {
 			UnitDesc unit = (UnitDesc) obj;
-			return units.get(unit.type).get(unit.team);
+			return (mini ? unitsMini : units).get(unit.type).get(unit.team);
 
 		} else if (obj instanceof Building) {
 			Building building = (Building) obj;
@@ -184,6 +203,18 @@ class Images {
 
 		} else {
 			return ect.get(obj);
+		}
+	}
+
+	static class Mini {
+		private final Object obj;
+
+		private Mini(Object obj) {
+			this.obj = obj;
+		}
+
+		static Mini of(Object obj) {
+			return new Mini(obj);
 		}
 	}
 

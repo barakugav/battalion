@@ -1,6 +1,8 @@
 package com.ugav.battalion;
 
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
@@ -174,6 +176,14 @@ public class Utils {
 			}
 		}
 		return img;
+	}
+
+	public static BufferedImage bufferedImageFromImage(Image img) {
+		BufferedImage bimage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D bGr = bimage.createGraphics();
+		bGr.drawImage(img, 0, 0, null);
+		bGr.dispose();
+		return bimage;
 	}
 
 	public static class Holder<T> {

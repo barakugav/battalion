@@ -1,5 +1,6 @@
 package com.ugav.battalion;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.KeyAdapter;
@@ -37,7 +38,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 	final Map<Object, UnitCompImpl> units;
 
 	private Position mapPos;
-	private double mapPosX, mapPosY;
+	private int mapPosX, mapPosY;
 	private final Timer mapMoveTimer;
 	private Position hovered;
 
@@ -176,8 +177,8 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		if (!pos.isInRect(arenaWidth - DISPLAYED_ARENA_WIDTH, arenaHeight - DISPLAYED_ARENA_HEIGHT))
 			return;
 		mapPos = pos;
-		mapPosX = pos.x;
-		mapPosY = pos.y;
+		mapPosX = (int) (pos.x * TILE_SIZE_PIXEL);
+		mapPosY = (int) (pos.y * TILE_SIZE_PIXEL);
 		repaint();
 	}
 
@@ -190,11 +191,11 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 	}
 
 	int displayedXInv(int x) {
-		return (int) (x + mapPosX);
+		return x + mapPosX;
 	}
 
 	int displayedYInv(int y) {
-		return (int) (y + mapPosY);
+		return y + mapPosY;
 	}
 
 	@Override
@@ -240,7 +241,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		return new Dimension(TILE_SIZE_PIXEL * DISPLAYED_ARENA_WIDTH, TILE_SIZE_PIXEL * DISPLAYED_ARENA_HEIGHT);
 	}
 
-	void drawImage(Graphics g, Object obj, Position pos) {
+	void drawRelativeToMap(Graphics g, Object obj, Position pos) {
 		int x = displayedX(pos.x * TILE_SIZE_PIXEL);
 		int y = displayedY(pos.y * TILE_SIZE_PIXEL);
 		drawImage(g, obj, x, y);
@@ -254,9 +255,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 	abstract Terrain getTerrain(Position pos);
 
-	abstract Object getBuilding(Position pos);
-
-	abstract Object getUnit(Position pos);
+	abstract Object getTrasporterUnit(Object unit);
 
 	abstract static class EntityComp implements Clearable {
 
@@ -316,7 +315,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 			Position pos = pos();
 			Terrain terrain = arena.getTerrain(pos);
 			if (terrain == Terrain.ClearWater) {
-				arena.drawImage(g, terrain, pos);
+				arena.drawRelativeToMap(g, terrain, pos);
 				for (int quadrant = 0; quadrant < 4; quadrant++) {
 					Pair<Direction, Direction> dirs = quadrantToDirs.apply(quadrant);
 					Position p1 = pos.add(dirs.e1), p2 = pos.add(dirs.e2), p3 = pos.add(dirs.e1).add(dirs.e2);
@@ -327,7 +326,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 					if (c1 || c2 || c3) {
 						int variant = (c1 ? 1 : 0) + (c2 ? 2 : 0);
-						arena.drawImage(g, "WaterEdge" + quadrant + variant, pos);
+						arena.drawRelativeToMap(g, "WaterEdge" + quadrant + variant, pos);
 
 					}
 				}
@@ -340,7 +339,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 							Terrain.Category.BridgeHigh);
 					variant += inArena(p) && roads.contains(arena.getTerrain(p).category) ? "v" : "x";
 				}
-				arena.drawImage(g, "Road_" + variant, pos);
+				arena.drawRelativeToMap(g, "Road_" + variant, pos);
 
 			} else if (EnumSet.of(Terrain.BridgeLow, Terrain.BridgeHigh).contains(terrain)) {
 				Set<Direction> ends = EnumSet.noneOf(Direction.class);
@@ -360,13 +359,13 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 							+ Map.of(Direction.XPos, "0", Direction.YNeg, "1", Direction.XNeg, "2", Direction.YPos, "3")
 									.get(dir);
 					label += ends.contains(dir) ? "x" : "v";
-					arena.drawImage(g, label, pos);
+					arena.drawRelativeToMap(g, label, pos);
 				}
 
 			} else if (terrain == Terrain.Shore) {
 				if (pos.x == 3 && pos.y == 2)
 					System.out.println();
-				arena.drawImage(g, Terrain.ClearWater, pos);
+				arena.drawRelativeToMap(g, Terrain.ClearWater, pos);
 				Set<Direction> connections = EnumSet.noneOf(Direction.class);
 
 				for (int quadrant = 0; quadrant < 4; quadrant++) {
@@ -390,27 +389,27 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 						connections.add(dirs.e1);
 
 					if (!(c1 || c2) && c3) {
-						arena.drawImage(g, "WaterEdge" + quadrant + 0, pos);
+						arena.drawRelativeToMap(g, "WaterEdge" + quadrant + 0, pos);
 					} else if (c1 || c2) {
 						int variant = (c1 ? 1 : 0) + (c2 ? 2 : 0);
-						arena.drawImage(g, "Shore" + quadrant + variant, pos);
+						arena.drawRelativeToMap(g, "Shore" + quadrant + variant, pos);
 					}
 				}
 				if (connections.isEmpty()) {
-					arena.drawImage(g, "Shore03", pos);
-					arena.drawImage(g, "Shore13", pos);
-					arena.drawImage(g, "Shore23", pos);
-					arena.drawImage(g, "Shore33", pos);
+					arena.drawRelativeToMap(g, "Shore03", pos);
+					arena.drawRelativeToMap(g, "Shore13", pos);
+					arena.drawRelativeToMap(g, "Shore23", pos);
+					arena.drawRelativeToMap(g, "Shore33", pos);
 				}
 
 			} else {
-				arena.drawImage(g, terrain, pos);
+				arena.drawRelativeToMap(g, terrain, pos);
 			}
 
 		}
 
 		void drawImage(Graphics g, Object obj) {
-			arena.drawImage(g, obj, pos());
+			arena.drawRelativeToMap(g, obj, pos());
 		}
 
 		@Override
@@ -427,10 +426,12 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 	static class BuildingComp extends EntityComp {
 
 		private final Position pos;
+		private final Object building;
 
-		BuildingComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
+		BuildingComp(AbstractArenaPanel<?, ?, ?> arena, Position pos, Object building) {
 			super(arena);
 			this.pos = Objects.requireNonNull(pos);
+			this.building = Objects.requireNonNull(building);
 		}
 
 		@Override
@@ -441,7 +442,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		@Override
 		void paintComponent(Graphics g) {
 			Position pos = pos();
-			arena.drawImage(g, arena.getBuilding(pos), pos);
+			arena.drawRelativeToMap(g, building, pos);
 		}
 
 		@Override
@@ -452,14 +453,30 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 	static abstract class UnitComp extends EntityComp {
 
-		UnitComp(AbstractArenaPanel<?, ?, ?> arena) {
+		private final Object unit;
+
+		UnitComp(AbstractArenaPanel<?, ?, ?> arena, Object unit) {
 			super(arena);
+			this.unit = Objects.requireNonNull(unit);
 		}
 
 		@Override
 		void paintComponent(Graphics g) {
 			Position pos = pos();
-			arena.drawImage(g, arena.getUnit(pos), pos);
+			arena.drawRelativeToMap(g, unit, pos);
+
+			Object trasporterUnit = arena.getTrasporterUnit(unit);
+			if (trasporterUnit != null) {
+				BufferedImage img = Images.getImage(Images.Mini.of(trasporterUnit));
+				int x = arena.displayedX(pos.x * TILE_SIZE_PIXEL) + 1;
+				int y = arena.displayedY(pos.y * TILE_SIZE_PIXEL) + TILE_SIZE_PIXEL - img.getHeight() - 1;
+				int w = img.getWidth(), h = img.getHeight();
+				g.setColor(Color.LIGHT_GRAY);
+				g.fillRect(x, y, w, h);
+				g.setColor(Color.BLACK);
+				g.drawRect(x, y, w, h);
+				g.drawImage(img, x, y, w, h, arena);
+			}
 		}
 
 		@Override

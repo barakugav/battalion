@@ -18,11 +18,34 @@ public class Unit extends Entity {
 	public final Type type;
 	private Position pos;
 	private int health;
+	private final Unit transportedUnit; /* valid only if type.canTransportUnits */
 
-	Unit(Arena arena, Type type, Team team) {
+	private Unit(Arena arena, Type type, Team team, Unit transportedUnit) {
 		super(arena, team);
 		this.type = type;
 		health = type.health;
+
+		if (type.transportUnits ^ (transportedUnit != null && transportedUnit.type.category == Unit.Category.Land))
+			throw new IllegalArgumentException();
+		this.transportedUnit = transportedUnit;
+	}
+
+	static Unit valueOf(Arena arena, UnitDesc desc) {
+		if (!desc.type.transportUnits) {
+			return new Unit(arena, desc.type, desc.team, null);
+
+		} else {
+			UnitDesc transportedUnit = desc.getTransportedUnit();
+			if (transportedUnit.type.transportUnits || desc.team != transportedUnit.team)
+				throw new IllegalArgumentException();
+			return newTrasportUnit(arena, desc.type, new Unit(arena, transportedUnit.type, transportedUnit.team, null));
+		}
+	}
+
+	static Unit newTrasportUnit(Arena arena, Type type, Unit unit) {
+		if (!type.transportUnits || unit.type.category != Unit.Category.Land)
+			throw new IllegalArgumentException();
+		return new Unit(arena, type, unit.getTeam(), unit);
 	}
 
 	@Override
@@ -56,6 +79,12 @@ public class Unit extends Entity {
 		return type.damage;
 	}
 
+	public Unit getTransportedUnit() {
+		if (!type.transportUnits || transportedUnit == null)
+			throw new IllegalStateException();
+		return transportedUnit;
+	}
+
 	boolean isMoveValid(List<Position> path) {
 		if (path.isEmpty() || path.size() > type.moveLimit)
 			return false;
@@ -80,7 +109,7 @@ public class Unit extends Entity {
 
 	public static class Weapon {
 		public enum Type {
-			CloseRange, LongRange
+			CloseRange, LongRange, None
 		}
 
 		public final Type type;
@@ -101,6 +130,10 @@ public class Unit extends Entity {
 
 		private static Weapon longRange(int minRange, int maxRange) {
 			return new Weapon(Type.LongRange, minRange, maxRange);
+		}
+
+		private static Weapon none() {
+			return new Weapon(Type.None, 0, 0);
 		}
 
 	}
@@ -156,7 +189,7 @@ public class Unit extends Entity {
 
 		AttAny(TypeBuilder::canAttack, Unit.Category.values()),
 
-		Conquerer, Invisible;
+		Conquerer, Invisible, UnitTransporter;
 
 		final Consumer<TypeBuilder> op;
 
@@ -194,9 +227,11 @@ public class Unit extends Entity {
 				Tech.AttWater),
 		Submarine(Category.DeepWater, Weapon.closeRange(), 25, 35, 4, Tech.StandOnWaterDeep, Tech.AttWater,
 				Tech.Invisible, Tech.AttDeepWater),
+		ShipTransporter(Category.Water, Weapon.none(), 90, 0, 5, Tech.StandOnWater, Tech.UnitTransporter),
 
 		Airplane(Category.Air, Weapon.closeRange(), 50, 30, 7, Tech.StandOnAny, Tech.AttAny),
-		Zeppelin(Category.Air, Weapon.closeRange(), 110, 80, 4, Tech.StandOnAny, Tech.AttAny);
+		Zeppelin(Category.Air, Weapon.closeRange(), 110, 80, 4, Tech.StandOnAny, Tech.AttAny),
+		AirTransporter(Category.Air, Weapon.none(), 50, 0, 6, Tech.StandOnAny, Tech.UnitTransporter);
 
 		public final Category category;
 		public final Weapon weapon;
@@ -207,6 +242,7 @@ public class Unit extends Entity {
 		public final int moveLimit;
 		public final boolean canConquer;
 		public final boolean invisible;
+		public final boolean transportUnits;
 
 		Type(Category category, Weapon weapon, int health, int damage, int moveLimit, Tech... techs) {
 			TypeBuilder builder = new TypeBuilder(techs);
@@ -220,11 +256,8 @@ public class Unit extends Entity {
 			this.moveLimit = moveLimit;
 			this.canConquer = builder.tech.contains(Tech.Conquerer);
 			this.invisible = builder.tech.contains(Tech.Invisible);
+			this.transportUnits = builder.tech.contains(Tech.UnitTransporter);
 		}
-	}
-
-	static Unit valueOf(Arena arena, UnitDesc desc) {
-		return new Unit(arena, desc.type, desc.team);
 	}
 
 	public Position.Bitmap getReachableMap() {
@@ -245,7 +278,8 @@ public class Unit extends Entity {
 
 	Position.Bitmap getPassableMap(boolean invisiableEnable) {
 		int[][] distanceMap = calcDistanceMap(invisiableEnable);
-		return Position.Bitmap.fromPredicate(arena.getWidth(), arena.getHeight(), p -> distanceMap[p.xInt()][p.yInt()] >= 0);
+		return Position.Bitmap.fromPredicate(arena.getWidth(), arena.getHeight(),
+				p -> distanceMap[p.xInt()][p.yInt()] >= 0);
 	}
 
 	private int[][] calcDistanceMap(boolean invisiableEnable) {
@@ -285,7 +319,8 @@ public class Unit extends Entity {
 		for (Position p = destination; !p.equals(getPos());) {
 			path.add(p);
 			for (Position next : p.neighbors()) {
-				if (arena.isValidPos(next) && distanceMap[next.xInt()][next.yInt()] == distanceMap[p.xInt()][p.yInt()] - 1) {
+				if (arena.isValidPos(next)
+						&& distanceMap[next.xInt()][next.yInt()] == distanceMap[p.xInt()][p.yInt()] - 1) {
 					p = next;
 					break;
 				}
@@ -318,6 +353,8 @@ public class Unit extends Entity {
 			return getAttackableMapCloseRange(invisiableEnable);
 		case LongRange:
 			return getAttackableMapLongRange(invisiableEnable);
+		case None:
+			return Position.Bitmap.Empty;
 		default:
 			throw new InternalError();
 		}

@@ -1,0 +1,2 @@
+units: https://kongregate.fandom.com/wiki/Units_of_Battalion_Versions
+maps: https://www.spriters-resource.com/pc_computer/battalionnemesis/sheet/132570/

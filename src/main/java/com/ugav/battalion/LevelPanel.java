@@ -286,6 +286,11 @@ class LevelPanel extends JPanel implements Clearable {
 				movePath.clear();
 				movePath.addAll(Objects.requireNonNull(attacker.calcPathForAttack(targetPos)));
 				break;
+
+			case None:
+				movePath.clear();
+				break;
+
 			default:
 				throw new IllegalArgumentException("Unexpected value: " + attacker.type.weapon.type);
 			}
@@ -328,7 +333,7 @@ class LevelPanel extends JPanel implements Clearable {
 
 				if (tile.hasBuilding()) {
 					Building building = tile.getBuilding();
-					buildings.put(building, new BuildingComp(this, pos));
+					buildings.put(building, new BuildingComp(this, pos, building));
 				}
 			}
 
@@ -479,9 +484,14 @@ class LevelPanel extends JPanel implements Clearable {
 				List<Position> path = game.calcRealPath(attacker, movePath);
 				gameAction(() -> game.moveAndAttack(attacker, path, target));
 				break;
+
 			case LongRange:
 				gameAction(() -> game.attackRange(attacker, target));
 				break;
+
+			case None:
+				break;
+
 			default:
 				throw new IllegalArgumentException("Unexpected value: " + attacker.type.weapon.type);
 			}
@@ -506,13 +516,9 @@ class LevelPanel extends JPanel implements Clearable {
 		}
 
 		@Override
-		Object getBuilding(Position pos) {
-			return game.getTile(pos).getBuilding();
-		}
-
-		@Override
-		Object getUnit(Position pos) {
-			return game.getTile(pos).getUnit();
+		Object getTrasporterUnit(Object unit) {
+			Unit u = ((Unit) unit);
+			return u.type.transportUnits ? u.getTransportedUnit() : null;
 		}
 
 		private class UnitComp extends AbstractArenaPanel.UnitComp {
@@ -528,7 +534,7 @@ class LevelPanel extends JPanel implements Clearable {
 			private static final int animationDelay = 12;
 
 			UnitComp(Unit unit) {
-				super(ArenaPanel.this);
+				super(ArenaPanel.this, unit);
 				this.unit = unit;
 			}
 
@@ -557,16 +563,15 @@ class LevelPanel extends JPanel implements Clearable {
 					return;
 				Graphics2D g2 = (Graphics2D) g;
 
-				int x = displayedX(pos.x * TILE_SIZE_PIXEL), y = displayedY(pos.y * TILE_SIZE_PIXEL);
-
 				/* Draw unit */
 				Composite oldComp = g2.getComposite();
 				if (unit.getTeam() == game.getTurn() && !unit.isActive())
 					g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-				drawImage(g, unit, x, y);
+				super.paintComponent(g);
 				g2.setComposite(oldComp);
 
 				/* Draw health bar */
+				int x = displayedX(pos.x * TILE_SIZE_PIXEL), y = displayedY(pos.y * TILE_SIZE_PIXEL);
 				int healthBarX = (int) (x + 0.5 * TILE_SIZE_PIXEL - HealthBarWidth * 0.5);
 				int healthBarY = y + TILE_SIZE_PIXEL - HealthBarHeight - HealthBarBottomMargin;
 				g2.setColor(Color.GREEN);

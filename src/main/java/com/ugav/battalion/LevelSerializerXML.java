@@ -44,9 +44,9 @@ class LevelSerializerXML implements LevelSerializer {
 		this.formatPretty = formatPretty;
 	}
 
-	private static void addValueChild(Document dom, Element parent, String tag, String data) {
+	private static void addValueChild(Document dom, Element parent, String tag, Object data) {
 		Element e = dom.createElement(tag);
-		e.appendChild(dom.createTextNode(data));
+		e.appendChild(dom.createTextNode(data.toString()));
 		parent.appendChild(e);
 	}
 
@@ -70,19 +70,29 @@ class LevelSerializerXML implements LevelSerializer {
 				addValueChild(dom, tileElm, "x", Integer.toString(pos.xInt()));
 				addValueChild(dom, tileElm, "y", Integer.toString(pos.yInt()));
 
-				addValueChild(dom, tileElm, "terrain", tile.terrain.name());
+				addValueChild(dom, tileElm, "terrain", tile.terrain);
 
 				if (tile.building != null) {
 					Element buildingElm = dom.createElement("building");
-					addValueChild(dom, buildingElm, "type", tile.building.type.name());
-					addValueChild(dom, buildingElm, "team", tile.building.team.name());
+					addValueChild(dom, buildingElm, "type", tile.building.type);
+					addValueChild(dom, buildingElm, "team", tile.building.team);
 					tileElm.appendChild(buildingElm);
 				}
 
 				if (tile.unit != null) {
+					UnitDesc unit = tile.unit;
 					Element unitElm = dom.createElement("unit");
-					addValueChild(dom, unitElm, "type", tile.unit.type.name());
-					addValueChild(dom, unitElm, "team", tile.unit.team.name());
+					addValueChild(dom, unitElm, "type", unit.type);
+					addValueChild(dom, unitElm, "team", unit.team);
+					if (unit.type.transportUnits) {
+						UnitDesc transportedUnit = unit.getTransportedUnit();
+						Element transportedUnitElm = dom.createElement("transportedUnit");
+						addValueChild(dom, transportedUnitElm, "type", transportedUnit.type);
+						addValueChild(dom, transportedUnitElm, "team", transportedUnit.team);
+						if (transportedUnit.type.transportUnits)
+							throw new IllegalArgumentException();
+						unitElm.appendChild(transportedUnitElm);
+					}
 					tileElm.appendChild(unitElm);
 				}
 
@@ -143,6 +153,10 @@ class LevelSerializerXML implements LevelSerializer {
 		return null;
 	}
 
+	private static String childData(Node parent, String tag) {
+		return childElm(parent, tag).getTextContent();
+	}
+
 	@Override
 	public Level levelRead(String path) {
 		try {
@@ -152,30 +166,42 @@ class LevelSerializerXML implements LevelSerializer {
 			Element levelElm = dom.getDocumentElement();
 
 			Element shapeElm = childElm(levelElm, "shape");
-			final int width = Integer.parseInt(childElm(shapeElm, "width").getTextContent());
-			final int height = Integer.parseInt(childElm(shapeElm, "height").getTextContent());
+			final int width = Integer.parseInt(childData(shapeElm, "width"));
+			final int height = Integer.parseInt(childData(shapeElm, "height"));
 
 			LevelBuilder builder = new LevelBuilder(width, height);
 
 			for (Element tileElm : childElms(childElm(levelElm, "tiles"))) {
-				int x = Integer.parseInt(childElm(tileElm, "x").getTextContent());
-				int y = Integer.parseInt(childElm(tileElm, "y").getTextContent());
-				Terrain terrain = Terrain.valueOf(childElm(tileElm, "terrain").getTextContent());
+				int x = Integer.parseInt(childData(tileElm, "x"));
+				int y = Integer.parseInt(childData(tileElm, "y"));
+				Terrain terrain = Terrain.valueOf(childData(tileElm, "terrain"));
 
 				BuildingDesc building = null;
 				Element buildingElm = childElm(tileElm, "building");
 				if (buildingElm != null) {
-					String type = childElm(buildingElm, "type").getTextContent();
-					String team = childElm(buildingElm, "team").getTextContent();
+					String type = childData(buildingElm, "type");
+					String team = childData(buildingElm, "team");
 					building = BuildingDesc.of(Building.Type.valueOf(type), Team.valueOf(team));
 				}
 
 				UnitDesc unit = null;
 				Element unitElm = childElm(tileElm, "unit");
 				if (unitElm != null) {
-					String type = childElm(unitElm, "type").getTextContent();
-					String team = childElm(unitElm, "team").getTextContent();
-					unit = UnitDesc.of(Unit.Type.valueOf(type), Team.valueOf(team));
+					Unit.Type type = Unit.Type.valueOf(childData(unitElm, "type"));
+					Team team = Team.valueOf(childData(unitElm, "team"));
+					if (!type.transportUnits) {
+						unit = UnitDesc.of(type, team);
+					} else {
+						Element transportedUnitElm = childElm(unitElm, "transportedUnit");
+						Unit.Type transportedUnitType = Unit.Type.valueOf(childData(transportedUnitElm, "type"));
+						Team transportedUnitTeam = Team.valueOf(childData(transportedUnitElm, "team"));
+						if (transportedUnitType.transportUnits)
+							throw new IllegalArgumentException();
+						UnitDesc transportedUnit = UnitDesc.of(transportedUnitType, transportedUnitTeam);
+						if (team != transportedUnitTeam)
+							throw new IllegalArgumentException();
+						unit = UnitDesc.transporter(type, transportedUnit);
+					}
 				}
 
 				builder.setTile(Position.of(x, y), terrain, building, unit);

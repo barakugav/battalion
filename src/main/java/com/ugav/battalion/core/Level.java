@@ -107,18 +107,37 @@ public class Level {
 	public static class UnitDesc {
 		public final Unit.Type type;
 		public final Team team;
+		private final UnitDesc transportedUnit;
 
-		UnitDesc(Unit.Type type, Team team) {
+		private UnitDesc(Unit.Type type, Team team, UnitDesc transportedUnit) {
 			this.type = Objects.requireNonNull(type);
 			this.team = Objects.requireNonNull(team);
+
+			if (type.transportUnits ^ (transportedUnit != null && transportedUnit.type.category == Unit.Category.Land))
+				throw new IllegalArgumentException();
+			this.transportedUnit = transportedUnit;
 		}
 
 		public static UnitDesc of(Unit.Type type, Team team) {
-			return new UnitDesc(type, team);
+			if (type.transportUnits)
+				throw new IllegalArgumentException();
+			return new UnitDesc(type, team, null);
+		}
+
+		public static UnitDesc transporter(Unit.Type type, UnitDesc unit) {
+			if (!type.transportUnits || unit.type.category != Unit.Category.Land)
+				throw new IllegalArgumentException();
+			return new UnitDesc(type, unit.team, unit);
 		}
 
 		public static UnitDesc copyOf(UnitDesc desc) {
-			return new UnitDesc(desc.type, desc.team);
+			return new UnitDesc(desc.type, desc.team, desc.transportedUnit);
+		}
+
+		public UnitDesc getTransportedUnit() {
+			if (!type.transportUnits || transportedUnit == null)
+				throw new IllegalStateException();
+			return transportedUnit;
 		}
 
 		@Override

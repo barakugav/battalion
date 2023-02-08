@@ -34,6 +34,8 @@ import com.ugav.battalion.core.Position;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.core.Unit.Category;
+import com.ugav.battalion.core.Unit.Type;
 
 class LevelBuilderWindow extends JPanel implements Clearable {
 
@@ -99,8 +101,13 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			unitsTabs = new HashMap<>(Team.realTeams.size());
 			for (Team team : Team.realTeams) {
 				EntityTab tab = new EntityTab();
-				for (Unit.Type type : Unit.Type.values())
-					tab.addEntityButton(UnitDesc.of(type, team));
+				for (Unit.Type type : Unit.Type.values()) {
+					if (!type.transportUnits) {
+						tab.addEntityButton(UnitDesc.of(type, team));
+					} else {
+						tab.addEntityButton(UnitDesc.transporter(type, UnitDesc.of(Type.Soldier, team)));
+					}
+				}
 				tab.addEntityButton(new EntityButton(removeUnitObj, Images.Label.Delete));
 				unitsTabs.put(team, tab);
 			}
@@ -442,7 +449,13 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 				} else if (selectedObj instanceof UnitDesc) {
 					UnitDesc unit = UnitDesc.copyOf((UnitDesc) selectedObj);
-					if (unit.type.canStand.contains(tile.terrain.category))
+
+					UnitDesc oldUnit;
+					if (tile.hasUnit() && (oldUnit = tile.getUnit()).team == unit.team && oldUnit.type.transportUnits
+							&& !unit.type.transportUnits && unit.type.category == Category.Land)
+						builder.setTile(pos, tile.terrain, tile.building, UnitDesc.transporter(oldUnit.type, unit));
+
+					else if (unit.type.canStand.contains(tile.terrain.category))
 						builder.setTile(pos, tile.terrain, tile.building, unit);
 					// TODO else user message
 
@@ -466,13 +479,9 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		}
 
 		@Override
-		Object getBuilding(Position pos) {
-			return builder.at(pos).building;
-		}
-
-		@Override
-		Object getUnit(Position pos) {
-			return builder.at(pos).unit;
+		Object getTrasporterUnit(Object unit) {
+			UnitDesc u = ((UnitDesc) unit);
+			return u.type.transportUnits ? u.getTransportedUnit() : null;
 		}
 
 		private class TileComp extends AbstractArenaPanel.TileComp {
@@ -488,11 +497,11 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				Position pos = pos();
 				TileDesc tile = builder.at(pos);
 				if (tile.building != null && building == null)
-					buildings.put(building = tile.building, new BuildingComp(ArenaPanel.this, pos));
+					buildings.put(building = tile.building, new BuildingComp(ArenaPanel.this, pos, building));
 				if (tile.building == null && building != null)
 					buildings.remove(building).clear();
 				if (tile.unit != null && unit == null)
-					units.put(unit = tile.unit, new UnitComp(ArenaPanel.this, pos));
+					units.put(unit = tile.unit, new UnitComp(ArenaPanel.this, pos, unit));
 				if (tile.unit == null && unit != null)
 					units.remove(unit).clear();
 			}
@@ -503,8 +512,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			private final Position pos;
 
-			UnitComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
-				super(arena);
+			UnitComp(AbstractArenaPanel<?, ?, ?> arena, Position pos, UnitDesc unit) {
+				super(arena, unit);
 				this.pos = Objects.requireNonNull(pos);
 			}
 
