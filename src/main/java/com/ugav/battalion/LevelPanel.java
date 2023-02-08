@@ -243,6 +243,19 @@ class LevelPanel extends JPanel implements Clearable {
 				units.get(e.unit).moveAnimation(e.path);
 			});
 
+			register.register(game.arena().onChange, e -> {
+				if (e.source instanceof Unit) {
+					Unit unit = (Unit) e.source;
+					UnitComp unitComp = units.get(unit);
+					if (unit.isDead()) {
+						units.remove(unit);
+						unitComp.clear();
+						checkGameStatus();
+					}
+				}
+				repaint();
+			});
+
 			updateArenaSize(game.getWidth(), game.getHeight());
 		}
 
@@ -504,7 +517,6 @@ class LevelPanel extends JPanel implements Clearable {
 
 		private class UnitComp extends AbstractArenaPanel.UnitComp {
 			private final Unit unit;
-			private final DataChangeRegister register = new DataChangeRegister();
 
 			private final int HealthBarWidth = 26;
 			private final int HealthBarHeight = 4;
@@ -516,54 +528,47 @@ class LevelPanel extends JPanel implements Clearable {
 			private static final int animationDelay = 12;
 
 			UnitComp(Unit unit) {
-				super(ArenaPanel.this, unit.getPos());
+				super(ArenaPanel.this);
 				this.unit = unit;
-
-				register.register(unit.onChange, e -> {
-					if (unit.isDead()) {
-						units.remove(unit);
-						clear();
-						checkGameStatus();
-					} else {
-						pos = unit.getPos();
-					}
-					repaint();
-				});
 			}
 
 			@Override
-			void paintComponent(Graphics g) {
-				final Team playerTeam = Team.Red;
-				if (!isMoveAnimationActive() && !game.arena().isUnitVisible(pos, playerTeam))
-					return;
-				Graphics2D g2 = (Graphics2D) g;
-
-				double x, y;
+			Position pos() {
 				if (isMoveAnimationActive()) {
 					int idx = animationCursor / animationResolution;
 					double frac = (animationCursor % animationResolution + 1) / (double) animationResolution;
 					Position p1 = animationMovePath.get(idx);
 					Position p2 = animationMovePath.get(idx + 1);
-					x = displayedX((p1.x + (p2.x - p1.x) * frac) * TILE_SIZE_PIXEL);
-					y = displayedY((p1.y + (p2.y - p1.y) * frac) * TILE_SIZE_PIXEL);
+					double x = p1.x + (p2.x - p1.x) * frac;
+					double y = p1.y + (p2.y - p1.y) * frac;
+					return Position.of(x, y);
 
 				} else {
-					x = displayedX(unit.getPos().x * TILE_SIZE_PIXEL);
-					y = displayedY(unit.getPos().y * TILE_SIZE_PIXEL);
+					return unit.getPos();
 				}
+			}
+
+			@Override
+			void paintComponent(Graphics g) {
+				Position pos = pos();
+
+				final Team playerTeam = Team.Red;
+				if (!isMoveAnimationActive() && !game.arena().isUnitVisible(pos, playerTeam))
+					return;
+				Graphics2D g2 = (Graphics2D) g;
+
+				int x = displayedX(pos.x * TILE_SIZE_PIXEL), y = displayedY(pos.y * TILE_SIZE_PIXEL);
 
 				/* Draw unit */
 				Composite oldComp = g2.getComposite();
 				if (unit.getTeam() == game.getTurn() && !unit.isActive())
 					g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-				int unitImgX = (int) x;
-				int unitImgY = (int) y;
-				drawImage(g, unit, unitImgX, unitImgY);
+				drawImage(g, unit, x, y);
 				g2.setComposite(oldComp);
 
 				/* Draw health bar */
 				int healthBarX = (int) (x + 0.5 * TILE_SIZE_PIXEL - HealthBarWidth * 0.5);
-				int healthBarY = (int) (y + TILE_SIZE_PIXEL - HealthBarHeight - HealthBarBottomMargin);
+				int healthBarY = y + TILE_SIZE_PIXEL - HealthBarHeight - HealthBarBottomMargin;
 				g2.setColor(Color.GREEN);
 				g2.fillRect(healthBarX + 1, healthBarY,
 						(int) ((double) (HealthBarWidth - 1) * unit.getHealth() / unit.type.health), HealthBarHeight);
@@ -573,7 +578,6 @@ class LevelPanel extends JPanel implements Clearable {
 
 			@Override
 			public void clear() {
-				register.unregisterAll();
 			}
 
 			void moveAnimation(List<Position> animationPath) {

@@ -24,7 +24,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import com.ugav.battalion.AbstractArenaPanel.BuildingComp;
-import com.ugav.battalion.AbstractArenaPanel.UnitComp;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Level.BuildingDesc;
@@ -370,7 +369,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 	}
 
-	private class ArenaPanel extends AbstractArenaPanel<ArenaPanel.TileComp, BuildingComp, UnitComp>
+	private class ArenaPanel extends AbstractArenaPanel<ArenaPanel.TileComp, BuildingComp, ArenaPanel.UnitComp>
 			implements Clearable {
 
 		private final DataChangeRegister register = new DataChangeRegister();
@@ -433,27 +432,27 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 							unit = oldUnit;
 					}
 
-					builder.setTile(pos.x, pos.y, terrain, building, unit);
+					builder.setTile(pos, terrain, building, unit);
 
 				} else if (selectedObj instanceof BuildingDesc) {
 					BuildingDesc building = BuildingDesc.copyOf((BuildingDesc) selectedObj);
 					if (building.type.canBuildOn.contains(tile.terrain.category))
-						builder.setTile(pos.x, pos.y, tile.terrain, building, tile.unit);
+						builder.setTile(pos, tile.terrain, building, tile.unit);
 					// TODO else user message
 
 				} else if (selectedObj instanceof UnitDesc) {
 					UnitDesc unit = UnitDesc.copyOf((UnitDesc) selectedObj);
 					if (unit.type.canStand.contains(tile.terrain.category))
-						builder.setTile(pos.x, pos.y, tile.terrain, tile.building, unit);
+						builder.setTile(pos, tile.terrain, tile.building, unit);
 					// TODO else user message
 
 				} else if (selectedObj == Menu.removeBuildingObj) {
 					if (tile.hasBuilding())
-						builder.setTile(pos.x, pos.y, tile.terrain, null, tile.unit);
+						builder.setTile(pos, tile.terrain, null, tile.unit);
 
 				} else if (selectedObj == Menu.removeUnitObj) {
 					if (tile.hasUnit())
-						builder.setTile(pos.x, pos.y, tile.terrain, tile.building, null);
+						builder.setTile(pos, tile.terrain, tile.building, null);
 
 				} else {
 					throw new InternalError("Unknown menu selected object: " + selectedObj);
@@ -486,6 +485,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			}
 
 			void tileUpdate() {
+				Position pos = pos();
 				TileDesc tile = builder.at(pos);
 				if (tile.building != null && building == null)
 					buildings.put(building = tile.building, new BuildingComp(ArenaPanel.this, pos));
@@ -495,6 +495,22 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					units.put(unit = tile.unit, new UnitComp(ArenaPanel.this, pos));
 				if (tile.unit == null && unit != null)
 					units.remove(unit).clear();
+			}
+
+		}
+
+		private class UnitComp extends AbstractArenaPanel.UnitComp {
+
+			private final Position pos;
+
+			UnitComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
+				super(arena);
+				this.pos = Objects.requireNonNull(pos);
+			}
+
+			@Override
+			Position pos() {
+				return pos;
 			}
 
 		}

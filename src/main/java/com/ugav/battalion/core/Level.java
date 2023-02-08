@@ -153,7 +153,7 @@ public class Level {
 			throw new IllegalArgumentException("illegal size: " + width + " " + height);
 		this.tiles = new TileDesc[width][height];
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			this.tiles[pos.x][pos.y] = Objects.requireNonNull(tiles[pos.x][pos.y]);
+			this.tiles[pos.xInt()][pos.yInt()] = Objects.requireNonNull(tiles[pos.xInt()][pos.yInt()]);
 	}
 
 	public int getWidth() {
@@ -165,7 +165,7 @@ public class Level {
 	}
 
 	public TileDesc at(Position pos) {
-		return tiles[pos.x][pos.y];
+		return tiles[pos.xInt()][pos.yInt()];
 	}
 
 	@Override

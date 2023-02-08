@@ -42,28 +42,28 @@ public class LevelBuilder {
 		int width = level.getWidth(), height = level.getHeight();
 		tiles = new TileDesc[width][height];
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			tiles[pos.x][pos.y] = Objects.requireNonNull(level.at(pos));
+			tiles[pos.xInt()][pos.yInt()] = Objects.requireNonNull(level.at(pos));
 		onResetChange.notify(new DataEvent.LevelReset(this));
 	}
 
 	public TileDesc at(Position pos) {
-		return tiles[pos.x][pos.y];
+		return tiles[pos.xInt()][pos.yInt()];
 	}
 
-	public LevelBuilder setTile(int x, int y, TileDesc tile) {
-		String errStr = checkValidTile(x, y, tile);
+	public LevelBuilder setTile(Position pos, TileDesc tile) {
+		String errStr = checkValidTile(pos, tile);
 		if (errStr != null) {
 			/* TODO: message to user */
 			System.err.println("Can't set tile: " + errStr);
 		} else {
-			tiles[x][y] = tile;
-			onTileChange.notify(new DataEvent.TileChange(this, Position.of(x, y)));
+			tiles[pos.xInt()][pos.yInt()] = tile;
+			onTileChange.notify(new DataEvent.TileChange(this, pos));
 		}
 		return this;
 	}
 
-	public LevelBuilder setTile(int x, int y, Terrain terrain, BuildingDesc buiding, UnitDesc unit) {
-		return setTile(x, y, TileDesc.of(terrain, buiding, unit));
+	public LevelBuilder setTile(Position pos, Terrain terrain, BuildingDesc buiding, UnitDesc unit) {
+		return setTile(pos, TileDesc.of(terrain, buiding, unit));
 	}
 
 	public int getWidth() {
@@ -76,18 +76,15 @@ public class LevelBuilder {
 
 	public Level buildLevel() {
 		int width = getWidth(), height = getHeight();
-		for (int x = 0; x < width; x++) {
-			for (int y = 0; y < height; y++) {
-				String errStr = checkValidTile(x, y, tiles[x][y]);
-				if (errStr != null)
-					throw new IllegalStateException("Can't build level, error at " + Position.of(x, y) + ": " + errStr);
-			}
+		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height))) {
+			String errStr = checkValidTile(pos, at(pos));
+			if (errStr != null)
+				throw new IllegalStateException("Can't build level, error at " + pos + ": " + errStr);
 		}
 		return new Level(tiles);
 	}
 
-	private String checkValidTile(int x, int y, TileDesc tile) {
-		Position pos = Position.of(x, y);
+	private String checkValidTile(Position pos, TileDesc tile) {
 		if (!pos.isInRect(getWidth() - 1, getHeight() - 1))
 			return "out of bound";
 		if (tile.hasBuilding())
@@ -97,7 +94,7 @@ public class LevelBuilder {
 			if (!tile.unit.type.canStand.contains(tile.terrain.category))
 				return "unit can't stand on terrain";
 
-		Function<Position, Terrain> terrain = p -> pos.equals(p) ? tile.terrain : tiles[p.x][p.y].terrain;
+		Function<Position, Terrain> terrain = p -> pos.equals(p) ? tile.terrain : tiles[p.xInt()][p.yInt()].terrain;
 		List<Position> checkBridge = new ArrayList<>(List.of(pos));
 		for (Direction dir : Direction.values()) {
 			Position p = pos.add(dir);

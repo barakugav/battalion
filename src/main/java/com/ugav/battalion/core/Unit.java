@@ -10,19 +10,17 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import com.ugav.battalion.DataEvent;
+import com.ugav.battalion.DataEvent.EntityChange;
 import com.ugav.battalion.core.Level.UnitDesc;
 
 public class Unit extends Entity {
 
 	public final Type type;
-	final Arena arena;
 	private Position pos;
 	private int health;
 
 	Unit(Arena arena, Type type, Team team) {
-		super(team);
-		this.arena = arena;
+		super(arena, team);
 		this.type = type;
 		health = type.health;
 	}
@@ -38,7 +36,7 @@ public class Unit extends Entity {
 
 	void setHealth(int health) {
 		this.health = health;
-		onChange.notify(new DataEvent(this));
+		onChange().notify(new EntityChange(this));
 	}
 
 	public boolean isDead() {
@@ -47,7 +45,7 @@ public class Unit extends Entity {
 
 	void setPos(Position pos) {
 		this.pos = pos;
-		onChange.notify(new DataEvent(this));
+		onChange().notify(new EntityChange(this));
 	}
 
 	public Position getPos() {
@@ -64,7 +62,7 @@ public class Unit extends Entity {
 		int[][] distanceMap = calcDistanceMap(false);
 		Position prev = getPos();
 		for (Position p : path) {
-			if (!prev.neighbors().contains(p) || distanceMap[p.x][p.y] < 0)
+			if (!prev.neighbors().contains(p) || distanceMap[p.xInt()][p.yInt()] < 0)
 				return false;
 			prev = p;
 		}
@@ -247,7 +245,7 @@ public class Unit extends Entity {
 
 	Position.Bitmap getPassableMap(boolean invisiableEnable) {
 		int[][] distanceMap = calcDistanceMap(invisiableEnable);
-		return Position.Bitmap.fromPredicate(arena.getWidth(), arena.getHeight(), p -> distanceMap[p.x][p.y] >= 0);
+		return Position.Bitmap.fromPredicate(arena.getWidth(), arena.getHeight(), p -> distanceMap[p.xInt()][p.yInt()] >= 0);
 	}
 
 	private int[][] calcDistanceMap(boolean invisiableEnable) {
@@ -256,21 +254,21 @@ public class Unit extends Entity {
 		int[][] distanceMap = new int[width][height];
 		for (int x = 0; x < width; x++)
 			Arrays.fill(distanceMap[x], -1);
-		distanceMap[pos.x][pos.y] = 0;
+		distanceMap[pos.xInt()][pos.yInt()] = 0;
 
 		int maxMove = type.moveLimit;
 		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
 			for (Position p : arena.positions()) {
 				Tile tile = arena.at(p);
-				if (distanceMap[p.x][p.y] >= 0 || !type.canStand.contains(tile.getTerrain().category))
+				if (distanceMap[p.xInt()][p.yInt()] >= 0 || !type.canStand.contains(tile.getTerrain().category))
 					continue;
 				if (tile.hasUnit() && !(invisiableEnable && !arena.isUnitVisible(p, getTeam()))
 						&& tile.getUnit().getTeam() != getTeam())
 					continue;
 
 				for (Position neighbor : p.neighbors()) {
-					if (arena.isValidPos(neighbor) && distanceMap[neighbor.x][neighbor.y] == moveLen - 1) {
-						distanceMap[p.x][p.y] = moveLen;
+					if (arena.isValidPos(neighbor) && distanceMap[neighbor.xInt()][neighbor.yInt()] == moveLen - 1) {
+						distanceMap[p.xInt()][p.yInt()] = moveLen;
 						break;
 					}
 				}
@@ -281,13 +279,13 @@ public class Unit extends Entity {
 
 	public List<Position> calcPath(Position destination) {
 		int[][] distanceMap = calcDistanceMap(true);
-		if (distanceMap[destination.x][destination.y] < 0)
+		if (distanceMap[destination.xInt()][destination.yInt()] < 0)
 			throw new IllegalArgumentException("Can't reach " + destination);
-		List<Position> path = new ArrayList<>(distanceMap[destination.x][destination.y]);
+		List<Position> path = new ArrayList<>(distanceMap[destination.xInt()][destination.yInt()]);
 		for (Position p = destination; !p.equals(getPos());) {
 			path.add(p);
 			for (Position next : p.neighbors()) {
-				if (arena.isValidPos(next) && distanceMap[next.x][next.y] == distanceMap[p.x][p.y] - 1) {
+				if (arena.isValidPos(next) && distanceMap[next.xInt()][next.yInt()] == distanceMap[p.xInt()][p.yInt()] - 1) {
 					p = next;
 					break;
 				}
@@ -336,7 +334,7 @@ public class Unit extends Entity {
 				if (!arena.at(neighbor).hasUnit() || (invisiableEnable && !arena.isUnitVisible(neighbor, getTeam())))
 					continue;
 				Unit other = arena.at(neighbor).getUnit();
-				attackableMap[neighbor.x][neighbor.y] = other.getTeam() != getTeam()
+				attackableMap[neighbor.xInt()][neighbor.yInt()] = other.getTeam() != getTeam()
 						&& type.canAttack.contains(other.type.category);
 			}
 		}
@@ -358,7 +356,7 @@ public class Unit extends Entity {
 	}
 
 	private static int distance1Norm(Position p1, Position p2) {
-		return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
+		return Math.abs(p1.xInt() - p2.xInt()) + Math.abs(p1.yInt() - p2.yInt());
 	}
 
 	@Override

@@ -67,8 +67,8 @@ class LevelSerializerXML implements LevelSerializer {
 			for (Position pos : Utils.iterable(new Position.Iterator2D(level.getWidth(), level.getHeight()))) {
 				TileDesc tile = level.at(pos);
 				Element tileElm = dom.createElement("tile");
-				addValueChild(dom, tileElm, "x", Integer.toString(pos.x));
-				addValueChild(dom, tileElm, "y", Integer.toString(pos.y));
+				addValueChild(dom, tileElm, "x", Integer.toString(pos.xInt()));
+				addValueChild(dom, tileElm, "y", Integer.toString(pos.yInt()));
 
 				addValueChild(dom, tileElm, "terrain", tile.terrain.name());
 
@@ -178,7 +178,7 @@ class LevelSerializerXML implements LevelSerializer {
 					unit = UnitDesc.of(Unit.Type.valueOf(type), Team.valueOf(team));
 				}
 
-				builder.setTile(x, y, terrain, building, unit);
+				builder.setTile(Position.of(x, y), terrain, building, unit);
 			}
 
 			return builder.buildLevel();

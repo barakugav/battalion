@@ -22,7 +22,6 @@ class GameImpl implements Game {
 	private final Iterator<Team> turnIterator;
 	private Team turn;
 	private Team winner;
-	private final List<Unit> deadQueue;
 
 	final DataChangeNotifier<DataEvent.UnitAdd> onUnitAdd = new DataChangeNotifier<>();
 	final DataChangeNotifier<DataEvent.UnitRemove> onUnitRemove = new DataChangeNotifier<>();
@@ -53,7 +52,6 @@ class GameImpl implements Game {
 		turnIterator = Utils.iteratorRepeatInfty(Team.realTeams);
 		turn = turnIterator.next();
 		winner = null;
-		deadQueue = new ArrayList<>();
 		for (Position pos : arena.positions()) {
 			Tile tile = arena.at(pos);
 			if (!tile.hasUnit())
@@ -123,10 +121,6 @@ class GameImpl implements Game {
 
 	@Override
 	public void turnEnd() {
-		for (Unit dead : deadQueue)
-			dead.clear();
-		deadQueue.clear();
-
 		if (isFinished()) {
 			Set<Team> alive = getAliveTeams();
 			winner = alive.size() == 1 ? alive.iterator().next() : null;
@@ -238,7 +232,6 @@ class GameImpl implements Game {
 		if (target.getHealth() <= damage) {
 			arena.at(target.getPos()).removeUnit();
 			target.setHealth(0);
-			deadQueue.add(target);
 			onUnitRemove.notify(new DataEvent.UnitRemove(this, target));
 		} else {
 			target.setHealth(target.getHealth() - damage);

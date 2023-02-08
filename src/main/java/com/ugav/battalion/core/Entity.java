@@ -3,16 +3,16 @@ package com.ugav.battalion.core;
 import java.util.Objects;
 
 import com.ugav.battalion.DataChangeNotifier;
-import com.ugav.battalion.DataEvent;
+import com.ugav.battalion.DataEvent.EntityChange;
 
 public abstract class Entity {
 
+	final Arena arena;
 	private Team team;
 	private boolean active;
 
-	public final DataChangeNotifier<DataEvent> onChange = new DataChangeNotifier<>();
-
-	Entity(Team team) {
+	Entity(Arena arena, Team team) {
+		this.arena = Objects.requireNonNull(arena);
 		this.team = Objects.requireNonNull(team);
 		active = false;
 	}
@@ -23,7 +23,7 @@ public abstract class Entity {
 
 	void setTeam(Team team) {
 		this.team = Objects.requireNonNull(team);
-		onChange.notify(new DataEvent(this));
+		onChange().notify(new EntityChange(this));
 	}
 
 	public boolean isActive() {
@@ -32,11 +32,11 @@ public abstract class Entity {
 
 	void setActive(boolean active) {
 		this.active = active;
-		onChange.notify(new DataEvent(this));
+		onChange().notify(new EntityChange(this));
 	}
 
-	void clear() {
-		onChange.clear();
+	DataChangeNotifier<EntityChange> onChange() {
+		return arena.onChange;
 	}
 
 }

@@ -94,7 +94,6 @@ public class Building extends Entity {
 	}
 
 	public final Type type;
-	private final Arena arena;
 	private Position pos;
 	private Team conquerTeam;
 	private int conquerProgress;
@@ -103,8 +102,7 @@ public class Building extends Entity {
 	private static final int CONQUER_DURATION_FROM_OTHER = 3;
 
 	Building(Arena arena, Type type, Team team) {
-		super(team);
-		this.arena = Objects.requireNonNull(arena);
+		super(arena, team);
 		this.type = Objects.requireNonNull(type);
 
 		setActive(canBeActive());

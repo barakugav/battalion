@@ -26,8 +26,8 @@ import javax.swing.Timer;
 
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Position;
-import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Position.Direction;
+import com.ugav.battalion.core.Terrain;
 
 abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileComp, BuildingCompImpl extends AbstractArenaPanel.BuildingComp, UnitCompImpl extends AbstractArenaPanel.UnitComp>
 		extends JPanel implements Clearable {
@@ -226,7 +226,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		comps.addAll(tiles.values());
 		comps.addAll(buildings.values());
 		comps.addAll(units.values());
-		comps.sort((o1, o2) -> o1.pos.compareTo(o2.pos));
+		comps.sort((o1, o2) -> o1.pos().compareTo(o2.pos()));
 		for (EntityComp comp : comps)
 			if (!comp.isPaintDelayed())
 				comp.paintComponent(g);
@@ -261,11 +261,9 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 	abstract static class EntityComp implements Clearable {
 
 		final AbstractArenaPanel<?, ?, ?> arena;
-		Position pos;
 
-		EntityComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
+		EntityComp(AbstractArenaPanel<?, ?, ?> arena) {
 			this.arena = Objects.requireNonNull(arena);
-			this.pos = Objects.requireNonNull(pos);
 		}
 
 		abstract void paintComponent(Graphics g);
@@ -273,12 +271,22 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		boolean isPaintDelayed() {
 			return false;
 		}
+
+		abstract Position pos();
 	}
 
 	static class TileComp extends EntityComp {
 
+		private final Position pos;
+
 		TileComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
-			super(arena, pos);
+			super(arena);
+			this.pos = Objects.requireNonNull(pos);
+		}
+
+		@Override
+		Position pos() {
+			return pos;
 		}
 
 		private boolean inArena(Position p) {
@@ -305,6 +313,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 					Terrain.isBridgeVertical(bridgePos, p -> arena.getTerrain(p), arena.arenaWidth, arena.arenaHeight),
 					"Can't determine bridge orientation").booleanValue();
 
+			Position pos = pos();
 			Terrain terrain = arena.getTerrain(pos);
 			if (terrain == Terrain.ClearWater) {
 				arena.drawImage(g, terrain, pos);
@@ -401,12 +410,12 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		}
 
 		void drawImage(Graphics g, Object obj) {
-			arena.drawImage(g, obj, pos);
+			arena.drawImage(g, obj, pos());
 		}
 
 		@Override
 		public String toString() {
-			return pos.toString();
+			return pos().toString();
 		}
 
 		@Override
@@ -417,12 +426,21 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 	static class BuildingComp extends EntityComp {
 
+		private final Position pos;
+
 		BuildingComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
-			super(arena, pos);
+			super(arena);
+			this.pos = Objects.requireNonNull(pos);
+		}
+
+		@Override
+		Position pos() {
+			return pos;
 		}
 
 		@Override
 		void paintComponent(Graphics g) {
+			Position pos = pos();
 			arena.drawImage(g, arena.getBuilding(pos), pos);
 		}
 
@@ -432,14 +450,15 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 	}
 
-	static class UnitComp extends EntityComp {
+	static abstract class UnitComp extends EntityComp {
 
-		UnitComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
-			super(arena, pos);
+		UnitComp(AbstractArenaPanel<?, ?, ?> arena) {
+			super(arena);
 		}
 
 		@Override
 		void paintComponent(Graphics g) {
+			Position pos = pos();
 			arena.drawImage(g, arena.getUnit(pos), pos);
 		}
 

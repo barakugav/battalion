@@ -7,6 +7,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
 
+import com.ugav.battalion.DataChangeNotifier;
+import com.ugav.battalion.DataEvent.EntityChange;
 import com.ugav.battalion.Utils;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.TileDesc;
@@ -17,6 +19,8 @@ public class Arena {
 	private final int width;
 	private final int height;
 	private final Tile[][] tiles;
+
+	public final DataChangeNotifier<EntityChange> onChange = new DataChangeNotifier<>();
 
 	Arena(int width, int height, Tile[][] tiles) {
 		if (width <= 0 || height <= 0)
@@ -36,7 +40,7 @@ public class Arena {
 		int width = level.getWidth(), height = level.getHeight();
 		tiles = new Tile[width][height];
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			tiles[pos.x][pos.y] = createTile(level.at(pos), pos);
+			tiles[pos.xInt()][pos.yInt()] = createTile(level.at(pos), pos);
 	}
 
 	public int getWidth() {
@@ -48,7 +52,7 @@ public class Arena {
 	}
 
 	public Tile at(Position pos) {
-		return tiles[pos.x][pos.y];
+		return tiles[pos.xInt()][pos.yInt()];
 	}
 
 	public boolean isValidPos(Position pos) {

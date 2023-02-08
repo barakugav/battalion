@@ -1,5 +1,6 @@
 package com.ugav.battalion;
 
+import com.ugav.battalion.core.Entity;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.LevelBuilder;
 import com.ugav.battalion.core.Position;
@@ -11,6 +12,14 @@ public class DataEvent {
 
 	public DataEvent(Object source) {
 		this.source = source;
+	}
+
+	public static class EntityChange extends DataEvent {
+
+		public EntityChange(Entity source) {
+			super(source);
+		}
+
 	}
 
 	public static class UnitAdd extends DataEvent {

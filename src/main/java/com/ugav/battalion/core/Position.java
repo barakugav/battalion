@@ -12,15 +12,27 @@ import com.ugav.battalion.Utils;
 
 public class Position implements Comparable<Position> {
 
-	public final int x, y;
+	public final double x, y;
 
-	public Position(int x, int y) {
+	public Position(double x, double y) {
 		this.x = x;
 		this.y = y;
 	}
 
-	public static Position of(int x, int y) {
+	public static Position of(double x, double y) {
 		return new Position(x, y);
+	}
+
+	public int xInt() {
+		if (!Utils.isInteger(x))
+			throw new IllegalStateException(toString());
+		return (int) x;
+	}
+
+	public int yInt() {
+		if (!Utils.isInteger(y))
+			throw new IllegalStateException(toString());
+		return (int) y;
 	}
 
 	@Override
@@ -30,7 +42,7 @@ public class Position implements Comparable<Position> {
 
 	@Override
 	public int hashCode() {
-		return x << 16 + y;
+		return Double.hashCode(x) ^ Double.hashCode(y);
 	}
 
 	@Override
@@ -55,11 +67,11 @@ public class Position implements Comparable<Position> {
 		return neighbors;
 	}
 
-	public boolean isInRect(int width, int height) {
+	public boolean isInRect(double width, double height) {
 		return isInRect(0, 0, width, height);
 	}
 
-	public boolean isInRect(int x1, int y1, int x2, int y2) {
+	public boolean isInRect(double x1, double y1, double x2, double y2) {
 		return x1 <= x && x <= x2 && y1 <= y && y <= y2;
 	}
 
@@ -121,7 +133,7 @@ public class Position implements Comparable<Position> {
 		public static Bitmap fromPredicate(int width, int height, Predicate<Position> predicate) {
 			boolean[][] map = new boolean[width][height];
 			for (Position pos : Utils.iterable(new Iterator2D(width, height)))
-				map[pos.x][pos.y] = predicate.test(pos);
+				map[pos.xInt()][pos.yInt()] = predicate.test(pos);
 			return new Bitmap(map);
 		}
 
@@ -134,7 +146,8 @@ public class Position implements Comparable<Position> {
 		}
 
 		public boolean contains(Position pos) {
-			return 0 <= pos.x && pos.x < map.length && 0 <= pos.y && pos.y < map[pos.x].length && map[pos.x][pos.y];
+			return 0 <= pos.x && pos.x < map.length && 0 <= pos.y && pos.y < map[pos.xInt()].length
+					&& map[pos.xInt()][pos.yInt()];
 		}
 
 		@Override
@@ -159,9 +172,9 @@ public class Position implements Comparable<Position> {
 	@Override
 	public int compareTo(Position o) {
 		if (x != o.x)
-			return Integer.compare(x, o.x);
+			return Double.compare(x, o.x);
 		if (y != o.y)
-			return Integer.compare(y, o.y);
+			return Double.compare(y, o.y);
 		return 0;
 	}
 
@@ -174,9 +187,9 @@ public class Position implements Comparable<Position> {
 		int ymul = yreverse ? -1 : 1;
 		return (p1, p2) -> {
 			if (p1.x != p2.x)
-				return Integer.compare(p1.x, p2.x) * xmul;
+				return Double.compare(p1.x, p2.x) * xmul;
 			if (p1.y != p2.y)
-				return Integer.compare(p1.y, p2.y) * ymul;
+				return Double.compare(p1.y, p2.y) * ymul;
 			return 0;
 		};
 	}

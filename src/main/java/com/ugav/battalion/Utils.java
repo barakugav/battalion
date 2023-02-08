@@ -220,4 +220,8 @@ public class Utils {
 		return c;
 	}
 
+	public static boolean isInteger(double x) {
+		return x == Math.floor(x) && !Double.isInfinite(x);
+	}
+
 }
