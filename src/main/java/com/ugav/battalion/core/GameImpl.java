@@ -26,7 +26,6 @@ class GameImpl implements Game {
 
 	final DataChangeNotifier<DataEvent.UnitAdd> onUnitAdd = new DataChangeNotifier<>();
 	final DataChangeNotifier<DataEvent.UnitRemove> onUnitRemove = new DataChangeNotifier<>();
-	final DataChangeNotifier<DataEvent.UnitMove> onBeforeUnitMove = new DataChangeNotifier<>();
 	final DataChangeNotifier<DataEvent.MoneyChange> onMoneyChange = new DataChangeNotifier<>();
 
 	@Override
@@ -37,11 +36,6 @@ class GameImpl implements Game {
 	@Override
 	public DataChangeNotifier<DataEvent.UnitRemove> onUnitRemove() {
 		return onUnitRemove;
-	}
-
-	@Override
-	public DataChangeNotifier<DataEvent.UnitMove> onBeforeUnitMove() {
-		return onBeforeUnitMove;
 	}
 
 	@Override
@@ -183,7 +177,6 @@ class GameImpl implements Game {
 	}
 
 	private void move0(Unit unit, List<Position> path) {
-		onBeforeUnitMove.notify(new DataEvent.UnitMove(this, unit, path));
 		Position source = unit.getPos();
 		Position destination = path.get(path.size() - 1);
 		arena.at(source).removeUnit();

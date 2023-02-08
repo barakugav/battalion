@@ -45,8 +45,6 @@ public interface Game {
 
 	public DataChangeNotifier<DataEvent.UnitRemove> onUnitRemove();
 
-	public DataChangeNotifier<DataEvent.UnitMove> onBeforeUnitMove();
-
 	public DataChangeNotifier<DataEvent.MoneyChange> onMoneyChange();
 
 	public static Game newInstance(Level level) {

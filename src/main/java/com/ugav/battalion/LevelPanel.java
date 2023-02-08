@@ -19,6 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -50,7 +53,7 @@ class LevelPanel extends JPanel implements Clearable {
 	private Position selection;
 	private final DebugPrintsManager debug;
 
-	private boolean actionsSuspended;
+	private volatile boolean actionsSuspended;
 
 	private static final long serialVersionUID = 1L;
 
@@ -60,7 +63,7 @@ class LevelPanel extends JPanel implements Clearable {
 		if (level.getWidth() < ArenaPanel.DISPLAYED_ARENA_WIDTH
 				|| level.getHeight() < ArenaPanel.DISPLAYED_ARENA_HEIGHT)
 			throw new IllegalArgumentException("level size is too small");
-		this.game = Game.newInstance(level);
+		this.game = new GameGUI(level);
 		menu = new Menu();
 		arenaPanel = new ArenaPanel();
 		debug = new DebugPrintsManager(true); // TODO
@@ -69,27 +72,65 @@ class LevelPanel extends JPanel implements Clearable {
 		add(menu);
 		add(arenaPanel);
 
-		game.start();
-
 		menu.initGame();
 		arenaPanel.initGame();
 		invalidate();
 		repaint();
+
+		(gameActionsThread = new GameActionsThread()).start();
+
+		gameAction(() -> game.start());
+	}
+
+	private final GameActionsThread gameActionsThread;
+
+	private class GameActionsThread extends Thread {
+
+		final BlockingQueue<Runnable> actions = new LinkedBlockingQueue<>();
+		volatile boolean running = true;
+
+		@Override
+		public void run() {
+			while (running) {
+				Runnable action = null;
+				try {
+					action = actions.poll(100, TimeUnit.MILLISECONDS);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				if (action == null)
+					continue;
+
+				action.run();
+			}
+		}
+
+	}
+
+	void gameAction(Runnable action) {
+		gameActionsThread.actions.add(action);
 	}
 
 	@Override
 	public void clear() {
 		menu.clear();
 		arenaPanel.clear();
+		gameActionsThread.running = false;
+		try {
+			gameActionsThread.join();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	private void endTurn() {
 		debug.println("End turn");
 		clearSelection();
-		game.turnEnd();
-		assert !game.isFinished();
-		game.turnBegin();
-		repaint();
+		gameAction(() -> {
+			game.turnEnd();
+			assert !game.isFinished();
+			game.turnBegin();
+		});
 	}
 
 	private void clearSelection() {
@@ -107,10 +148,12 @@ class LevelPanel extends JPanel implements Clearable {
 	}
 
 	private void suspendActions() {
+		debug.println("Actions suspended");
 		actionsSuspended = true;
 	}
 
 	private void resumeActions() {
+		debug.println("Actions resumed");
 		actionsSuspended = false;
 	}
 
@@ -189,7 +232,8 @@ class LevelPanel extends JPanel implements Clearable {
 
 			register.register(onTileClick, e -> tileClicked(e.pos));
 			register.register(onHoverChange, e -> hoveredUpdated(e.pos));
-			register.register(game.onBeforeUnitMove(), e -> {
+
+			register.register(((GameGUI) game).onBeforeUnitMove, e -> {
 				units.get(e.unit).moveAnimation(e.path);
 			});
 
@@ -396,8 +440,9 @@ class LevelPanel extends JPanel implements Clearable {
 				movePath.clear();
 				movePath.addAll(unit.calcPath(destination));
 			}
+			List<Position> path = game.calcRealPath(unit, movePath);
 			debug.println("Move ", unit.getPos(), " ", destination);
-			game.move(unit, game.calcRealPath(unit, movePath));
+			gameAction(() -> game.move(unit, path));
 		}
 
 		private void unitAttack(Unit attacker, Unit target) {
@@ -412,11 +457,11 @@ class LevelPanel extends JPanel implements Clearable {
 						movePath.addAll(Objects.requireNonNull(attacker.calcPathForAttack(targetPos)));
 					}
 				}
-
-				game.moveAndAttack(attacker, game.calcRealPath(attacker, movePath), target);
+				List<Position> path = game.calcRealPath(attacker, movePath);
+				gameAction(() -> game.moveAndAttack(attacker, path, target));
 				break;
 			case LongRange:
-				game.attackRange(attacker, target);
+				gameAction(() -> game.attackRange(attacker, target));
 				break;
 			default:
 				throw new IllegalArgumentException("Unexpected value: " + attacker.type.weapon.type);
@@ -546,6 +591,8 @@ class LevelPanel extends JPanel implements Clearable {
 				});
 				animationTimer.setRepeats(true);
 				animationTimer.start();
+				while (isActionSuspended())
+					;
 			}
 
 			boolean isMoveAnimationActive() {
@@ -644,7 +691,7 @@ class LevelPanel extends JPanel implements Clearable {
 		private void buyNewUnit(Building.UnitSale sale) {
 			if (sale.price > game.getMoney(factory.getTeam()))
 				return;
-			game.buildUnit(factory, sale.type);
+			gameAction(() -> game.buildUnit(factory, sale.type));
 			clearSelection();
 			dispose();
 		}
