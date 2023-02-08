@@ -51,6 +51,7 @@ class LevelPanel extends JPanel implements Clearable {
 
 	private final Game game;
 	private Position selection;
+	private final ComputerPlayer computer = new ComputerPlayer.Random();
 	private final DebugPrintsManager debug;
 
 	private volatile boolean actionsSuspended;
@@ -129,6 +130,11 @@ class LevelPanel extends JPanel implements Clearable {
 		gameAction(() -> {
 			game.turnEnd();
 			assert !game.isFinished();
+			game.turnBegin();
+
+			computer.playTurn(game);
+
+			game.turnEnd();
 			game.turnBegin();
 		});
 	}
@@ -521,6 +527,7 @@ class LevelPanel extends JPanel implements Clearable {
 					} else {
 						pos = unit.getPos();
 					}
+					repaint();
 				});
 			}
 

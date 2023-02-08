@@ -198,6 +198,19 @@ public class Utils {
 		return l;
 	}
 
+	static <T> List<T> listCollect(Iterable<T> it) {
+		if (it instanceof Collection<?>)
+			return new ArrayList<>((Collection<T>) it);
+		return listCollect(it.iterator());
+	}
+
+	static <T> List<T> listCollect(Iterator<T> it) {
+		List<T> l = new ArrayList<>();
+		while (it.hasNext())
+			l.add(it.next());
+		return l;
+	}
+
 	public static GridBagConstraints gbConstraints(int x, int y, int width, int height) {
 		GridBagConstraints c = new GridBagConstraints();
 		c.gridx = x;
