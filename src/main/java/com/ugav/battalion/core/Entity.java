@@ -1,22 +1,23 @@
-package com.ugav.battalion;
+package com.ugav.battalion.core;
 
 import java.util.Objects;
 
-import com.ugav.battalion.Images.Drawable;
+import com.ugav.battalion.DataChangeNotifier;
+import com.ugav.battalion.DataEvent;
 
-abstract class Entity implements Drawable {
+public abstract class Entity {
 
 	private Team team;
 	private boolean active;
 
-	final DataChangeNotifier<DataEvent> onChange = new DataChangeNotifier<>();
+	public final DataChangeNotifier<DataEvent> onChange = new DataChangeNotifier<>();
 
 	Entity(Team team) {
 		this.team = Objects.requireNonNull(team);
 		active = false;
 	}
 
-	Team getTeam() {
+	public Team getTeam() {
 		return team;
 	}
 
@@ -25,7 +26,7 @@ abstract class Entity implements Drawable {
 		onChange.notify(new DataEvent(this));
 	}
 
-	boolean isActive() {
+	public boolean isActive() {
 		return active;
 	}
 

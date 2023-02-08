@@ -1,4 +1,4 @@
-package com.ugav.battalion;
+package com.ugav.battalion.core;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,11 +10,12 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import com.ugav.battalion.Level.UnitDesc;
+import com.ugav.battalion.DataEvent;
+import com.ugav.battalion.core.Level.UnitDesc;
 
-class Unit extends Entity {
+public class Unit extends Entity {
 
-	final Type type;
+	public final Type type;
 	final Arena arena;
 	private Position pos;
 	private int health;
@@ -31,7 +32,7 @@ class Unit extends Entity {
 		throw new UnsupportedOperationException();
 	}
 
-	int getHealth() {
+	public int getHealth() {
 		return health;
 	}
 
@@ -40,7 +41,7 @@ class Unit extends Entity {
 		onChange.notify(new DataEvent(this));
 	}
 
-	boolean isDead() {
+	public boolean isDead() {
 		return health <= 0;
 	}
 
@@ -49,11 +50,11 @@ class Unit extends Entity {
 		onChange.notify(new DataEvent(this));
 	}
 
-	Position getPos() {
+	public Position getPos() {
 		return pos;
 	}
 
-	int getDamge(Unit target) {
+	public int getDamge(Unit target) {
 		return type.damage;
 	}
 
@@ -75,18 +76,18 @@ class Unit extends Entity {
 				&& type.canAttack.contains(target.type.category);
 	}
 
-	enum Category {
+	public enum Category {
 		Land, Water, DeepWater, Air
 	}
 
-	static class Weapon {
-		enum Type {
+	public static class Weapon {
+		public enum Type {
 			CloseRange, LongRange
 		}
 
-		final Type type;
-		final int minRange;
-		final int maxRange;
+		public final Type type;
+		public final int minRange;
+		public final int maxRange;
 
 		private Weapon(Type type, int minRange, int maxRange) {
 			this.type = Objects.requireNonNull(type);
@@ -96,11 +97,11 @@ class Unit extends Entity {
 			this.maxRange = maxRange;
 		}
 
-		static Weapon closeRange() {
+		private static Weapon closeRange() {
 			return new Weapon(Type.CloseRange, 1, 1);
 		}
 
-		static Weapon longRange(int minRange, int maxRange) {
+		private static Weapon longRange(int minRange, int maxRange) {
 			return new Weapon(Type.LongRange, minRange, maxRange);
 		}
 
@@ -175,7 +176,7 @@ class Unit extends Entity {
 		}
 	}
 
-	enum Type {
+	public enum Type {
 		Soldier(Category.Land, Weapon.closeRange(), 50, 22, 3, Tech.StandOnLandExtreme, Tech.AttLand, Tech.AttWater,
 				Tech.Conquerer),
 		Bazooka(Category.Land, Weapon.closeRange(), 50, 30, 3, Tech.StandOnLandExtreme, Tech.AttLand, Tech.AttWater,
@@ -199,15 +200,15 @@ class Unit extends Entity {
 		Airplane(Category.Air, Weapon.closeRange(), 50, 30, 7, Tech.StandOnAny, Tech.AttAny),
 		Zeppelin(Category.Air, Weapon.closeRange(), 110, 80, 4, Tech.StandOnAny, Tech.AttAny);
 
-		final Category category;
-		final Weapon weapon;
-		final Set<Terrain.Category> canStand;
-		final Set<Category> canAttack;
-		final int health;
-		final int damage;
-		final int moveLimit;
-		final boolean canConquer;
-		final boolean invisible;
+		public final Category category;
+		public final Weapon weapon;
+		public final Set<Terrain.Category> canStand;
+		public final Set<Category> canAttack;
+		public final int health;
+		public final int damage;
+		public final int moveLimit;
+		public final boolean canConquer;
+		public final boolean invisible;
 
 		Type(Category category, Weapon weapon, int health, int damage, int moveLimit, Tech... techs) {
 			TypeBuilder builder = new TypeBuilder(techs);
@@ -228,7 +229,7 @@ class Unit extends Entity {
 		return new Unit(arena, desc.type, desc.team);
 	}
 
-	Position.Bitmap getReachableMap() {
+	public Position.Bitmap getReachableMap() {
 		return getReachableMap(true);
 	}
 
@@ -240,7 +241,7 @@ class Unit extends Entity {
 		});
 	}
 
-	Position.Bitmap getPassableMap() {
+	public Position.Bitmap getPassableMap() {
 		return getPassableMap(true);
 	}
 
@@ -278,7 +279,7 @@ class Unit extends Entity {
 		return distanceMap;
 	}
 
-	List<Position> calcPath(Position destination) {
+	public List<Position> calcPath(Position destination) {
 		int[][] distanceMap = calcDistanceMap(true);
 		if (distanceMap[destination.x][destination.y] < 0)
 			throw new IllegalArgumentException("Can't reach " + destination);
@@ -296,7 +297,7 @@ class Unit extends Entity {
 		return path;
 	}
 
-	List<Position> calcPathForAttack(Position targetPos) {
+	public List<Position> calcPathForAttack(Position targetPos) {
 		Position.Bitmap reachableMap = getReachableMap();
 		List<Position> bestPath = null;
 		for (Position p : targetPos.neighbors()) {
@@ -309,7 +310,7 @@ class Unit extends Entity {
 		return bestPath;
 	}
 
-	Position.Bitmap getAttackableMap() {
+	public Position.Bitmap getAttackableMap() {
 		return getAttackableMap(true);
 	}
 

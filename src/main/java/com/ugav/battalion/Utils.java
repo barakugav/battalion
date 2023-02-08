@@ -19,13 +19,13 @@ import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-class Utils {
+public class Utils {
 
 	private Utils() {
 		throw new InternalError();
 	}
 
-	static <E> Iterable<E> iterable(Iterator<E> it) {
+	public static <E> Iterable<E> iterable(Iterator<E> it) {
 		/*
 		 * java lack nice for loop syntax using iterators, hopefully this code will be
 		 * inlined by the compiler and no object will be created here
@@ -39,7 +39,7 @@ class Utils {
 		};
 	}
 
-	static <E> Iterator<E> iteratorIf(Iterator<E> it, Predicate<? super E> condition) {
+	public static <E> Iterator<E> iteratorIf(Iterator<E> it, Predicate<? super E> condition) {
 		return new IteratorIf<>(it, condition);
 	}
 
@@ -50,7 +50,7 @@ class Utils {
 		private Object nextElm;
 		private static final Object NoElm = new Object();
 
-		IteratorIf(Iterator<E> it, Predicate<? super E> condition) {
+		public IteratorIf(Iterator<E> it, Predicate<? super E> condition) {
 			this.it = it;
 			this.condition = condition;
 			nextElm = NoElm;
@@ -81,13 +81,13 @@ class Utils {
 		}
 	}
 
-	static <E> Iterator<E> iteratorRepeat(Iterable<E> iterable, int repeat) {
+	public static <E> Iterator<E> iteratorRepeat(Iterable<E> iterable, int repeat) {
 		if (repeat < 0)
 			throw new IllegalArgumentException();
 		return new IteratorRepeat<>(iterable, repeat);
 	}
 
-	static <E> Iterator<E> iteratorRepeatInfty(Iterable<E> iterable) {
+	public static <E> Iterator<E> iteratorRepeatInfty(Iterable<E> iterable) {
 		return new IteratorRepeat<>(iterable, -1);
 	}
 
@@ -124,7 +124,7 @@ class Utils {
 
 	}
 
-	static <T> String toString(T[][] a) {
+	public static <T> String toString(T[][] a) {
 		if (a == null)
 			return "null";
 		int iMax = a.length - 1;
@@ -140,14 +140,14 @@ class Utils {
 		}
 	}
 
-	static String buildPath(String base, String... names) {
+	public static String buildPath(String base, String... names) {
 		String path = new File(base).getAbsolutePath();
 		for (String name : names)
 			path = new File(path, name).getAbsolutePath();
 		return path;
 	}
 
-	static List<String> readLines(String filename) throws FileNotFoundException, IOException {
+	public static List<String> readLines(String filename) throws FileNotFoundException, IOException {
 		List<String> lines = new ArrayList<>();
 		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
 			for (String line; (line = br.readLine()) != null;) {
@@ -157,14 +157,14 @@ class Utils {
 		return lines;
 	}
 
-	static BufferedImage imgDeepCopy(BufferedImage img) {
+	public static BufferedImage imgDeepCopy(BufferedImage img) {
 		ColorModel cm = img.getColorModel();
 		boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
 		WritableRaster raster = img.copyData(null);
 		return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
 	}
 
-	static BufferedImage imgTransform(BufferedImage img, Consumer<int[]> op) {
+	public static BufferedImage imgTransform(BufferedImage img, Consumer<int[]> op) {
 		int[] pixel = new int[img.getRaster().getNumBands()];
 		for (int x = 0; x < img.getWidth(); x++) {
 			for (int y = 0; y < img.getHeight(); y++) {
@@ -176,29 +176,29 @@ class Utils {
 		return img;
 	}
 
-	static class Holder<T> {
-		T val;
+	public static class Holder<T> {
+		public T val;
 
-		Holder() {
+		public Holder() {
 			this(null);
 		}
 
-		Holder(T val) {
+		public Holder(T val) {
 			this.val = val;
 		}
 	}
 
-	static <T> List<T> sorted(Collection<T> c) {
+	public static <T> List<T> sorted(Collection<T> c) {
 		return sorted(c, null);
 	}
 
-	static <T> List<T> sorted(Collection<T> c, Comparator<? super T> cmp) {
+	public static <T> List<T> sorted(Collection<T> c, Comparator<? super T> cmp) {
 		List<T> l = new ArrayList<>(c);
 		l.sort(cmp);
 		return l;
 	}
 
-	static GridBagConstraints gbConstraints(int x, int y, int width, int height) {
+	public static GridBagConstraints gbConstraints(int x, int y, int width, int height) {
 		GridBagConstraints c = new GridBagConstraints();
 		c.gridx = x;
 		c.gridy = y;

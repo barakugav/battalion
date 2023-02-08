@@ -1,4 +1,4 @@
-package com.ugav.battalion;
+package com.ugav.battalion.core;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,16 +8,18 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 
-class Position implements Comparable<Position> {
+import com.ugav.battalion.Utils;
 
-	final int x, y;
+public class Position implements Comparable<Position> {
 
-	Position(int x, int y) {
+	public final int x, y;
+
+	public Position(int x, int y) {
 		this.x = x;
 		this.y = y;
 	}
 
-	static Position of(int x, int y) {
+	public static Position of(int x, int y) {
 		return new Position(x, y);
 	}
 
@@ -41,11 +43,11 @@ class Position implements Comparable<Position> {
 		return x == o.x && y == o.y;
 	}
 
-	Position add(Direction dir) {
+	public Position add(Direction dir) {
 		return Position.of(x + dir.dx, y + dir.dy);
 	}
 
-	List<Position> neighbors() {
+	public List<Position> neighbors() {
 		/* TODO return view instead of actually creating an array list each time */
 		List<Position> neighbors = new ArrayList<>(Direction.values().length);
 		for (Direction dir : Direction.values())
@@ -53,19 +55,19 @@ class Position implements Comparable<Position> {
 		return neighbors;
 	}
 
-	boolean isInRect(int width, int height) {
+	public boolean isInRect(int width, int height) {
 		return isInRect(0, 0, width, height);
 	}
 
-	boolean isInRect(int x1, int y1, int x2, int y2) {
+	public boolean isInRect(int x1, int y1, int x2, int y2) {
 		return x1 <= x && x <= x2 && y1 <= y && y <= y2;
 	}
 
-	static enum Direction {
+	public static enum Direction {
 
 		XPos(1, 0), XNeg(-1, 0), YPos(0, 1), YNeg(0, -1);
 
-		final int dx, dy;
+		public final int dx, dy;
 
 		Direction(int dr, int dc) {
 			this.dx = dr;
@@ -74,12 +76,12 @@ class Position implements Comparable<Position> {
 
 	};
 
-	static class Iterator2D implements Iterator<Position> {
+	public static class Iterator2D implements Iterator<Position> {
 
-		final int width, height;
-		int x, y;
+		private final int width, height;
+		private int x, y;
 
-		Iterator2D(int width, int height) {
+		public Iterator2D(int width, int height) {
 			if (width < 0 || height < 0)
 				throw new IllegalArgumentException();
 			this.width = width;
@@ -106,32 +108,33 @@ class Position implements Comparable<Position> {
 
 	}
 
-	static class Bitmap implements Predicate<Position>, Iterable<Position> {
+	public static class Bitmap implements Predicate<Position>, Iterable<Position> {
 
 		private final boolean[][] map;
 
-		static final Bitmap empty = new Bitmap(new boolean[0][0]);
+		// TODO rename
+		public static final Bitmap empty = new Bitmap(new boolean[0][0]);
 
-		Bitmap(boolean[][] map) {
+		public Bitmap(boolean[][] map) {
 			this.map = map;
 		}
 
-		static Bitmap fromPredicate(int width, int height, Predicate<Position> predicate) {
+		public static Bitmap fromPredicate(int width, int height, Predicate<Position> predicate) {
 			boolean[][] map = new boolean[width][height];
 			for (Position pos : Utils.iterable(new Iterator2D(width, height)))
 				map[pos.x][pos.y] = predicate.test(pos);
 			return new Bitmap(map);
 		}
 
-		int width() {
+		public int width() {
 			return map.length;
 		}
 
-		int height() {
+		public int height() {
 			return map.length != 0 ? map[0].length : 0;
 		}
 
-		boolean contains(Position pos) {
+		public boolean contains(Position pos) {
 			return 0 <= pos.x && pos.x < map.length && 0 <= pos.y && pos.y < map[pos.x].length && map[pos.x][pos.y];
 		}
 
@@ -163,11 +166,11 @@ class Position implements Comparable<Position> {
 		return 0;
 	}
 
-	static <T extends Position> Comparator<T> comparator() {
+	public static <T extends Position> Comparator<T> comparator() {
 		return comparator(false, false);
 	}
 
-	static <T extends Position> Comparator<T> comparator(boolean xreverse, boolean yreverse) {
+	public static <T extends Position> Comparator<T> comparator(boolean xreverse, boolean yreverse) {
 		int xmul = xreverse ? -1 : 1;
 		int ymul = yreverse ? -1 : 1;
 		return (p1, p2) -> {

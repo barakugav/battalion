@@ -1,19 +1,19 @@
-package com.ugav.battalion;
+package com.ugav.battalion.core;
 
 import java.util.Objects;
 
-import com.ugav.battalion.Images.Drawable;
+import com.ugav.battalion.Utils;
 
-class Level {
+public class Level {
 
 	private final int width;
 	private final int height;
 	private final TileDesc[][] tiles;
 
-	static class TileDesc {
-		final Terrain terrain;
-		final BuildingDesc building;
-		final UnitDesc unit;
+	public static class TileDesc {
+		public final Terrain terrain;
+		public final BuildingDesc building;
+		public final UnitDesc unit;
 
 		TileDesc(Terrain terrain, BuildingDesc building, UnitDesc unit) {
 			this.terrain = Objects.requireNonNull(terrain);
@@ -21,23 +21,23 @@ class Level {
 			this.unit = unit;
 		}
 
-		static TileDesc of(Terrain terrain, BuildingDesc building, UnitDesc unit) {
+		public static TileDesc of(Terrain terrain, BuildingDesc building, UnitDesc unit) {
 			return new TileDesc(terrain, building, unit);
 		}
 
-		boolean hasUnit() {
+		public boolean hasUnit() {
 			return unit != null;
 		}
 
-		UnitDesc getUnit() {
+		public UnitDesc getUnit() {
 			return unit;
 		}
 
-		boolean hasBuilding() {
+		public boolean hasBuilding() {
 			return building != null;
 		}
 
-		BuildingDesc getBuilding() {
+		public BuildingDesc getBuilding() {
 			return building;
 		}
 
@@ -64,22 +64,21 @@ class Level {
 		}
 	}
 
-	static class BuildingDesc implements Drawable {
-		final Building.Type type;
-		final Team team;
+	public static class BuildingDesc {
+		public final Building.Type type;
+		public final Team team;
 
 		BuildingDesc(Building.Type type, Team team) {
 			this.type = Objects.requireNonNull(type);
 			this.team = Objects.requireNonNull(team);
 		}
 
-		BuildingDesc(BuildingDesc desc) {
-			this.type = desc.type;
-			this.team = desc.team;
+		public static BuildingDesc of(Building.Type type, Team team) {
+			return new BuildingDesc(type, team);
 		}
 
-		static BuildingDesc of(Building.Type type, Team team) {
-			return new BuildingDesc(type, team);
+		public static BuildingDesc copyOf(BuildingDesc desc) {
+			return new BuildingDesc(desc.type, desc.team);
 		}
 
 		@Override
@@ -105,22 +104,21 @@ class Level {
 
 	}
 
-	static class UnitDesc implements Drawable {
-		final Unit.Type type;
-		final Team team;
+	public static class UnitDesc {
+		public final Unit.Type type;
+		public final Team team;
 
 		UnitDesc(Unit.Type type, Team team) {
 			this.type = Objects.requireNonNull(type);
 			this.team = Objects.requireNonNull(team);
 		}
 
-		UnitDesc(UnitDesc desc) {
-			this.type = desc.type;
-			this.team = desc.team;
+		public static UnitDesc of(Unit.Type type, Team team) {
+			return new UnitDesc(type, team);
 		}
 
-		static UnitDesc of(Unit.Type type, Team team) {
-			return new UnitDesc(type, team);
+		public static UnitDesc copyOf(UnitDesc desc) {
+			return new UnitDesc(desc.type, desc.team);
 		}
 
 		@Override
@@ -145,8 +143,8 @@ class Level {
 		}
 	}
 
-	static final int MINIMUM_WIDTH = 10;
-	static final int MINIMUM_HEIGHT = 10;
+	public static final int MINIMUM_WIDTH = 10;
+	public static final int MINIMUM_HEIGHT = 10;
 
 	Level(TileDesc[][] tiles) {
 		this.width = tiles.length;
@@ -158,15 +156,16 @@ class Level {
 			this.tiles[pos.x][pos.y] = Objects.requireNonNull(tiles[pos.x][pos.y]);
 	}
 
-	int getWidth() {
+	public int getWidth() {
 		return width;
 	}
 
-	int getHeight() {
+	public int getHeight() {
 		return height;
 	}
 
-	TileDesc tileDesc(Position pos) {
+	// TODO rename to 'tile'
+	public TileDesc tileDesc(Position pos) {
 		return tiles[pos.x][pos.y];
 	}
 

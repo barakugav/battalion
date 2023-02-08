@@ -25,9 +25,16 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import com.ugav.battalion.Level.BuildingDesc;
-import com.ugav.battalion.Level.TileDesc;
-import com.ugav.battalion.Level.UnitDesc;
+import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.Level;
+import com.ugav.battalion.core.Level.BuildingDesc;
+import com.ugav.battalion.core.Level.TileDesc;
+import com.ugav.battalion.core.Level.UnitDesc;
+import com.ugav.battalion.core.LevelBuilder;
+import com.ugav.battalion.core.Position;
+import com.ugav.battalion.core.Team;
+import com.ugav.battalion.core.Terrain;
+import com.ugav.battalion.core.Unit;
 
 class LevelSerializerXML implements LevelSerializer {
 

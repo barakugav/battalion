@@ -3,28 +3,28 @@ package com.ugav.battalion;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-class DataChangeNotifier<E extends DataEvent> {
+public class DataChangeNotifier<E extends DataEvent> {
 
 	private final List<DataListener<? super E>> listeners;
 
-	DataChangeNotifier() {
+	public DataChangeNotifier() {
 		listeners = new CopyOnWriteArrayList<>();
 	}
 
-	void addListener(DataListener<? super E> listener) {
+	public void addListener(DataListener<? super E> listener) {
 		listeners.add(listener);
 	}
 
-	void removeListener(DataListener<? super E> listener) {
+	public void removeListener(DataListener<? super E> listener) {
 		listeners.remove(listener);
 	}
 
-	void notify(E event) {
+	public void notify(E event) {
 		for (DataListener<? super E> listener : listeners)
 			listener.onChange(event);
 	}
 
-	void clear() {
+	public void clear() {
 		listeners.clear();
 	}
 

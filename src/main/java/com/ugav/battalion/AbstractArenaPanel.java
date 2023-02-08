@@ -24,7 +24,10 @@ import java.util.function.Predicate;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
-import com.ugav.battalion.Position.Direction;
+import com.ugav.battalion.core.Level;
+import com.ugav.battalion.core.Position;
+import com.ugav.battalion.core.Terrain;
+import com.ugav.battalion.core.Position.Direction;
 
 abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileComp, BuildingCompImpl extends AbstractArenaPanel.BuildingComp, UnitCompImpl extends AbstractArenaPanel.UnitComp>
 		extends JPanel implements Clearable {

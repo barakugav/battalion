@@ -1,14 +1,13 @@
-package com.ugav.battalion;
+package com.ugav.battalion.core;
 
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import com.ugav.battalion.Images.Drawable;
-import com.ugav.battalion.Position.Direction;
+import com.ugav.battalion.core.Position.Direction;
 
-enum Terrain implements Drawable {
+public enum Terrain {
 
 	FlatLand1(Category.FlatLand), FlatLand2(Category.FlatLand), FlatLand3(Category.FlatLand),
 	FlatLand4(Category.FlatLand), FlatLand5(Category.FlatLand),
@@ -25,17 +24,18 @@ enum Terrain implements Drawable {
 
 	ClearWater(Category.Water);
 
-	final Category category;
+	public final Category category;
 
 	private Terrain(Category category) {
 		this.category = category;
 	}
 
-	enum Category {
+	public enum Category {
 		FlatLand, RoughLand, ExtremeLand, Road, BridgeLow, BridgeHigh, Shore, Water;
 	}
 
-	static Set<Direction> getBridgeConnection(Position pos, Function<Position, Terrain> terrain, int width, int high) {
+	public static Set<Direction> getBridgeConnection(Position pos, Function<Position, Terrain> terrain, int width,
+			int high) {
 		Set<Terrain.Category> connectCategoties = EnumSet.of(Terrain.Category.Road, Terrain.Category.BridgeLow,
 				Terrain.Category.BridgeHigh);
 		Predicate<Position> isInRange = p -> p.isInRect(width - 1, high - 1);
@@ -56,7 +56,7 @@ enum Terrain implements Drawable {
 		return connections;
 	}
 
-	static Boolean isBridgeVertical(Position pos, Function<Position, Terrain> terrain, int width, int high) {
+	public static Boolean isBridgeVertical(Position pos, Function<Position, Terrain> terrain, int width, int high) {
 		if (!EnumSet.of(Terrain.BridgeLow, Terrain.BridgeHigh).contains(terrain.apply(pos)))
 			throw new IllegalArgumentException("terrain is not a bridge at: " + pos);
 

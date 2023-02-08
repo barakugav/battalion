@@ -5,14 +5,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import com.ugav.battalion.core.Level;
+
 class Levels {
 
-	private final Globals globals;
 	private final Map<Label, Level> levels;
 	private final List<Label> campaign;
 
@@ -22,10 +22,9 @@ class Levels {
 		BonusLevel,
 	}
 
-	Levels(Globals globals) {
-		this.globals = Objects.requireNonNull(globals);
+	Levels(LevelSerializer levelSerializer) {
 		levels = new HashMap<>();
-		levels.put(Label.BonusLevel, this.globals.levelSerializer.levelRead("level/bonus_level.xml"));
+		levels.put(Label.BonusLevel, levelSerializer.levelRead("level/bonus_level.xml"));
 
 		campaign = new ArrayList<>();
 //		campaign.add(Label.GraphicTest);
@@ -41,12 +40,12 @@ class Levels {
 		return lvls;
 	}
 
-	static JFileChooser createFileChooser(String fileType) {
+	static JFileChooser createFileChooser(String fileType, String dirPath) {
+		// TODO move
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileFilter(new FileNameExtensionFilter("Level file (*." + fileType + ")", fileType));
-		String dialogDir = Cookies.getCookieValue(Cookies.LEVEL_DISK_LAST_DIR);
-		if (dialogDir == null || !(new File(dialogDir).isDirectory()))
-			dialogDir = System.getProperty("user.home");
+		String dialogDir = (dirPath != null && (new File(dirPath).isDirectory())) ? dirPath
+				: System.getProperty("user.home");
 		fileChooser.setCurrentDirectory(new File(dialogDir));
 		return fileChooser;
 	}

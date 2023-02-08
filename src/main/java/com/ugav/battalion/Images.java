@@ -11,8 +11,12 @@ import java.util.function.BiConsumer;
 
 import javax.imageio.ImageIO;
 
-import com.ugav.battalion.Level.BuildingDesc;
-import com.ugav.battalion.Level.UnitDesc;
+import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.Level.BuildingDesc;
+import com.ugav.battalion.core.Level.UnitDesc;
+import com.ugav.battalion.core.Team;
+import com.ugav.battalion.core.Terrain;
+import com.ugav.battalion.core.Unit;
 
 class Images {
 
@@ -181,9 +185,6 @@ class Images {
 		} else {
 			return ect.get(obj);
 		}
-	}
-
-	static interface Drawable {
 	}
 
 }

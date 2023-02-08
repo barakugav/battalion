@@ -2,7 +2,7 @@ package com.ugav.battalion;
 
 import java.util.Objects;
 
-class Pair<E1, E2> implements Comparable<Pair<E1, E2>> {
+public class Pair<E1, E2> implements Comparable<Pair<E1, E2>> {
 
 	public E1 e1;
 	public E2 e2;

@@ -30,7 +30,15 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
-import com.ugav.battalion.Level.UnitDesc;
+import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.Game;
+import com.ugav.battalion.core.Level;
+import com.ugav.battalion.core.Position;
+import com.ugav.battalion.core.Team;
+import com.ugav.battalion.core.Terrain;
+import com.ugav.battalion.core.Tile;
+import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.core.Level.UnitDesc;
 
 class LevelPanel extends JPanel implements Clearable {
 

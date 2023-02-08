@@ -1,4 +1,4 @@
-package com.ugav.battalion;
+package com.ugav.battalion.core;
 
 import java.util.AbstractCollection;
 import java.util.ArrayList;
@@ -7,11 +7,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
 
-import com.ugav.battalion.Level.BuildingDesc;
-import com.ugav.battalion.Level.TileDesc;
-import com.ugav.battalion.Level.UnitDesc;
+import com.ugav.battalion.Utils;
+import com.ugav.battalion.core.Level.BuildingDesc;
+import com.ugav.battalion.core.Level.TileDesc;
+import com.ugav.battalion.core.Level.UnitDesc;
 
-class Arena {
+public class Arena {
 
 	private final int width;
 	private final int height;
@@ -38,23 +39,23 @@ class Arena {
 			tiles[pos.x][pos.y] = createTile(level.tileDesc(pos), pos);
 	}
 
-	int getWidth() {
+	public int getWidth() {
 		return width;
 	}
 
-	int getHeight() {
+	public int getHeight() {
 		return height;
 	}
 
-	Tile at(Position pos) {
+	public Tile at(Position pos) {
 		return tiles[pos.x][pos.y];
 	}
 
-	boolean isValidPos(Position pos) {
+	public boolean isValidPos(Position pos) {
 		return pos.isInRect(width - 1, height - 1);
 	}
 
-	Collection<Position> positions() {
+	public Collection<Position> positions() {
 		return new AbstractCollection<>() {
 
 			@Override
@@ -70,7 +71,7 @@ class Arena {
 		};
 	}
 
-	Collection<Tile> tiles() {
+	public Collection<Tile> tiles() {
 		return new AbstractCollection<>() {
 
 			@Override
@@ -100,11 +101,11 @@ class Arena {
 		};
 	}
 
-	Collection<Building> buildings(Team team, Predicate<Building> filter) {
+	public Collection<Building> buildings(Team team, Predicate<Building> filter) {
 		return buildings(filter.and(b -> team == b.getTeam()));
 	}
 
-	Collection<Building> buildings(Predicate<Building> filter) {
+	public Collection<Building> buildings(Predicate<Building> filter) {
 		List<Building> buildings = new ArrayList<>();
 		for (Tile tile : tiles())
 			if (tile.hasBuilding() && filter.test(tile.getBuilding()))
@@ -112,11 +113,11 @@ class Arena {
 		return buildings;
 	}
 
-	Collection<Unit> units(Team team) {
+	public Collection<Unit> units(Team team) {
 		return units(u -> team == u.getTeam());
 	}
 
-	Collection<Unit> units(Predicate<? super Unit> filter) {
+	public Collection<Unit> units(Predicate<? super Unit> filter) {
 		List<Unit> units = new ArrayList<>();
 		for (Tile tile : tiles())
 			if (tile.hasUnit() && filter.test(tile.getUnit()))
@@ -147,7 +148,7 @@ class Arena {
 		return unit;
 	}
 
-	boolean isUnitVisible(Position pos, Team viewer) {
+	public boolean isUnitVisible(Position pos, Team viewer) {
 		if (!isValidPos(pos))
 			throw new IllegalArgumentException();
 		if (!at(pos).hasUnit())

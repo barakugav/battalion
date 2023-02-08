@@ -1,8 +1,8 @@
-package com.ugav.battalion;
+package com.ugav.battalion.core;
 
 import java.util.Objects;
 
-class Tile {
+public class Tile {
 
 	private final Terrain terrain;
 	private final Building building;
@@ -14,27 +14,27 @@ class Tile {
 		this.unit = unit;
 	}
 
-	Terrain getTerrain() {
+	public Terrain getTerrain() {
 		return terrain;
 	}
 
-	Building getBuilding() {
+	public Building getBuilding() {
 		if (!hasBuilding())
 			throw new IllegalStateException();
 		return building;
 	}
 
-	boolean hasBuilding() {
+	public boolean hasBuilding() {
 		return building != null;
 	}
 
-	Unit getUnit() {
+	public Unit getUnit() {
 		if (!hasUnit())
 			throw new IllegalStateException();
 		return unit;
 	}
 
-	boolean hasUnit() {
+	public boolean hasUnit() {
 		return unit != null;
 	}
 

@@ -1,4 +1,4 @@
-package com.ugav.battalion;
+package com.ugav.battalion.core;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -9,28 +9,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.ugav.battalion.Level.UnitDesc;
-import com.ugav.battalion.Unit.Weapon;
+import com.ugav.battalion.DataChangeNotifier;
+import com.ugav.battalion.DataEvent;
+import com.ugav.battalion.Utils;
+import com.ugav.battalion.core.Level.UnitDesc;
+import com.ugav.battalion.core.Unit.Weapon;
 
-class Game {
+public class Game {
 
-	final Arena arena;
+	public final Arena arena;
 	private final Map<Team, TeamData> teamData;
 	private final Iterator<Team> turnIterator;
 	private Team turn;
 	private Team winner;
 	private final List<Unit> deadQueue;
 
-	final DataChangeNotifier<DataEvent.UnitAdd> onUnitAdd = new DataChangeNotifier<>();
-	final DataChangeNotifier<DataEvent.UnitRemove> onUnitRemove = new DataChangeNotifier<>();
-	final DataChangeNotifier<DataEvent.UnitMove> onBeforeUnitMove = new DataChangeNotifier<>();
-	final DataChangeNotifier<DataEvent.MoneyChange> onMoneyChange = new DataChangeNotifier<>();
+	public final DataChangeNotifier<DataEvent.UnitAdd> onUnitAdd = new DataChangeNotifier<>();
+	public final DataChangeNotifier<DataEvent.UnitRemove> onUnitRemove = new DataChangeNotifier<>();
+	public final DataChangeNotifier<DataEvent.UnitMove> onBeforeUnitMove = new DataChangeNotifier<>();
+	public final DataChangeNotifier<DataEvent.MoneyChange> onMoneyChange = new DataChangeNotifier<>();
 
 	private static class TeamData {
 		int money;
 	}
 
-	Game(Level level) {
+	public Game(Level level) {
 		arena = new Arena(level);
 		teamData = new HashMap<>();
 		turnIterator = Utils.iteratorRepeatInfty(Team.realTeams);
@@ -49,31 +52,31 @@ class Game {
 			teamData.put(team, new TeamData());
 	}
 
-	int getWidth() {
+	public int getWidth() {
 		return arena.getWidth();
 	}
 
-	int getHeight() {
+	public int getHeight() {
 		return arena.getHeight();
 	}
 
-	Tile getTile(Position pos) {
+	public Tile getTile(Position pos) {
 		return arena.at(pos);
 	}
 
-	Team getTurn() {
+	public Team getTurn() {
 		return turn;
 	}
 
-	int getMoney(Team team) {
+	public int getMoney(Team team) {
 		return teamData.get(team).money;
 	}
 
-	void start() {
+	public void start() {
 		turnBegin();
 	}
 
-	void turnBegin() {
+	public void turnBegin() {
 		/* Conquer buildings */
 		for (Tile tile : arena.tiles())
 			if (tile.hasBuilding() && tile.hasUnit() && tile.getUnit().type.canConquer
@@ -92,7 +95,7 @@ class Game {
 		}
 	}
 
-	void turnEnd() {
+	public void turnEnd() {
 		for (Unit dead : deadQueue)
 			dead.clear();
 		deadQueue.clear();
@@ -128,15 +131,15 @@ class Game {
 		return alive;
 	}
 
-	boolean isFinished() {
+	public boolean isFinished() {
 		return getAliveTeams().size() <= 1;
 	}
 
-	Team getWinner() {
+	public Team getWinner() {
 		return winner;
 	}
 
-	void move(Unit unit, List<Position> path) {
+	public void move(Unit unit, List<Position> path) {
 		if (path.isEmpty() || !isMoveValid(unit, path))
 			throw new IllegalStateException();
 		move0(unit, path);
@@ -156,7 +159,7 @@ class Game {
 		return unit.getTeam() == turn && unit.isActive() && unit.isMoveValid(path);
 	}
 
-	List<Position> calcRealPath(Unit unit, List<Position> path) {
+	public List<Position> calcRealPath(Unit unit, List<Position> path) {
 		Position.Bitmap passableMap = unit.getPassableMap(false);
 		for (int i = 0; i < path.size(); i++) {
 			if (!passableMap.contains(path.get(i))) {
@@ -167,7 +170,7 @@ class Game {
 		return new ArrayList<>(path);
 	}
 
-	void moveAndAttack(Unit attacker, List<Position> path, Unit target) {
+	public void moveAndAttack(Unit attacker, List<Position> path, Unit target) {
 		if (attacker.type.weapon.type != Weapon.Type.CloseRange)
 			throw new UnsupportedOperationException("Only close range weapon are supported");
 
@@ -182,7 +185,7 @@ class Game {
 		attacker.setActive(false);
 	}
 
-	void attackRange(Unit attacker, Unit target) {
+	public void attackRange(Unit attacker, Unit target) {
 		if (attacker.type.weapon.type != Weapon.Type.LongRange)
 			throw new UnsupportedOperationException("Only long range weapon are supported");
 
@@ -193,7 +196,7 @@ class Game {
 		attacker.setActive(false);
 	}
 
-	boolean isAttackValid(Unit attacker, Unit target) {
+	public boolean isAttackValid(Unit attacker, Unit target) {
 		return attacker.getTeam() == turn && attacker.isActive() && attacker.isAttackValid(target);
 	}
 
@@ -209,7 +212,7 @@ class Game {
 		}
 	}
 
-	void buildUnit(Building factory, Unit.Type unitType) {
+	public void buildUnit(Building factory, Unit.Type unitType) {
 		Position pos = factory.getPos();
 		if (!factory.type.canBuildUnits || !factory.isActive() || arena.at(pos).hasUnit())
 			throw new IllegalStateException();

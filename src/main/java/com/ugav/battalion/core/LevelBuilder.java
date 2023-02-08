@@ -1,4 +1,4 @@
-package com.ugav.battalion;
+package com.ugav.battalion.core;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -6,26 +6,29 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-import com.ugav.battalion.Level.BuildingDesc;
-import com.ugav.battalion.Level.TileDesc;
-import com.ugav.battalion.Level.UnitDesc;
-import com.ugav.battalion.Position.Direction;
+import com.ugav.battalion.DataChangeNotifier;
+import com.ugav.battalion.DataEvent;
+import com.ugav.battalion.Utils;
+import com.ugav.battalion.core.Level.BuildingDesc;
+import com.ugav.battalion.core.Level.TileDesc;
+import com.ugav.battalion.core.Level.UnitDesc;
+import com.ugav.battalion.core.Position.Direction;
 
-class LevelBuilder {
+public class LevelBuilder {
 
 	private TileDesc[][] tiles;
-	final DataChangeNotifier<DataEvent.TileChange> onTileChange = new DataChangeNotifier<>();
-	final DataChangeNotifier<DataEvent.LevelReset> onResetChange = new DataChangeNotifier<>();
+	public final DataChangeNotifier<DataEvent.TileChange> onTileChange = new DataChangeNotifier<>();
+	public final DataChangeNotifier<DataEvent.LevelReset> onResetChange = new DataChangeNotifier<>();
 
-	LevelBuilder(int width, int height) {
+	public LevelBuilder(int width, int height) {
 		reset(width, height);
 	}
 
-	LevelBuilder(Level level) {
+	public LevelBuilder(Level level) {
 		reset(level);
 	}
 
-	void reset(int width, int height) {
+	public void reset(int width, int height) {
 		if (!(Level.MINIMUM_WIDTH <= width && width < 100 && Level.MINIMUM_HEIGHT <= height && height < 100))
 			throw new IllegalArgumentException();
 		tiles = new TileDesc[width][height];
@@ -35,7 +38,7 @@ class LevelBuilder {
 		onResetChange.notify(new DataEvent.LevelReset(this));
 	}
 
-	void reset(Level level) {
+	public void reset(Level level) {
 		int width = level.getWidth(), height = level.getHeight();
 		tiles = new TileDesc[width][height];
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
@@ -43,11 +46,11 @@ class LevelBuilder {
 		onResetChange.notify(new DataEvent.LevelReset(this));
 	}
 
-	TileDesc at(Position pos) {
+	public TileDesc at(Position pos) {
 		return tiles[pos.x][pos.y];
 	}
 
-	LevelBuilder setTile(int x, int y, TileDesc tile) {
+	public LevelBuilder setTile(int x, int y, TileDesc tile) {
 		String errStr = checkValidTile(x, y, tile);
 		if (errStr != null) {
 			/* TODO: message to user */
@@ -59,19 +62,19 @@ class LevelBuilder {
 		return this;
 	}
 
-	LevelBuilder setTile(int x, int y, Terrain terrain, BuildingDesc buiding, UnitDesc unit) {
+	public LevelBuilder setTile(int x, int y, Terrain terrain, BuildingDesc buiding, UnitDesc unit) {
 		return setTile(x, y, TileDesc.of(terrain, buiding, unit));
 	}
 
-	int getWidth() {
+	public int getWidth() {
 		return tiles.length;
 	}
 
-	int getHeight() {
+	public int getHeight() {
 		return tiles[0].length;
 	}
 
-	Level buildLevel() {
+	public Level buildLevel() {
 		int width = getWidth(), height = getHeight();
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {

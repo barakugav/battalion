@@ -3,6 +3,8 @@ package com.ugav.battalion;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 
+import com.ugav.battalion.core.Level;
+
 class GameFrame extends JFrame {
 
 	private JComponent activeWindow;

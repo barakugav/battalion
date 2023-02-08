@@ -7,6 +7,8 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 
+import com.ugav.battalion.core.Level;
+
 class MainMenuPanel extends JPanel implements Clearable {
 
 	private final Globals globals;
@@ -16,7 +18,7 @@ class MainMenuPanel extends JPanel implements Clearable {
 
 	MainMenuPanel(Globals globals) {
 		this.globals = Objects.requireNonNull(globals);
-		levels = new Levels(globals);
+		levels = new Levels(globals.levelSerializer);
 
 		int levelCount = levels.getLevels().size();
 		setLayout(new GridLayout(0, 1));
@@ -31,7 +33,8 @@ class MainMenuPanel extends JPanel implements Clearable {
 		JButton customLvlButton = new JButton("Custom Level");
 		customLvlButton.addActionListener(e -> {
 
-			JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType());
+			JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType(),
+					Cookies.getCookieValue(Cookies.LEVEL_DISK_LAST_DIR));
 			int result = fileChooser.showOpenDialog(globals.frame);
 			if (result == JFileChooser.APPROVE_OPTION) {
 				Cookies.setCookieValue(Cookies.LEVEL_DISK_LAST_DIR,

@@ -25,10 +25,16 @@ import javax.swing.JTextField;
 
 import com.ugav.battalion.AbstractArenaPanel.BuildingComp;
 import com.ugav.battalion.AbstractArenaPanel.UnitComp;
-import com.ugav.battalion.Images.Drawable;
-import com.ugav.battalion.Level.BuildingDesc;
-import com.ugav.battalion.Level.TileDesc;
-import com.ugav.battalion.Level.UnitDesc;
+import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.Level;
+import com.ugav.battalion.core.Level.BuildingDesc;
+import com.ugav.battalion.core.Level.TileDesc;
+import com.ugav.battalion.core.Level.UnitDesc;
+import com.ugav.battalion.core.LevelBuilder;
+import com.ugav.battalion.core.Position;
+import com.ugav.battalion.core.Team;
+import com.ugav.battalion.core.Terrain;
+import com.ugav.battalion.core.Unit;
 
 class LevelBuilderWindow extends JPanel implements Clearable {
 
@@ -128,7 +134,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			return panel;
 		}
 
-		private JButton createEntityTabButton(Drawable drawable) {
+		private JButton createEntityTabButton(Object drawable) {
 			final int ImgButtonSize = 20;
 			Image img = Images.getImage(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize, Image.SCALE_SMOOTH);
 			JButton button = new JButton(new ImageIcon(img));
@@ -266,7 +272,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			JButton buttonLoad = new JButton("Load");
 			buttonLoad.addActionListener(e -> {
-				JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType());
+				JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType(),
+						Cookies.getCookieValue(Cookies.LEVEL_DISK_LAST_DIR));
 				int result = fileChooser.showOpenDialog(globals.frame);
 				if (result == JFileChooser.APPROVE_OPTION) {
 					Cookies.setCookieValue(Cookies.LEVEL_DISK_LAST_DIR,
@@ -285,7 +292,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			JButton buttonSave = new JButton("Save");
 			buttonSave.addActionListener(e -> {
-				JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType());
+				JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType(),
+						Cookies.getCookieValue(Cookies.LEVEL_DISK_LAST_DIR));
 				int result = fileChooser.showSaveDialog(globals.frame);
 				if (result == JFileChooser.APPROVE_OPTION) {
 					Cookies.setCookieValue(Cookies.LEVEL_DISK_LAST_DIR,
@@ -428,13 +436,13 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					builder.setTile(pos.x, pos.y, terrain, building, unit);
 
 				} else if (selectedObj instanceof BuildingDesc) {
-					BuildingDesc building = new BuildingDesc((BuildingDesc) selectedObj);
+					BuildingDesc building = BuildingDesc.copyOf((BuildingDesc) selectedObj);
 					if (building.type.canBuildOn.contains(tile.terrain.category))
 						builder.setTile(pos.x, pos.y, tile.terrain, building, tile.unit);
 					// TODO else user message
 
 				} else if (selectedObj instanceof UnitDesc) {
-					UnitDesc unit = new UnitDesc((UnitDesc) selectedObj);
+					UnitDesc unit = UnitDesc.copyOf((UnitDesc) selectedObj);
 					if (unit.type.canStand.contains(tile.terrain.category))
 						builder.setTile(pos.x, pos.y, tile.terrain, tile.building, unit);
 					// TODO else user message

@@ -1,4 +1,4 @@
-package com.ugav.battalion;
+package com.ugav.battalion.core;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -10,9 +10,9 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import com.ugav.battalion.Level.BuildingDesc;
+import com.ugav.battalion.core.Level.BuildingDesc;
 
-class Building extends Entity {
+public class Building extends Entity {
 
 	enum Tech {
 		BuildOnLandFlat(TypeBuilder::canBuildOn, Terrain.Category.FlatLand),
@@ -56,7 +56,7 @@ class Building extends Entity {
 
 	}
 
-	enum Type {
+	public enum Type {
 		OilRefinery(20, Tech.BuildOnLandFlat),
 
 		OilRefineryBig(35, Tech.BuildOnLandFlat),
@@ -71,12 +71,12 @@ class Building extends Entity {
 		ControllerWater(0, Tech.BuildOnLandFlat, Tech.AllowUnitBuildWater),
 		ControllerAir(0, Tech.BuildOnLandFlat, Tech.AllowUnitBuildAir);
 
-		final Set<Terrain.Category> canBuildOn;
-		final int moneyGain;
-		final boolean canBuildUnits;
-		final boolean allowUnitBuildLand;
-		final boolean allowUnitBuildWater;
-		final boolean allowUnitBuildAir;
+		public final Set<Terrain.Category> canBuildOn;
+		public final int moneyGain;
+		public final boolean canBuildUnits;
+		public final boolean allowUnitBuildLand;
+		public final boolean allowUnitBuildWater;
+		public final boolean allowUnitBuildAir;
 
 		Type(int moneyGain, Tech... techs) {
 			TypeBuilder builder = new TypeBuilder(techs);
@@ -93,7 +93,7 @@ class Building extends Entity {
 		}
 	}
 
-	final Type type;
+	public final Type type;
 	private final Arena arena;
 	private Position pos;
 	private Team conquerTeam;
@@ -110,11 +110,11 @@ class Building extends Entity {
 		setActive(canBeActive());
 	}
 
-	static Building valueOf(Arena arena, BuildingDesc desc) {
+	public static Building valueOf(Arena arena, BuildingDesc desc) {
 		return new Building(arena, desc.type, desc.team);
 	}
 
-	Position getPos() {
+	public Position getPos() {
 		return pos;
 	}
 
@@ -139,7 +139,7 @@ class Building extends Entity {
 		}
 	}
 
-	int getMoneyGain() {
+	public int getMoneyGain() {
 		return type.moneyGain;
 	}
 
@@ -154,7 +154,7 @@ class Building extends Entity {
 		super.setActive(active);
 	}
 
-	Map<Unit.Type, UnitSale> getAvailableUnits() {
+	public Map<Unit.Type, UnitSale> getAvailableUnits() {
 		if (!type.canBuildUnits)
 			throw new IllegalStateException();
 		Map<Unit.Type, UnitSale> sales = new HashMap<>();
@@ -189,9 +189,9 @@ class Building extends Entity {
 		return sales;
 	}
 
-	static class UnitSale {
-		final Unit.Type type;
-		final int price;
+	public static class UnitSale {
+		public final Unit.Type type;
+		public final int price;
 
 		UnitSale(Unit.Type type, int price) {
 			this.type = type;
