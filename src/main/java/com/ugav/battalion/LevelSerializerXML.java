@@ -65,7 +65,7 @@ class LevelSerializerXML implements LevelSerializer {
 
 			Element tilesElm = dom.createElement("tiles");
 			for (Position pos : Utils.iterable(new Position.Iterator2D(level.getWidth(), level.getHeight()))) {
-				TileDesc tile = level.tileDesc(pos);
+				TileDesc tile = level.at(pos);
 				Element tileElm = dom.createElement("tile");
 				addValueChild(dom, tileElm, "x", Integer.toString(pos.x));
 				addValueChild(dom, tileElm, "y", Integer.toString(pos.y));

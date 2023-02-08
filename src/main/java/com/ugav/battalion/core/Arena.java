@@ -36,7 +36,7 @@ public class Arena {
 		int width = level.getWidth(), height = level.getHeight();
 		tiles = new Tile[width][height];
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			tiles[pos.x][pos.y] = createTile(level.tileDesc(pos), pos);
+			tiles[pos.x][pos.y] = createTile(level.at(pos), pos);
 	}
 
 	public int getWidth() {

@@ -17,7 +17,7 @@ import com.ugav.battalion.core.Unit.Weapon;
 
 public class Game {
 
-	public final Arena arena;
+	final Arena arena;
 	private final Map<Team, TeamData> teamData;
 	private final Iterator<Team> turnIterator;
 	private Team turn;
@@ -50,6 +50,10 @@ public class Game {
 
 		for (Team team : Team.realTeams)
 			teamData.put(team, new TeamData());
+	}
+
+	public Arena arena() {
+		return arena;
 	}
 
 	public int getWidth() {

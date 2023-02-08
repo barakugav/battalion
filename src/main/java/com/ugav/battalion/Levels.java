@@ -41,7 +41,6 @@ class Levels {
 	}
 
 	static JFileChooser createFileChooser(String fileType, String dirPath) {
-		// TODO move
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileFilter(new FileNameExtensionFilter("Level file (*." + fileType + ")", fileType));
 		String dialogDir = (dirPath != null && (new File(dirPath).isDirectory())) ? dirPath

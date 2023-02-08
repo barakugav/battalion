@@ -42,7 +42,7 @@ public class LevelBuilder {
 		int width = level.getWidth(), height = level.getHeight();
 		tiles = new TileDesc[width][height];
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			tiles[pos.x][pos.y] = Objects.requireNonNull(level.tileDesc(pos));
+			tiles[pos.x][pos.y] = Objects.requireNonNull(level.at(pos));
 		onResetChange.notify(new DataEvent.LevelReset(this));
 	}
 

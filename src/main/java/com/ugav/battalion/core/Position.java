@@ -112,8 +112,7 @@ public class Position implements Comparable<Position> {
 
 		private final boolean[][] map;
 
-		// TODO rename
-		public static final Bitmap empty = new Bitmap(new boolean[0][0]);
+		public static final Bitmap Empty = new Bitmap(new boolean[0][0]);
 
 		public Bitmap(boolean[][] map) {
 			this.map = map;

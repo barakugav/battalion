@@ -164,8 +164,7 @@ public class Level {
 		return height;
 	}
 
-	// TODO rename to 'tile'
-	public TileDesc tileDesc(Position pos) {
+	public TileDesc at(Position pos) {
 		return tiles[pos.x][pos.y];
 	}
 
@@ -180,7 +179,7 @@ public class Level {
 		if (width != other.width || height != other.height)
 			return false;
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			if (!Objects.equals(tileDesc(pos), other.tileDesc(pos)))
+			if (!Objects.equals(at(pos), other.at(pos)))
 				return false;
 		return true;
 	}
@@ -189,7 +188,7 @@ public class Level {
 	public int hashCode() {
 		int hash = 1;
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			hash = 31 * hash + Objects.hashCode(tileDesc(pos));
+			hash = 31 * hash + Objects.hashCode(at(pos));
 		return hash;
 	}
 

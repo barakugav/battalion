@@ -33,12 +33,12 @@ import javax.swing.Timer;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level;
+import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Position;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Tile;
 import com.ugav.battalion.core.Unit;
-import com.ugav.battalion.core.Level.UnitDesc;
 
 class LevelPanel extends JPanel implements Clearable {
 
@@ -97,8 +97,8 @@ class LevelPanel extends JPanel implements Clearable {
 			return;
 		debug.println("clearSelection ", selection);
 		selection = null;
-		arenaPanel.reachableMap = Position.Bitmap.empty;
-		arenaPanel.attackableMap = Position.Bitmap.empty;
+		arenaPanel.reachableMap = Position.Bitmap.Empty;
+		arenaPanel.attackableMap = Position.Bitmap.Empty;
 		arenaPanel.movePath.clear();
 	}
 
@@ -175,9 +175,9 @@ class LevelPanel extends JPanel implements Clearable {
 			AbstractArenaPanel<AbstractArenaPanel.TileComp, AbstractArenaPanel.BuildingComp, ArenaPanel.UnitComp>
 			implements Clearable {
 
-		private Position.Bitmap passableMap = Position.Bitmap.empty;
-		private Position.Bitmap reachableMap = Position.Bitmap.empty;
-		private Position.Bitmap attackableMap = Position.Bitmap.empty;
+		private Position.Bitmap passableMap = Position.Bitmap.Empty;
+		private Position.Bitmap reachableMap = Position.Bitmap.Empty;
+		private Position.Bitmap attackableMap = Position.Bitmap.Empty;
 		private final List<Position> movePath;
 
 		private final DataChangeRegister register = new DataChangeRegister();
@@ -193,7 +193,7 @@ class LevelPanel extends JPanel implements Clearable {
 				units.get(e.unit).moveAnimation(e.path);
 			});
 
-			updateArenaSize(game.arena.getWidth(), game.arena.getHeight());
+			updateArenaSize(game.getWidth(), game.getHeight());
 		}
 
 		void hoveredUpdated(Position hovered) {
@@ -209,7 +209,7 @@ class LevelPanel extends JPanel implements Clearable {
 		}
 
 		private void updateAttackMovePath(Position targetPos) {
-			Unit attacker = game.arena.at(selection).getUnit();
+			Unit attacker = game.getTile(selection).getUnit();
 			switch (attacker.type.weapon.type) {
 			case LongRange:
 				movePath.clear();
@@ -217,8 +217,8 @@ class LevelPanel extends JPanel implements Clearable {
 
 			case CloseRange:
 				Position last = movePath.isEmpty() ? attacker.getPos() : movePath.get(movePath.size() - 1);
-				if (targetPos.neighbors().contains(last) && (!game.arena.isUnitVisible(last, game.getTurn())
-						|| game.arena.at(last).getUnit() == attacker))
+				if (targetPos.neighbors().contains(last) && (!game.arena().isUnitVisible(last, game.getTurn())
+						|| game.getTile(last).getUnit() == attacker))
 					break;
 				movePath.clear();
 				movePath.addAll(Objects.requireNonNull(attacker.calcPathForAttack(targetPos)));
@@ -230,7 +230,7 @@ class LevelPanel extends JPanel implements Clearable {
 		}
 
 		private void updateMovePath(Position targetPos) {
-			Unit unit = game.arena.at(selection).getUnit();
+			Unit unit = game.getTile(selection).getUnit();
 
 			/* Update move path from unit position to hovered position */
 			Position last = movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1);
@@ -256,9 +256,9 @@ class LevelPanel extends JPanel implements Clearable {
 		}
 
 		void initGame() {
-			for (Position pos : game.arena.positions()) {
+			for (Position pos : game.arena().positions()) {
 				TileComp tileComp = new TileComp(this, pos);
-				Tile tile = game.arena.at(pos);
+				Tile tile = game.getTile(pos);
 				tiles.put(pos, tileComp);
 				if (tile.hasUnit())
 					addUnitComp(tile.getUnit());
@@ -313,7 +313,7 @@ class LevelPanel extends JPanel implements Clearable {
 
 			}
 			if (isUnitSelected()) {
-				Unit unit = game.arena.at(selection).getUnit();
+				Unit unit = game.getTile(selection).getUnit();
 				g.setColor(new Color(100, 0, 0));
 				Position prev = unit.getPos();
 				for (Position pos : movePath) {
@@ -342,7 +342,7 @@ class LevelPanel extends JPanel implements Clearable {
 		}
 
 		private boolean isUnitSelected() {
-			return selection != null && game.arena.at(selection).hasUnit();
+			return selection != null && game.getTile(selection).hasUnit();
 		}
 
 		private void tileClicked(Position pos) {
@@ -359,7 +359,7 @@ class LevelPanel extends JPanel implements Clearable {
 		}
 
 		private void trySelect(Position pos) {
-			Tile tile = game.arena.at(pos);
+			Tile tile = game.getTile(pos);
 
 			if (tile.hasUnit()) {
 				if (!tile.getUnit().isActive())
@@ -425,9 +425,9 @@ class LevelPanel extends JPanel implements Clearable {
 		}
 
 		private void unitSecondSelection(Position target) {
-			Tile targetTile = game.arena.at(target);
-			Unit selectedUnit = game.arena.at(selection).getUnit();
-			if (!game.arena.isUnitVisible(target, selectedUnit.getTeam())) {
+			Tile targetTile = game.getTile(target);
+			Unit selectedUnit = game.getTile(selection).getUnit();
+			if (!game.arena().isUnitVisible(target, selectedUnit.getTeam())) {
 				if (reachableMap.contains(target))
 					unitMove(selectedUnit, target);
 
@@ -438,17 +438,17 @@ class LevelPanel extends JPanel implements Clearable {
 
 		@Override
 		Terrain getTerrain(Position pos) {
-			return game.arena.at(pos).getTerrain();
+			return game.getTile(pos).getTerrain();
 		}
 
 		@Override
 		Object getBuilding(Position pos) {
-			return game.arena.at(pos).getBuilding();
+			return game.getTile(pos).getBuilding();
 		}
 
 		@Override
 		Object getUnit(Position pos) {
-			return game.arena.at(pos).getUnit();
+			return game.getTile(pos).getUnit();
 		}
 
 		private class UnitComp extends AbstractArenaPanel.UnitComp {
@@ -482,7 +482,7 @@ class LevelPanel extends JPanel implements Clearable {
 			@Override
 			void paintComponent(Graphics g) {
 				final Team playerTeam = Team.Red;
-				if (!isMoveAnimationActive() && !game.arena.isUnitVisible(pos, playerTeam))
+				if (!isMoveAnimationActive() && !game.arena().isUnitVisible(pos, playerTeam))
 					return;
 				Graphics2D g2 = (Graphics2D) g;
 
