@@ -60,7 +60,7 @@ class LevelPanel extends JPanel implements Clearable {
 		if (level.getWidth() < ArenaPanel.DISPLAYED_ARENA_WIDTH
 				|| level.getHeight() < ArenaPanel.DISPLAYED_ARENA_HEIGHT)
 			throw new IllegalArgumentException("level size is too small");
-		this.game = new Game(level);
+		this.game = Game.newInstance(level);
 		menu = new Menu();
 		arenaPanel = new ArenaPanel();
 		debug = new DebugPrintsManager(true); // TODO
@@ -150,7 +150,7 @@ class LevelPanel extends JPanel implements Clearable {
 		}
 
 		void initGame() {
-			register.register(game.onMoneyChange, e -> updateMoneyLabel(e.team, e.newAmount));
+			register.register(game.onMoneyChange(), e -> updateMoneyLabel(e.team, e.newAmount));
 		}
 
 		@Override
@@ -189,7 +189,7 @@ class LevelPanel extends JPanel implements Clearable {
 
 			register.register(onTileClick, e -> tileClicked(e.pos));
 			register.register(onHoverChange, e -> hoveredUpdated(e.pos));
-			register.register(game.onBeforeUnitMove, e -> {
+			register.register(game.onBeforeUnitMove(), e -> {
 				units.get(e.unit).moveAnimation(e.path);
 			});
 
@@ -271,7 +271,7 @@ class LevelPanel extends JPanel implements Clearable {
 
 			setPreferredSize(getPreferredSize());
 
-			register.register(game.onUnitAdd, e -> {
+			register.register(game.onUnitAdd(), e -> {
 				addUnitComp(e.unit);
 				repaint();
 			});
