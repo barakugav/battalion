@@ -390,7 +390,9 @@ class LevelGameWindow extends JPanel implements Clearable {
 				register.register(game.onUnitRemove(), e -> {
 					if (e.unit.getPos().equals(selection))
 						clearSelection();
-					units.remove(e.unit).clear();
+					UnitComp unitComp = units.remove(e.unit);
+					if (unitComp != null)
+						unitComp.clear();
 					repaint();
 				});
 				register.register(game.arena().onEntityChange, e -> {
@@ -572,7 +574,6 @@ class LevelGameWindow extends JPanel implements Clearable {
 			}
 
 			private class UnitComp extends AbstractArenaPanel.UnitComp {
-				private final Unit unit;
 
 				private final int HealthBarWidth = 26;
 				private final int HealthBarHeight = 4;
@@ -585,7 +586,11 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 				UnitComp(Unit unit) {
 					super(ArenaPanel.this, unit);
-					this.unit = unit;
+				}
+
+				@Override
+				Unit unit() {
+					return (Unit) super.unit();
 				}
 
 				@Override
@@ -600,7 +605,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 						return Position.of(x, y);
 
 					} else {
-						return unit.getPos();
+						return unit().getPos();
 					}
 				}
 
@@ -615,7 +620,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 					/* Draw unit */
 					Composite oldComp = g2.getComposite();
-					if (unit.getTeam() == game.getTurn() && !unit.isActive())
+					if (unit().getTeam() == game.getTurn() && !unit().isActive())
 						g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
 					super.paintComponent(g);
 					g2.setComposite(oldComp);
@@ -626,7 +631,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 					int healthBarY = y + TILE_SIZE_PIXEL - HealthBarHeight - HealthBarBottomMargin;
 					g2.setColor(Color.GREEN);
 					g2.fillRect(healthBarX + 1, healthBarY,
-							(int) ((double) (HealthBarWidth - 1) * unit.getHealth() / unit.type.health),
+							(int) ((double) (HealthBarWidth - 1) * unit().getHealth() / unit().type.health),
 							HealthBarHeight);
 					g2.setColor(Color.BLACK);
 					g2.drawRect(healthBarX, healthBarY, HealthBarWidth, HealthBarHeight);
@@ -637,7 +642,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 						return;
 
 					suspendActions();
-					UnitComp unitComp = units.get(unit);
+					UnitComp unitComp = units.get(unit());
 
 					animationMovePath = new ArrayList<>(animationPath);
 					animationCursor = 0;

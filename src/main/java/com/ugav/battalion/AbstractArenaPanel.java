@@ -445,6 +445,10 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 			this.building = Objects.requireNonNull(building);
 		}
 
+		Object building() {
+			return building;
+		}
+
 		@Override
 		Position pos() {
 			return pos;
@@ -469,6 +473,10 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		UnitComp(AbstractArenaPanel<?, ?, ?> arena, Object unit) {
 			super(arena);
 			this.unit = Objects.requireNonNull(unit);
+		}
+
+		Object unit() {
+			return unit;
 		}
 
 		@Override

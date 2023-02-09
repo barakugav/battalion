@@ -506,8 +506,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			private class TileComp extends AbstractArenaPanel.TileComp {
 
-				BuildingDesc building;
-				UnitDesc unit;
+				BuildingComp buildingComp;
+				UnitComp unitComp;
 
 				TileComp(Position pos) {
 					super(ArenaPanel.this, pos);
@@ -516,15 +516,21 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				void tileUpdate() {
 					Position pos = pos();
 					TileDesc tile = builder.at(pos);
-					if (tile.building != null && building == null)
-						entityLayer.buildings.put(building = tile.building,
-								new BuildingComp(ArenaPanel.this, pos, building));
-					if (tile.building == null && building != null)
-						buildings.remove(building).clear();
-					if (tile.unit != null && unit == null)
-						units.put(unit = tile.unit, new UnitComp(ArenaPanel.this, pos, unit));
-					if (tile.unit == null && unit != null)
-						units.remove(unit).clear();
+
+					if (buildingComp != null && tile.building != buildingComp.building()) {
+						buildings.remove(buildingComp.building()).clear();
+						buildingComp = null;
+					}
+					if (tile.building != null && buildingComp == null)
+						entityLayer.buildings.put(tile.building,
+								buildingComp = new BuildingComp(ArenaPanel.this, pos, tile.building));
+
+					if (unitComp != null && tile.unit != unitComp.unit()) {
+						units.remove(unitComp.unit()).clear();
+						unitComp = null;
+					}
+					if (tile.unit != null && unitComp == null)
+						units.put(tile.unit, unitComp = new UnitComp(ArenaPanel.this, pos, tile.unit));
 				}
 
 			}
