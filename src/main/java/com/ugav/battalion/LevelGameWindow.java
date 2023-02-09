@@ -14,6 +14,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,12 +24,14 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -212,6 +215,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 			implements Clearable {
 
 		private Position selection;
+		private UnitMenu unitMenu;
 
 		private final DataChangeRegister register = new DataChangeRegister();
 
@@ -219,6 +223,8 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 		ArenaPanel() {
 			register.register(entityLayer.onTileClick, e -> tileClicked(e.pos));
+
+			register.register(onMapMove, e -> closeUnitMenu());
 
 			updateArenaSize(game.getWidth(), game.getHeight());
 		}
@@ -245,16 +251,13 @@ class LevelGameWindow extends JPanel implements Clearable {
 			super.clear();
 		}
 
-		@Override
-		public Dimension getPreferredSize() {
-			return new Dimension(TILE_SIZE_PIXEL * DISPLAYED_ARENA_WIDTH, TILE_SIZE_PIXEL * DISPLAYED_ARENA_HEIGHT);
-		}
-
 		private boolean isUnitSelected() {
 			return selection != null && game.getTile(selection).hasUnit();
 		}
 
 		private void tileClicked(Position pos) {
+			closeUnitMenu();
+
 			if (game == null || isActionSuspended())
 				return;
 			if (selection == null) {
@@ -303,7 +306,11 @@ class LevelGameWindow extends JPanel implements Clearable {
 			Tile targetTile = game.getTile(target);
 			Unit selectedUnit = game.getTile(selection).getUnit();
 
-			if (!game.arena().isUnitVisible(target, selectedUnit.getTeam())) {
+			if (selection.equals(target)) {
+				/* double click */
+				openUnitMenu(selectedUnit);
+
+			} else if (!game.arena().isUnitVisible(target, selectedUnit.getTeam())) {
 				if (entityLayer().reachableMap.contains(target))
 					entityLayer().unitMove(selectedUnit, target);
 				clearSelection();
@@ -315,6 +322,37 @@ class LevelGameWindow extends JPanel implements Clearable {
 			} else {
 				clearSelection();
 			}
+		}
+
+		void closeUnitMenu() {
+			if (unitMenu == null)
+				return;
+			unitMenu.setVisible(false);
+			remove(unitMenu);
+			unitMenu = null;
+		}
+
+		private void openUnitMenu(Unit unit) {
+			closeUnitMenu();
+			clearSelection();
+
+			unitMenu = new UnitMenu(unit);
+			add(unitMenu, JLayeredPane.POPUP_LAYER);
+			Dimension unitMenuSize = unitMenu.getPreferredSize();
+
+			int unitXMiddle = displayedX((unit.getPos().x + 0.5) * TILE_SIZE_PIXEL);
+			int x = unitXMiddle - unitMenuSize.width / 2;
+			x = Math.max(0, Math.min(x, getWidth() - unitMenuSize.width));
+
+			int unitY = displayedY(unit.getPos().y * TILE_SIZE_PIXEL);
+			int yOverlap = (int) (TILE_SIZE_PIXEL * 0.25);
+			int y = unitY - unitMenuSize.height + yOverlap;
+			y = Math.max(0, Math.min(y, getHeight() - unitMenuSize.height));
+			if (y + unitMenuSize.height > unitY + yOverlap)
+				y = unitY + TILE_SIZE_PIXEL - yOverlap;
+
+			unitMenu.setBounds(x, y, unitMenuSize.width, unitMenuSize.height);
+			revalidate();
 		}
 
 		private void clearSelection() {
@@ -347,6 +385,12 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 				register.register(game.onUnitAdd(), e -> {
 					addUnitComp(e.unit);
+					repaint();
+				});
+				register.register(game.onUnitRemove(), e -> {
+					if (e.unit.getPos().equals(selection))
+						clearSelection();
+					units.remove(e.unit).clear();
 					repaint();
 				});
 				register.register(game.arena().onEntityChange, e -> {
@@ -521,8 +565,6 @@ class LevelGameWindow extends JPanel implements Clearable {
 						buildings.put(building, new BuildingComp(ArenaPanel.this, pos, building));
 					}
 				}
-
-				setPreferredSize(getPreferredSize());
 			}
 
 			private void addUnitComp(Unit unit) {
@@ -636,6 +678,59 @@ class LevelGameWindow extends JPanel implements Clearable {
 					}
 				}
 
+			}
+
+		}
+
+		private class UnitMenu extends JPanel {
+
+			private static final long serialVersionUID = 1L;
+
+			UnitMenu(Unit unit) {
+				super(new GridLayout(1, 0));
+
+				/* Transparent background, draw only buttons */
+				setOpaque(false);
+
+				if (!unit.type.transportUnits) {
+					boolean transportAirEn = unit.type.category == Unit.Category.Land
+							&& Unit.Type.AirTransporter.canStandOn(getTerrain(unit.getPos()));
+					createUnitMenuButton(Images.Label.UnitMenuTransportAir, transportAirEn,
+							e -> gameAction(() -> game.unitTransport(unit, Unit.Type.AirTransporter)));
+
+					boolean transportWaterEn = unit.type.category == Unit.Category.Land
+							&& Unit.Type.ShipTransporter.canStandOn(getTerrain(unit.getPos()));
+					createUnitMenuButton(Images.Label.UnitMenuTransportWater, transportWaterEn,
+							e -> gameAction(() -> game.unitTransport(unit, Unit.Type.ShipTransporter)));
+				} else {
+					Unit transportedUnit = unit.getTransportedUnit();
+
+					boolean transportFinishEn = transportedUnit.type.canStandOn(getTerrain(unit.getPos()));
+					createUnitMenuButton(Images.Label.UnitMenuTransportFinish, transportFinishEn,
+							e -> gameAction(() -> game.transportFinish(unit)));
+				}
+
+				boolean repairEn = unit.getHealth() < unit.type.health;
+				createUnitMenuButton(Images.Label.UnitMenuRepair, repairEn, e -> System.out.println("UnitMenuRepair"));
+
+				createUnitMenuButton(Images.Label.UnitMenuCancel, true, e -> {
+				});
+			}
+
+			private void createUnitMenuButton(Images.Label label, boolean enable, ActionListener l) {
+				BufferedImage img = Images.getImage(label);
+				if (!enable)
+					img = Utils.transparentImg(img, 0.5);
+				JButton button = new JButton(new ImageIcon(img));
+				button.setBorder(BorderFactory.createEmptyBorder());
+				button.setContentAreaFilled(false);
+				button.setPreferredSize(new Dimension(img.getWidth(), img.getHeight()));
+				if (enable)
+					button.addActionListener(e -> {
+						closeUnitMenu();
+						l.actionPerformed(e);
+					});
+				add(button);
 			}
 
 		}

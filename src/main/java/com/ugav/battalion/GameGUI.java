@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 import javax.swing.SwingUtilities;
 
@@ -126,9 +127,21 @@ class GameGUI implements Game {
 	}
 
 	@Override
-	public void buildUnit(Building factory, Type unitType) {
+	public Unit buildUnit(Building factory, Type unitType) {
 		checkCorrectThread();
-		run(() -> game.buildUnit(factory, unitType));
+		return run(() -> game.buildUnit(factory, unitType));
+	}
+
+	@Override
+	public Unit unitTransport(Unit transportedUnit, Unit.Type transportType) {
+		checkCorrectThread();
+		return run(() -> game.unitTransport(transportedUnit, transportType));
+	}
+
+	@Override
+	public Unit transportFinish(Unit trasporterUnit) {
+		checkCorrectThread();
+		return run(() -> game.transportFinish(trasporterUnit));
 	}
 
 	@Override
@@ -167,6 +180,14 @@ class GameGUI implements Game {
 		} catch (InvocationTargetException | InterruptedException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private static <R> R run(Supplier<R> runnable) {
+		Utils.Holder<R> holder = new Utils.Holder<>();
+		run(() -> {
+			holder.val = runnable.get();
+		});
+		return holder.val;
 	}
 
 }

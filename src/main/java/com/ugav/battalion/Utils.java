@@ -1,5 +1,6 @@
 package com.ugav.battalion;
 
+import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.Image;
@@ -184,6 +185,15 @@ public class Utils {
 		bGr.drawImage(img, 0, 0, null);
 		bGr.dispose();
 		return bimage;
+	}
+
+	public static BufferedImage transparentImg(Image img, double alpha) {
+		BufferedImage tImg = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2 = tImg.createGraphics();
+		g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) alpha));
+		g2.drawImage(img, 0, 0, null);
+		g2.dispose();
+		return tImg;
 	}
 
 	public static class Holder<T> {

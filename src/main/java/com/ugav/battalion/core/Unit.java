@@ -103,8 +103,7 @@ public class Unit extends Entity {
 	}
 
 	boolean isAttackValid(Unit target) {
-		return target.getTeam() != getTeam() && getAttackableMap().contains(target.getPos())
-				&& type.canAttack.contains(target.type.category);
+		return target.getTeam() != getTeam() && getAttackableMap().contains(target.getPos()) && canAttack(target);
 	}
 
 	public enum Category {
@@ -239,8 +238,8 @@ public class Unit extends Entity {
 
 		public final Category category;
 		public final Weapon weapon;
-		public final Set<Terrain.Category> canStand;
-		public final Set<Category> canAttack;
+		private final Set<Terrain.Category> canStand;
+		private final Set<Category> canAttack;
 		public final int health;
 		public final int damage;
 		public final int moveLimit;
@@ -262,6 +261,14 @@ public class Unit extends Entity {
 			this.invisible = builder.tech.contains(Tech.Invisible);
 			this.transportUnits = builder.tech.contains(Tech.UnitTransporter);
 		}
+
+		public boolean canStandOn(Terrain terrain) {
+			return canStand.contains(terrain.category);
+		}
+	}
+
+	public boolean canAttack(Unit other) {
+		return type.canAttack.contains(other.type.category);
 	}
 
 	public Position.Bitmap getReachableMap() {
@@ -298,7 +305,7 @@ public class Unit extends Entity {
 		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
 			for (Position p : arena.positions()) {
 				Tile tile = arena.at(p);
-				if (distanceMap[p.xInt()][p.yInt()] >= 0 || !type.canStand.contains(tile.getTerrain().category))
+				if (distanceMap[p.xInt()][p.yInt()] >= 0 || !type.canStandOn(tile.getTerrain()))
 					continue;
 				if (tile.hasUnit() && !(invisiableEnable && !arena.isUnitVisible(p, getTeam()))
 						&& tile.getUnit().getTeam() != getTeam())
@@ -375,8 +382,7 @@ public class Unit extends Entity {
 				if (!arena.at(neighbor).hasUnit() || (invisiableEnable && !arena.isUnitVisible(neighbor, getTeam())))
 					continue;
 				Unit other = arena.at(neighbor).getUnit();
-				attackableMap[neighbor.xInt()][neighbor.yInt()] = other.getTeam() != getTeam()
-						&& type.canAttack.contains(other.type.category);
+				attackableMap[neighbor.xInt()][neighbor.yInt()] = other.getTeam() != getTeam() && canAttack(other);
 			}
 		}
 
@@ -391,7 +397,7 @@ public class Unit extends Entity {
 			Unit other = arena.at(p).getUnit();
 			if (!(type.weapon.minRange <= distance && distance <= type.weapon.maxRange) || other.getTeam() == getTeam())
 				return false;
-			return type.canAttack.contains(other.type.category);
+			return canAttack(other);
 
 		});
 	}

@@ -71,7 +71,7 @@ public class Building extends Entity {
 		ControllerWater(0, Tech.BuildOnLandFlat, Tech.AllowUnitBuildWater),
 		ControllerAir(0, Tech.BuildOnLandFlat, Tech.AllowUnitBuildAir);
 
-		public final Set<Terrain.Category> canBuildOn;
+		private final Set<Terrain.Category> canBuildOn;
 		public final int moneyGain;
 		public final boolean canBuildUnits;
 		public final boolean allowUnitBuildLand;
@@ -90,6 +90,10 @@ public class Building extends Entity {
 			this.allowUnitBuildLand = builder.tech.contains(Tech.AllowUnitBuildLand);
 			this.allowUnitBuildWater = builder.tech.contains(Tech.AllowUnitBuildWater);
 			this.allowUnitBuildAir = builder.tech.contains(Tech.AllowUnitBuildAir);
+		}
+
+		public boolean canBuildOn(Terrain terrain) {
+			return canBuildOn.contains(terrain.category);
 		}
 	}
 

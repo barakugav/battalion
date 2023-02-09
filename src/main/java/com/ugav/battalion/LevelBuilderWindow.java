@@ -422,14 +422,14 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					BuildingDesc building = null;
 					if (tile.hasBuilding()) {
 						BuildingDesc oldBuilding = tile.building;
-						if (oldBuilding.type.canBuildOn.contains(terrain.category))
+						if (oldBuilding.type.canBuildOn(terrain))
 							building = oldBuilding;
 					}
 
 					UnitDesc unit = null;
 					if (tile.hasUnit()) {
 						UnitDesc oldUnit = tile.unit;
-						if (oldUnit.type.canStand.contains(terrain.category))
+						if (oldUnit.type.canStandOn(terrain))
 							unit = oldUnit;
 					}
 
@@ -437,7 +437,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 				} else if (selectedObj instanceof BuildingDesc) {
 					BuildingDesc building = BuildingDesc.copyOf((BuildingDesc) selectedObj);
-					if (building.type.canBuildOn.contains(tile.terrain.category))
+					if (building.type.canBuildOn(tile.terrain))
 						builder.setTile(pos, tile.terrain, building, tile.unit);
 					// TODO else user message
 
@@ -449,7 +449,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 							&& !unit.type.transportUnits && unit.type.category == Category.Land)
 						builder.setTile(pos, tile.terrain, tile.building, UnitDesc.transporter(oldUnit.type, unit));
 
-					else if (unit.type.canStand.contains(tile.terrain.category))
+					else if (unit.type.canStandOn(tile.terrain))
 						builder.setTile(pos, tile.terrain, tile.building, unit);
 					// TODO else user message
 

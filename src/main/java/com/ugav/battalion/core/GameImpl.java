@@ -225,7 +225,7 @@ class GameImpl implements Game {
 	}
 
 	@Override
-	public void buildUnit(Building factory, Unit.Type unitType) {
+	public Unit buildUnit(Building factory, Unit.Type unitType) {
 		Position pos = factory.getPos();
 		if (!factory.type.canBuildUnits || !factory.isActive() || arena.at(pos).hasUnit())
 			throw new IllegalStateException();
@@ -238,11 +238,62 @@ class GameImpl implements Game {
 			throw new IllegalStateException();
 
 		data.money -= sale.price;
-		Unit unit = arena.createUnit(UnitDesc.of(unitType, team), pos);
+		Unit unit = Unit.valueOf(arena, UnitDesc.of(unitType, team));
+		unit.setPos(pos);
 		arena.at(pos).setUnit(unit);
 
 		onMoneyChange.notify(new MoneyChange(this, team, data.money));
 		onUnitAdd.notify(new UnitAdd(this, unit));
+
+		return unit;
+	}
+
+	@Override
+	public Unit unitTransport(Unit transportedUnit, Unit.Type transportType) {
+		Position pos = transportedUnit.getPos();
+
+		if (!transportedUnit.isActive() || transportedUnit.type.category != Unit.Category.Land)
+			throw new IllegalArgumentException();
+		if (!transportType.transportUnits || !transportType.canStandOn(arena.at(pos).getTerrain()))
+			throw new IllegalArgumentException();
+
+		transportedUnit.setActive(false);
+		arena.at(pos).removeUnit();
+		onUnitRemove.notify(new UnitRemove(this, transportedUnit));
+
+		Unit newUnit = Unit.newTrasportUnit(arena, transportType, transportedUnit);
+		arena.at(pos).setUnit(newUnit);
+		newUnit.setPos(pos);
+		newUnit.setActive(false);
+
+		// TODO money
+
+		onUnitAdd.notify(new UnitAdd(this, newUnit));
+
+		return newUnit;
+	}
+
+	@Override
+	public Unit transportFinish(Unit trasporterUnit) {
+		Position pos = trasporterUnit.getPos();
+
+		if (!trasporterUnit.isActive() || !trasporterUnit.type.transportUnits)
+			throw new IllegalArgumentException();
+		Unit transportedUnit = trasporterUnit.getTransportedUnit();
+		if (!transportedUnit.type.canStandOn(arena.at(pos).getTerrain()))
+			throw new IllegalArgumentException();
+
+		trasporterUnit.setActive(false);
+		arena.at(pos).removeUnit();
+		onUnitRemove.notify(new UnitRemove(this, trasporterUnit));
+
+		arena.at(pos).setUnit(transportedUnit);
+		transportedUnit.setPos(pos);
+		transportedUnit.setActive(true);
+
+		onUnitAdd.notify(new UnitAdd(this, transportedUnit));
+
+		return transportedUnit;
 	}
 
 	@Override

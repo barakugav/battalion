@@ -38,7 +38,11 @@ public interface Game {
 
 	public boolean isAttackValid(Unit attacker, Unit target);
 
-	public void buildUnit(Building factory, Unit.Type unitType);
+	public Unit buildUnit(Building factory, Unit.Type unitType);
+
+	public Unit unitTransport(Unit transportedUnit, Unit.Type transportType);
+
+	public Unit transportFinish(Unit trasportedUnit);
 
 	public DataChangeNotifier<UnitAdd> onUnitAdd();
 

@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
+import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
@@ -31,7 +32,7 @@ import com.ugav.battalion.core.Position.Direction;
 import com.ugav.battalion.core.Terrain;
 
 abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileComp, BuildingCompImpl extends AbstractArenaPanel.BuildingComp, UnitCompImpl extends AbstractArenaPanel.UnitComp>
-		extends JPanel implements Clearable {
+		extends JLayeredPane implements Clearable {
 
 	private int arenaWidth;
 	private int arenaHeight;
@@ -41,6 +42,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 	final EntityLayer<TileCompImpl, BuildingCompImpl, UnitCompImpl> entityLayer;
 
 	private final KeyListener keyListener;
+	final DataChangeNotifier<DataEvent> onMapMove = new DataChangeNotifier<>();
 
 	static final int TILE_SIZE_PIXEL = 56;
 	static final int DISPLAYED_ARENA_WIDTH = Level.MINIMUM_WIDTH;
@@ -55,9 +57,11 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		mapPosX = mapPosY = 0;
 
 		entityLayer = createEntityLayer();
-		add(entityLayer);
+		add(entityLayer, JLayeredPane.DEFAULT_LAYER);
+		Dimension entityLayerSize = entityLayer.getPreferredSize();
+		entityLayer.setBounds(0, 0, entityLayerSize.width, entityLayerSize.height);
 
-		addKeyListener(keyListener = new KeyAdapter() {
+		entityLayer.addKeyListener(keyListener = new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				Position.Direction dir = keyToDir(e.getKeyCode());
@@ -106,6 +110,11 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		return new EntityLayer<>(this);
 	}
 
+	@Override
+	public Dimension getPreferredSize() {
+		return entityLayer.getPreferredSize();
+	}
+
 	void updateArenaSize(int width, int height) {
 		if (!(DISPLAYED_ARENA_WIDTH <= width && width < 100) || !(DISPLAYED_ARENA_HEIGHT <= height && height < 100))
 			throw new IllegalArgumentException("illegal arena size: " + width + " " + height);
@@ -117,6 +126,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		Position mapPosNew = mapPos.add(dir);
 		if (!mapPosNew.isInRect(arenaWidth - DISPLAYED_ARENA_WIDTH, arenaHeight - DISPLAYED_ARENA_HEIGHT))
 			return;
+		onMapMove.notify(new DataEvent(this));
 		mapPos = mapPosNew;
 		repaint();
 	}
@@ -124,6 +134,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 	void mapViewSet(Position pos) {
 		if (!pos.isInRect(arenaWidth - DISPLAYED_ARENA_WIDTH, arenaHeight - DISPLAYED_ARENA_HEIGHT))
 			return;
+		onMapMove.notify(new DataEvent(this));
 		mapPos = pos;
 		mapPosX = (int) (pos.x * TILE_SIZE_PIXEL);
 		mapPosY = (int) (pos.y * TILE_SIZE_PIXEL);
@@ -150,7 +161,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 	public void clear() {
 		mapMoveTimer.stop();
 
-		removeKeyListener(keyListener);
+		entityLayer.removeKeyListener(keyListener);
 
 		entityLayer.clear();
 	}
@@ -199,8 +210,6 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 			});
 			setFocusable(true);
 			requestFocusInWindow();
-
-			setPreferredSize(getPreferredSize());
 		}
 
 		@Override

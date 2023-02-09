@@ -144,7 +144,7 @@ public class Arena {
 		return building;
 	}
 
-	Unit createUnit(UnitDesc desc, Position pos) {
+	private Unit createUnit(UnitDesc desc, Position pos) {
 		if (desc == null)
 			return null;
 		Unit unit = Unit.valueOf(this, desc);

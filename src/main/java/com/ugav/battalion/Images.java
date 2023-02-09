@@ -28,7 +28,7 @@ class Images {
 		/* GUI */
 		Selection, Reachable, Attackable, UnitLocked, Delete,
 
-		UnitMenuTransportAir, UnitMenuTransportWater, UnitMenuRepair, UnitMenuCancel,
+		UnitMenuTransportAir, UnitMenuTransportWater, UnitMenuTransportFinish, UnitMenuRepair, UnitMenuCancel,
 	}
 
 	private static final Map<Terrain, BufferedImage> terrains;
@@ -152,6 +152,7 @@ class Images {
 		};
 		addUnitMenuIcon.accept(Label.UnitMenuTransportAir, "img/gui/unit_menu_transport_air.png");
 		addUnitMenuIcon.accept(Label.UnitMenuTransportWater, "img/gui/unit_menu_transport_water.png");
+		addUnitMenuIcon.accept(Label.UnitMenuTransportFinish, "img/gui/unit_menu_transport_finish.png");
 		addUnitMenuIcon.accept(Label.UnitMenuRepair, "img/gui/unit_menu_repair.png");
 		addUnitMenuIcon.accept(Label.UnitMenuCancel, "img/gui/unit_menu_cancel.png");
 		ect = Collections.unmodifiableMap(ect0);

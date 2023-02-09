@@ -88,10 +88,10 @@ public class LevelBuilder {
 		if (!pos.isInRect(getWidth() - 1, getHeight() - 1))
 			return "out of bound";
 		if (tile.hasBuilding())
-			if (!tile.building.type.canBuildOn.contains(tile.terrain.category))
+			if (!tile.building.type.canBuildOn(tile.terrain))
 				return "building can't stand on terrain";
 		if (tile.hasUnit())
-			if (!tile.unit.type.canStand.contains(tile.terrain.category))
+			if (!tile.unit.type.canStandOn(tile.terrain))
 				return "unit can't stand on terrain";
 
 		Function<Position, Terrain> terrain = p -> pos.equals(p) ? tile.terrain : tiles[p.xInt()][p.yInt()].terrain;
