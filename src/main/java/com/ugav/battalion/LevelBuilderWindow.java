@@ -376,31 +376,30 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 	}
 
-	private class ArenaPanel extends AbstractArenaPanel<ArenaPanel.TileComp, BuildingComp, ArenaPanel.UnitComp>
+	private class ArenaPanel
+			extends AbstractArenaPanel<ArenaPanel.EntityLayer.TileComp, BuildingComp, ArenaPanel.EntityLayer.UnitComp>
 			implements Clearable {
 
 		private final DataChangeRegister register = new DataChangeRegister();
 
 		private static final long serialVersionUID = 1L;
 
+		@Override
+		EntityLayer createEntityLayer() {
+			return new EntityLayer(this);
+		}
+
 		ArenaPanel() {
-			register.register(builder.onTileChange, e -> {
-				tiles.computeIfAbsent(e.pos, TileComp::new).tileUpdate();
-				repaint(); /* TODO find a way to repaint only the changed tile */
-			});
 			register.register(builder.onResetChange, e -> reset());
-			register.register(onTileClick, e -> tileClicked(e.pos));
+			register.register(entityLayer.onTileClick, e -> tileClicked(e.pos));
+		}
+
+		EntityLayer entityLayer() {
+			return (EntityLayer) entityLayer;
 		}
 
 		void reset() {
-			removeEnteriesComp();
-
-			for (Position pos : Utils.iterable(new Position.Iterator2D(builder.getWidth(), builder.getHeight()))) {
-				TileComp tileComp = new TileComp(pos);
-				tiles.put(pos, tileComp);
-				tileComp.tileUpdate();
-			}
-
+			entityLayer().reset();
 			updateArenaSize(builder.getWidth(), builder.getHeight());
 			mapViewSet(Position.of(0, 0));
 			repaint();
@@ -410,11 +409,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		public void clear() {
 			register.unregisterAll();
 			super.clear();
-		}
-
-		@Override
-		protected void paintComponent(Graphics g) {
-			super.paintComponent(g);
 		}
 
 		private void tileClicked(Position pos) {
@@ -484,42 +478,71 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			return u.type.transportUnits ? u.getTransportedUnit() : null;
 		}
 
-		private class TileComp extends AbstractArenaPanel.TileComp {
+		private class EntityLayer
+				extends AbstractArenaPanel.EntityLayer<EntityLayer.TileComp, BuildingComp, EntityLayer.UnitComp> {
 
-			BuildingDesc building;
-			UnitDesc unit;
+			private static final long serialVersionUID = 1L;
 
-			TileComp(Position pos) {
-				super(ArenaPanel.this, pos);
+			private final DataChangeRegister register = new DataChangeRegister();
+
+			EntityLayer(ArenaPanel arena) {
+				super(arena);
+
+				register.register(builder.onTileChange, e -> {
+					tiles.computeIfAbsent(e.pos, TileComp::new).tileUpdate();
+					repaint(); /* TODO find a way to repaint only the changed tile */
+				});
 			}
 
-			void tileUpdate() {
-				Position pos = pos();
-				TileDesc tile = builder.at(pos);
-				if (tile.building != null && building == null)
-					buildings.put(building = tile.building, new BuildingComp(ArenaPanel.this, pos, building));
-				if (tile.building == null && building != null)
-					buildings.remove(building).clear();
-				if (tile.unit != null && unit == null)
-					units.put(unit = tile.unit, new UnitComp(ArenaPanel.this, pos, unit));
-				if (tile.unit == null && unit != null)
-					units.remove(unit).clear();
+			void reset() {
+				removeAllEntityComps();
+
+				for (Position pos : Utils.iterable(new Position.Iterator2D(builder.getWidth(), builder.getHeight()))) {
+					TileComp tileComp = new TileComp(pos);
+					tiles.put(pos, tileComp);
+					tileComp.tileUpdate();
+				}
 			}
 
-		}
+			private class TileComp extends AbstractArenaPanel.TileComp {
 
-		private class UnitComp extends AbstractArenaPanel.UnitComp {
+				BuildingDesc building;
+				UnitDesc unit;
 
-			private final Position pos;
+				TileComp(Position pos) {
+					super(ArenaPanel.this, pos);
+				}
 
-			UnitComp(AbstractArenaPanel<?, ?, ?> arena, Position pos, UnitDesc unit) {
-				super(arena, unit);
-				this.pos = Objects.requireNonNull(pos);
+				void tileUpdate() {
+					Position pos = pos();
+					TileDesc tile = builder.at(pos);
+					if (tile.building != null && building == null)
+						entityLayer.buildings.put(building = tile.building,
+								new BuildingComp(ArenaPanel.this, pos, building));
+					if (tile.building == null && building != null)
+						buildings.remove(building).clear();
+					if (tile.unit != null && unit == null)
+						units.put(unit = tile.unit, new UnitComp(ArenaPanel.this, pos, unit));
+					if (tile.unit == null && unit != null)
+						units.remove(unit).clear();
+				}
+
 			}
 
-			@Override
-			Position pos() {
-				return pos;
+			private class UnitComp extends AbstractArenaPanel.UnitComp {
+
+				private final Position pos;
+
+				UnitComp(AbstractArenaPanel<?, ?, ?> arena, Position pos, UnitDesc unit) {
+					super(arena, unit);
+					this.pos = Objects.requireNonNull(pos);
+				}
+
+				@Override
+				Position pos() {
+					return pos;
+				}
+
 			}
 
 		}

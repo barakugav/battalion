@@ -26,7 +26,9 @@ class Images {
 
 	enum Label {
 		/* GUI */
-		Selection, Reachable, Attackable, UnitLocked, Delete;
+		Selection, Reachable, Attackable, UnitLocked, Delete,
+
+		UnitMenuTransportAir, UnitMenuTransportWater, UnitMenuRepair, UnitMenuCancel,
 	}
 
 	private static final Map<Terrain, BufferedImage> terrains;
@@ -139,6 +141,19 @@ class Images {
 		ect0.put(Label.Attackable, loadImg("img/gui/attackabe.png"));
 		ect0.put(Label.UnitLocked, loadImg("img/gui/unit_locked.png"));
 		ect0.put(Label.Delete, loadImg("img/gui/delete.png"));
+
+		BiConsumer<Label, String> addUnitMenuIcon = (label, path) -> {
+			BufferedImage img = loadImg("img/gui/unit_menu_box.png");
+			BufferedImage icon = loadImg(path);
+			if (img.getWidth() != icon.getWidth() || img.getHeight() != icon.getHeight())
+				throw new IllegalArgumentException();
+			img.getGraphics().drawImage(icon, 0, 0, null);
+			ect0.put(label, img);
+		};
+		addUnitMenuIcon.accept(Label.UnitMenuTransportAir, "img/gui/unit_menu_transport_air.png");
+		addUnitMenuIcon.accept(Label.UnitMenuTransportWater, "img/gui/unit_menu_transport_water.png");
+		addUnitMenuIcon.accept(Label.UnitMenuRepair, "img/gui/unit_menu_repair.png");
+		addUnitMenuIcon.accept(Label.UnitMenuCancel, "img/gui/unit_menu_cancel.png");
 		ect = Collections.unmodifiableMap(ect0);
 	}
 

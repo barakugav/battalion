@@ -33,43 +33,14 @@ import com.ugav.battalion.core.Terrain;
 abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileComp, BuildingCompImpl extends AbstractArenaPanel.BuildingComp, UnitCompImpl extends AbstractArenaPanel.UnitComp>
 		extends JPanel implements Clearable {
 
-	final Map<Position, TileCompImpl> tiles;
-	final Map<Object, BuildingCompImpl> buildings;
-	final Map<Object, UnitCompImpl> units;
-
+	private int arenaWidth;
+	private int arenaHeight;
 	private Position mapPos;
 	private int mapPosX, mapPosY;
 	private final Timer mapMoveTimer;
-	private Position hovered;
+	final EntityLayer<TileCompImpl, BuildingCompImpl, UnitCompImpl> entityLayer;
 
-	private final MouseListener mouseListener;
-	private final MouseMotionListener mouseMotionListener;
 	private final KeyListener keyListener;
-
-	final DataChangeNotifier<HoverChangeEvent> onHoverChange = new DataChangeNotifier<>();
-	final DataChangeNotifier<TileClickEvent> onTileClick = new DataChangeNotifier<>();
-
-	static class HoverChangeEvent extends DataEvent {
-
-		final Position pos;
-
-		HoverChangeEvent(AbstractArenaPanel<?, ?, ?> source, Position pos) {
-			super(source);
-			this.pos = pos;
-		}
-
-	}
-
-	static class TileClickEvent extends DataEvent {
-
-		final Position pos;
-
-		TileClickEvent(AbstractArenaPanel<?, ?, ?> source, Position pos) {
-			super(source);
-			this.pos = pos;
-		}
-
-	}
 
 	static final int TILE_SIZE_PIXEL = 56;
 	static final int DISPLAYED_ARENA_WIDTH = Level.MINIMUM_WIDTH;
@@ -79,33 +50,17 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 	private static final int MapMoveSpeed = 4;
 	private static final long serialVersionUID = 1L;
 
-	AbstractArenaPanel() {
-		tiles = new HashMap<>();
-		buildings = new IdentityHashMap<>();
-		units = new IdentityHashMap<>();
+	EntityLayer<TileCompImpl, BuildingCompImpl, UnitCompImpl> createEntityLayer() {
+		return new EntityLayer<>(this);
+	}
 
+	AbstractArenaPanel() {
 		mapPos = Position.of(0, 0);
 		mapPosX = mapPosY = 0;
 
-		addMouseListener(mouseListener = new MouseAdapter() {
-			@Override
-			public void mousePressed(MouseEvent e) {
-				requestFocusInWindow();
-				int clickx = displayedXInv(e.getX()) / TILE_SIZE_PIXEL;
-				int clicky = displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
-				onTileClick.notify(new TileClickEvent(AbstractArenaPanel.this, Position.of(clickx, clicky)));
-			}
-		});
-		addMouseMotionListener(mouseMotionListener = new MouseAdapter() {
-			@Override
-			public void mouseMoved(MouseEvent e) {
-				int x = displayedXInv(e.getX()) / TILE_SIZE_PIXEL, y = displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
-				if (hovered == null || hovered.x != x || hovered.y != y) {
-					hovered = Position.of(x, y);
-					onHoverChange.notify(new HoverChangeEvent(AbstractArenaPanel.this, hovered));
-				}
-			}
-		});
+		entityLayer = createEntityLayer();
+		add(entityLayer);
+
 		addKeyListener(keyListener = new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
@@ -134,8 +89,6 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 			}
 		});
-		setFocusable(true);
-		requestFocusInWindow();
 
 		mapMoveTimer = new Timer(MapMoveTimerDelay, e -> {
 			double dx = mapPos.x * TILE_SIZE_PIXEL - mapPosX;
@@ -151,12 +104,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		});
 		mapMoveTimer.setRepeats(true);
 		mapMoveTimer.start();
-
-		setPreferredSize(getPreferredSize());
 	}
-
-	private int arenaWidth;
-	private int arenaHeight;
 
 	void updateArenaSize(int width, int height) {
 		if (!(DISPLAYED_ARENA_WIDTH <= width && width < 100) || !(DISPLAYED_ARENA_HEIGHT <= height && height < 100))
@@ -202,43 +150,99 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 	public void clear() {
 		mapMoveTimer.stop();
 
-		removeMouseListener(mouseListener);
-		removeMouseMotionListener(mouseMotionListener);
 		removeKeyListener(keyListener);
 
-		removeEnteriesComp();
+		entityLayer.clear();
 	}
 
-	void removeEnteriesComp() {
-		for (TileCompImpl tile : tiles.values())
-			tile.clear();
-		tiles.clear();
-		for (BuildingCompImpl building : buildings.values())
-			building.clear();
-		buildings.clear();
-		for (UnitCompImpl unit : units.values())
-			unit.clear();
-		units.clear();
-	}
+	static class EntityLayer<TileCompImpl extends AbstractArenaPanel.TileComp, BuildingCompImpl extends AbstractArenaPanel.BuildingComp, UnitCompImpl extends AbstractArenaPanel.UnitComp>
+			extends JPanel implements Clearable {
 
-	@Override
-	protected void paintComponent(Graphics g) {
-		List<EntityComp> comps = new ArrayList<>(tiles.size() + buildings.size() + units.size());
-		comps.addAll(tiles.values());
-		comps.addAll(buildings.values());
-		comps.addAll(units.values());
-		comps.sort((o1, o2) -> o1.pos().compareTo(o2.pos()));
-		for (EntityComp comp : comps)
-			if (!comp.isPaintDelayed())
-				comp.paintComponent(g);
-		for (EntityComp comp : comps)
-			if (comp.isPaintDelayed())
-				comp.paintComponent(g);
-	}
+		private final AbstractArenaPanel<TileCompImpl, BuildingCompImpl, UnitCompImpl> arena;
 
-	@Override
-	public Dimension getPreferredSize() {
-		return new Dimension(TILE_SIZE_PIXEL * DISPLAYED_ARENA_WIDTH, TILE_SIZE_PIXEL * DISPLAYED_ARENA_HEIGHT);
+		final Map<Position, TileCompImpl> tiles = new HashMap<>();
+		final Map<Object, BuildingCompImpl> buildings = new IdentityHashMap<>();
+		final Map<Object, UnitCompImpl> units = new IdentityHashMap<>();
+
+		private Position hovered;
+
+		final DataChangeNotifier<HoverChangeEvent> onHoverChange = new DataChangeNotifier<>();
+		final DataChangeNotifier<TileClickEvent> onTileClick = new DataChangeNotifier<>();
+
+		private final MouseListener mouseListener;
+		private final MouseMotionListener mouseMotionListener;
+
+		private static final long serialVersionUID = 1L;
+
+		EntityLayer(AbstractArenaPanel<TileCompImpl, BuildingCompImpl, UnitCompImpl> arena) {
+			this.arena = Objects.requireNonNull(arena);
+
+			addMouseListener(mouseListener = new MouseAdapter() {
+				@Override
+				public void mousePressed(MouseEvent e) {
+					requestFocusInWindow();
+					int clickx = EntityLayer.this.arena.displayedXInv(e.getX()) / TILE_SIZE_PIXEL;
+					int clicky = EntityLayer.this.arena.displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
+					onTileClick.notify(new TileClickEvent(EntityLayer.this.arena, Position.of(clickx, clicky)));
+				}
+			});
+			addMouseMotionListener(mouseMotionListener = new MouseAdapter() {
+				@Override
+				public void mouseMoved(MouseEvent e) {
+					int x = EntityLayer.this.arena.displayedXInv(e.getX()) / TILE_SIZE_PIXEL,
+							y = EntityLayer.this.arena.displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
+					if (hovered == null || hovered.x != x || hovered.y != y) {
+						hovered = Position.of(x, y);
+						onHoverChange.notify(new HoverChangeEvent(EntityLayer.this.arena, hovered));
+					}
+				}
+			});
+			setFocusable(true);
+			requestFocusInWindow();
+
+			setPreferredSize(getPreferredSize());
+		}
+
+		@Override
+		protected void paintComponent(Graphics g) {
+			List<EntityComp> comps = new ArrayList<>(tiles.size() + buildings.size() + units.size());
+			comps.addAll(tiles.values());
+			comps.addAll(buildings.values());
+			comps.addAll(units.values());
+			comps.sort((o1, o2) -> o1.pos().compareTo(o2.pos()));
+			for (EntityComp comp : comps)
+				if (!comp.isPaintDelayed())
+					comp.paintComponent(g);
+			for (EntityComp comp : comps)
+				if (comp.isPaintDelayed())
+					comp.paintComponent(g);
+		}
+
+		@Override
+		public Dimension getPreferredSize() {
+			return new Dimension(TILE_SIZE_PIXEL * DISPLAYED_ARENA_WIDTH, TILE_SIZE_PIXEL * DISPLAYED_ARENA_HEIGHT);
+		}
+
+		void removeAllEntityComps() {
+			for (TileCompImpl tile : tiles.values())
+				tile.clear();
+			tiles.clear();
+			for (BuildingCompImpl building : buildings.values())
+				building.clear();
+			buildings.clear();
+			for (UnitCompImpl unit : units.values())
+				unit.clear();
+			units.clear();
+		}
+
+		@Override
+		public void clear() {
+			removeMouseListener(mouseListener);
+			removeMouseMotionListener(mouseMotionListener);
+
+			removeAllEntityComps();
+		}
+
 	}
 
 	void drawRelativeToMap(Graphics g, Object obj, Position pos) {
@@ -363,8 +367,6 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 				}
 
 			} else if (terrain == Terrain.Shore) {
-				if (pos.x == 3 && pos.y == 2)
-					System.out.println();
 				arena.drawRelativeToMap(g, Terrain.ClearWater, pos);
 				Set<Direction> connections = EnumSet.noneOf(Direction.class);
 
@@ -481,6 +483,28 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 		@Override
 		public void clear() {
+		}
+
+	}
+
+	static class HoverChangeEvent extends DataEvent {
+
+		final Position pos;
+
+		HoverChangeEvent(AbstractArenaPanel<?, ?, ?> source, Position pos) {
+			super(source);
+			this.pos = pos;
+		}
+
+	}
+
+	static class TileClickEvent extends DataEvent {
+
+		final Position pos;
+
+		TileClickEvent(AbstractArenaPanel<?, ?, ?> source, Position pos) {
+			super(source);
+			this.pos = pos;
 		}
 
 	}

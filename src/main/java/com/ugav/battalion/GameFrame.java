@@ -35,7 +35,7 @@ class GameFrame extends JFrame {
 	}
 
 	void loadLevel(Level level) {
-		displayWindow(new LevelPanel(globals, level));
+		displayWindow(new LevelGameWindow(globals, level));
 	}
 
 	void loadLevelBuilder() {
