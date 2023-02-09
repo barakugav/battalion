@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import com.ugav.battalion.DataChangeNotifier;
-import com.ugav.battalion.DataEvent.EntityChange;
 import com.ugav.battalion.Utils;
+import com.ugav.battalion.core.Game.EntityChange;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.TileDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
@@ -20,7 +20,7 @@ public class Arena {
 	private final int height;
 	private final Tile[][] tiles;
 
-	public final DataChangeNotifier<EntityChange> onChange = new DataChangeNotifier<>();
+	public final DataChangeNotifier<EntityChange> onEntityChange = new DataChangeNotifier<>();
 
 	Arena(int width, int height, Tile[][] tiles) {
 		if (width <= 0 || height <= 0)

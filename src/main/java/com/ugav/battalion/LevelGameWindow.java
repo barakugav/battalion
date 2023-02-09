@@ -52,6 +52,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 	private final Game game;
 	private final ComputerPlayer computer = new ComputerPlayer.Random();
 	private final DebugPrintsManager debug;
+	private final DataChangeRegister register = new DataChangeRegister();
 
 	private volatile boolean actionsSuspended;
 
@@ -74,6 +75,14 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 		menu.initGame();
 		arenaPanel.initGame();
+
+		register.register(game.onGameEnd(), e -> {
+			debug.println("Game finished");
+			JOptionPane.showMessageDialog(this, "Winner: " + e.winner);
+			suspendActions();
+			// TODO
+		});
+
 		invalidate();
 		repaint();
 
@@ -113,6 +122,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 	@Override
 	public void clear() {
+		register.unregisterAll();
 		menu.clear();
 		arenaPanel.clear();
 		gameActionsThread.running = false;
@@ -146,14 +156,6 @@ class LevelGameWindow extends JPanel implements Clearable {
 	private void resumeActions() {
 		debug.println("Actions resumed");
 		actionsSuspended = false;
-	}
-
-	private void checkGameStatus() {
-		if (game.isFinished()) {
-			debug.println("Game finished");
-			JOptionPane.showMessageDialog(this, "TODO");
-			suspendActions();
-		}
 	}
 
 	private class SideMenu extends JPanel implements Clearable {
@@ -347,14 +349,13 @@ class LevelGameWindow extends JPanel implements Clearable {
 					addUnitComp(e.unit);
 					repaint();
 				});
-				register.register(game.arena().onChange, e -> {
+				register.register(game.arena().onEntityChange, e -> {
 					if (e.source instanceof Unit) {
 						Unit unit = (Unit) e.source;
 						UnitComp unitComp = units.get(unit);
 						if (unit.isDead()) {
 							units.remove(unit);
 							unitComp.clear();
-							checkGameStatus(); // Change to event-based flow
 						}
 					}
 					repaint();

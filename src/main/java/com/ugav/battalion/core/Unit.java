@@ -10,7 +10,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import com.ugav.battalion.DataEvent.EntityChange;
+import com.ugav.battalion.core.Game.EntityChange;
 import com.ugav.battalion.core.Level.UnitDesc;
 
 public class Unit extends Entity {
@@ -58,6 +58,8 @@ public class Unit extends Entity {
 	}
 
 	void setHealth(int health) {
+		if (this.health == health)
+			return;
 		this.health = health;
 		onChange().notify(new EntityChange(this));
 	}
@@ -67,6 +69,8 @@ public class Unit extends Entity {
 	}
 
 	void setPos(Position pos) {
+		if (Objects.equals(this.pos, pos))
+			return;
 		this.pos = pos;
 		onChange().notify(new EntityChange(this));
 	}

@@ -21,7 +21,7 @@ public class DataChangeNotifier<E extends DataEvent> {
 
 	public void notify(E event) {
 		for (DataListener<? super E> listener : listeners)
-			listener.onChange(event);
+			listener.onEvent(event);
 	}
 
 	public void clear() {

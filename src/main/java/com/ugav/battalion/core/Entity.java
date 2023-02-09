@@ -3,7 +3,7 @@ package com.ugav.battalion.core;
 import java.util.Objects;
 
 import com.ugav.battalion.DataChangeNotifier;
-import com.ugav.battalion.DataEvent.EntityChange;
+import com.ugav.battalion.core.Game.EntityChange;
 
 public abstract class Entity {
 
@@ -22,6 +22,8 @@ public abstract class Entity {
 	}
 
 	void setTeam(Team team) {
+		if (Objects.equals(this.team, team))
+			return;
 		this.team = Objects.requireNonNull(team);
 		onChange().notify(new EntityChange(this));
 	}
@@ -31,12 +33,14 @@ public abstract class Entity {
 	}
 
 	void setActive(boolean active) {
+		if (this.active == active)
+			return;
 		this.active = active;
 		onChange().notify(new EntityChange(this));
 	}
 
 	DataChangeNotifier<EntityChange> onChange() {
-		return arena.onChange;
+		return arena.onEntityChange;
 	}
 
 }

@@ -1,6 +1,7 @@
 package com.ugav.battalion.core;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.ugav.battalion.DataChangeNotifier;
 import com.ugav.battalion.DataEvent;
@@ -39,16 +40,72 @@ public interface Game {
 
 	public void buildUnit(Building factory, Unit.Type unitType);
 
-	public DataChangeNotifier<DataEvent.UnitAdd> onUnitAdd();
+	public DataChangeNotifier<UnitAdd> onUnitAdd();
 
-	public DataChangeNotifier<DataEvent.UnitRemove> onUnitRemove();
+	public DataChangeNotifier<UnitRemove> onUnitRemove();
 
-	public DataChangeNotifier<DataEvent.MoneyChange> onMoneyChange();
+	public DataChangeNotifier<MoneyChange> onMoneyChange();
 
 	public DataChangeNotifier<DataEvent> onTurnEnd();
 
+	public DataChangeNotifier<GameEnd> onGameEnd();
+
 	public static Game newInstance(Level level) {
 		return new GameImpl(level);
+	}
+
+	public static class EntityChange extends DataEvent {
+
+		public EntityChange(Entity source) {
+			super(Objects.requireNonNull(source));
+		}
+
+	}
+
+	public static class UnitAdd extends DataEvent {
+
+		public final Unit unit;
+
+		public UnitAdd(Game source, Unit unit) {
+			super(Objects.requireNonNull(source));
+			this.unit = Objects.requireNonNull(unit);
+		}
+
+	}
+
+	public static class UnitRemove extends DataEvent {
+
+		public final Unit unit;
+
+		public UnitRemove(Game source, Unit unit) {
+			super(Objects.requireNonNull(source));
+			this.unit = Objects.requireNonNull(unit);
+		}
+
+	}
+
+	public static class MoneyChange extends DataEvent {
+
+		public final Team team;
+		public final int newAmount;
+
+		public MoneyChange(Game source, Team team, int newAmount) {
+			super(Objects.requireNonNull(source));
+			this.team = Objects.requireNonNull(team);
+			this.newAmount = newAmount;
+		}
+
+	}
+
+	public static class GameEnd extends DataEvent {
+
+		public final Team winner;
+
+		public GameEnd(Game source, Team winner) {
+			super(Objects.requireNonNull(source));
+			this.winner = Objects.requireNonNull(winner);
+		}
+
 	}
 
 }

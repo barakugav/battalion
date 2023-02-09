@@ -23,34 +23,11 @@ class GameImpl implements Game {
 	private Team turn;
 	private Team winner;
 
-	final DataChangeNotifier<DataEvent.UnitAdd> onUnitAdd = new DataChangeNotifier<>();
-	final DataChangeNotifier<DataEvent.UnitRemove> onUnitRemove = new DataChangeNotifier<>();
-	final DataChangeNotifier<DataEvent.MoneyChange> onMoneyChange = new DataChangeNotifier<>();
+	final DataChangeNotifier<UnitAdd> onUnitAdd = new DataChangeNotifier<>();
+	final DataChangeNotifier<UnitRemove> onUnitRemove = new DataChangeNotifier<>();
+	final DataChangeNotifier<MoneyChange> onMoneyChange = new DataChangeNotifier<>();
 	final DataChangeNotifier<DataEvent> onTurnEnd = new DataChangeNotifier<>();
-
-	@Override
-	public DataChangeNotifier<DataEvent.UnitAdd> onUnitAdd() {
-		return onUnitAdd;
-	}
-
-	@Override
-	public DataChangeNotifier<DataEvent.UnitRemove> onUnitRemove() {
-		return onUnitRemove;
-	}
-
-	@Override
-	public DataChangeNotifier<DataEvent.MoneyChange> onMoneyChange() {
-		return onMoneyChange;
-	}
-
-	@Override
-	public DataChangeNotifier<DataEvent> onTurnEnd() {
-		return onTurnEnd;
-	}
-
-	private static class TeamData {
-		int money;
-	}
+	final DataChangeNotifier<GameEnd> onGameEnd = new DataChangeNotifier<>();
 
 	public GameImpl(Level level) {
 		arena = new Arena(level);
@@ -120,12 +97,6 @@ class GameImpl implements Game {
 
 	@Override
 	public void turnEnd() {
-		if (isFinished()) {
-			Set<Team> alive = getAliveTeams();
-			winner = alive.size() == 1 ? alive.iterator().next() : null;
-			return;
-		}
-
 		Set<Team> moneyChanged = new HashSet<>();
 		for (Tile tile : arena.tiles()) {
 			if (tile.hasBuilding()) {
@@ -138,7 +109,7 @@ class GameImpl implements Game {
 			}
 		}
 		for (Team team : moneyChanged)
-			onMoneyChange.notify(new DataEvent.MoneyChange(this, team, teamData.get(team).money));
+			onMoneyChange.notify(new MoneyChange(this, team, teamData.get(team).money));
 
 		turn = turnIterator.next();
 
@@ -163,7 +134,9 @@ class GameImpl implements Game {
 
 	@Override
 	public boolean isFinished() {
-		return getAliveTeams().size() <= 1;
+		Set<Team> alive = getAliveTeams();
+		winner = alive.size() > 1 ? null : alive.iterator().next();
+		return winner != null;
 	}
 
 	@Override
@@ -241,7 +214,11 @@ class GameImpl implements Game {
 		if (target.getHealth() <= damage) {
 			arena.at(target.getPos()).removeUnit();
 			target.setHealth(0);
-			onUnitRemove.notify(new DataEvent.UnitRemove(this, target));
+			onUnitRemove.notify(new UnitRemove(this, target));
+
+			if (isFinished())
+				onGameEnd.notify(new GameEnd(this, getWinner()));
+
 		} else {
 			target.setHealth(target.getHealth() - damage);
 		}
@@ -264,8 +241,37 @@ class GameImpl implements Game {
 		Unit unit = arena.createUnit(UnitDesc.of(unitType, team), pos);
 		arena.at(pos).setUnit(unit);
 
-		onMoneyChange.notify(new DataEvent.MoneyChange(this, team, data.money));
-		onUnitAdd.notify(new DataEvent.UnitAdd(this, unit));
+		onMoneyChange.notify(new MoneyChange(this, team, data.money));
+		onUnitAdd.notify(new UnitAdd(this, unit));
+	}
+
+	@Override
+	public DataChangeNotifier<UnitAdd> onUnitAdd() {
+		return onUnitAdd;
+	}
+
+	@Override
+	public DataChangeNotifier<UnitRemove> onUnitRemove() {
+		return onUnitRemove;
+	}
+
+	@Override
+	public DataChangeNotifier<MoneyChange> onMoneyChange() {
+		return onMoneyChange;
+	}
+
+	@Override
+	public DataChangeNotifier<DataEvent> onTurnEnd() {
+		return onTurnEnd;
+	}
+
+	@Override
+	public DataChangeNotifier<GameEnd> onGameEnd() {
+		return onGameEnd;
+	}
+
+	private static class TeamData {
+		int money;
 	}
 
 }

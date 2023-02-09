@@ -7,9 +7,6 @@ import java.util.List;
 
 import javax.swing.SwingUtilities;
 
-import com.ugav.battalion.DataEvent.MoneyChange;
-import com.ugav.battalion.DataEvent.UnitAdd;
-import com.ugav.battalion.DataEvent.UnitRemove;
 import com.ugav.battalion.core.Arena;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Game;
@@ -152,6 +149,11 @@ class GameGUI implements Game {
 	@Override
 	public DataChangeNotifier<DataEvent> onTurnEnd() {
 		return game.onTurnEnd();
+	}
+
+	@Override
+	public DataChangeNotifier<GameEnd> onGameEnd() {
+		return game.onGameEnd();
 	}
 
 	private static void checkCorrectThread() {

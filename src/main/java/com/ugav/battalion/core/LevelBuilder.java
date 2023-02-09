@@ -17,8 +17,8 @@ import com.ugav.battalion.core.Position.Direction;
 public class LevelBuilder {
 
 	private TileDesc[][] tiles;
-	public final DataChangeNotifier<DataEvent.TileChange> onTileChange = new DataChangeNotifier<>();
-	public final DataChangeNotifier<DataEvent.LevelReset> onResetChange = new DataChangeNotifier<>();
+	public final DataChangeNotifier<TileChange> onTileChange = new DataChangeNotifier<>();
+	public final DataChangeNotifier<LevelReset> onResetChange = new DataChangeNotifier<>();
 
 	public LevelBuilder(int width, int height) {
 		reset(width, height);
@@ -35,7 +35,7 @@ public class LevelBuilder {
 		for (int x = 0; x < width; x++)
 			for (int y = 0; y < height; y++)
 				tiles[x][y] = TileDesc.of(Terrain.FlatLand1, null, null);
-		onResetChange.notify(new DataEvent.LevelReset(this));
+		onResetChange.notify(new LevelReset(this));
 	}
 
 	public void reset(Level level) {
@@ -43,7 +43,7 @@ public class LevelBuilder {
 		tiles = new TileDesc[width][height];
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
 			tiles[pos.xInt()][pos.yInt()] = Objects.requireNonNull(level.at(pos));
-		onResetChange.notify(new DataEvent.LevelReset(this));
+		onResetChange.notify(new LevelReset(this));
 	}
 
 	public TileDesc at(Position pos) {
@@ -57,7 +57,7 @@ public class LevelBuilder {
 			System.err.println("Can't set tile: " + errStr);
 		} else {
 			tiles[pos.xInt()][pos.yInt()] = tile;
-			onTileChange.notify(new DataEvent.TileChange(this, pos));
+			onTileChange.notify(new TileChange(this, pos));
 		}
 		return this;
 	}
@@ -108,6 +108,25 @@ public class LevelBuilder {
 					return "illegal bridge, can't determine orientation";
 		}
 		return null;
+	}
+
+	public static class TileChange extends DataEvent {
+
+		public final Position pos;
+
+		public TileChange(LevelBuilder source, Position pos) {
+			super(source);
+			this.pos = pos;
+		}
+
+	}
+
+	public static class LevelReset extends DataEvent {
+
+		public LevelReset(LevelBuilder source) {
+			super(source);
+		}
+
 	}
 
 }
