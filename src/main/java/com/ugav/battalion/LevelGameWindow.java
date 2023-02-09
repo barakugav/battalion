@@ -50,7 +50,6 @@ class LevelGameWindow extends JPanel implements Clearable {
 	private final ArenaPanel arenaPanel;
 
 	private final Game game;
-	private Position selection;
 	private final ComputerPlayer computer = new ComputerPlayer.Random();
 	private final DebugPrintsManager debug;
 
@@ -126,27 +125,13 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 	private void endTurn() {
 		debug.println("End turn");
-		clearSelection();
 		gameAction(() -> {
 			game.turnEnd();
 			assert !game.isFinished();
-			game.turnBegin();
 
 			computer.playTurn(game);
-
 			game.turnEnd();
-			game.turnBegin();
 		});
-	}
-
-	private void clearSelection() {
-		if (selection == null)
-			return;
-		debug.println("clearSelection ", selection);
-		selection = null;
-		arenaPanel.entityLayer().reachableMap = Position.Bitmap.Empty;
-		arenaPanel.entityLayer().attackableMap = Position.Bitmap.Empty;
-		arenaPanel.entityLayer().movePath.clear();
 	}
 
 	private boolean isActionSuspended() {
@@ -224,9 +209,122 @@ class LevelGameWindow extends JPanel implements Clearable {
 			AbstractArenaPanel<AbstractArenaPanel.TileComp, AbstractArenaPanel.BuildingComp, ArenaPanel.EntityLayer.UnitComp>
 			implements Clearable {
 
+		private Position selection;
+
 		private final DataChangeRegister register = new DataChangeRegister();
 
 		private static final long serialVersionUID = 1L;
+
+		ArenaPanel() {
+			register.register(entityLayer.onTileClick, e -> tileClicked(e.pos));
+
+			updateArenaSize(game.getWidth(), game.getHeight());
+		}
+
+		@Override
+		EntityLayer createEntityLayer() {
+			return new EntityLayer();
+		}
+
+		EntityLayer entityLayer() {
+			return (EntityLayer) entityLayer;
+		}
+
+		void initGame() {
+			entityLayer().reset();
+
+			mapViewSet(Position.of(0, 0));
+		}
+
+		@Override
+		public void clear() {
+			register.unregisterAll();
+
+			super.clear();
+		}
+
+		@Override
+		public Dimension getPreferredSize() {
+			return new Dimension(TILE_SIZE_PIXEL * DISPLAYED_ARENA_WIDTH, TILE_SIZE_PIXEL * DISPLAYED_ARENA_HEIGHT);
+		}
+
+		private boolean isUnitSelected() {
+			return selection != null && game.getTile(selection).hasUnit();
+		}
+
+		private void tileClicked(Position pos) {
+			if (game == null || isActionSuspended())
+				return;
+			if (selection == null) {
+				trySelect(pos);
+
+			} else if (isUnitSelected()) {
+				unitSecondSelection(pos);
+			}
+			repaint();
+		}
+
+		private void trySelect(Position pos) {
+			Tile tile = game.getTile(pos);
+
+			if (tile.hasUnit()) {
+				if (!tile.getUnit().isActive())
+					return;
+				debug.println("Selected unit ", pos);
+				selection = pos;
+				Unit unit = tile.getUnit();
+				entityLayer().passableMap = unit.getPassableMap();
+				entityLayer().reachableMap = unit.getReachableMap();
+				entityLayer().attackableMap = unit.getAttackableMap();
+
+			} else if (tile.hasBuilding()) {
+				if (!tile.getBuilding().isActive())
+					return;
+				debug.println("Selected building ", pos);
+				selection = pos;
+				Building building = tile.getBuilding();
+				if (building.type.canBuildUnits) {
+					FactoryMenu factoryMenu = new FactoryMenu(globals.frame, building);
+					factoryMenu.addWindowListener(new WindowAdapter() {
+						@Override
+						public void windowClosing(WindowEvent e) {
+							clearSelection();
+							repaint();
+						}
+					});
+					factoryMenu.setVisible(true);
+				}
+			}
+		}
+
+		private void unitSecondSelection(Position target) {
+			Tile targetTile = game.getTile(target);
+			Unit selectedUnit = game.getTile(selection).getUnit();
+
+			if (!game.arena().isUnitVisible(target, selectedUnit.getTeam())) {
+				if (entityLayer().reachableMap.contains(target))
+					entityLayer().unitMove(selectedUnit, target);
+				clearSelection();
+
+			} else if (game.isAttackValid(selectedUnit, targetTile.getUnit())) {
+				entityLayer().unitAttack(selectedUnit, targetTile.getUnit());
+				clearSelection();
+
+			} else {
+				clearSelection();
+			}
+		}
+
+		private void clearSelection() {
+			if (selection == null)
+				return;
+			debug.println("clearSelection ", selection);
+			selection = null;
+			entityLayer().reachableMap = Position.Bitmap.Empty;
+			entityLayer().attackableMap = Position.Bitmap.Empty;
+			entityLayer().movePath.clear();
+			repaint();
+		}
 
 		private class EntityLayer extends
 				AbstractArenaPanel.EntityLayer<AbstractArenaPanel.TileComp, AbstractArenaPanel.BuildingComp, EntityLayer.UnitComp> {
@@ -261,6 +359,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 					}
 					repaint();
 				});
+				register.register(game.onTurnEnd(), e -> clearSelection());
 
 				register.register(onHoverChange, e -> hoveredUpdated(e.pos));
 				register.register(((GameGUI) game).onBeforeUnitMove, e -> {
@@ -541,107 +640,6 @@ class LevelGameWindow extends JPanel implements Clearable {
 		}
 
 		@Override
-		EntityLayer createEntityLayer() {
-			return new EntityLayer();
-		}
-
-		ArenaPanel() {
-
-			register.register(entityLayer.onTileClick, e -> tileClicked(e.pos));
-
-			updateArenaSize(game.getWidth(), game.getHeight());
-		}
-
-		EntityLayer entityLayer() {
-			return (EntityLayer) entityLayer;
-		}
-
-		void initGame() {
-			entityLayer().reset();
-
-			mapViewSet(Position.of(0, 0));
-		}
-
-		@Override
-		public void clear() {
-			register.unregisterAll();
-
-			super.clear();
-		}
-
-		@Override
-		public Dimension getPreferredSize() {
-			return new Dimension(TILE_SIZE_PIXEL * DISPLAYED_ARENA_WIDTH, TILE_SIZE_PIXEL * DISPLAYED_ARENA_HEIGHT);
-		}
-
-		private boolean isUnitSelected() {
-			return selection != null && game.getTile(selection).hasUnit();
-		}
-
-		private void tileClicked(Position pos) {
-			if (game == null || isActionSuspended())
-				return;
-			if (selection == null) {
-				trySelect(pos);
-
-			} else if (isUnitSelected()) {
-				unitSecondSelection(pos);
-			}
-			repaint();
-		}
-
-		private void trySelect(Position pos) {
-			Tile tile = game.getTile(pos);
-
-			if (tile.hasUnit()) {
-				if (!tile.getUnit().isActive())
-					return;
-				debug.println("Selected unit ", pos);
-				selection = pos;
-				Unit unit = tile.getUnit();
-				entityLayer().passableMap = unit.getPassableMap();
-				entityLayer().reachableMap = unit.getReachableMap();
-				entityLayer().attackableMap = unit.getAttackableMap();
-
-			} else if (tile.hasBuilding()) {
-				if (!tile.getBuilding().isActive())
-					return;
-				debug.println("Selected building ", pos);
-				selection = pos;
-				Building building = tile.getBuilding();
-				if (building.type.canBuildUnits) {
-					FactoryMenu factoryMenu = new FactoryMenu(globals.frame, building);
-					factoryMenu.addWindowListener(new WindowAdapter() {
-						@Override
-						public void windowClosing(WindowEvent e) {
-							clearSelection();
-							repaint();
-						}
-					});
-					factoryMenu.setVisible(true);
-				}
-			}
-		}
-
-		private void unitSecondSelection(Position target) {
-			Tile targetTile = game.getTile(target);
-			Unit selectedUnit = game.getTile(selection).getUnit();
-
-			if (!game.arena().isUnitVisible(target, selectedUnit.getTeam())) {
-				if (entityLayer().reachableMap.contains(target))
-					entityLayer().unitMove(selectedUnit, target);
-				clearSelection();
-
-			} else if (game.isAttackValid(selectedUnit, targetTile.getUnit())) {
-				entityLayer().unitAttack(selectedUnit, targetTile.getUnit());
-				clearSelection();
-
-			} else {
-				clearSelection();
-			}
-		}
-
-		@Override
 		Terrain getTerrain(Position pos) {
 			return game.getTile(pos).getTerrain();
 		}
@@ -727,7 +725,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 			if (sale.price > game.getMoney(factory.getTeam()))
 				return;
 			gameAction(() -> game.buildUnit(factory, sale.type));
-			clearSelection();
+			arenaPanel.clearSelection();
 			dispose();
 		}
 	}

@@ -50,10 +50,6 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 	private static final int MapMoveSpeed = 4;
 	private static final long serialVersionUID = 1L;
 
-	EntityLayer<TileCompImpl, BuildingCompImpl, UnitCompImpl> createEntityLayer() {
-		return new EntityLayer<>(this);
-	}
-
 	AbstractArenaPanel() {
 		mapPos = Position.of(0, 0);
 		mapPosX = mapPosY = 0;
@@ -104,6 +100,10 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		});
 		mapMoveTimer.setRepeats(true);
 		mapMoveTimer.start();
+	}
+
+	EntityLayer<TileCompImpl, BuildingCompImpl, UnitCompImpl> createEntityLayer() {
+		return new EntityLayer<>(this);
 	}
 
 	void updateArenaSize(int width, int height) {

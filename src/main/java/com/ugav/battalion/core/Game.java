@@ -21,8 +21,6 @@ public interface Game {
 
 	public void start();
 
-	public void turnBegin();
-
 	public void turnEnd();
 
 	public boolean isFinished();
@@ -46,6 +44,8 @@ public interface Game {
 	public DataChangeNotifier<DataEvent.UnitRemove> onUnitRemove();
 
 	public DataChangeNotifier<DataEvent.MoneyChange> onMoneyChange();
+
+	public DataChangeNotifier<DataEvent> onTurnEnd();
 
 	public static Game newInstance(Level level) {
 		return new GameImpl(level);

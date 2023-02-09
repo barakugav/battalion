@@ -26,6 +26,7 @@ class GameImpl implements Game {
 	final DataChangeNotifier<DataEvent.UnitAdd> onUnitAdd = new DataChangeNotifier<>();
 	final DataChangeNotifier<DataEvent.UnitRemove> onUnitRemove = new DataChangeNotifier<>();
 	final DataChangeNotifier<DataEvent.MoneyChange> onMoneyChange = new DataChangeNotifier<>();
+	final DataChangeNotifier<DataEvent> onTurnEnd = new DataChangeNotifier<>();
 
 	@Override
 	public DataChangeNotifier<DataEvent.UnitAdd> onUnitAdd() {
@@ -40,6 +41,11 @@ class GameImpl implements Game {
 	@Override
 	public DataChangeNotifier<DataEvent.MoneyChange> onMoneyChange() {
 		return onMoneyChange;
+	}
+
+	@Override
+	public DataChangeNotifier<DataEvent> onTurnEnd() {
+		return onTurnEnd;
 	}
 
 	private static class TeamData {
@@ -99,14 +105,7 @@ class GameImpl implements Game {
 		turnBegin();
 	}
 
-	@Override
-	public void turnBegin() {
-		/* Conquer buildings */
-		for (Tile tile : arena.tiles())
-			if (tile.hasBuilding() && tile.hasUnit() && tile.getUnit().type.canConquer
-					&& tile.getUnit().getTeam() == turn)
-				tile.getBuilding().tryConquer(tile.getUnit().getTeam());
-
+	private void turnBegin() {
 		for (Tile tile : arena.tiles()) {
 			if (tile.hasBuilding()) {
 				Building building = tile.getBuilding();
@@ -142,6 +141,16 @@ class GameImpl implements Game {
 			onMoneyChange.notify(new DataEvent.MoneyChange(this, team, teamData.get(team).money));
 
 		turn = turnIterator.next();
+
+		/* Conquer buildings */
+		for (Tile tile : arena.tiles())
+			if (tile.hasBuilding() && tile.hasUnit() && tile.getUnit().type.canConquer
+					&& tile.getUnit().getTeam() == turn)
+				tile.getBuilding().tryConquer(tile.getUnit().getTeam());
+
+		turnBegin();
+
+		onTurnEnd.notify(new DataEvent(this));
 	}
 
 	private Set<Team> getAliveTeams() {

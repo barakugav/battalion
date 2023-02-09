@@ -83,12 +83,6 @@ class GameGUI implements Game {
 	}
 
 	@Override
-	public void turnBegin() {
-		checkCorrectThread();
-		run(() -> game.turnBegin());
-	}
-
-	@Override
 	public void turnEnd() {
 		checkCorrectThread();
 		run(() -> game.turnEnd());
@@ -153,6 +147,11 @@ class GameGUI implements Game {
 	@Override
 	public DataChangeNotifier<MoneyChange> onMoneyChange() {
 		return game.onMoneyChange();
+	}
+
+	@Override
+	public DataChangeNotifier<DataEvent> onTurnEnd() {
+		return game.onTurnEnd();
 	}
 
 	private static void checkCorrectThread() {
