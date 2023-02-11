@@ -59,6 +59,14 @@ public class Position implements Comparable<Position> {
 		return Position.of(x + dir.dx, y + dir.dy);
 	}
 
+	public double dist(Position other) {
+		return Math.sqrt(Math.pow(x - other.x, 2) + Math.pow(y - other.y, 2));
+	}
+
+	public double distNorm1(Position other) {
+		return Math.abs(x - other.x) + Math.abs(y - other.y);
+	}
+
 	public List<Position> neighbors() {
 		/* TODO return view instead of actually creating an array list each time */
 		List<Position> neighbors = new ArrayList<>(Direction.values().length);

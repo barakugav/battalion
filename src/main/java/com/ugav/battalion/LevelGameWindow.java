@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.LongToIntFunction;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -41,6 +42,7 @@ import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Position;
+import com.ugav.battalion.core.Position.Direction;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Tile;
@@ -467,8 +469,17 @@ class LevelGameWindow extends JPanel implements Clearable {
 					}
 
 				} else if (movePath.size() < unit.type.moveLimit && last.neighbors().contains(targetPos)) {
-					/* Append to the end of the move path */
-					movePath.add(targetPos);
+					if (targetPos.equals(unit.getPos()))
+						movePath.clear();
+					else {
+
+						/* Append to the end of the move path */
+						int index = movePath.indexOf(targetPos);
+						if (index == -1)
+							movePath.add(targetPos);
+						else
+							movePath.subList(index, movePath.size()).clear();
+					}
 
 				} else {
 					/* Unable to append to end of current move path, calculate new route */
@@ -484,32 +495,52 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 				if (selection != null) {
 					tiles.get(selection).drawImage(g, Images.Label.Selection);
-					for (Position pos : reachableMap)
-						tiles.get(pos).drawImage(g, Images.Label.Reachable);
+					for (Position pos : passableMap)
+						tiles.get(pos).drawImage(g, Images.Label.Passable);
 					for (Position pos : attackableMap)
 						tiles.get(pos).drawImage(g, Images.Label.Attackable);
 
 				}
 				if (isUnitSelected()) {
-					Unit unit = game.getTile(selection).getUnit();
-					g.setColor(new Color(100, 0, 0));
-					Position prev = unit.getPos();
-					for (Position pos : movePath) {
-						int prevX = displayedX(prev.x * TILE_SIZE_PIXEL), prevY = displayedY(prev.y * TILE_SIZE_PIXEL);
-						int pX = displayedX(pos.x * TILE_SIZE_PIXEL), pY = displayedY(pos.y * TILE_SIZE_PIXEL);
+					if (movePath.isEmpty()) {
+						drawRelativeToMap(g, "MovePathSourceNone", selection);
+					} else {
+						LongToIntFunction calcDir = idx0 -> {
+							int idx = (int) idx0;
+							Position p1 = idx >= 0 ? movePath.get(idx) : selection;
+							Position p2 = movePath.get(idx + 1);
+							if (p1.distNorm1(p2) != 1)
+								throw new IllegalStateException();
+							if (p1.add(Direction.XPos).equals(p2))
+								return 0;
+							if (p1.add(Direction.YNeg).equals(p2))
+								return 1;
+							if (p1.add(Direction.XNeg).equals(p2))
+								return 2;
+							if (p1.add(Direction.YPos).equals(p2))
+								return 3;
+							throw new IllegalStateException();
+						};
 
-						int ovalRadius = TILE_SIZE_PIXEL / 2;
-						int ovalOffset = (TILE_SIZE_PIXEL - ovalRadius) / 2;
-						g.fillOval(prevX + ovalOffset, prevY + ovalOffset, ovalRadius, ovalRadius);
-						g.fillOval(pX + ovalOffset, pY + ovalOffset, ovalRadius, ovalRadius);
+						int sourceDir = calcDir.applyAsInt(-1);
+						drawRelativeToMap(g, "MovePathSource" + sourceDir, selection);
 
-						int rCenterX = (prevX + pX) / 2 + TILE_SIZE_PIXEL / 2;
-						int rCenterY = (prevY + pY) / 2 + TILE_SIZE_PIXEL / 2;
-						int rWidth = prevX == pX ? ovalRadius : TILE_SIZE_PIXEL;
-						int rHeight = prevY == pY ? ovalRadius : TILE_SIZE_PIXEL;
-						g.fillRect(rCenterX - rWidth / 2, rCenterY - rHeight / 2, rWidth, rHeight);
+						for (int idx = 0; idx < movePath.size() - 1; idx++) {
+							int prevDir = calcDir.applyAsInt(idx - 1);
+							int dir = calcDir.applyAsInt(idx);
+							String label = "MovePath";
+							if (prevDir == dir) {
+								label += "Straight" + (dir % 2 == 0 ? "Horizontal" : "Vertical");
+							} else {
+								label += "Turn" + ((dir == (prevDir + 1) % 4) ? dir : Utils.mod(dir - 1, 4));
+							}
+							drawRelativeToMap(g, label, movePath.get(idx));
+						}
 
-						prev = pos;
+						Position dest = movePath.get(movePath.size() - 1);
+						int destDir = (calcDir.applyAsInt(movePath.size() - 2) + 2) % 4;
+						String destLabel = "MovePathDest" + (reachableMap.contains(dest) ? "" : "Unstand");
+						drawRelativeToMap(g, destLabel + destDir, dest);
 					}
 				}
 			}
@@ -725,7 +756,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 			private void createUnitMenuButton(Images.Label label, boolean enable, ActionListener l) {
 				BufferedImage img = Images.getImage(label);
 				if (!enable)
-					img = Utils.transparentImg(img, 0.5);
+					img = Utils.imgTransparent(img, 0.5);
 				JButton button = new JButton(new ImageIcon(img));
 				button.setBorder(BorderFactory.createEmptyBorder());
 				button.setContentAreaFilled(false);

@@ -391,7 +391,7 @@ public class Unit extends Entity {
 
 	private Position.Bitmap getAttackableMapLongRange(boolean invisiableEnable) {
 		return Position.Bitmap.fromPredicate(arena.getWidth(), arena.getHeight(), p -> {
-			int distance = distance1Norm(getPos(), p);
+			int distance = (int) getPos().distNorm1(p);
 			if (!arena.at(p).hasUnit() || (invisiableEnable && !arena.isUnitVisible(p, getTeam())))
 				return false;
 			Unit other = arena.at(p).getUnit();
@@ -400,10 +400,6 @@ public class Unit extends Entity {
 			return canAttack(other);
 
 		});
-	}
-
-	private static int distance1Norm(Position p1, Position p2) {
-		return Math.abs(p1.xInt() - p2.xInt()) + Math.abs(p1.yInt() - p2.yInt());
 	}
 
 	@Override

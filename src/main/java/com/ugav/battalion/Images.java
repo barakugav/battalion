@@ -26,7 +26,7 @@ class Images {
 
 	enum Label {
 		/* GUI */
-		Selection, Reachable, Attackable, UnitLocked, Delete,
+		Selection, Passable, Attackable, UnitLocked, Delete,
 
 		UnitMenuTransportAir, UnitMenuTransportWater, UnitMenuTransportFinish, UnitMenuRepair, UnitMenuCancel,
 	}
@@ -136,8 +136,25 @@ class Images {
 				ect0.put("Shore" + suffix, loadImg("img/terrain/shore_" + suffix + ".png"));
 			}
 		}
+
+		ect0.put("MovePathSourceNone", loadImg("img/gui/move_path_source_none.png"));
+		BufferedImage moveSource = loadImg("img/gui/move_path_source_down.png");
+		BufferedImage movePathDest = loadImg("img/gui/move_path_destination_down.png");
+		BufferedImage movePathDestUnstand = loadImg("img/gui/move_path_destination_unstandable_down.png");
+		BufferedImage movePathStraight = loadImg("img/gui/move_path_straight.png");
+		BufferedImage movePathTurn = loadImg("img/gui/move_path_turn_down_right.png");
+		for (int dir = 0; dir < 4; dir++) {
+			double rotateAngle = -(dir + 1) * Math.PI / 2;
+			ect0.put("MovePathSource" + dir, Utils.imgRotate(moveSource, rotateAngle));
+			ect0.put("MovePathDest" + dir, Utils.imgRotate(movePathDest, rotateAngle));
+			ect0.put("MovePathDestUnstand" + dir, Utils.imgRotate(movePathDestUnstand, rotateAngle));
+			ect0.put("MovePathTurn" + dir, Utils.imgRotate(movePathTurn, rotateAngle));
+		}
+		ect0.put("MovePathStraightVertical", Utils.imgRotate(movePathStraight, 0));
+		ect0.put("MovePathStraightHorizontal", Utils.imgRotate(movePathStraight, Math.PI / 2));
+
 		ect0.put(Label.Selection, loadImg("img/gui/selection.png"));
-		ect0.put(Label.Reachable, loadImg("img/gui/reachable.png"));
+		ect0.put(Label.Passable, loadImg("img/gui/passable.png"));
 		ect0.put(Label.Attackable, loadImg("img/gui/attackabe.png"));
 		ect0.put(Label.UnitLocked, loadImg("img/gui/unit_locked.png"));
 		ect0.put(Label.Delete, loadImg("img/gui/delete.png"));

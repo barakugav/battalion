@@ -4,6 +4,8 @@ import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.Image;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
@@ -187,13 +189,29 @@ public class Utils {
 		return bimage;
 	}
 
-	public static BufferedImage transparentImg(Image img, double alpha) {
+	public static BufferedImage imgTransparent(Image img, double alpha) {
 		BufferedImage tImg = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2 = tImg.createGraphics();
 		g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) alpha));
 		g2.drawImage(img, 0, 0, null);
 		g2.dispose();
 		return tImg;
+	}
+
+	public static BufferedImage imgRotate(BufferedImage img, double theta) {
+		if (theta == 0)
+			return img;
+		AffineTransform transform = new AffineTransform();
+		transform.rotate(theta, img.getWidth() / 2, img.getHeight() / 2);
+		AffineTransformOp op = new AffineTransformOp(transform, AffineTransformOp.TYPE_BILINEAR);
+		return op.filter(img, null);
+	}
+
+	public static BufferedImage imgMirror(BufferedImage img) {
+		AffineTransform transform = AffineTransform.getScaleInstance(-1, 1);
+		transform.translate(-img.getWidth(null), 0);
+		AffineTransformOp op = new AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+		return op.filter(img, null);
 	}
 
 	public static class Holder<T> {
@@ -242,6 +260,16 @@ public class Utils {
 
 	public static boolean isInteger(double x) {
 		return x == Math.floor(x) && !Double.isInfinite(x);
+	}
+
+	public static int mod(int x, int m) {
+		if (m <= 0)
+			throw new IllegalArgumentException();
+		int r = x % m;
+		if (r < 0)
+			r = (r + m) % m;
+		assert r >= 0;
+		return r;
 	}
 
 }
