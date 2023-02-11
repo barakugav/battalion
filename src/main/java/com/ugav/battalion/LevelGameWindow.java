@@ -213,7 +213,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 	}
 
 	private class ArenaPanel extends
-			AbstractArenaPanel<AbstractArenaPanel.TileComp, AbstractArenaPanel.BuildingComp, ArenaPanel.EntityLayer.UnitComp>
+			ArenaPanelAbstract<ArenaPanelAbstract.TerrainComp, ArenaPanelAbstract.BuildingComp, ArenaPanel.EntityLayer.UnitComp>
 			implements Clearable {
 
 		private Position selection;
@@ -369,7 +369,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 		}
 
 		private class EntityLayer extends
-				AbstractArenaPanel.EntityLayer<AbstractArenaPanel.TileComp, AbstractArenaPanel.BuildingComp, EntityLayer.UnitComp> {
+				ArenaPanelAbstract.EntityLayer<ArenaPanelAbstract.TerrainComp, ArenaPanelAbstract.BuildingComp, EntityLayer.UnitComp> {
 
 			private static final long serialVersionUID = 1L;
 
@@ -585,9 +585,9 @@ class LevelGameWindow extends JPanel implements Clearable {
 			}
 
 			void reset() {
-				removeAllEntityComps();
+				removeAllArenaComps();
 				for (Position pos : game.arena().positions()) {
-					TileComp tileComp = new TileComp(ArenaPanel.this, pos);
+					TerrainComp tileComp = new TerrainComp(ArenaPanel.this, pos);
 					Tile tile = game.getTile(pos);
 					tiles.put(pos, tileComp);
 					if (tile.hasUnit())
@@ -604,7 +604,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 				units.put(unit, new UnitComp(unit));
 			}
 
-			private class UnitComp extends AbstractArenaPanel.UnitComp {
+			private class UnitComp extends ArenaPanelAbstract.UnitComp {
 
 				private final int HealthBarWidth = 26;
 				private final int HealthBarHeight = 4;

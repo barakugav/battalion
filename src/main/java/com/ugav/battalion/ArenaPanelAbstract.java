@@ -31,7 +31,7 @@ import com.ugav.battalion.core.Position;
 import com.ugav.battalion.core.Position.Direction;
 import com.ugav.battalion.core.Terrain;
 
-abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileComp, BuildingCompImpl extends AbstractArenaPanel.BuildingComp, UnitCompImpl extends AbstractArenaPanel.UnitComp>
+abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.TerrainComp, BuildingCompImpl extends ArenaPanelAbstract.BuildingComp, UnitCompImpl extends ArenaPanelAbstract.UnitComp>
 		extends JLayeredPane implements Clearable {
 
 	private int arenaWidth;
@@ -39,7 +39,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 	private Position mapPos;
 	private int mapPosX, mapPosY;
 	private final Timer mapMoveTimer;
-	final EntityLayer<TileCompImpl, BuildingCompImpl, UnitCompImpl> entityLayer;
+	final EntityLayer<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> entityLayer;
 
 	private final KeyListener keyListener;
 	final DataChangeNotifier<DataEvent> onMapMove = new DataChangeNotifier<>();
@@ -52,7 +52,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 	private static final int MapMoveSpeed = 4;
 	private static final long serialVersionUID = 1L;
 
-	AbstractArenaPanel() {
+	ArenaPanelAbstract() {
 		mapPos = Position.of(0, 0);
 		mapPosX = mapPosY = 0;
 
@@ -106,7 +106,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		mapMoveTimer.start();
 	}
 
-	EntityLayer<TileCompImpl, BuildingCompImpl, UnitCompImpl> createEntityLayer() {
+	EntityLayer<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> createEntityLayer() {
 		return new EntityLayer<>(this);
 	}
 
@@ -166,12 +166,12 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		entityLayer.clear();
 	}
 
-	static class EntityLayer<TileCompImpl extends AbstractArenaPanel.TileComp, BuildingCompImpl extends AbstractArenaPanel.BuildingComp, UnitCompImpl extends AbstractArenaPanel.UnitComp>
+	static class EntityLayer<TerrainCompImpl extends ArenaPanelAbstract.TerrainComp, BuildingCompImpl extends ArenaPanelAbstract.BuildingComp, UnitCompImpl extends ArenaPanelAbstract.UnitComp>
 			extends JPanel implements Clearable {
 
-		private final AbstractArenaPanel<TileCompImpl, BuildingCompImpl, UnitCompImpl> arena;
+		private final ArenaPanelAbstract<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> arena;
 
-		final Map<Position, TileCompImpl> tiles = new HashMap<>();
+		final Map<Position, TerrainCompImpl> tiles = new HashMap<>();
 		final Map<Object, BuildingCompImpl> buildings = new IdentityHashMap<>();
 		final Map<Object, UnitCompImpl> units = new IdentityHashMap<>();
 
@@ -185,7 +185,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 		private static final long serialVersionUID = 1L;
 
-		EntityLayer(AbstractArenaPanel<TileCompImpl, BuildingCompImpl, UnitCompImpl> arena) {
+		EntityLayer(ArenaPanelAbstract<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> arena) {
 			this.arena = Objects.requireNonNull(arena);
 
 			addMouseListener(mouseListener = new MouseAdapter() {
@@ -214,15 +214,28 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 		@Override
 		protected void paintComponent(Graphics g) {
-			List<EntityComp> comps = new ArrayList<>(tiles.size() + buildings.size() + units.size());
+			List<ArenaComp> comps = new ArrayList<>(tiles.size() + buildings.size() + units.size());
 			comps.addAll(tiles.values());
 			comps.addAll(buildings.values());
 			comps.addAll(units.values());
-			comps.sort((o1, o2) -> o1.pos().compareTo(o2.pos()));
-			for (EntityComp comp : comps)
+			comps.sort((o1, o2) -> {
+				Position p1 = o1.pos(), p2 = o2.pos();
+				if (p1.y != p2.y)
+					return Double.compare(p1.y, p2.y);
+				if (p1.x != p2.x)
+					return Double.compare(p1.x, p2.x);
+				if ((o1 instanceof TerrainComp) ^ (o2 instanceof TerrainComp))
+					return o1 instanceof TerrainComp ? -1 : 1;
+				if ((o1 instanceof BuildingComp) ^ (o2 instanceof BuildingComp))
+					return o1 instanceof BuildingComp ? -1 : 1;
+				if ((o1 instanceof UnitComp) ^ (o2 instanceof UnitComp))
+					return o1 instanceof UnitComp ? -1 : 1;
+				return 0;
+			});
+			for (ArenaComp comp : comps)
 				if (!comp.isPaintDelayed())
 					comp.paintComponent(g);
-			for (EntityComp comp : comps)
+			for (ArenaComp comp : comps)
 				if (comp.isPaintDelayed())
 					comp.paintComponent(g);
 		}
@@ -232,8 +245,8 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 			return new Dimension(TILE_SIZE_PIXEL * DISPLAYED_ARENA_WIDTH, TILE_SIZE_PIXEL * DISPLAYED_ARENA_HEIGHT);
 		}
 
-		void removeAllEntityComps() {
-			for (TileCompImpl tile : tiles.values())
+		void removeAllArenaComps() {
+			for (TerrainCompImpl tile : tiles.values())
 				tile.clear();
 			tiles.clear();
 			for (BuildingCompImpl building : buildings.values())
@@ -249,7 +262,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 			removeMouseListener(mouseListener);
 			removeMouseMotionListener(mouseMotionListener);
 
-			removeAllEntityComps();
+			removeAllArenaComps();
 		}
 
 	}
@@ -270,11 +283,11 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 	abstract Object getTrasporterUnit(Object unit);
 
-	abstract static class EntityComp implements Clearable {
+	abstract static class ArenaComp implements Clearable {
 
-		final AbstractArenaPanel<?, ?, ?> arena;
+		final ArenaPanelAbstract<?, ?, ?> arena;
 
-		EntityComp(AbstractArenaPanel<?, ?, ?> arena) {
+		ArenaComp(ArenaPanelAbstract<?, ?, ?> arena) {
 			this.arena = Objects.requireNonNull(arena);
 		}
 
@@ -287,11 +300,11 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		abstract Position pos();
 	}
 
-	static class TileComp extends EntityComp {
+	static class TerrainComp extends ArenaComp {
 
 		private final Position pos;
 
-		TileComp(AbstractArenaPanel<?, ?, ?> arena, Position pos) {
+		TerrainComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos) {
 			super(arena);
 			this.pos = Objects.requireNonNull(pos);
 		}
@@ -425,7 +438,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 		@Override
 		public String toString() {
-			return pos().toString();
+			return "[" + pos() + ", " + arena.getTerrain(pos) + "]";
 		}
 
 		@Override
@@ -434,12 +447,12 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 	}
 
-	static class BuildingComp extends EntityComp {
+	static class BuildingComp extends ArenaComp {
 
 		private final Position pos;
 		private final Object building;
 
-		BuildingComp(AbstractArenaPanel<?, ?, ?> arena, Position pos, Object building) {
+		BuildingComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos, Object building) {
 			super(arena);
 			this.pos = Objects.requireNonNull(pos);
 			this.building = Objects.requireNonNull(building);
@@ -464,13 +477,18 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		public void clear() {
 		}
 
+		@Override
+		public String toString() {
+			return "[" + pos() + ", " + building() + "]";
+		}
+
 	}
 
-	static abstract class UnitComp extends EntityComp {
+	static abstract class UnitComp extends ArenaComp {
 
 		private final Object unit;
 
-		UnitComp(AbstractArenaPanel<?, ?, ?> arena, Object unit) {
+		UnitComp(ArenaPanelAbstract<?, ?, ?> arena, Object unit) {
 			super(arena);
 			this.unit = Objects.requireNonNull(unit);
 		}
@@ -502,13 +520,18 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 		public void clear() {
 		}
 
+		@Override
+		public String toString() {
+			return "[" + pos() + ", " + unit() + "]";
+		}
+
 	}
 
 	static class HoverChangeEvent extends DataEvent {
 
 		final Position pos;
 
-		HoverChangeEvent(AbstractArenaPanel<?, ?, ?> source, Position pos) {
+		HoverChangeEvent(ArenaPanelAbstract<?, ?, ?> source, Position pos) {
 			super(source);
 			this.pos = pos;
 		}
@@ -519,7 +542,7 @@ abstract class AbstractArenaPanel<TileCompImpl extends AbstractArenaPanel.TileCo
 
 		final Position pos;
 
-		TileClickEvent(AbstractArenaPanel<?, ?, ?> source, Position pos) {
+		TileClickEvent(ArenaPanelAbstract<?, ?, ?> source, Position pos) {
 			super(source);
 			this.pos = pos;
 		}

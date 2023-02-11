@@ -23,7 +23,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import com.ugav.battalion.AbstractArenaPanel.BuildingComp;
+import com.ugav.battalion.ArenaPanelAbstract.BuildingComp;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Level.BuildingDesc;
@@ -376,8 +376,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 	}
 
-	private class ArenaPanel
-			extends AbstractArenaPanel<ArenaPanel.EntityLayer.TileComp, BuildingComp, ArenaPanel.EntityLayer.UnitComp>
+	private class ArenaPanel extends
+			ArenaPanelAbstract<ArenaPanel.EntityLayer.TerrainComp, BuildingComp, ArenaPanel.EntityLayer.UnitComp>
 			implements Clearable {
 
 		private final DataChangeRegister register = new DataChangeRegister();
@@ -479,7 +479,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		}
 
 		private class EntityLayer
-				extends AbstractArenaPanel.EntityLayer<EntityLayer.TileComp, BuildingComp, EntityLayer.UnitComp> {
+				extends ArenaPanelAbstract.EntityLayer<EntityLayer.TerrainComp, BuildingComp, EntityLayer.UnitComp> {
 
 			private static final long serialVersionUID = 1L;
 
@@ -489,27 +489,27 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				super(arena);
 
 				register.register(builder.onTileChange, e -> {
-					tiles.computeIfAbsent(e.pos, TileComp::new).tileUpdate();
+					tiles.computeIfAbsent(e.pos, TerrainComp::new).tileUpdate();
 					repaint(); /* TODO find a way to repaint only the changed tile */
 				});
 			}
 
 			void reset() {
-				removeAllEntityComps();
+				removeAllArenaComps();
 
 				for (Position pos : Utils.iterable(new Position.Iterator2D(builder.getWidth(), builder.getHeight()))) {
-					TileComp tileComp = new TileComp(pos);
+					TerrainComp tileComp = new TerrainComp(pos);
 					tiles.put(pos, tileComp);
 					tileComp.tileUpdate();
 				}
 			}
 
-			private class TileComp extends AbstractArenaPanel.TileComp {
+			private class TerrainComp extends ArenaPanelAbstract.TerrainComp {
 
 				BuildingComp buildingComp;
 				UnitComp unitComp;
 
-				TileComp(Position pos) {
+				TerrainComp(Position pos) {
 					super(ArenaPanel.this, pos);
 				}
 
@@ -535,13 +535,18 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			}
 
-			private class UnitComp extends AbstractArenaPanel.UnitComp {
+			private class UnitComp extends ArenaPanelAbstract.UnitComp {
 
 				private final Position pos;
 
-				UnitComp(AbstractArenaPanel<?, ?, ?> arena, Position pos, UnitDesc unit) {
+				UnitComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos, UnitDesc unit) {
 					super(arena, unit);
 					this.pos = Objects.requireNonNull(pos);
+				}
+
+				@Override
+				UnitDesc unit() {
+					return (UnitDesc) super.unit();
 				}
 
 				@Override
