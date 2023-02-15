@@ -16,7 +16,7 @@ import com.ugav.battalion.core.Position.Direction;
 
 public class LevelBuilder {
 
-	private TileDesc[][] tiles;
+	private Position.Array<TileDesc> tiles;
 	public final DataChangeNotifier<TileChange> onTileChange = new DataChangeNotifier<>();
 	public final DataChangeNotifier<LevelReset> onResetChange = new DataChangeNotifier<>();
 
@@ -31,23 +31,18 @@ public class LevelBuilder {
 	public void reset(int width, int height) {
 		if (!(Level.MINIMUM_WIDTH <= width && width < 100 && Level.MINIMUM_HEIGHT <= height && height < 100))
 			throw new IllegalArgumentException();
-		tiles = new TileDesc[width][height];
-		for (int x = 0; x < width; x++)
-			for (int y = 0; y < height; y++)
-				tiles[x][y] = TileDesc.of(Terrain.FlatLand1, null, null);
+		tiles = Position.Array.fromFunc(width, height, p -> TileDesc.of(Terrain.FlatLand1, null, null));
 		onResetChange.notify(new LevelReset(this));
 	}
 
 	public void reset(Level level) {
 		int width = level.width(), height = level.height();
-		tiles = new TileDesc[width][height];
-		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			tiles[pos.xInt()][pos.yInt()] = Objects.requireNonNull(level.at(pos));
+		tiles = Position.Array.fromFunc(width, height, pos -> Objects.requireNonNull(level.at(pos)));
 		onResetChange.notify(new LevelReset(this));
 	}
 
 	public TileDesc at(Position pos) {
-		return tiles[pos.xInt()][pos.yInt()];
+		return tiles.at(pos);
 	}
 
 	public LevelBuilder setTile(Position pos, TileDesc tile) {
@@ -56,7 +51,7 @@ public class LevelBuilder {
 			/* TODO: message to user */
 			System.err.println("Can't set tile: " + errStr);
 		} else {
-			tiles[pos.xInt()][pos.yInt()] = tile;
+			tiles.set(pos, tile);
 			onTileChange.notify(new TileChange(this, pos));
 		}
 		return this;
@@ -67,11 +62,11 @@ public class LevelBuilder {
 	}
 
 	public int width() {
-		return tiles.length;
+		return tiles.width();
 	}
 
 	public int height() {
-		return tiles.length != 0 ? tiles[0].length : 0;
+		return tiles.height();
 	}
 
 	public Level buildLevel() {
@@ -93,7 +88,7 @@ public class LevelBuilder {
 			if (!tile.unit.type.canStandOn(tile.terrain))
 				return "unit can't stand on terrain";
 
-		Function<Position, Terrain> terrain = p -> pos.equals(p) ? tile.terrain : tiles[p.xInt()][p.yInt()].terrain;
+		Function<Position, Terrain> terrain = p -> pos.equals(p) ? tile.terrain : tiles.at(p).terrain;
 		List<Position> checkBridge = new ArrayList<>(List.of(pos));
 		for (Direction dir : Direction.values()) {
 			Position p = pos.add(dir);

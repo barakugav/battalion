@@ -16,36 +16,24 @@ import com.ugav.battalion.core.Level.UnitDesc;
 
 public class Arena {
 
-	private final Tile[][] tiles;
+	private final Position.Array<Tile> tiles;
 
 	public final DataChangeNotifier<EntityChange> onEntityChange = new DataChangeNotifier<>();
 
-	Arena(int width, int height, Tile[][] tiles) {
-		if (width <= 0 || height <= 0)
-			throw new IllegalArgumentException();
-		this.tiles = new Tile[width][height];
-		for (int x = 0; x < width; x++)
-			for (int y = 0; y < height; y++)
-				this.tiles[x][y] = tiles[x][y];
-	}
-
 	Arena(Level level) {
-		int width = level.width(), height = level.height();
-		tiles = new Tile[width][height];
-		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			tiles[pos.xInt()][pos.yInt()] = createTile(level.at(pos), pos);
+		tiles = Position.Array.fromFunc(level.width(), level.height(), pos -> createTile(level.at(pos), pos));
 	}
 
 	public int width() {
-		return tiles.length;
+		return tiles.width();
 	}
 
 	public int height() {
-		return tiles.length != 0 ? tiles[0].length : 0;
+		return tiles.height();
 	}
 
 	public Tile at(Position pos) {
-		return tiles[pos.xInt()][pos.yInt()];
+		return tiles.at(pos);
 	}
 
 	public boolean isValidPos(Position pos) {
@@ -98,6 +86,10 @@ public class Arena {
 		};
 	}
 
+	public Collection<Building> buildings() {
+		return buildings(b -> true);
+	}
+
 	public Collection<Building> buildings(Team team, Predicate<Building> filter) {
 		return buildings(filter.and(b -> team == b.getTeam()));
 	}
@@ -108,6 +100,10 @@ public class Arena {
 			if (tile.hasBuilding() && filter.test(tile.getBuilding()))
 				buildings.add(tile.getBuilding());
 		return buildings;
+	}
+
+	public Collection<Unit> units() {
+		return units(u -> true);
 	}
 
 	public Collection<Unit> units(Team team) {
@@ -166,7 +162,7 @@ public class Arena {
 
 	@Override
 	public String toString() {
-		return Utils.toString(tiles);
+		return Utils.toString(tiles.toArray());
 	}
 
 }

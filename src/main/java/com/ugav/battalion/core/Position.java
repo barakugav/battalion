@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import com.ugav.battalion.Utils;
@@ -100,18 +101,32 @@ public class Position implements Comparable<Position> {
 
 		private final int width, height;
 		private int x, y;
+		private final boolean yfirst; // TODO needed?
 
 		public Iterator2D(int width, int height) {
+			this(width, height, true);
+		}
+
+		public Iterator2D(int width, int height, boolean yfirst) {
 			if (width < 0 || height < 0)
 				throw new IllegalArgumentException();
 			this.width = width;
 			this.height = height;
 			x = y = 0;
+			this.yfirst = yfirst;
+		}
+
+		public static Iterator2D of(int width, int height) {
+			return new Iterator2D(width, height);
+		}
+
+		public static Iterator2D xFirst(int width, int height) {
+			return new Iterator2D(width, height, false);
 		}
 
 		@Override
 		public boolean hasNext() {
-			return x < width;
+			return x < width && y < height;
 		}
 
 		@Override
@@ -119,9 +134,16 @@ public class Position implements Comparable<Position> {
 			if (!hasNext())
 				throw new NoSuchElementException();
 			Position pos = Position.of(x, y);
-			if (++y >= height) {
-				y = 0;
-				x++;
+			if (yfirst) {
+				if (++y >= height) {
+					y = 0;
+					x++;
+				}
+			} else {
+				if (++x >= height) {
+					x = 0;
+					y++;
+				}
 			}
 			return pos;
 		}
@@ -158,6 +180,10 @@ public class Position implements Comparable<Position> {
 					&& map[pos.xInt()][pos.yInt()];
 		}
 
+		public void set(Position pos, boolean val) {
+			map[pos.xInt()][pos.yInt()] = val;
+		}
+
 		@Override
 		public boolean test(Position pos) {
 			return contains(pos);
@@ -170,9 +196,84 @@ public class Position implements Comparable<Position> {
 			return Utils.iteratorIf(new Iterator2D(width(), height()), this);
 		}
 
+		public Bitmap not() {
+			return fromPredicate(width(), height(), p -> !test(p));
+		}
+
 		@Override
 		public Bitmap and(Predicate<? super Position> predicate) {
 			return fromPredicate(width(), height(), p -> test(p) && predicate.test(p));
+		}
+
+		@Override
+		public Bitmap or(Predicate<? super Position> predicate) {
+			return fromPredicate(width(), height(), p -> test(p) || predicate.test(p));
+		}
+
+		public Bitmap xor(Predicate<? super Position> predicate) {
+			return fromPredicate(width(), height(), p -> test(p) ^ predicate.test(p));
+		}
+
+		public static Bitmap ofTrue(int width, int height) {
+			return fromPredicate(width, height, p -> true);
+		}
+
+		public static Bitmap ofFalse(int width, int height) {
+			return fromPredicate(width, height, p -> false);
+		}
+
+	}
+
+	public static class Array<T> implements Function<Position, T> {
+
+		private final Object[][] arr;
+
+		public Array(int width, int height) {
+			arr = new Object[width][height];
+		}
+
+		public static <T> Array<T> of(int width, int height) {
+			return new Array<>(width, height);
+		}
+
+		public static <T> Array<T> fromFunc(int width, int height, Function<Position, T> func) {
+			Array<T> arr = new Array<>(width, height);
+			for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
+				arr.set(pos, func.apply(pos));
+			return arr;
+		}
+
+		public int width() {
+			return arr.length;
+		}
+
+		public int height() {
+			return arr.length != 0 ? arr[0].length : 0;
+		}
+
+		public T at(Position p) {
+			return at(p.xInt(), p.yInt());
+		}
+
+		@SuppressWarnings("unchecked")
+		public T at(int x, int y) {
+			return (T) arr[x][y];
+		}
+
+		@Override
+		public T apply(Position p) {
+			return at(p);
+		}
+
+		public void set(Position p, T val) {
+			arr[p.xInt()][p.yInt()] = val;
+		}
+
+		public Object[][] toArray() {
+			Object[][] arr = new Object[width()][height()];
+			for (Position pos : Utils.iterable(new Position.Iterator2D(width(), height())))
+				arr[pos.xInt()][pos.yInt()] = at(pos);
+			return arr;
 		}
 
 	}

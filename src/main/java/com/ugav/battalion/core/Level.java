@@ -6,31 +6,29 @@ import com.ugav.battalion.Utils;
 
 public class Level {
 
-	private final TileDesc[][] tiles;
+	private final Position.Array<TileDesc> tiles;
 
 	public static final int MINIMUM_WIDTH = 10;
 	public static final int MINIMUM_HEIGHT = 10;
 
-	Level(TileDesc[][] tiles) {
-		int width = tiles.length;
-		int height = tiles[0].length;
+	Level(Position.Array<TileDesc> tiles) {
+		int width = tiles.width();
+		int height = tiles.height();
 		if (width < MINIMUM_WIDTH || height < MINIMUM_HEIGHT)
 			throw new IllegalArgumentException("illegal size: " + width + " " + height);
-		this.tiles = new TileDesc[width][height];
-		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			this.tiles[pos.xInt()][pos.yInt()] = Objects.requireNonNull(tiles[pos.xInt()][pos.yInt()]);
+		this.tiles = Position.Array.fromFunc(width, height, tiles);
 	}
 
 	public int width() {
-		return tiles.length;
+		return tiles.width();
 	}
 
 	public int height() {
-		return tiles.length != 0 ? tiles[0].length : 0;
+		return tiles.height();
 	}
 
 	public TileDesc at(Position pos) {
-		return tiles[pos.xInt()][pos.yInt()];
+		return tiles.at(pos);
 	}
 
 	@Override
