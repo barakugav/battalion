@@ -1,6 +1,7 @@
 package com.ugav.battalion;
 
 import java.awt.AlphaComposite;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.Image;
@@ -214,6 +215,10 @@ public class Utils {
 		return op.filter(img, null);
 	}
 
+	public static Dimension max(Dimension d1, Dimension d2) {
+		return new Dimension(Math.max(d1.width, d2.width), Math.max(d1.height, d2.height));
+	}
+
 	public static class Holder<T> {
 		public T val;
 
@@ -247,6 +252,20 @@ public class Utils {
 		while (it.hasNext())
 			l.add(it.next());
 		return l;
+	}
+
+	static <T> List<T> listOf(T elm, List<T> l) {
+		List<T> r = new ArrayList<>(1 + l.size());
+		r.add(elm);
+		r.addAll(l);
+		return r;
+	}
+
+	static <T> List<T> listOf(List<T> l, @SuppressWarnings("unchecked") T... ts) {
+		List<T> r = new ArrayList<>(l.size() + ts.length);
+		r.addAll(l);
+		r.addAll(List.of(ts));
+		return r;
 	}
 
 	public static GridBagConstraints gbConstraints(int x, int y, int width, int height) {

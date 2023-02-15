@@ -132,9 +132,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			Dimension panelSize = panel.getPreferredSize();
 			for (JPanel tab : getEntitiesTabs()) {
 				panel.add(tab);
-				Dimension tabSize = tab.getPreferredSize();
-				panelSize = new Dimension(Math.max(panelSize.width, tabSize.width),
-						Math.max(panelSize.height, tabSize.height));
+				panelSize = Utils.max(panelSize, tab.getPreferredSize());
 			}
 			panel.setPreferredSize(panelSize);
 			return panel;
