@@ -1,9 +1,8 @@
 package com.ugav.battalion;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import javax.swing.SwingUtilities;
@@ -21,26 +20,10 @@ import com.ugav.battalion.core.Unit.Type;
 class GameGUI implements Game {
 
 	private final Game game;
+	private final LevelGameWindow gui;
 
-	final DataChangeNotifier<UnitMove> onBeforeUnitMove = new DataChangeNotifier<>();
-
-	static class UnitMove extends DataEvent {
-
-		public final Unit unit;
-		public final List<Position> path;
-
-		public UnitMove(Game source, Unit unit, List<Position> path) {
-			super(source);
-			this.unit = unit;
-			List<Position> tempPath = new ArrayList<>(path.size() + 1);
-			tempPath.add(unit.getPos());
-			tempPath.addAll(path);
-			this.path = Collections.unmodifiableList(tempPath);
-		}
-
-	}
-
-	GameGUI(Level level) {
+	GameGUI(LevelGameWindow gui, Level level) {
+		this.gui = Objects.requireNonNull(gui);
 		game = Game.newInstance(level);
 	}
 
@@ -104,15 +87,16 @@ class GameGUI implements Game {
 	@Override
 	public void move(Unit unit, List<Position> path) {
 		checkCorrectThread();
-		onBeforeUnitMove.notify(new UnitMove(this, unit, path));
-		run(() -> game.move(unit, path));
+		List<Position> animationPath = Utils.listOf(unit.getPos(), path);
+		gui.arenaPanel.entityLayer().units.get(unit).moveAnimation(animationPath, () -> game.move(unit, path));
 	}
 
 	@Override
 	public void moveAndAttack(Unit attacker, List<Position> path, Unit target) {
 		checkCorrectThread();
-		onBeforeUnitMove.notify(new UnitMove(this, attacker, path));
-		run(() -> game.moveAndAttack(attacker, path, target));
+		List<Position> animationPath = Utils.listOf(attacker.getPos(), path);
+		gui.arenaPanel.entityLayer().units.get(attacker).moveAnimation(animationPath,
+				() -> game.moveAndAttack(attacker, path, target));
 	}
 
 	@Override

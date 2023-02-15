@@ -35,7 +35,6 @@ import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.Timer;
 
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Game;
@@ -52,7 +51,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 	private final Globals globals;
 	private final SideMenu menu;
-	private final ArenaPanel arenaPanel;
+	final ArenaPanel arenaPanel;
 
 	private final Game game;
 	private final ComputerPlayer computer = new ComputerPlayer.Random();
@@ -68,7 +67,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 		if (level.width() < ArenaPanel.DISPLAYED_ARENA_WIDTH || level.height() < ArenaPanel.DISPLAYED_ARENA_HEIGHT)
 			throw new IllegalArgumentException("level size is too small");
-		this.game = new GameGUI(level);
+		this.game = new GameGUI(this, level);
 		menu = new SideMenu();
 		arenaPanel = new ArenaPanel();
 		debug = new DebugPrintsManager(true); // TODO
@@ -211,7 +210,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 	}
 
-	private class ArenaPanel extends
+	class ArenaPanel extends
 			ArenaPanelAbstract<ArenaPanelAbstract.TerrainComp, ArenaPanelAbstract.BuildingComp, ArenaPanel.EntityLayer.UnitComp>
 			implements Clearable {
 
@@ -367,7 +366,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 			repaint();
 		}
 
-		private class EntityLayer extends
+		class EntityLayer extends
 				ArenaPanelAbstract.EntityLayer<ArenaPanelAbstract.TerrainComp, ArenaPanelAbstract.BuildingComp, EntityLayer.UnitComp> {
 
 			private static final long serialVersionUID = 1L;
@@ -376,6 +375,8 @@ class LevelGameWindow extends JPanel implements Clearable {
 			private Position.Bitmap reachableMap = Position.Bitmap.Empty;
 			private Position.Bitmap attackableMap = Position.Bitmap.Empty;
 			private final List<Position> movePath;
+
+			private final Animation animation = new Animation();
 
 			private final DataChangeRegister register = new DataChangeRegister();
 
@@ -410,9 +411,21 @@ class LevelGameWindow extends JPanel implements Clearable {
 				register.register(game.onTurnEnd(), e -> clearSelection());
 
 				register.register(onHoverChange, e -> hoveredUpdated(e.pos));
-				register.register(((GameGUI) game).onBeforeUnitMove, e -> {
-					units.get(e.unit).moveAnimation(e.path);
-				});
+
+				register.register(animation.onAnimationBegin, e -> suspendActions());
+				register.register(animation.onAnimationEnd, e -> resumeActions());
+				register.register(animation.onAnimationStep, e -> repaint());
+
+				animation.start();
+			}
+
+			@Override
+			public void clear() {
+				animation.stop();
+
+				register.unregisterAll();
+
+				super.clear();
 			}
 
 			void hoveredUpdated(Position hovered) {
@@ -603,7 +616,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 				units.put(unit, new UnitComp(unit));
 			}
 
-			private class UnitComp extends ArenaPanelAbstract.UnitComp {
+			class UnitComp extends ArenaPanelAbstract.UnitComp implements Animation.Animated {
 
 				private final int HealthBarWidth = 26;
 				private final int HealthBarHeight = 4;
@@ -611,8 +624,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 				private List<Position> animationMovePath;
 				private int animationCursor;
-				private static final int animationResolution = 16;
-				private static final int animationFreq = 1000 / 60;
+				private static final int AnimationStepSize = 16;
 
 				UnitComp(Unit unit) {
 					super(ArenaPanel.this, unit);
@@ -625,9 +637,9 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 				@Override
 				Position pos() {
-					if (isMoveAnimationActive()) {
-						int idx = animationCursor / animationResolution;
-						double frac = (animationCursor % animationResolution + 1) / (double) animationResolution;
+					if (isAnimated()) {
+						int idx = animationCursor / AnimationStepSize;
+						double frac = (animationCursor % AnimationStepSize + 1) / (double) AnimationStepSize;
 						Position p1 = animationMovePath.get(idx);
 						Position p2 = animationMovePath.get(idx + 1);
 						double x = p1.x + (p2.x - p1.x) * frac;
@@ -644,7 +656,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 					Position pos = pos();
 
 					final Team playerTeam = Team.Red;
-					if (!isMoveAnimationActive() && !game.arena().isUnitVisible(pos, playerTeam))
+					if (!isAnimated() && !game.arena().isUnitVisible(pos, playerTeam))
 						return;
 					Graphics2D g2 = (Graphics2D) g;
 
@@ -667,50 +679,34 @@ class LevelGameWindow extends JPanel implements Clearable {
 					g2.drawRect(healthBarX, healthBarY, HealthBarWidth, HealthBarHeight);
 				}
 
-				void moveAnimation(List<Position> animationPath) {
-					if (animationPath.size() < 2)
-						return;
-
-					suspendActions();
-					UnitComp unitComp = units.get(unit());
-
+				void moveAnimation(List<Position> animationPath, Runnable future) {
 					animationMovePath = new ArrayList<>(animationPath);
 					animationCursor = 0;
-
-					Timer animationTimer = new Timer(animationFreq, null);
-					animationTimer.addActionListener(e -> {
-						repaint();
-						unitComp.advanceMoveAnimation();
-						if (!unitComp.isMoveAnimationActive()) {
-							animationTimer.stop();
-							repaint();
-							resumeActions();
-						}
-					});
-					animationTimer.setRepeats(true);
-					animationTimer.start();
-					while (animationTimer.isRunning())
-						;
+					animation.animateAndWait(this, future);
 				}
 
-				boolean isMoveAnimationActive() {
-					return animationMovePath != null;
+				public boolean isAnimated() {
+					return animationMovePath != null && animationMovePath.size() >= 2;
+				}
+
+				@Override
+				public boolean advanceAnimationStep() {
+					if (animationMovePath == null)
+						throw new IllegalStateException();
+					assert animationCursor < animationMovePath.size() * AnimationStepSize;
+					animationCursor++;
+					if (animationCursor < (animationMovePath.size() - 1) * AnimationStepSize) {
+						return true;
+					} else {
+						animationMovePath = null;
+						animationCursor = 0;
+						return false;
+					}
 				}
 
 				@Override
 				boolean isPaintDelayed() {
-					return isMoveAnimationActive();
-				}
-
-				void advanceMoveAnimation() {
-					if (animationMovePath == null)
-						return;
-					assert animationCursor < animationMovePath.size() * animationResolution;
-					animationCursor++;
-					if (animationCursor == (animationMovePath.size() - 1) * animationResolution) {
-						animationMovePath = null;
-						animationCursor = 0;
-					}
+					return isAnimated();
 				}
 
 			}
