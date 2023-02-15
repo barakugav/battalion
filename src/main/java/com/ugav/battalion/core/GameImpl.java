@@ -44,7 +44,7 @@ class GameImpl implements Game {
 		}
 
 		for (Team team : Team.realTeams)
-			teamData.put(team, new TeamData());
+			teamData.put(team, new TeamData(level.getStartingMoney(team)));
 	}
 
 	@Override
@@ -323,6 +323,12 @@ class GameImpl implements Game {
 
 	private static class TeamData {
 		int money;
+
+		TeamData(int startingMoney) {
+			if (startingMoney < 0)
+				throw new IllegalArgumentException();
+			money = startingMoney;
+		}
 	}
 
 }

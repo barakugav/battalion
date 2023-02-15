@@ -185,7 +185,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 			add(buttonMainMenu);
 
 			for (Team team : Team.realTeams)
-				updateMoneyLabel(team, 0);
+				updateMoneyLabel(team, game.getMoney(team));
 		}
 
 		void initGame() {

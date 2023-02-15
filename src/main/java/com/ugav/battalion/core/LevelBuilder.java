@@ -2,7 +2,9 @@ package com.ugav.battalion.core;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -17,14 +19,17 @@ import com.ugav.battalion.core.Position.Direction;
 public class LevelBuilder {
 
 	private Position.Array<TileDesc> tiles;
+	private final Map<Team, Integer> startingMoney;
 	public final DataChangeNotifier<TileChange> onTileChange = new DataChangeNotifier<>();
 	public final DataChangeNotifier<LevelReset> onResetChange = new DataChangeNotifier<>();
 
 	public LevelBuilder(int width, int height) {
+		startingMoney = new HashMap<>();
 		reset(width, height);
 	}
 
 	public LevelBuilder(Level level) {
+		startingMoney = new HashMap<>();
 		reset(level);
 	}
 
@@ -32,12 +37,14 @@ public class LevelBuilder {
 		if (!(Level.MINIMUM_WIDTH <= width && width < 100 && Level.MINIMUM_HEIGHT <= height && height < 100))
 			throw new IllegalArgumentException();
 		tiles = Position.Array.fromFunc(width, height, p -> TileDesc.of(Terrain.FlatLand1, null, null));
+		startingMoney.clear();
 		onResetChange.notify(new LevelReset(this));
 	}
 
 	public void reset(Level level) {
 		int width = level.width(), height = level.height();
 		tiles = Position.Array.fromFunc(width, height, pos -> Objects.requireNonNull(level.at(pos)));
+		startingMoney.clear();
 		onResetChange.notify(new LevelReset(this));
 	}
 
@@ -69,13 +76,17 @@ public class LevelBuilder {
 		return tiles.height();
 	}
 
+	public void setStartingMoney(Team team, int money) {
+		startingMoney.put(team, Integer.valueOf(money));
+	}
+
 	public Level buildLevel() {
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width(), height()))) {
 			String errStr = checkValidTile(pos, at(pos));
 			if (errStr != null)
 				throw new IllegalStateException("Can't build level, error at " + pos + ": " + errStr);
 		}
-		return new Level(tiles);
+		return new Level(tiles, startingMoney);
 	}
 
 	private String checkValidTile(Position pos, TileDesc tile) {

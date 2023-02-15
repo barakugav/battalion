@@ -1,5 +1,8 @@
 package com.ugav.battalion.core;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import com.ugav.battalion.Utils;
@@ -7,16 +10,18 @@ import com.ugav.battalion.Utils;
 public class Level {
 
 	private final Position.Array<TileDesc> tiles;
+	private final Map<Team, Integer> startingMoney;
 
 	public static final int MINIMUM_WIDTH = 10;
 	public static final int MINIMUM_HEIGHT = 10;
 
-	Level(Position.Array<TileDesc> tiles) {
+	Level(Position.Array<TileDesc> tiles, Map<Team, Integer> startingMoney) {
 		int width = tiles.width();
 		int height = tiles.height();
 		if (width < MINIMUM_WIDTH || height < MINIMUM_HEIGHT)
 			throw new IllegalArgumentException("illegal size: " + width + " " + height);
 		this.tiles = Position.Array.fromFunc(width, height, tiles);
+		this.startingMoney = Collections.unmodifiableMap(new HashMap<>(startingMoney));
 	}
 
 	public int width() {
@@ -29,6 +34,11 @@ public class Level {
 
 	public TileDesc at(Position pos) {
 		return tiles.at(pos);
+	}
+
+	public int getStartingMoney(Team team) {
+		Integer m = startingMoney.get(team);
+		return m != null ? m.intValue() : 0;
 	}
 
 	@Override

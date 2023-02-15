@@ -63,6 +63,18 @@ class LevelSerializerXML implements LevelSerializer {
 			addValueChild(dom, shapeElm, "height", Integer.toString(level.height()));
 			levelElm.appendChild(shapeElm);
 
+			Element teamsElm = dom.createElement("teams");
+			for (Team team : Team.realTeams) {
+				Element teamElm = dom.createElement("team");
+
+				addValueChild(dom, teamElm, "color", team);
+				int startingMoney = level.getStartingMoney(team);
+				addValueChild(dom, teamElm, "startingMoney", Integer.toString(startingMoney));
+
+				teamsElm.appendChild(teamElm);
+			}
+			levelElm.appendChild(teamsElm);
+
 			Element tilesElm = dom.createElement("tiles");
 			for (Position pos : Utils.iterable(new Position.Iterator2D(level.width(), level.height()))) {
 				TileDesc tile = level.at(pos);
@@ -146,11 +158,18 @@ class LevelSerializerXML implements LevelSerializer {
 		return elms;
 	}
 
-	private static Element childElm(Node parent, String tag) {
+	private static Element childElmMaybeNull(Node parent, String tag) {
 		for (Element elm : childElms(parent))
 			if (tag.equals(elm.getTagName()))
 				return elm;
 		return null;
+	}
+
+	private static Element childElm(Node parent, String tag) {
+		Element elm = childElmMaybeNull(parent, tag);
+		if (elm == null)
+			throw new RuntimeException("Element not found: '" + tag + "'");
+		return elm;
 	}
 
 	private static String childData(Node parent, String tag) {
@@ -171,13 +190,19 @@ class LevelSerializerXML implements LevelSerializer {
 
 			LevelBuilder builder = new LevelBuilder(width, height);
 
+			for (Element teamElm : childElms(childElm(levelElm, "teams"))) {
+				Team team = Team.valueOf(childData(teamElm, "color"));
+				int startingMoney = Integer.parseInt(childData(teamElm, "startingMoney"));
+				builder.setStartingMoney(team, startingMoney);
+			}
+
 			for (Element tileElm : childElms(childElm(levelElm, "tiles"))) {
 				int x = Integer.parseInt(childData(tileElm, "x"));
 				int y = Integer.parseInt(childData(tileElm, "y"));
 				Terrain terrain = Terrain.valueOf(childData(tileElm, "terrain"));
 
 				BuildingDesc building = null;
-				Element buildingElm = childElm(tileElm, "building");
+				Element buildingElm = childElmMaybeNull(tileElm, "building");
 				if (buildingElm != null) {
 					String type = childData(buildingElm, "type");
 					String team = childData(buildingElm, "team");
@@ -185,7 +210,7 @@ class LevelSerializerXML implements LevelSerializer {
 				}
 
 				UnitDesc unit = null;
-				Element unitElm = childElm(tileElm, "unit");
+				Element unitElm = childElmMaybeNull(tileElm, "unit");
 				if (unitElm != null) {
 					Unit.Type type = Unit.Type.valueOf(childData(unitElm, "type"));
 					Team team = Team.valueOf(childData(unitElm, "team"));
