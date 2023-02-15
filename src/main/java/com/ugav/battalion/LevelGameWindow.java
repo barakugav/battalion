@@ -66,8 +66,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 	LevelGameWindow(Globals globals, Level level) {
 		this.globals = Objects.requireNonNull(globals);
 
-		if (level.getWidth() < ArenaPanel.DISPLAYED_ARENA_WIDTH
-				|| level.getHeight() < ArenaPanel.DISPLAYED_ARENA_HEIGHT)
+		if (level.width() < ArenaPanel.DISPLAYED_ARENA_WIDTH || level.height() < ArenaPanel.DISPLAYED_ARENA_HEIGHT)
 			throw new IllegalArgumentException("level size is too small");
 		this.game = new GameGUI(level);
 		menu = new SideMenu();
@@ -228,7 +227,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 			register.register(onMapMove, e -> closeUnitMenu());
 
-			updateArenaSize(game.getWidth(), game.getHeight());
+			updateArenaSize(game.width(), game.height());
 		}
 
 		@Override

@@ -50,13 +50,13 @@ class GameGUI implements Game {
 	}
 
 	@Override
-	public int getWidth() {
-		return game.getWidth();
+	public int width() {
+		return game.width();
 	}
 
 	@Override
-	public int getHeight() {
-		return game.getHeight();
+	public int height() {
+		return game.height();
 	}
 
 	@Override

@@ -16,8 +16,6 @@ import com.ugav.battalion.core.Level.UnitDesc;
 
 public class Arena {
 
-	private final int width;
-	private final int height;
 	private final Tile[][] tiles;
 
 	public final DataChangeNotifier<EntityChange> onEntityChange = new DataChangeNotifier<>();
@@ -25,8 +23,6 @@ public class Arena {
 	Arena(int width, int height, Tile[][] tiles) {
 		if (width <= 0 || height <= 0)
 			throw new IllegalArgumentException();
-		this.width = width;
-		this.height = height;
 		this.tiles = new Tile[width][height];
 		for (int x = 0; x < width; x++)
 			for (int y = 0; y < height; y++)
@@ -34,21 +30,18 @@ public class Arena {
 	}
 
 	Arena(Level level) {
-		width = level.getWidth();
-		height = level.getHeight();
-
-		int width = level.getWidth(), height = level.getHeight();
+		int width = level.width(), height = level.height();
 		tiles = new Tile[width][height];
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
 			tiles[pos.xInt()][pos.yInt()] = createTile(level.at(pos), pos);
 	}
 
-	public int getWidth() {
-		return width;
+	public int width() {
+		return tiles.length;
 	}
 
-	public int getHeight() {
-		return height;
+	public int height() {
+		return tiles.length != 0 ? tiles[0].length : 0;
 	}
 
 	public Tile at(Position pos) {
@@ -56,7 +49,7 @@ public class Arena {
 	}
 
 	public boolean isValidPos(Position pos) {
-		return pos.isInRect(width - 1, height - 1);
+		return pos.isInRect(width() - 1, height() - 1);
 	}
 
 	public Collection<Position> positions() {
@@ -64,12 +57,12 @@ public class Arena {
 
 			@Override
 			public int size() {
-				return width * height;
+				return width() * height();
 			}
 
 			@Override
 			public Iterator<Position> iterator() {
-				return new Position.Iterator2D(width, height);
+				return new Position.Iterator2D(width(), height());
 			}
 
 		};
@@ -80,7 +73,7 @@ public class Arena {
 
 			@Override
 			public int size() {
-				return width * height;
+				return width() * height();
 			}
 
 			@Override

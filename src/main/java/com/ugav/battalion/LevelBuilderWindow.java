@@ -339,8 +339,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			super(globals.frame, "Reset level");
 			JPanel panel = new JPanel();
 
-			JTextField widthText = new JTextField(Integer.toString(builder.getWidth()), 12);
-			JTextField heightText = new JTextField(Integer.toString(builder.getHeight()), 12);
+			JTextField widthText = new JTextField(Integer.toString(builder.width()), 12);
+			JTextField heightText = new JTextField(Integer.toString(builder.height()), 12);
 			JButton resetButton = new JButton("reset");
 			JButton cancelButton = new JButton("cancel");
 
@@ -400,7 +400,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		void reset() {
 			entityLayer().reset();
-			updateArenaSize(builder.getWidth(), builder.getHeight());
+			updateArenaSize(builder.width(), builder.height());
 			mapViewSet(Position.of(0, 0));
 			repaint();
 		}
@@ -497,7 +497,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			void reset() {
 				removeAllArenaComps();
 
-				for (Position pos : Utils.iterable(new Position.Iterator2D(builder.getWidth(), builder.getHeight()))) {
+				for (Position pos : Utils.iterable(new Position.Iterator2D(builder.width(), builder.height()))) {
 					TerrainComp tileComp = new TerrainComp(pos);
 					tiles.put(pos, tileComp);
 					tileComp.tileUpdate();

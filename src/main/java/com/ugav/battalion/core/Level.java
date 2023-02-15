@@ -6,9 +6,56 @@ import com.ugav.battalion.Utils;
 
 public class Level {
 
-	private final int width;
-	private final int height;
 	private final TileDesc[][] tiles;
+
+	public static final int MINIMUM_WIDTH = 10;
+	public static final int MINIMUM_HEIGHT = 10;
+
+	Level(TileDesc[][] tiles) {
+		int width = tiles.length;
+		int height = tiles[0].length;
+		if (width < MINIMUM_WIDTH || height < MINIMUM_HEIGHT)
+			throw new IllegalArgumentException("illegal size: " + width + " " + height);
+		this.tiles = new TileDesc[width][height];
+		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
+			this.tiles[pos.xInt()][pos.yInt()] = Objects.requireNonNull(tiles[pos.xInt()][pos.yInt()]);
+	}
+
+	public int width() {
+		return tiles.length;
+	}
+
+	public int height() {
+		return tiles.length != 0 ? tiles[0].length : 0;
+	}
+
+	public TileDesc at(Position pos) {
+		return tiles[pos.xInt()][pos.yInt()];
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == this)
+			return true;
+		if (!(o instanceof Level))
+			return false;
+		Level other = (Level) o;
+
+		if (width() != other.width() || height() != other.height())
+			return false;
+		for (Position pos : Utils.iterable(new Position.Iterator2D(width(), height())))
+			if (!Objects.equals(at(pos), other.at(pos)))
+				return false;
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 1;
+		for (Position pos : Utils.iterable(new Position.Iterator2D(width(), height())))
+			hash = 31 * hash + Objects.hashCode(at(pos));
+		return hash;
+	}
 
 	public static class TileDesc {
 		public final Terrain terrain;
@@ -160,55 +207,6 @@ public class Level {
 		public String toString() {
 			return "(" + type + ", " + team + ")";
 		}
-	}
-
-	public static final int MINIMUM_WIDTH = 10;
-	public static final int MINIMUM_HEIGHT = 10;
-
-	Level(TileDesc[][] tiles) {
-		this.width = tiles.length;
-		this.height = tiles[0].length;
-		if (width < MINIMUM_WIDTH || height < MINIMUM_HEIGHT)
-			throw new IllegalArgumentException("illegal size: " + width + " " + height);
-		this.tiles = new TileDesc[width][height];
-		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			this.tiles[pos.xInt()][pos.yInt()] = Objects.requireNonNull(tiles[pos.xInt()][pos.yInt()]);
-	}
-
-	public int getWidth() {
-		return width;
-	}
-
-	public int getHeight() {
-		return height;
-	}
-
-	public TileDesc at(Position pos) {
-		return tiles[pos.xInt()][pos.yInt()];
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		if (o == this)
-			return true;
-		if (!(o instanceof Level))
-			return false;
-		Level other = (Level) o;
-
-		if (width != other.width || height != other.height)
-			return false;
-		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			if (!Objects.equals(at(pos), other.at(pos)))
-				return false;
-		return true;
-	}
-
-	@Override
-	public int hashCode() {
-		int hash = 1;
-		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
-			hash = 31 * hash + Objects.hashCode(at(pos));
-		return hash;
 	}
 
 }

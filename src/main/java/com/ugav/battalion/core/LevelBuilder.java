@@ -39,7 +39,7 @@ public class LevelBuilder {
 	}
 
 	public void reset(Level level) {
-		int width = level.getWidth(), height = level.getHeight();
+		int width = level.width(), height = level.height();
 		tiles = new TileDesc[width][height];
 		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
 			tiles[pos.xInt()][pos.yInt()] = Objects.requireNonNull(level.at(pos));
@@ -66,17 +66,16 @@ public class LevelBuilder {
 		return setTile(pos, TileDesc.of(terrain, buiding, unit));
 	}
 
-	public int getWidth() {
+	public int width() {
 		return tiles.length;
 	}
 
-	public int getHeight() {
-		return tiles[0].length;
+	public int height() {
+		return tiles.length != 0 ? tiles[0].length : 0;
 	}
 
 	public Level buildLevel() {
-		int width = getWidth(), height = getHeight();
-		for (Position pos : Utils.iterable(new Position.Iterator2D(width, height))) {
+		for (Position pos : Utils.iterable(new Position.Iterator2D(width(), height()))) {
 			String errStr = checkValidTile(pos, at(pos));
 			if (errStr != null)
 				throw new IllegalStateException("Can't build level, error at " + pos + ": " + errStr);
@@ -85,7 +84,7 @@ public class LevelBuilder {
 	}
 
 	private String checkValidTile(Position pos, TileDesc tile) {
-		if (!pos.isInRect(getWidth() - 1, getHeight() - 1))
+		if (!pos.isInRect(width() - 1, height() - 1))
 			return "out of bound";
 		if (tile.hasBuilding())
 			if (!tile.building.type.canBuildOn(tile.terrain))
@@ -98,13 +97,13 @@ public class LevelBuilder {
 		List<Position> checkBridge = new ArrayList<>(List.of(pos));
 		for (Direction dir : Direction.values()) {
 			Position p = pos.add(dir);
-			if (p.isInRect(getWidth() - 1, getHeight() - 1))
+			if (p.isInRect(width() - 1, height() - 1))
 				checkBridge.add(p);
 		}
 		for (Position bridgePos : checkBridge) {
 			if (EnumSet.of(Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh)
 					.contains(terrain.apply(bridgePos).category))
-				if (Terrain.isBridgeVertical(bridgePos, terrain, getWidth(), getHeight()) == null)
+				if (Terrain.isBridgeVertical(bridgePos, terrain, width(), height()) == null)
 					return "illegal bridge, can't determine orientation";
 		}
 		return null;

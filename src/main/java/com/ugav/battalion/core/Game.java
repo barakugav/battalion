@@ -10,9 +10,9 @@ public interface Game {
 
 	public Arena arena();
 
-	public int getWidth();
+	public int width();
 
-	public int getHeight();
+	public int height();
 
 	public Tile getTile(Position pos);
 

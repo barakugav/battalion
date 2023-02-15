@@ -289,12 +289,12 @@ public class Unit extends Entity {
 
 	Position.Bitmap getPassableMap(boolean invisiableEnable) {
 		int[][] distanceMap = calcDistanceMap(invisiableEnable);
-		return Position.Bitmap.fromPredicate(arena.getWidth(), arena.getHeight(),
+		return Position.Bitmap.fromPredicate(arena.width(), arena.height(),
 				p -> distanceMap[p.xInt()][p.yInt()] >= 0);
 	}
 
 	private int[][] calcDistanceMap(boolean invisiableEnable) {
-		int width = arena.getWidth(), height = arena.getHeight();
+		int width = arena.width(), height = arena.height();
 
 		int[][] distanceMap = new int[width][height];
 		for (int x = 0; x < width; x++)
@@ -374,7 +374,7 @@ public class Unit extends Entity {
 	private Position.Bitmap getAttackableMapCloseRange(boolean invisiableEnable) {
 		Position.Bitmap reachableMap = getReachableMap(invisiableEnable);
 
-		boolean[][] attackableMap = new boolean[arena.getWidth()][arena.getHeight()];
+		boolean[][] attackableMap = new boolean[arena.width()][arena.height()];
 		for (Position p : reachableMap) {
 			for (Position neighbor : p.neighbors()) {
 				if (!arena.isValidPos(neighbor))
@@ -390,7 +390,7 @@ public class Unit extends Entity {
 	}
 
 	private Position.Bitmap getAttackableMapLongRange(boolean invisiableEnable) {
-		return Position.Bitmap.fromPredicate(arena.getWidth(), arena.getHeight(), p -> {
+		return Position.Bitmap.fromPredicate(arena.width(), arena.height(), p -> {
 			int distance = (int) getPos().distNorm1(p);
 			if (!arena.at(p).hasUnit() || (invisiableEnable && !arena.isUnitVisible(p, getTeam())))
 				return false;

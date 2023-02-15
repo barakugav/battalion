@@ -53,13 +53,13 @@ class GameImpl implements Game {
 	}
 
 	@Override
-	public int getWidth() {
-		return arena.getWidth();
+	public int width() {
+		return arena.width();
 	}
 
 	@Override
-	public int getHeight() {
-		return arena.getHeight();
+	public int height() {
+		return arena.height();
 	}
 
 	@Override
