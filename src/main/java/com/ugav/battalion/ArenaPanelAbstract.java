@@ -276,7 +276,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	void drawImage(Graphics g, Object obj, int x, int y) {
 		BufferedImage img = Images.getImage(obj);
 		assert img.getWidth() == TILE_SIZE_PIXEL;
-		g.drawImage(img, x, y + TILE_SIZE_PIXEL - img.getHeight(), img.getWidth(), img.getHeight(), this);
+		g.drawImage(img, x, y + TILE_SIZE_PIXEL - img.getHeight(), this);
 	}
 
 	abstract Terrain getTerrain(Position pos);

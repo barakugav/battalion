@@ -218,13 +218,13 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				/* Regular icon */
 				BufferedImage icon = new BufferedImage(IconWidth, IconHeight, BufferedImage.TYPE_INT_ARGB);
 				g = icon.getGraphics();
-				g.drawImage(img, 0, IconHeight - img.getHeight(), IconWidth, img.getHeight(), null);
+				g.drawImage(img, 0, IconHeight - img.getHeight(), null);
 				setIcon(new ImageIcon(icon));
 
 				/* Selected icon */
 				BufferedImage selectedIcon = new BufferedImage(IconWidth, IconHeight, BufferedImage.TYPE_INT_ARGB);
 				g = selectedIcon.getGraphics();
-				g.drawImage(img, 0, IconHeight - img.getHeight(), IconWidth, img.getHeight(), null);
+				g.drawImage(img, 0, IconHeight - img.getHeight(), null);
 				g.drawImage(selectImg, 0, IconHeight - selectImg.getHeight(), IconWidth, IconWidth, null);
 				setSelectedIcon(new ImageIcon(selectedIcon));
 			}
