@@ -274,18 +274,18 @@ class GameImpl implements Game {
 	}
 
 	@Override
-	public Unit transportFinish(Unit trasporterUnit) {
-		Position pos = trasporterUnit.getPos();
+	public Unit transportFinish(Unit trasportedUnit) {
+		Position pos = trasportedUnit.getPos();
 
-		if (!trasporterUnit.isActive() || !trasporterUnit.type.transportUnits)
+		if (!trasportedUnit.isActive() || !trasportedUnit.type.transportUnits)
 			throw new IllegalArgumentException();
-		Unit transportedUnit = trasporterUnit.getTransportedUnit();
+		Unit transportedUnit = trasportedUnit.getTransportedUnit();
 		if (!transportedUnit.type.canStandOn(arena.at(pos).getTerrain()))
 			throw new IllegalArgumentException();
 
-		trasporterUnit.setActive(false);
+		trasportedUnit.setActive(false);
 		arena.at(pos).removeUnit();
-		onUnitRemove.notify(new UnitRemove(this, trasporterUnit));
+		onUnitRemove.notify(new UnitRemove(this, trasportedUnit));
 
 		arena.at(pos).setUnit(transportedUnit);
 		transportedUnit.setPos(pos);

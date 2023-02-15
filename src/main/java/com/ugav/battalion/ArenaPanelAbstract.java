@@ -281,7 +281,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	abstract Terrain getTerrain(Position pos);
 
-	abstract Object getTrasporterUnit(Object unit);
+	abstract Object getTrasportedUnit(Object unit);
 
 	abstract static class ArenaComp implements Clearable {
 
@@ -502,9 +502,9 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			Position pos = pos();
 			arena.drawRelativeToMap(g, unit, pos);
 
-			Object trasporterUnit = arena.getTrasporterUnit(unit);
-			if (trasporterUnit != null) {
-				BufferedImage img = Images.getImage(Images.Mini.of(trasporterUnit));
+			Object trasportedUnit = arena.getTrasportedUnit(unit);
+			if (trasportedUnit != null) {
+				BufferedImage img = Images.getImage(Images.Mini.of(trasportedUnit));
 				int x = arena.displayedX(pos.x * TILE_SIZE_PIXEL) + 1;
 				int y = arena.displayedY(pos.y * TILE_SIZE_PIXEL) + TILE_SIZE_PIXEL - img.getHeight() - 1;
 				int w = img.getWidth(), h = img.getHeight();

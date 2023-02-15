@@ -777,7 +777,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 		}
 
 		@Override
-		Object getTrasporterUnit(Object unit) {
+		Object getTrasportedUnit(Object unit) {
 			Unit u = ((Unit) unit);
 			return u.type.transportUnits ? u.getTransportedUnit() : null;
 		}

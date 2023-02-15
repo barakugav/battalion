@@ -139,9 +139,9 @@ class GameGUI implements Game {
 	}
 
 	@Override
-	public Unit transportFinish(Unit trasporterUnit) {
+	public Unit transportFinish(Unit trasportedUnit) {
 		checkCorrectThread();
-		return run(() -> game.transportFinish(trasporterUnit));
+		return run(() -> game.transportFinish(trasportedUnit));
 	}
 
 	@Override

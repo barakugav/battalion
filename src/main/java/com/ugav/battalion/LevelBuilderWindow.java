@@ -473,7 +473,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		}
 
 		@Override
-		Object getTrasporterUnit(Object unit) {
+		Object getTrasportedUnit(Object unit) {
 			UnitDesc u = ((UnitDesc) unit);
 			return u.type.transportUnits ? u.getTransportedUnit() : null;
 		}
