@@ -493,11 +493,11 @@ class LevelGameWindow extends JPanel implements Clearable {
 				super.paintComponent(g);
 
 				if (selection != null) {
-					tiles.get(selection).drawImage(g, Images.Label.Selection);
+					terrains.get(selection).drawImage(g, Images.Label.Selection);
 					for (Position pos : passableMap)
-						tiles.get(pos).drawImage(g, Images.Label.Passable);
+						terrains.get(pos).drawImage(g, Images.Label.Passable);
 					for (Position pos : attackableMap)
-						tiles.get(pos).drawImage(g, Images.Label.Attackable);
+						terrains.get(pos).drawImage(g, Images.Label.Attackable);
 
 				}
 				if (isUnitSelected()) {
@@ -588,7 +588,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 				for (Position pos : game.arena().positions()) {
 					TerrainComp tileComp = new TerrainComp(ArenaPanel.this, pos);
 					Tile tile = game.getTile(pos);
-					tiles.put(pos, tileComp);
+					terrains.put(pos, tileComp);
 					if (tile.hasUnit())
 						addUnitComp(tile.getUnit());
 

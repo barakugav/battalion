@@ -487,7 +487,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				super(arena);
 
 				register.register(builder.onTileChange, e -> {
-					tiles.computeIfAbsent(e.pos, TerrainComp::new).tileUpdate();
+					terrains.computeIfAbsent(e.pos, TerrainComp::new).tileUpdate();
 					repaint(); /* TODO find a way to repaint only the changed tile */
 				});
 			}
@@ -497,7 +497,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 				for (Position pos : Utils.iterable(new Position.Iterator2D(builder.width(), builder.height()))) {
 					TerrainComp tileComp = new TerrainComp(pos);
-					tiles.put(pos, tileComp);
+					terrains.put(pos, tileComp);
 					tileComp.tileUpdate();
 				}
 			}

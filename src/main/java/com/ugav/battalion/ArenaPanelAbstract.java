@@ -171,7 +171,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		private final ArenaPanelAbstract<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> arena;
 
-		final Map<Position, TerrainCompImpl> tiles = new HashMap<>();
+		final Map<Position, TerrainCompImpl> terrains = new HashMap<>();
 		final Map<Object, BuildingCompImpl> buildings = new IdentityHashMap<>();
 		final Map<Object, UnitCompImpl> units = new IdentityHashMap<>();
 
@@ -214,8 +214,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		@Override
 		protected void paintComponent(Graphics g) {
-			List<ArenaComp> comps = new ArrayList<>(tiles.size() + buildings.size() + units.size());
-			comps.addAll(tiles.values());
+			List<ArenaComp> comps = new ArrayList<>(terrains.size() + buildings.size() + units.size());
+			comps.addAll(terrains.values());
 			comps.addAll(buildings.values());
 			comps.addAll(units.values());
 			comps.sort((o1, o2) -> {
@@ -246,9 +246,9 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		}
 
 		void removeAllArenaComps() {
-			for (TerrainCompImpl tile : tiles.values())
+			for (TerrainCompImpl tile : terrains.values())
 				tile.clear();
-			tiles.clear();
+			terrains.clear();
 			for (BuildingCompImpl building : buildings.values())
 				building.clear();
 			buildings.clear();
