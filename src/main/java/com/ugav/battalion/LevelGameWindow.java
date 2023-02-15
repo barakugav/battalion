@@ -7,11 +7,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -28,18 +25,15 @@ import java.util.function.LongToIntFunction;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+import com.ugav.battalion.FactoryMenu.UnitBuy;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level;
-import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Position;
 import com.ugav.battalion.core.Position.Direction;
 import com.ugav.battalion.core.Team;
@@ -289,12 +283,28 @@ class LevelGameWindow extends JPanel implements Clearable {
 				selection = pos;
 				Building building = tile.getBuilding();
 				if (building.type.canBuildUnits) {
-					FactoryMenu factoryMenu = new FactoryMenu(globals.frame, building);
+					FactoryMenu factoryMenu = new FactoryMenu(globals.frame, game, building);
+					DataListener<UnitBuy> unitButListener = e -> {
+						gameAction(() -> game.buildUnit((Building) e.source, e.sale.type));
+						clearSelection();
+					};
+					register.register(factoryMenu.onUnitBuy, unitButListener);
 					factoryMenu.addWindowListener(new WindowAdapter() {
-						@Override
-						public void windowClosing(WindowEvent e) {
+
+						private void closed() {
+							register.unregister(factoryMenu.onUnitBuy, unitButListener);
 							clearSelection();
 							repaint();
+						}
+
+						@Override
+						public void windowClosed(WindowEvent e) {
+							closed();
+						}
+
+						@Override
+						public void windowClosing(WindowEvent e) {
+							closed();
 						}
 					});
 					factoryMenu.setVisible(true);
@@ -777,84 +787,6 @@ class LevelGameWindow extends JPanel implements Clearable {
 			return u.type.transportUnits ? u.getTransportedUnit() : null;
 		}
 
-	}
-
-	private class FactoryMenu extends JDialog {
-
-		private final Building factory;
-
-		private static final long serialVersionUID = 1L;
-
-		FactoryMenu(JFrame parent, Building factory) {
-			super(parent);
-
-			if (!factory.type.canBuildUnits)
-				throw new IllegalArgumentException(factory.type.toString());
-			this.factory = factory;
-
-			initUI();
-		}
-
-		private void initUI() {
-			setTitle("Factory");
-
-			int unitCount = Unit.Type.values().length;
-			setLayout(new GridLayout(1, unitCount));
-
-			Map<Unit.Type, Building.UnitSale> sales = factory.getAvailableUnits();
-
-			List<Unit.Type> landUnits = List.of(Unit.Type.Soldier, Unit.Type.Bazooka, Unit.Type.TankAntiAir,
-					Unit.Type.Tank, Unit.Type.Mortar, Unit.Type.Artillery, Unit.Type.TankBig);
-			List<Unit.Type> waterUnits = List.of(Unit.Type.SpeedBoat, Unit.Type.ShipAntiAir, Unit.Type.Ship,
-					Unit.Type.ShipArtillery, Unit.Type.Submarine);
-			List<Unit.Type> airUnits = List.of(Unit.Type.Airplane, Unit.Type.Airplane);
-			List<Unit.Type> unitsOrder = new ArrayList<>();
-			unitsOrder.addAll(landUnits);
-			unitsOrder.addAll(waterUnits);
-			unitsOrder.addAll(airUnits);
-
-			for (Unit.Type unit : unitsOrder) {
-				JPanel saleComp = new JPanel();
-				saleComp.setLayout(new GridBagLayout());
-				JComponent upperComp;
-				JComponent lowerComp;
-
-				Building.UnitSale unitSale = sales.get(unit);
-				if (unitSale != null) {
-					upperComp = new JLabel(new ImageIcon(Images.getImage(UnitDesc.of(unit, factory.getTeam()))));
-					lowerComp = new JLabel(Integer.toString(unitSale.price));
-				} else {
-					upperComp = new JLabel(new ImageIcon(Images.getImage(Images.Label.UnitLocked)));
-					lowerComp = new JLabel("none");
-				}
-
-				saleComp.add(upperComp, Utils.gbConstraints(0, 0, 1, 3));
-				saleComp.add(lowerComp, Utils.gbConstraints(0, 3, 1, 1));
-
-				if (unitSale != null) {
-					Building.UnitSale sale = unitSale;
-					saleComp.addMouseListener(new MouseAdapter() {
-						@Override
-						public void mousePressed(MouseEvent e) {
-							buyNewUnit(sale);
-						}
-					});
-				}
-
-				add(saleComp);
-			}
-
-			pack();
-			setLocationRelativeTo(getParent());
-		}
-
-		private void buyNewUnit(Building.UnitSale sale) {
-			if (sale.price > game.getMoney(factory.getTeam()))
-				return;
-			gameAction(() -> game.buildUnit(factory, sale.type));
-			arenaPanel.clearSelection();
-			dispose();
-		}
 	}
 
 }
