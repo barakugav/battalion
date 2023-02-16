@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.ugav.battalion.Utils;
+import com.ugav.battalion.core.Unit.Type;
 
 public class Level {
 
@@ -159,7 +160,7 @@ public class Level {
 
 	}
 
-	public static class UnitDesc {
+	public static class UnitDesc implements IUnit {
 		public final Unit.Type type;
 		public final Team team;
 		private final UnitDesc transportedUnit;
@@ -189,10 +190,9 @@ public class Level {
 			return new UnitDesc(desc.type, desc.team, desc.transportedUnit);
 		}
 
+		@Override
 		public UnitDesc getTransportedUnit() {
-			if (!type.transportUnits || transportedUnit == null)
-				throw new IllegalStateException();
-			return transportedUnit;
+			return type.transportUnits ? Objects.requireNonNull(transportedUnit) : null;
 		}
 
 		@Override
@@ -215,6 +215,17 @@ public class Level {
 		public String toString() {
 			return "(" + type + ", " + team + ")";
 		}
+
+		@Override
+		public Type getType() {
+			return type;
+		}
+
+		@Override
+		public Team getTeam() {
+			return team;
+		}
+
 	}
 
 }

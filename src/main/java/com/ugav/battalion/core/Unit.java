@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 import com.ugav.battalion.core.Game.EntityChange;
 import com.ugav.battalion.core.Level.UnitDesc;
 
-public class Unit extends Entity {
+public class Unit extends Entity implements IUnit {
 
 	public final Type type;
 	private Position pos;
@@ -83,10 +83,9 @@ public class Unit extends Entity {
 		return type.damage;
 	}
 
+	@Override
 	public Unit getTransportedUnit() {
-		if (!type.transportUnits || transportedUnit == null)
-			throw new IllegalStateException();
-		return transportedUnit;
+		return type.transportUnits ? Objects.requireNonNull(transportedUnit) : null;
 	}
 
 	boolean isMoveValid(List<Position> path) {
@@ -289,8 +288,7 @@ public class Unit extends Entity {
 
 	Position.Bitmap getPassableMap(boolean invisiableEnable) {
 		int[][] distanceMap = calcDistanceMap(invisiableEnable);
-		return Position.Bitmap.fromPredicate(arena.width(), arena.height(),
-				p -> distanceMap[p.xInt()][p.yInt()] >= 0);
+		return Position.Bitmap.fromPredicate(arena.width(), arena.height(), p -> distanceMap[p.xInt()][p.yInt()] >= 0);
 	}
 
 	private int[][] calcDistanceMap(boolean invisiableEnable) {
@@ -405,6 +403,11 @@ public class Unit extends Entity {
 	@Override
 	public String toString() {
 		return "" + getTeam().toString().charAt(0) + type;
+	}
+
+	@Override
+	public Type getType() {
+		return type;
 	}
 
 }

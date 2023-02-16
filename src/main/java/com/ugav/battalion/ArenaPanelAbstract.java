@@ -25,6 +25,7 @@ import java.util.function.Predicate;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 
+import com.ugav.battalion.core.IUnit;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Position;
 import com.ugav.battalion.core.Position.Direction;
@@ -277,8 +278,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	abstract Terrain getTerrain(Position pos);
 
-	abstract Object getTrasportedUnit(Object unit);
-
 	abstract static class ArenaComp implements Clearable {
 
 		final ArenaPanelAbstract<?, ?, ?> arena;
@@ -482,9 +481,9 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	static abstract class UnitComp extends ArenaComp {
 
-		private final Object unit;
+		private final IUnit unit;
 
-		UnitComp(ArenaPanelAbstract<?, ?, ?> arena, Object unit) {
+		UnitComp(ArenaPanelAbstract<?, ?, ?> arena, IUnit unit) {
 			super(arena);
 			this.unit = Objects.requireNonNull(unit);
 		}
@@ -498,7 +497,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			Position pos = pos();
 			arena.drawRelativeToMap(g, unit, pos);
 
-			Object trasportedUnit = arena.getTrasportedUnit(unit);
+			IUnit trasportedUnit = unit.getTransportedUnit();
 			if (trasportedUnit != null) {
 				BufferedImage img = Images.getImage(Images.Mini.of(trasportedUnit));
 				int x = arena.displayedX(pos.x * TILE_SIZE_PIXEL) + 1;

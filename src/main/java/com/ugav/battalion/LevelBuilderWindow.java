@@ -469,11 +469,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			return builder.at(pos).terrain;
 		}
 
-		@Override
-		Object getTrasportedUnit(Object unit) {
-			UnitDesc u = ((UnitDesc) unit);
-			return u.type.transportUnits ? u.getTransportedUnit() : null;
-		}
 
 		private class EntityLayer
 				extends ArenaPanelAbstract.EntityLayer<EntityLayer.TerrainComp, BuildingComp, EntityLayer.UnitComp> {

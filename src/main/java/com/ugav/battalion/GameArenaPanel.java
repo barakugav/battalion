@@ -612,10 +612,4 @@ public class GameArenaPanel extends
 		return game.getTile(pos).getTerrain();
 	}
 
-	@Override
-	Object getTrasportedUnit(Object unit) {
-		Unit u = ((Unit) unit);
-		return u.type.transportUnits ? u.getTransportedUnit() : null;
-	}
-
 }
