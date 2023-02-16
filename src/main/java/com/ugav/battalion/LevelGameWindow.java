@@ -58,9 +58,6 @@ class LevelGameWindow extends JPanel implements Clearable {
 			// TODO
 		});
 
-		invalidate();
-		repaint();
-
 		(gameActionsThread = new GameActionsThread()).start();
 
 		gameAction(() -> game.start());
@@ -146,9 +143,9 @@ class LevelGameWindow extends JPanel implements Clearable {
 				labelMoney.put(team, new JLabel());
 
 			JButton buttonEndTurn = new JButton("End Turn");
-			buttonEndTurn.addActionListener(onActiveActions(e -> endTurn()));
+			buttonEndTurn.addActionListener(onlyIfActionsEnabled(e -> endTurn()));
 			JButton buttonMainMenu = new JButton("Main Menu");
-			buttonMainMenu.addActionListener(onActiveActions(e -> globals.frame.displayMainMenu()));
+			buttonMainMenu.addActionListener(onlyIfActionsEnabled(e -> globals.frame.displayMainMenu()));
 
 			setLayout(new GridLayout(0, 1));
 			for (JLabel label : labelMoney.values())
@@ -173,7 +170,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 			labelMoney.get(team).setText(team.toString() + ": " + money);
 		}
 
-		private ActionListener onActiveActions(ActionListener l) {
+		private ActionListener onlyIfActionsEnabled(ActionListener l) {
 			return e -> {
 				if (!isActionSuspended())
 					l.actionPerformed(e);

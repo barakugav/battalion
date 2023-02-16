@@ -59,8 +59,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		add(arenaPanel);
 
 		arenaPanel.reset();
-		invalidate();
-		repaint();
 	}
 
 	@Override
@@ -390,6 +388,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		ArenaPanel() {
 			register.register(builder.onResetChange, e -> reset());
 			register.register(entityLayer.onTileClick, e -> tileClicked(e.pos));
+
+			tickTaskManager.start();
 		}
 
 		EntityLayer entityLayer() {
@@ -400,7 +400,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			entityLayer().reset();
 			updateArenaSize(builder.width(), builder.height());
 			mapViewSet(Position.of(0, 0));
-			repaint();
 		}
 
 		@Override
@@ -486,10 +485,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			EntityLayer(ArenaPanel arena) {
 				super(arena);
 
-				register.register(builder.onTileChange, e -> {
-					terrains.computeIfAbsent(e.pos, TerrainComp::new).tileUpdate();
-					repaint(); /* TODO find a way to repaint only the changed tile */
-				});
+				register.register(builder.onTileChange,
+						e -> terrains.computeIfAbsent(e.pos, TerrainComp::new).tileUpdate());
 			}
 
 			void reset() {

@@ -24,7 +24,6 @@ import java.util.function.Predicate;
 
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
-import javax.swing.Timer;
 
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Position;
@@ -38,8 +37,9 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	private int arenaHeight;
 	private Position mapPos;
 	private int mapPosX, mapPosY;
-	private final Timer mapMoveTimer;
 	final EntityLayer<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> entityLayer;
+
+	final TickTaskManager tickTaskManager = new TickTaskManager();
 
 	private final KeyListener keyListener;
 	final DataChangeNotifier<DataEvent> onMapMove = new DataChangeNotifier<>();
@@ -48,7 +48,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	static final int DISPLAYED_ARENA_WIDTH = Level.MINIMUM_WIDTH;
 	static final int DISPLAYED_ARENA_HEIGHT = Level.MINIMUM_WIDTH;
 
-	private static final int MapMoveTimerDelay = 10;
 	private static final int MapMoveSpeed = 4;
 	private static final long serialVersionUID = 1L;
 
@@ -90,7 +89,9 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			}
 		});
 
-		mapMoveTimer = new Timer(MapMoveTimerDelay, e -> {
+		tickTaskManager.addTask(1000, this::repaint);
+
+		tickTaskManager.addTask(100, () -> {
 			double dx = mapPos.x * TILE_SIZE_PIXEL - mapPosX;
 			double dy = mapPos.y * TILE_SIZE_PIXEL - mapPosY;
 			if (dx == 0 && dy == 0)
@@ -100,10 +101,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			double cy = dy / Math.sqrt(dx * dx + dy * dy) * speed;
 			mapPosX += Math.abs(cx) >= Math.abs(dx) ? dx : cx;
 			mapPosY += Math.abs(cy) >= Math.abs(dy) ? dy : cy;
-			repaint();
 		});
-		mapMoveTimer.setRepeats(true);
-		mapMoveTimer.start();
 	}
 
 	EntityLayer<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> createEntityLayer() {
@@ -128,7 +126,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			return;
 		onMapMove.notify(new DataEvent(this));
 		mapPos = mapPosNew;
-		repaint();
 	}
 
 	void mapViewSet(Position pos) {
@@ -138,7 +135,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		mapPos = pos;
 		mapPosX = (int) (pos.x * TILE_SIZE_PIXEL);
 		mapPosY = (int) (pos.y * TILE_SIZE_PIXEL);
-		repaint();
 	}
 
 	int displayedX(double x) {
@@ -159,7 +155,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	@Override
 	public void clear() {
-		mapMoveTimer.stop();
+		tickTaskManager.stop();
 
 		entityLayer.removeKeyListener(keyListener);
 

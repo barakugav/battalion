@@ -88,15 +88,14 @@ class GameGUI implements Game {
 	public void move(Unit unit, List<Position> path) {
 		checkCorrectThread();
 		List<Position> animationPath = Utils.listOf(unit.getPos(), path);
-		gui.arenaPanel.entityLayer().units.get(unit).moveAnimation(animationPath, () -> game.move(unit, path));
+		gui.arenaPanel.animateUnitMove(unit, animationPath, () -> game.move(unit, path));
 	}
 
 	@Override
 	public void moveAndAttack(Unit attacker, List<Position> path, Unit target) {
 		checkCorrectThread();
 		List<Position> animationPath = Utils.listOf(attacker.getPos(), path);
-		gui.arenaPanel.entityLayer().units.get(attacker).moveAnimation(animationPath,
-				() -> game.moveAndAttack(attacker, path, target));
+		gui.arenaPanel.animateUnitMove(attacker, animationPath, () -> game.moveAndAttack(attacker, path, target));
 	}
 
 	@Override

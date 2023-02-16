@@ -98,7 +98,6 @@ public class GameArenaPanel extends
 		} else if (isUnitSelected()) {
 			unitSecondSelection(pos);
 		}
-		repaint();
 	}
 
 	private void trySelect(Position pos) {
@@ -132,7 +131,6 @@ public class GameArenaPanel extends
 					private void closed() {
 						register.unregister(factoryMenu.onUnitBuy, unitButListener);
 						clearSelection();
-						repaint();
 					}
 
 					@Override
@@ -211,7 +209,10 @@ public class GameArenaPanel extends
 		entityLayer().reachableMap = Position.Bitmap.Empty;
 		entityLayer().attackableMap = Position.Bitmap.Empty;
 		entityLayer().movePath.clear();
-		repaint();
+	}
+
+	void animateUnitMove(Unit unit, List<Position> path, Runnable future) {
+		entityLayer().units.get(unit).moveAnimation(path, future);
 	}
 
 	class EntityLayer extends
@@ -224,7 +225,7 @@ public class GameArenaPanel extends
 		private Position.Bitmap attackableMap = Position.Bitmap.Empty;
 		private final List<Position> movePath;
 
-		private final Animation animation = new Animation();
+		private final AnimationTask animationTask = new AnimationTask();
 
 		private final DataChangeRegister register = new DataChangeRegister();
 
@@ -235,17 +236,13 @@ public class GameArenaPanel extends
 		}
 
 		void initUI() {
-			register.register(game.onUnitAdd(), e -> {
-				addUnitComp(e.unit);
-				repaint();
-			});
+			register.register(game.onUnitAdd(), e -> addUnitComp(e.unit));
 			register.register(game.onUnitRemove(), e -> {
 				if (e.unit.getPos().equals(selection))
 					clearSelection();
 				UnitComp unitComp = units.remove(e.unit);
 				if (unitComp != null)
 					unitComp.clear();
-				repaint();
 			});
 			register.register(game.arena().onEntityChange, e -> {
 				if (e.source instanceof Unit) {
@@ -256,23 +253,21 @@ public class GameArenaPanel extends
 						unitComp.clear();
 					}
 				}
-				repaint();
 			});
 			register.register(game.onTurnEnd(), e -> clearSelection());
 
 			register.register(onHoverChange, e -> hoveredUpdated(e.pos));
 
-			register.register(animation.onAnimationBegin, e -> window.suspendActions());
-			register.register(animation.onAnimationEnd, e -> window.resumeActions());
-			register.register(animation.onAnimationStep, e -> repaint());
+			register.register(animationTask.onAnimationBegin, e -> window.suspendActions());
+			register.register(animationTask.onAnimationEnd, e -> window.resumeActions());
 
-			animation.start();
+			tickTaskManager.addTask(100, animationTask);
+
+			tickTaskManager.start();
 		}
 
 		@Override
 		public void clear() {
-			animation.stop();
-
 			register.unregisterAll();
 
 			super.clear();
@@ -313,7 +308,6 @@ public class GameArenaPanel extends
 			default:
 				throw new IllegalArgumentException("Unexpected value: " + attacker.type.weapon.type);
 			}
-			repaint();
 		}
 
 		private void updateMovePath(Position targetPos) {
@@ -348,7 +342,6 @@ public class GameArenaPanel extends
 				movePath.clear();
 				movePath.addAll(unit.calcPath(targetPos));
 			}
-			repaint();
 		}
 
 		@Override
@@ -466,7 +459,7 @@ public class GameArenaPanel extends
 			units.put(unit, new UnitComp(unit));
 		}
 
-		class UnitComp extends ArenaPanelAbstract.UnitComp implements Animation.Animated {
+		class UnitComp extends ArenaPanelAbstract.UnitComp {
 
 			private final int HealthBarWidth = 26;
 			private final int HealthBarHeight = 4;
@@ -532,26 +525,24 @@ public class GameArenaPanel extends
 			void moveAnimation(List<Position> animationPath, Runnable future) {
 				animationMovePath = new ArrayList<>(animationPath);
 				animationCursor = 0;
-				animation.animateAndWait(this, future);
+				animationTask.animateAndWait(() -> {
+					if (animationMovePath == null)
+						throw new IllegalStateException();
+					assert animationCursor < animationMovePath.size() * AnimationStepSize;
+					animationCursor++;
+					if (animationCursor < (animationMovePath.size() - 1) * AnimationStepSize) {
+						return true;
+					} else {
+						animationMovePath = null;
+						animationCursor = 0;
+						return false;
+					}
+
+				}, future);
 			}
 
 			public boolean isAnimated() {
 				return animationMovePath != null && animationMovePath.size() >= 2;
-			}
-
-			@Override
-			public boolean advanceAnimationStep() {
-				if (animationMovePath == null)
-					throw new IllegalStateException();
-				assert animationCursor < animationMovePath.size() * AnimationStepSize;
-				animationCursor++;
-				if (animationCursor < (animationMovePath.size() - 1) * AnimationStepSize) {
-					return true;
-				} else {
-					animationMovePath = null;
-					animationCursor = 0;
-					return false;
-				}
 			}
 
 			@Override
