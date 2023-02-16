@@ -215,6 +215,14 @@ public class Utils {
 		return op.filter(img, null);
 	}
 
+	public static BufferedImage imgSub(BufferedImage img, int x, int y, int width, int height) {
+		BufferedImage sub = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2 = sub.createGraphics();
+		g2.drawImage(img, 0, 0, width, height, x, y, x + width, y + height, null);
+		g2.dispose();
+		return sub;
+	}
+
 	public static Dimension max(Dimension d1, Dimension d2) {
 		return new Dimension(Math.max(d1.width, d2.width), Math.max(d1.height, d2.height));
 	}

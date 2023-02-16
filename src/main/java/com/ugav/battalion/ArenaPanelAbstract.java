@@ -271,9 +271,9 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	}
 
 	void drawImage(Graphics g, Object obj, int x, int y) {
-		BufferedImage img = Images.getImage(obj);
-		assert img.getWidth() == TILE_SIZE_PIXEL;
-		g.drawImage(img, x, y + TILE_SIZE_PIXEL - img.getHeight(), this);
+		BufferedImage img = obj instanceof BufferedImage ? (BufferedImage) obj : Images.getImage(obj);
+		assert img.getWidth() == TILE_SIZE_PIXEL : Objects.toString(obj);
+		g.drawImage(img, x, y + TILE_SIZE_PIXEL - img.getHeight(), img.getWidth(), img.getHeight(), this);
 	}
 
 	abstract Terrain getTerrain(Position pos);
@@ -495,7 +495,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		@Override
 		void paintComponent(Graphics g) {
 			Position pos = pos();
-			arena.drawRelativeToMap(g, unit, pos);
+			arena.drawRelativeToMap(g, Images.getUnitImage(unit, getOrientation()), pos);
 
 			IUnit trasportedUnit = unit.getTransportedUnit();
 			if (trasportedUnit != null) {
@@ -509,6 +509,10 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				g.drawRect(x, y, w, h);
 				g.drawImage(img, x, y, w, h, arena);
 			}
+		}
+
+		Direction getOrientation() {
+			return Direction.XPos;
 		}
 
 		@Override

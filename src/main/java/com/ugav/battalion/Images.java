@@ -5,16 +5,20 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 
 import javax.imageio.ImageIO;
 
 import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.IUnit;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
+import com.ugav.battalion.core.Position.Direction;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
@@ -31,9 +35,45 @@ class Images {
 		UnitMenuTransportAir, UnitMenuTransportWater, UnitMenuTransportFinish, UnitMenuRepair, UnitMenuCancel,
 	}
 
+	private static class UnitImgDesc {
+
+		private final Object[] keys;
+
+		UnitImgDesc(Unit.Type type, Team team, Direction orientation) {
+			if (type == null || team == null || orientation == null)
+				throw new NullPointerException();
+			keys = new Object[] { type, team, orientation };
+		}
+
+		static UnitImgDesc of(IUnit unit, Direction orientation) {
+			return new UnitImgDesc(unit.getType(), unit.getTeam(), orientation != null ? orientation : Direction.XPos);
+		}
+
+		@Override
+		public boolean equals(Object other) {
+			if (other == this)
+				return true;
+			if (!(other instanceof UnitImgDesc))
+				return false;
+			UnitImgDesc o = (UnitImgDesc) other;
+			return Arrays.equals(keys, o.keys);
+		}
+
+		@Override
+		public int hashCode() {
+			return Arrays.hashCode(keys);
+		}
+
+		@Override
+		public String toString() {
+			return Arrays.toString(keys);
+		}
+
+	}
+
 	private static final Map<Terrain, BufferedImage> terrains;
-	private static final Map<Unit.Type, Map<Team, BufferedImage>> units;
-	private static final Map<Unit.Type, Map<Team, BufferedImage>> unitsMini;
+	private static final Map<UnitImgDesc, BufferedImage> units;
+	private static final Map<UnitImgDesc, BufferedImage> unitsMini;
 	private static final Map<Building.Type, Map<Team, BufferedImage>> buildings;
 	private static final Map<Object, BufferedImage> ect;
 	static {
@@ -53,40 +93,30 @@ class Images {
 		terrains = Collections.unmodifiableMap(terrains0);
 
 		/* Units */
-		Map<Unit.Type, Map<Team, BufferedImage>> units0 = new HashMap<>();
-		Map<Unit.Type, Map<Team, BufferedImage>> unitsMini0 = new HashMap<>();
-		BiConsumer<Unit.Type, String> addUnit = (type, path) -> {
-			BufferedImage redImg = loadImg(path);
-			BufferedImage blueImg = toBlue(redImg);
-			Map<Team, BufferedImage> imgs = Map.of(Team.Red, redImg, Team.Blue, blueImg);
-			units0.put(type, imgs);
-
-			Map<Team, BufferedImage> imgsMini = new HashMap<>(imgs);
-			imgsMini.replaceAll((team, img) -> {
-				final int miniWidth = 28;
-				int height = img.getHeight() * miniWidth / img.getWidth();
-				return Utils.bufferedImageFromImage(img.getScaledInstance(miniWidth, height, Image.SCALE_SMOOTH));
-			});
-			unitsMini0.put(type, imgsMini);
-		};
-		addUnit.accept(Unit.Type.Soldier, "img/unit/soldier.png");
-		addUnit.accept(Unit.Type.Bazooka, "img/unit/bazooka.png");
-		addUnit.accept(Unit.Type.Tank, "img/unit/tank.png");
-		addUnit.accept(Unit.Type.TankBig, "img/unit/tank_big.png");
-		addUnit.accept(Unit.Type.TankAntiAir, "img/unit/tank_anti_air.png");
-		addUnit.accept(Unit.Type.Artillery, "img/unit/artillery.png");
-		addUnit.accept(Unit.Type.Mortar, "img/unit/mortar.png");
-		addUnit.accept(Unit.Type.Turrent, "img/unit/turrent.png");
-		addUnit.accept(Unit.Type.SpeedBoat, "img/unit/speed_boat.png");
-		addUnit.accept(Unit.Type.Ship, "img/unit/ship_close_range.png");
-		addUnit.accept(Unit.Type.ShipAntiAir, "img/unit/ship_anti_air.png");
-		addUnit.accept(Unit.Type.ShipArtillery, "img/unit/ship_artillery.png");
-		addUnit.accept(Unit.Type.Submarine, "img/unit/submarine.png");
-		addUnit.accept(Unit.Type.ShipTransporter, "img/unit/unit_ship_water.png");
-		addUnit.accept(Unit.Type.Airplane, "img/unit/airplane.png");
-		addUnit.accept(Unit.Type.Zeppelin, "img/unit/zeppelin.png");
-		addUnit.accept(Unit.Type.AirTransporter, "img/unit/unit_ship_air.png");
+		Map<UnitImgDesc, BufferedImage> units0 = new HashMap<>();
+		BiConsumer<Unit.Type, String> addUnit1gesture = (type, path) -> units0.putAll(addUnit(type, path, 1));
+		BiConsumer<Unit.Type, String> addUnit4gesture = (type, path) -> units0.putAll(addUnit(type, path, 4));
+		BiConsumer<Unit.Type, String> addUnit5gesture = (type, path) -> units0.putAll(addUnit(type, path, 5));
+		addUnit5gesture.accept(Unit.Type.Soldier, "img/unit/soldier.png");
+		addUnit5gesture.accept(Unit.Type.Bazooka, "img/unit/bazooka.png");
+		addUnit4gesture.accept(Unit.Type.Tank, "img/unit/tank.png");
+		addUnit4gesture.accept(Unit.Type.TankBig, "img/unit/tank_big.png");
+		addUnit4gesture.accept(Unit.Type.TankAntiAir, "img/unit/tank_anti_air.png");
+		addUnit4gesture.accept(Unit.Type.Artillery, "img/unit/artillery.png");
+		addUnit4gesture.accept(Unit.Type.Mortar, "img/unit/mortar.png");
+		addUnit1gesture.accept(Unit.Type.Turrent, "img/unit/turrent.png");
+		addUnit4gesture.accept(Unit.Type.SpeedBoat, "img/unit/speed_boat.png");
+		addUnit4gesture.accept(Unit.Type.Ship, "img/unit/ship_close_range.png");
+		addUnit4gesture.accept(Unit.Type.ShipAntiAir, "img/unit/ship_anti_air.png");
+		addUnit4gesture.accept(Unit.Type.ShipArtillery, "img/unit/ship_artillery.png");
+		addUnit4gesture.accept(Unit.Type.Submarine, "img/unit/submarine.png");
+		addUnit4gesture.accept(Unit.Type.ShipTransporter, "img/unit/unit_ship_water.png");
+		addUnit4gesture.accept(Unit.Type.Airplane, "img/unit/airplane.png");
+		addUnit4gesture.accept(Unit.Type.Zeppelin, "img/unit/zeppelin.png");
+		addUnit4gesture.accept(Unit.Type.AirTransporter, "img/unit/unit_ship_air.png");
 		units = Collections.unmodifiableMap(units0);
+		Map<UnitImgDesc, BufferedImage> unitsMini0 = new HashMap<>(units);
+		unitsMini0.replaceAll((desc, img) -> miniUnitImg(img));
 		unitsMini = Collections.unmodifiableMap(unitsMini0);
 
 		/* Buildings */
@@ -183,6 +213,48 @@ class Images {
 		}
 	};
 
+	private static Direction orientationIdxToObj(int index) {
+		switch (index) {
+		case 0:
+			return Direction.XPos;
+		case 1:
+			return Direction.YPos;
+		case 2:
+			return Direction.XNeg;
+		case 3:
+			return Direction.YNeg;
+		default:
+			throw new IllegalArgumentException();
+		}
+	}
+
+	private static Map<UnitImgDesc, BufferedImage> addUnit(Unit.Type type, String path, int gestureNum) {
+		BufferedImage[][] imgs = new BufferedImage[gestureNum][4];
+		BufferedImage img = loadImg(path);
+		int width = img.getWidth() / 4;
+		int height = img.getHeight() / gestureNum;
+		for (int gesture = 0; gesture < gestureNum; gesture++)
+			for (int orientatoin = 0; orientatoin < 4; orientatoin++)
+				imgs[gesture][orientatoin] = Utils.imgSub(img, orientatoin * width, gesture * height, width, height);
+
+		Map<UnitImgDesc, BufferedImage> units = new HashMap<>();
+		final int gesture = 0;
+		for (int orientatoinIdx = 0; orientatoinIdx < 4; orientatoinIdx++) {
+			BufferedImage redImg = imgs[gesture][orientatoinIdx];
+			BufferedImage blueImg = toBlue(redImg);
+			Direction orientatoin = orientationIdxToObj(orientatoinIdx);
+			units.put(new UnitImgDesc(type, Team.Red, orientatoin), redImg);
+			units.put(new UnitImgDesc(type, Team.Blue, orientatoin), blueImg);
+		}
+		return units;
+	}
+
+	private static BufferedImage miniUnitImg(BufferedImage img) {
+		final int miniWidth = 28;
+		int height = img.getHeight() * miniWidth / img.getWidth();
+		return Utils.bufferedImageFromImage(img.getScaledInstance(miniWidth, height, Image.SCALE_SMOOTH));
+	}
+
 	private static BufferedImage toBlue(BufferedImage redImg) {
 		if (redImg.getRaster().getNumBands() != 4)
 			throw new IllegalArgumentException("expected rgba format");
@@ -209,6 +281,10 @@ class Images {
 		return img;
 	}
 
+	static BufferedImage getUnitImage(IUnit unit, Direction orientation) {
+		return Objects.requireNonNull(units.get(UnitImgDesc.of(unit, orientation)));
+	}
+
 	private static BufferedImage getImage0(Object obj) {
 		boolean mini = obj instanceof Mini;
 		if (mini)
@@ -220,11 +296,11 @@ class Images {
 
 		} else if (obj instanceof Unit) {
 			Unit unit = (Unit) obj;
-			return (mini ? unitsMini : units).get(unit.type).get(unit.getTeam());
+			return (mini ? unitsMini : units).get(UnitImgDesc.of(unit, null));
 
 		} else if (obj instanceof UnitDesc) {
 			UnitDesc unit = (UnitDesc) obj;
-			return (mini ? unitsMini : units).get(unit.type).get(unit.team);
+			return (mini ? unitsMini : units).get(UnitImgDesc.of(unit, null));
 
 		} else if (obj instanceof Building) {
 			Building building = (Building) obj;

@@ -461,13 +461,15 @@ public class GameArenaPanel extends
 
 		class UnitComp extends ArenaPanelAbstract.UnitComp {
 
-			private final int HealthBarWidth = 26;
-			private final int HealthBarHeight = 4;
-			private final int HealthBarBottomMargin = 3;
+			private Direction orientation = Direction.XPos;
 
 			private List<Position> animationMovePath;
 			private int animationCursor;
 			private static final int AnimationStepSize = 16;
+
+			private static final int HealthBarWidth = 26;
+			private static final int HealthBarHeight = 4;
+			private static final int HealthBarBottomMargin = 3;
 
 			UnitComp(Unit unit) {
 				super(GameArenaPanel.this, unit);
@@ -485,6 +487,7 @@ public class GameArenaPanel extends
 					double frac = (animationCursor % AnimationStepSize + 1) / (double) AnimationStepSize;
 					Position p1 = animationMovePath.get(idx);
 					Position p2 = animationMovePath.get(idx + 1);
+					orientation = Direction.calc(p1, p2);
 					double x = p1.x + (p2.x - p1.x) * frac;
 					double y = p1.y + (p2.y - p1.y) * frac;
 					return Position.of(x, y);
@@ -492,6 +495,11 @@ public class GameArenaPanel extends
 				} else {
 					return unit().getPos();
 				}
+			}
+
+			@Override
+			Direction getOrientation() {
+				return orientation;
 			}
 
 			@Override

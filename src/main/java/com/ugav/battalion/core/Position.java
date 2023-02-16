@@ -95,6 +95,13 @@ public class Position implements Comparable<Position> {
 			this.dy = dc;
 		}
 
+		public static Direction calc(Position source, Position dest) {
+			for (Direction dir : Direction.values())
+				if (dest.equals(source.add(dir)))
+					return dir;
+			throw new IllegalArgumentException();
+		}
+
 	};
 
 	public static class Iterator2D implements Iterator<Position> {
