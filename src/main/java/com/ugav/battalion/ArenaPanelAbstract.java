@@ -495,7 +495,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		@Override
 		void paintComponent(Graphics g) {
 			Position pos = pos();
-			arena.drawRelativeToMap(g, Images.getUnitImage(unit, getOrientation(), getGasture()), pos);
+			arena.drawRelativeToMap(g, getUnitImg(), pos);
 
 			IUnit trasportedUnit = unit.getTransportedUnit();
 			if (trasportedUnit != null) {
@@ -509,6 +509,10 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				g.drawRect(x, y, w, h);
 				g.drawImage(img, x, y, w, h, arena);
 			}
+		}
+
+		BufferedImage getUnitImg() {
+			return Images.getUnitImage(unit, getOrientation(), getGasture());
 		}
 
 		Direction getOrientation() {

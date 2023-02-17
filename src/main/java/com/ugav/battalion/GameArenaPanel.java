@@ -1,8 +1,6 @@
 package com.ugav.battalion;
 
-import java.awt.AlphaComposite;
 import java.awt.Color;
-import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -11,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.awt.image.RescaleOp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -521,25 +520,20 @@ public class GameArenaPanel extends
 				final Team playerTeam = Team.Red;
 				if (!isAnimated() && !game.arena().isUnitVisible(pos, playerTeam))
 					return;
-				Graphics2D g2 = (Graphics2D) g;
 
 				/* Draw unit */
-				Composite oldComp = g2.getComposite();
-				if (unit().getTeam() == game.getTurn() && !unit().isActive())
-					g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
 				super.paintComponent(g);
-				g2.setComposite(oldComp);
 
 				/* Draw health bar */
 				int x = displayedX(pos.x * TILE_SIZE_PIXEL), y = displayedY(pos.y * TILE_SIZE_PIXEL);
 				int healthBarX = (int) (x + 0.5 * TILE_SIZE_PIXEL - HealthBarWidth * 0.5);
 				int healthBarY = y + TILE_SIZE_PIXEL - HealthBarHeight - HealthBarBottomMargin;
-				g2.setColor(Color.GREEN);
-				g2.fillRect(healthBarX + 1, healthBarY,
+				g.setColor(Color.GREEN);
+				g.fillRect(healthBarX + 1, healthBarY,
 						(int) ((double) (HealthBarWidth - 1) * unit().getHealth() / unit().type.health),
 						HealthBarHeight);
-				g2.setColor(Color.BLACK);
-				g2.drawRect(healthBarX, healthBarY, HealthBarWidth, HealthBarHeight);
+				g.setColor(Color.BLACK);
+				g.drawRect(healthBarX, healthBarY, HealthBarWidth, HealthBarHeight);
 			}
 
 			void moveAnimation(List<Position> animationPath, Runnable future) {
@@ -559,6 +553,19 @@ public class GameArenaPanel extends
 					}
 
 				}, future);
+			}
+
+			@Override
+			BufferedImage getUnitImg() {
+				BufferedImage orig = super.getUnitImg();
+				if (unit().getTeam() != game.getTurn() || unit().isActive())
+					return orig;
+
+				BufferedImage img = new BufferedImage(orig.getWidth(), orig.getHeight(), BufferedImage.TYPE_INT_ARGB);
+				Graphics2D g = img.createGraphics();
+				g.drawImage(orig, 0, 0, null);
+				g.dispose();
+				return new RescaleOp(.7f, 0, null).filter(img, null);
 			}
 
 			public boolean isAnimated() {
