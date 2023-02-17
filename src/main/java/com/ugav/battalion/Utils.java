@@ -28,7 +28,7 @@ import java.util.function.Predicate;
 public class Utils {
 
 	private Utils() {
-		throw new InternalError();
+		throw new RuntimeException();
 	}
 
 	public static <E> Iterable<E> iterable(Iterator<E> it) {

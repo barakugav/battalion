@@ -365,7 +365,7 @@ public class Unit extends Entity implements IUnit {
 		case None:
 			return Position.Bitmap.Empty;
 		default:
-			throw new InternalError();
+			throw new IllegalArgumentException("Unexpected value: " + type.weapon.type);
 		}
 	}
 

@@ -326,7 +326,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				case 3:
 					return Pair.of(Direction.YPos, Direction.XPos);
 				default:
-					throw new InternalError();
+					throw new IllegalArgumentException("Unexpected value: " + quadrant);
 				}
 			};
 			Predicate<Position> isBridgeHorizontal = bridgePos -> Objects.requireNonNull(

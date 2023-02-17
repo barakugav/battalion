@@ -459,7 +459,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 						builder.setTile(pos, tile.terrain, tile.building, null);
 
 				} else {
-					throw new InternalError("Unknown menu selected object: " + selectedObj);
+					throw new IllegalArgumentException("Unknown menu selected object: " + selectedObj);
 				}
 			}
 		}
@@ -468,7 +468,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		Terrain getTerrain(Position pos) {
 			return builder.at(pos).terrain;
 		}
-
 
 		private class EntityLayer
 				extends ArenaPanelAbstract.EntityLayer<EntityLayer.TerrainComp, BuildingComp, EntityLayer.UnitComp> {
