@@ -468,9 +468,9 @@ public class GameArenaPanel extends
 			private int animationCursor;
 			private static final int AnimationStepSize = 16;
 
-			private static final int HealthBarWidth = 26;
-			private static final int HealthBarHeight = 4;
-			private static final int HealthBarBottomMargin = 3;
+			private static final Color HealthColorHigh = new Color(0, 206, 0);
+			private static final Color HealthColorMed = new Color(255, 130, 4);
+			private static final Color HealthColorLow = new Color(242, 0, 0);
 
 			UnitComp(Unit unit) {
 				super(GameArenaPanel.this, unit);
@@ -525,15 +525,30 @@ public class GameArenaPanel extends
 				super.paintComponent(g);
 
 				/* Draw health bar */
-				int x = displayedX(pos.x * TILE_SIZE_PIXEL), y = displayedY(pos.y * TILE_SIZE_PIXEL);
-				int healthBarX = (int) (x + 0.5 * TILE_SIZE_PIXEL - HealthBarWidth * 0.5);
-				int healthBarY = y + TILE_SIZE_PIXEL - HealthBarHeight - HealthBarBottomMargin;
-				g.setColor(Color.GREEN);
-				g.fillRect(healthBarX + 1, healthBarY,
-						(int) ((double) (HealthBarWidth - 1) * unit().getHealth() / unit().type.health),
-						HealthBarHeight);
-				g.setColor(Color.BLACK);
-				g.drawRect(healthBarX, healthBarY, HealthBarWidth, HealthBarHeight);
+				if (unit().getHealth() != unit().type.health) {
+					double health = (double) unit().getHealth() / unit().type.health;
+
+					BufferedImage healthBar = new BufferedImage(17, 9, BufferedImage.TYPE_INT_RGB);
+					Graphics2D healthBarG = healthBar.createGraphics();
+					healthBarG.setColor(Color.BLACK);
+					healthBarG.fillRect(0, 0, 17, 9);
+					Color healthColor;
+					if (health > 2.0 / 3.0)
+						healthColor = HealthColorHigh;
+					else if (health > 1.0 / 3.0)
+						healthColor = HealthColorMed;
+					else
+						healthColor = HealthColorLow;
+					healthBarG.setColor(healthColor);
+					for (int bar = 0; bar < 4; bar++) {
+						double barPrec = Math.min(Math.max(0, health - bar * 0.25) * 4, 1);
+						int barHeight = (int) (7 * barPrec);
+						healthBarG.fillRect(1 + bar * 4, 8 - barHeight, 3, barHeight);
+					}
+					int x = displayedX(pos.x * TILE_SIZE_PIXEL) + 32;
+					int y = displayedY(pos.y * TILE_SIZE_PIXEL) + 42;
+					g.drawImage(healthBar, x, y, null);
+				}
 			}
 
 			void moveAnimation(List<Position> animationPath, Runnable future) {
