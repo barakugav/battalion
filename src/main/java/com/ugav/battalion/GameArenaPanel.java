@@ -505,7 +505,7 @@ public class GameArenaPanel extends
 
 			@Override
 			int getGasture() {
-				if (!unit().isActive())
+				if (unit().getTeam() == game.getTurn() && !unit().isActive())
 					return 0;
 				int gestureNum = Images.getGestureNum(unit().type);
 				if (gestureNum == 5 && !isAnimated())
