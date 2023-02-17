@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 
 import com.ugav.battalion.core.Level.BuildingDesc;
 
-public class Building extends Entity {
+public class Building extends Entity implements IBuilding {
 
 	enum Tech {
 		BuildOnLandFlat(TypeBuilder::canBuildOn, Terrain.Category.FlatLand),
@@ -213,6 +213,11 @@ public class Building extends Entity {
 	@Override
 	public String toString() {
 		return "" + getTeam().toString().charAt(0) + type;
+	}
+
+	@Override
+	public Type getType() {
+		return type;
 	}
 
 }

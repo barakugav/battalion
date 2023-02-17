@@ -25,6 +25,7 @@ import java.util.function.Predicate;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 
+import com.ugav.battalion.core.IBuilding;
 import com.ugav.battalion.core.IUnit;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Position;
@@ -169,8 +170,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		private final ArenaPanelAbstract<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> arena;
 
 		final Map<Position, TerrainCompImpl> terrains = new HashMap<>();
-		final Map<Object, BuildingCompImpl> buildings = new IdentityHashMap<>();
-		final Map<Object, UnitCompImpl> units = new IdentityHashMap<>();
+		final Map<IBuilding, BuildingCompImpl> buildings = new IdentityHashMap<>();
+		final Map<IUnit, UnitCompImpl> units = new IdentityHashMap<>();
 
 		private Position hovered;
 
@@ -445,15 +446,15 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	static class BuildingComp extends ArenaComp {
 
 		private final Position pos;
-		private final Object building;
+		private final IBuilding building;
 
-		BuildingComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos, Object building) {
+		BuildingComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos, IBuilding building) {
 			super(arena);
 			this.pos = Objects.requireNonNull(pos);
 			this.building = Objects.requireNonNull(building);
 		}
 
-		Object building() {
+		IBuilding building() {
 			return building;
 		}
 
@@ -488,7 +489,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			this.unit = Objects.requireNonNull(unit);
 		}
 
-		Object unit() {
+		IUnit unit() {
 			return unit;
 		}
 

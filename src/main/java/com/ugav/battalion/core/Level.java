@@ -120,7 +120,7 @@ public class Level {
 		}
 	}
 
-	public static class BuildingDesc {
+	public static class BuildingDesc implements IBuilding {
 		public final Building.Type type;
 		public final Team team;
 
@@ -156,6 +156,16 @@ public class Level {
 		@Override
 		public String toString() {
 			return "(" + type + ", " + team + ")";
+		}
+
+		@Override
+		public Building.Type getType() {
+			return type;
+		}
+
+		@Override
+		public Team getTeam() {
+			return team;
 		}
 
 	}
