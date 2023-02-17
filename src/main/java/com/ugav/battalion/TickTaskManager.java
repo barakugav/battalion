@@ -27,6 +27,8 @@ class TickTaskManager {
 	}
 
 	void start() {
+		if (tickTimer.isRunning())
+			return;
 		tasks.sort((p1, p2) -> {
 			int priorary1 = p1.e2.intValue(), priorary2 = p2.e2.intValue();
 			return Integer.compare(priorary1, priorary2);

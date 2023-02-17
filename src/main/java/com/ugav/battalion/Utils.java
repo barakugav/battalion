@@ -299,4 +299,28 @@ public class Utils {
 		return r;
 	}
 
+	/* NOT efficient */
+	static int gcd(int a, int b) {
+		return a == 0 ? b : gcd(b % a, a);
+	}
+
+	/* NOT efficient */
+	static int gcdArr(int a[]) {
+		int r = a[0];
+		for (int x : a)
+			if ((r = gcd(r, x)) == 1)
+				return 1;
+		for (int x : a)
+			assert x % r == 0;
+		return r;
+	}
+
+	static int[] toArray(Collection<Integer> c) {
+		int[] arr = new int[c.size()];
+		int idx = 0;
+		for (Integer x : c)
+			arr[idx++] = x.intValue();
+		return arr;
+	}
+
 }

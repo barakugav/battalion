@@ -39,14 +39,15 @@ class Images {
 
 		private final Object[] keys;
 
-		UnitImgDesc(Unit.Type type, Team team, Direction orientation) {
+		UnitImgDesc(Unit.Type type, Team team, Direction orientation, int gesture) {
 			if (type == null || team == null || orientation == null)
 				throw new NullPointerException();
-			keys = new Object[] { type, team, orientation };
+			keys = new Object[] { type, team, orientation, Integer.valueOf(gesture) };
 		}
 
-		static UnitImgDesc of(IUnit unit, Direction orientation) {
-			return new UnitImgDesc(unit.getType(), unit.getTeam(), orientation != null ? orientation : Direction.XPos);
+		static UnitImgDesc of(IUnit unit, Direction orientation, int gesture) {
+			orientation = orientation != null ? orientation : Direction.XPos;
+			return new UnitImgDesc(unit.getType(), unit.getTeam(), orientation, gesture);
 		}
 
 		@Override
@@ -94,26 +95,24 @@ class Images {
 
 		/* Units */
 		Map<UnitImgDesc, BufferedImage> units0 = new HashMap<>();
-		BiConsumer<Unit.Type, String> addUnit1gesture = (type, path) -> units0.putAll(addUnit(type, path, 1));
-		BiConsumer<Unit.Type, String> addUnit4gesture = (type, path) -> units0.putAll(addUnit(type, path, 4));
-		BiConsumer<Unit.Type, String> addUnit5gesture = (type, path) -> units0.putAll(addUnit(type, path, 5));
-		addUnit5gesture.accept(Unit.Type.Soldier, "img/unit/soldier.png");
-		addUnit5gesture.accept(Unit.Type.Bazooka, "img/unit/bazooka.png");
-		addUnit4gesture.accept(Unit.Type.Tank, "img/unit/tank.png");
-		addUnit4gesture.accept(Unit.Type.TankBig, "img/unit/tank_big.png");
-		addUnit4gesture.accept(Unit.Type.TankAntiAir, "img/unit/tank_anti_air.png");
-		addUnit4gesture.accept(Unit.Type.Artillery, "img/unit/artillery.png");
-		addUnit4gesture.accept(Unit.Type.Mortar, "img/unit/mortar.png");
-		addUnit1gesture.accept(Unit.Type.Turrent, "img/unit/turrent.png");
-		addUnit4gesture.accept(Unit.Type.SpeedBoat, "img/unit/speed_boat.png");
-		addUnit4gesture.accept(Unit.Type.Ship, "img/unit/ship_close_range.png");
-		addUnit4gesture.accept(Unit.Type.ShipAntiAir, "img/unit/ship_anti_air.png");
-		addUnit4gesture.accept(Unit.Type.ShipArtillery, "img/unit/ship_artillery.png");
-		addUnit4gesture.accept(Unit.Type.Submarine, "img/unit/submarine.png");
-		addUnit4gesture.accept(Unit.Type.ShipTransporter, "img/unit/unit_ship_water.png");
-		addUnit4gesture.accept(Unit.Type.Airplane, "img/unit/airplane.png");
-		addUnit4gesture.accept(Unit.Type.Zeppelin, "img/unit/zeppelin.png");
-		addUnit4gesture.accept(Unit.Type.AirTransporter, "img/unit/unit_ship_air.png");
+		BiConsumer<Unit.Type, String> addUnit = (type, path) -> units0.putAll(loadUnitImgs(type, path));
+		addUnit.accept(Unit.Type.Soldier, "img/unit/soldier.png");
+		addUnit.accept(Unit.Type.Bazooka, "img/unit/bazooka.png");
+		addUnit.accept(Unit.Type.Tank, "img/unit/tank.png");
+		addUnit.accept(Unit.Type.TankBig, "img/unit/tank_big.png");
+		addUnit.accept(Unit.Type.TankAntiAir, "img/unit/tank_anti_air.png");
+		addUnit.accept(Unit.Type.Artillery, "img/unit/artillery.png");
+		addUnit.accept(Unit.Type.Mortar, "img/unit/mortar.png");
+		addUnit.accept(Unit.Type.Turrent, "img/unit/turrent.png");
+		addUnit.accept(Unit.Type.SpeedBoat, "img/unit/speed_boat.png");
+		addUnit.accept(Unit.Type.Ship, "img/unit/ship_close_range.png");
+		addUnit.accept(Unit.Type.ShipAntiAir, "img/unit/ship_anti_air.png");
+		addUnit.accept(Unit.Type.ShipArtillery, "img/unit/ship_artillery.png");
+		addUnit.accept(Unit.Type.Submarine, "img/unit/submarine.png");
+		addUnit.accept(Unit.Type.ShipTransporter, "img/unit/unit_ship_water.png");
+		addUnit.accept(Unit.Type.Airplane, "img/unit/airplane.png");
+		addUnit.accept(Unit.Type.Zeppelin, "img/unit/zeppelin.png");
+		addUnit.accept(Unit.Type.AirTransporter, "img/unit/unit_ship_air.png");
 		units = Collections.unmodifiableMap(units0);
 		Map<UnitImgDesc, BufferedImage> unitsMini0 = new HashMap<>(units);
 		unitsMini0.replaceAll((desc, img) -> miniUnitImg(img));
@@ -228,7 +227,8 @@ class Images {
 		}
 	}
 
-	private static Map<UnitImgDesc, BufferedImage> addUnit(Unit.Type type, String path, int gestureNum) {
+	private static Map<UnitImgDesc, BufferedImage> loadUnitImgs(Unit.Type type, String path) {
+		int gestureNum = getGestureNum(type);
 		BufferedImage[][] imgs = new BufferedImage[gestureNum][4];
 		BufferedImage img = loadImg(path);
 		int width = img.getWidth() / 4;
@@ -238,13 +238,14 @@ class Images {
 				imgs[gesture][orientatoin] = Utils.imgSub(img, orientatoin * width, gesture * height, width, height);
 
 		Map<UnitImgDesc, BufferedImage> units = new HashMap<>();
-		final int gesture = 0;
-		for (int orientatoinIdx = 0; orientatoinIdx < 4; orientatoinIdx++) {
-			BufferedImage redImg = imgs[gesture][orientatoinIdx];
-			BufferedImage blueImg = toBlue(redImg);
-			Direction orientatoin = orientationIdxToObj(orientatoinIdx);
-			units.put(new UnitImgDesc(type, Team.Red, orientatoin), redImg);
-			units.put(new UnitImgDesc(type, Team.Blue, orientatoin), blueImg);
+		for (int gesture = 0; gesture < gestureNum; gesture++) {
+			for (int orientatoinIdx = 0; orientatoinIdx < 4; orientatoinIdx++) {
+				BufferedImage redImg = imgs[gesture][orientatoinIdx];
+				BufferedImage blueImg = toBlue(redImg);
+				Direction orientatoin = orientationIdxToObj(orientatoinIdx);
+				units.put(new UnitImgDesc(type, Team.Red, orientatoin, gesture), redImg);
+				units.put(new UnitImgDesc(type, Team.Blue, orientatoin, gesture), blueImg);
+			}
 		}
 		return units;
 	}
@@ -281,8 +282,8 @@ class Images {
 		return img;
 	}
 
-	static BufferedImage getUnitImage(IUnit unit, Direction orientation) {
-		return Objects.requireNonNull(units.get(UnitImgDesc.of(unit, orientation)));
+	static BufferedImage getUnitImage(IUnit unit, Direction orientation, int gesture) {
+		return Objects.requireNonNull(units.get(UnitImgDesc.of(unit, orientation, gesture)));
 	}
 
 	private static BufferedImage getImage0(Object obj) {
@@ -296,11 +297,11 @@ class Images {
 
 		} else if (obj instanceof Unit) {
 			Unit unit = (Unit) obj;
-			return (mini ? unitsMini : units).get(UnitImgDesc.of(unit, null));
+			return (mini ? unitsMini : units).get(UnitImgDesc.of(unit, null, 0));
 
 		} else if (obj instanceof UnitDesc) {
 			UnitDesc unit = (UnitDesc) obj;
-			return (mini ? unitsMini : units).get(UnitImgDesc.of(unit, null));
+			return (mini ? unitsMini : units).get(UnitImgDesc.of(unit, null, 0));
 
 		} else if (obj instanceof Building) {
 			Building building = (Building) obj;
@@ -324,6 +325,33 @@ class Images {
 
 		static Mini of(Object obj) {
 			return new Mini(obj);
+		}
+	}
+
+	static int getGestureNum(Unit.Type type) {
+		switch (type) {
+		case Soldier:
+		case Bazooka:
+			return 5;
+		case Tank:
+		case TankBig:
+		case TankAntiAir:
+		case Artillery:
+		case Mortar:
+		case SpeedBoat:
+		case Ship:
+		case ShipAntiAir:
+		case ShipArtillery:
+		case Submarine:
+		case ShipTransporter:
+		case Airplane:
+		case Zeppelin:
+		case AirTransporter:
+			return 4;
+		case Turrent:
+			return 1;
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + type);
 		}
 	}
 

@@ -226,6 +226,7 @@ public class GameArenaPanel extends
 		private final List<Position> movePath;
 
 		private final AnimationTask animationTask = new AnimationTask();
+		private final GestureTask gestureTask = new GestureTask();
 
 		private final DataChangeRegister register = new DataChangeRegister();
 
@@ -262,6 +263,7 @@ public class GameArenaPanel extends
 			register.register(animationTask.onAnimationEnd, e -> window.resumeActions());
 
 			tickTaskManager.addTask(100, animationTask);
+			tickTaskManager.addTask(100, gestureTask);
 
 			tickTaskManager.start();
 		}
@@ -500,6 +502,16 @@ public class GameArenaPanel extends
 			@Override
 			Direction getOrientation() {
 				return orientation;
+			}
+
+			@Override
+			int getGasture() {
+				if (!unit().isActive())
+					return 0;
+				int gestureNum = Images.getGestureNum(unit().type);
+				if (gestureNum == 5 && !isAnimated())
+					return 0;
+				return gestureTask.getGesture() % gestureNum;
 			}
 
 			@Override
