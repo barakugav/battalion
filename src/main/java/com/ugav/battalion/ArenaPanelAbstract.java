@@ -3,6 +3,7 @@ package com.ugav.battalion;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -273,7 +274,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	void drawImage(Graphics g, Object obj, int x, int y) {
 		BufferedImage img = obj instanceof BufferedImage ? (BufferedImage) obj : Images.getImage(obj);
-		assert img.getWidth() == TILE_SIZE_PIXEL : Objects.toString(obj);
+		assert img.getWidth() == TILE_SIZE_PIXEL : "wrong width (" + img.getWidth() + "):" + obj;
 		g.drawImage(img, x, y + TILE_SIZE_PIXEL - img.getHeight(), img.getWidth(), img.getHeight(), this);
 	}
 
@@ -500,7 +501,12 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 			IUnit trasportedUnit = unit.getTransportedUnit();
 			if (trasportedUnit != null) {
-				BufferedImage img = Images.getImage(Images.Mini.of(trasportedUnit));
+				BufferedImage imgBig = Images.getImage(trasportedUnit);
+				final int miniWidth = 28;
+				int height = imgBig.getHeight() * miniWidth / imgBig.getWidth();
+				BufferedImage img = Utils
+						.bufferedImageFromImage(imgBig.getScaledInstance(miniWidth, height, Image.SCALE_SMOOTH));
+
 				int x = arena.displayedX(pos.x * TILE_SIZE_PIXEL) + 1;
 				int y = arena.displayedY(pos.y * TILE_SIZE_PIXEL) + TILE_SIZE_PIXEL - img.getHeight() - 1;
 				int w = img.getWidth(), h = img.getHeight();

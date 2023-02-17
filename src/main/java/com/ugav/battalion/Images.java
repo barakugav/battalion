@@ -1,6 +1,5 @@
 package com.ugav.battalion;
 
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -15,9 +14,8 @@ import java.util.function.BiConsumer;
 import javax.imageio.ImageIO;
 
 import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.IBuilding;
 import com.ugav.battalion.core.IUnit;
-import com.ugav.battalion.core.Level.BuildingDesc;
-import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Position.Direction;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
@@ -35,29 +33,22 @@ class Images {
 		UnitMenuTransportAir, UnitMenuTransportWater, UnitMenuTransportFinish, UnitMenuRepair, UnitMenuCancel,
 	}
 
-	private static class UnitImgDesc {
+	private static class ImgDesc {
 
 		private final Object[] keys;
 
-		UnitImgDesc(Unit.Type type, Team team, Direction orientation, int gesture) {
-			if (type == null || team == null || orientation == null)
-				throw new NullPointerException();
-			keys = new Object[] { type, team, orientation, Integer.valueOf(gesture) };
-		}
-
-		static UnitImgDesc of(IUnit unit, Direction orientation, int gesture) {
-			orientation = orientation != null ? orientation : Direction.XPos;
-			return new UnitImgDesc(unit.getType(), unit.getTeam(), orientation, gesture);
+		ImgDesc(Object... keys) {
+			this.keys = Objects.requireNonNull(keys);
 		}
 
 		@Override
 		public boolean equals(Object other) {
 			if (other == this)
 				return true;
-			if (!(other instanceof UnitImgDesc))
+			if (!(other instanceof ImgDesc))
 				return false;
-			UnitImgDesc o = (UnitImgDesc) other;
-			return Arrays.equals(keys, o.keys);
+			ImgDesc o = (ImgDesc) other;
+			return getClass().equals(o.getClass()) && Arrays.equals(keys, o.keys);
 		}
 
 		@Override
@@ -72,30 +63,50 @@ class Images {
 
 	}
 
-	private static final Map<Terrain, BufferedImage> terrains;
-	private static final Map<UnitImgDesc, BufferedImage> units;
-	private static final Map<UnitImgDesc, BufferedImage> unitsMini;
-	private static final Map<Building.Type, Map<Team, BufferedImage>> buildings;
-	private static final Map<Object, BufferedImage> ect;
+	private static class UnitImgDesc extends ImgDesc {
+
+		private UnitImgDesc(Unit.Type type, Team team, Direction orientation, int gesture) {
+			super(type, team, orientation, Integer.valueOf(gesture));
+		}
+
+		static UnitImgDesc of(IUnit unit, Direction orientation, int gesture) {
+			orientation = orientation != null ? orientation : Direction.XPos;
+			return new UnitImgDesc(unit.getType(), unit.getTeam(), orientation, gesture);
+		}
+
+	}
+
+	private static class BuildingImgDesc extends ImgDesc {
+
+		private BuildingImgDesc(Building.Type type, Team team, int gesture) {
+			super(type, team, Integer.valueOf(gesture));
+		}
+
+		static BuildingImgDesc of(IBuilding building, int gesture) {
+			return new BuildingImgDesc(building.getType(), building.getTeam(), gesture);
+		}
+
+	}
+
+	private static final Map<Object, BufferedImage> images;
 	static {
+		Map<Object, BufferedImage> images0 = new HashMap<>();
+
 		/* Terrain */
-		Map<Terrain, BufferedImage> terrains0 = new HashMap<>();
 		for (int type = 1; type <= 5; type++)
-			terrains0.put(Terrain.valueOf("FlatLand" + type), loadImg("img/terrain/flat_land_0" + type + ".png"));
-		terrains0.put(Terrain.Trees, loadImg("img/terrain/forest.png"));
-		terrains0.put(Terrain.Hills, loadImg("img/terrain/land_hills.png"));
-		terrains0.put(Terrain.Mountain, loadImg("img/terrain/mountain.png"));
-		terrains0.put(Terrain.MountainBig, loadImg("img/terrain/mountain_high.png"));
-		terrains0.put(Terrain.Road, loadImg("img/terrain/road_vxvx.png"));
-		terrains0.put(Terrain.BridgeLow, loadImg("img/terrain/bridge_low.png"));
-		terrains0.put(Terrain.BridgeHigh, loadImg("img/terrain/bridge_high.png"));
-		terrains0.put(Terrain.Shore, loadImg("img/terrain/shore.png"));
-		terrains0.put(Terrain.ClearWater, loadImg("img/terrain/water_clear.png"));
-		terrains = Collections.unmodifiableMap(terrains0);
+			images0.put(Terrain.valueOf("FlatLand" + type), loadImg("img/terrain/flat_land_0" + type + ".png"));
+		images0.put(Terrain.Trees, loadImg("img/terrain/forest.png"));
+		images0.put(Terrain.Hills, loadImg("img/terrain/land_hills.png"));
+		images0.put(Terrain.Mountain, loadImg("img/terrain/mountain.png"));
+		images0.put(Terrain.MountainBig, loadImg("img/terrain/mountain_high.png"));
+		images0.put(Terrain.Road, loadImg("img/terrain/road_vxvx.png"));
+		images0.put(Terrain.BridgeLow, loadImg("img/terrain/bridge_low.png"));
+		images0.put(Terrain.BridgeHigh, loadImg("img/terrain/bridge_high.png"));
+		images0.put(Terrain.Shore, loadImg("img/terrain/shore.png"));
+		images0.put(Terrain.ClearWater, loadImg("img/terrain/water_clear.png"));
 
 		/* Units */
-		Map<UnitImgDesc, BufferedImage> units0 = new HashMap<>();
-		BiConsumer<Unit.Type, String> addUnit = (type, path) -> units0.putAll(loadUnitImgs(type, path));
+		BiConsumer<Unit.Type, String> addUnit = (type, path) -> images0.putAll(loadUnitImgs(type, path));
 		addUnit.accept(Unit.Type.Soldier, "img/unit/soldier.png");
 		addUnit.accept(Unit.Type.Bazooka, "img/unit/bazooka.png");
 		addUnit.accept(Unit.Type.Tank, "img/unit/tank.png");
@@ -113,19 +124,9 @@ class Images {
 		addUnit.accept(Unit.Type.Airplane, "img/unit/airplane.png");
 		addUnit.accept(Unit.Type.Zeppelin, "img/unit/zeppelin.png");
 		addUnit.accept(Unit.Type.AirTransporter, "img/unit/unit_ship_air.png");
-		units = Collections.unmodifiableMap(units0);
-		Map<UnitImgDesc, BufferedImage> unitsMini0 = new HashMap<>(units);
-		unitsMini0.replaceAll((desc, img) -> miniUnitImg(img));
-		unitsMini = Collections.unmodifiableMap(unitsMini0);
 
 		/* Buildings */
-		Map<Building.Type, Map<Team, BufferedImage>> buildings0 = new HashMap<>();
-		BiConsumer<Building.Type, String> addBuilding = (type, path) -> {
-			BufferedImage redImg = loadImg(path);
-			BufferedImage blueImg = toBlue(redImg);
-			BufferedImage whiteImg = toWhite(redImg);
-			buildings0.put(type, Map.of(Team.Red, redImg, Team.Blue, blueImg, Team.None, whiteImg));
-		};
+		BiConsumer<Building.Type, String> addBuilding = (type, path) -> images0.putAll(loadBuildingImgs(type, path));
 		addBuilding.accept(Building.Type.Capital, "img/building/capital.png");
 		addBuilding.accept(Building.Type.Factory, "img/building/facotry.png");
 		addBuilding.accept(Building.Type.ControllerLand, "img/building/controller_land.png");
@@ -134,39 +135,37 @@ class Images {
 		addBuilding.accept(Building.Type.OilRefinery, "img/building/oil_refinery.png");
 		addBuilding.accept(Building.Type.OilRefineryBig, "img/building/oil_refinery_big.png");
 		addBuilding.accept(Building.Type.OilRig, "img/building/oil_rig.png");
-		buildings = Collections.unmodifiableMap(buildings0);
 
 		/* Ect */
-		Map<Object, BufferedImage> ect0 = new HashMap<>();
 		for (int quadrant = 0; quadrant < 4; quadrant++) {
 			for (int variant = 0; variant < 4; variant++) {
 				String suffix = "" + quadrant + variant;
-				ect0.put("WaterEdge" + suffix, loadImg("img/terrain/water_edge_" + suffix + ".png"));
+				images0.put("WaterEdge" + suffix, loadImg("img/terrain/water_edge_" + suffix + ".png"));
 			}
 		}
 		for (int variant = 0; variant < 16; variant++) {
 			String suffix = "";
 			for (int b = 0; b < 4; b++)
 				suffix += ((variant & (1 << b)) != 0) ? "v" : "x";
-			ect0.put("Road_" + suffix, loadImg("img/terrain/road_" + suffix + ".png"));
+			images0.put("Road_" + suffix, loadImg("img/terrain/road_" + suffix + ".png"));
 		}
 		for (boolean high : new boolean[] { true, false }) {
 			for (int dir = 0; dir < 4; dir++) {
 				for (boolean end : new boolean[] { true, false }) {
 					String label = "bridge_" + (high ? "high" : "low");
 					label += "_" + dir + (end ? "x" : "v");
-					ect0.put(label, loadImg("img/terrain/" + label + ".png"));
+					images0.put(label, loadImg("img/terrain/" + label + ".png"));
 				}
 			}
 		}
 		for (int quadrant = 0; quadrant < 4; quadrant++) {
 			for (int variant = 1; variant < 4; variant++) {
 				String suffix = "" + quadrant + variant;
-				ect0.put("Shore" + suffix, loadImg("img/terrain/shore_" + suffix + ".png"));
+				images0.put("Shore" + suffix, loadImg("img/terrain/shore_" + suffix + ".png"));
 			}
 		}
 
-		ect0.put("MovePathSourceNone", loadImg("img/gui/move_path_source_none.png"));
+		images0.put("MovePathSourceNone", loadImg("img/gui/move_path_source_none.png"));
 		BufferedImage moveSource = loadImg("img/gui/move_path_source_down.png");
 		BufferedImage movePathDest = loadImg("img/gui/move_path_destination_down.png");
 		BufferedImage movePathDestUnstand = loadImg("img/gui/move_path_destination_unstandable_down.png");
@@ -174,19 +173,19 @@ class Images {
 		BufferedImage movePathTurn = loadImg("img/gui/move_path_turn_down_right.png");
 		for (int dir = 0; dir < 4; dir++) {
 			double rotateAngle = -(dir + 1) * Math.PI / 2;
-			ect0.put("MovePathSource" + dir, Utils.imgRotate(moveSource, rotateAngle));
-			ect0.put("MovePathDest" + dir, Utils.imgRotate(movePathDest, rotateAngle));
-			ect0.put("MovePathDestUnstand" + dir, Utils.imgRotate(movePathDestUnstand, rotateAngle));
-			ect0.put("MovePathTurn" + dir, Utils.imgRotate(movePathTurn, rotateAngle));
+			images0.put("MovePathSource" + dir, Utils.imgRotate(moveSource, rotateAngle));
+			images0.put("MovePathDest" + dir, Utils.imgRotate(movePathDest, rotateAngle));
+			images0.put("MovePathDestUnstand" + dir, Utils.imgRotate(movePathDestUnstand, rotateAngle));
+			images0.put("MovePathTurn" + dir, Utils.imgRotate(movePathTurn, rotateAngle));
 		}
-		ect0.put("MovePathStraightVertical", Utils.imgRotate(movePathStraight, 0));
-		ect0.put("MovePathStraightHorizontal", Utils.imgRotate(movePathStraight, Math.PI / 2));
+		images0.put("MovePathStraightVertical", Utils.imgRotate(movePathStraight, 0));
+		images0.put("MovePathStraightHorizontal", Utils.imgRotate(movePathStraight, Math.PI / 2));
 
-		ect0.put(Label.Selection, loadImg("img/gui/selection.png"));
-		ect0.put(Label.Passable, loadImg("img/gui/passable.png"));
-		ect0.put(Label.Attackable, loadImg("img/gui/attackabe.png"));
-		ect0.put(Label.UnitLocked, loadImg("img/gui/unit_locked.png"));
-		ect0.put(Label.Delete, loadImg("img/gui/delete.png"));
+		images0.put(Label.Selection, loadImg("img/gui/selection.png"));
+		images0.put(Label.Passable, loadImg("img/gui/passable.png"));
+		images0.put(Label.Attackable, loadImg("img/gui/attackabe.png"));
+		images0.put(Label.UnitLocked, loadImg("img/gui/unit_locked.png"));
+		images0.put(Label.Delete, loadImg("img/gui/delete.png"));
 
 		BiConsumer<Label, String> addUnitMenuIcon = (label, path) -> {
 			BufferedImage img = loadImg("img/gui/unit_menu_box.png");
@@ -194,14 +193,15 @@ class Images {
 			if (img.getWidth() != icon.getWidth() || img.getHeight() != icon.getHeight())
 				throw new IllegalArgumentException();
 			img.getGraphics().drawImage(icon, 0, 0, null);
-			ect0.put(label, img);
+			images0.put(label, img);
 		};
 		addUnitMenuIcon.accept(Label.UnitMenuTransportAir, "img/gui/unit_menu_transport_air.png");
 		addUnitMenuIcon.accept(Label.UnitMenuTransportWater, "img/gui/unit_menu_transport_water.png");
 		addUnitMenuIcon.accept(Label.UnitMenuTransportFinish, "img/gui/unit_menu_transport_finish.png");
 		addUnitMenuIcon.accept(Label.UnitMenuRepair, "img/gui/unit_menu_repair.png");
 		addUnitMenuIcon.accept(Label.UnitMenuCancel, "img/gui/unit_menu_cancel.png");
-		ect = Collections.unmodifiableMap(ect0);
+
+		images = Collections.unmodifiableMap(images0);
 	}
 
 	private static BufferedImage loadImg(String path) {
@@ -229,18 +229,14 @@ class Images {
 
 	private static Map<UnitImgDesc, BufferedImage> loadUnitImgs(Unit.Type type, String path) {
 		int gestureNum = getGestureNum(type);
-		BufferedImage[][] imgs = new BufferedImage[gestureNum][4];
 		BufferedImage img = loadImg(path);
 		int width = img.getWidth() / 4;
 		int height = img.getHeight() / gestureNum;
-		for (int gesture = 0; gesture < gestureNum; gesture++)
-			for (int orientatoin = 0; orientatoin < 4; orientatoin++)
-				imgs[gesture][orientatoin] = Utils.imgSub(img, orientatoin * width, gesture * height, width, height);
 
 		Map<UnitImgDesc, BufferedImage> units = new HashMap<>();
 		for (int gesture = 0; gesture < gestureNum; gesture++) {
 			for (int orientatoinIdx = 0; orientatoinIdx < 4; orientatoinIdx++) {
-				BufferedImage redImg = imgs[gesture][orientatoinIdx];
+				BufferedImage redImg = Utils.imgSub(img, orientatoinIdx * width, gesture * height, width, height);
 				BufferedImage blueImg = toBlue(redImg);
 				Direction orientatoin = orientationIdxToObj(orientatoinIdx);
 				units.put(new UnitImgDesc(type, Team.Red, orientatoin, gesture), redImg);
@@ -250,10 +246,25 @@ class Images {
 		return units;
 	}
 
-	private static BufferedImage miniUnitImg(BufferedImage img) {
-		final int miniWidth = 28;
-		int height = img.getHeight() * miniWidth / img.getWidth();
-		return Utils.bufferedImageFromImage(img.getScaledInstance(miniWidth, height, Image.SCALE_SMOOTH));
+	private static Map<BuildingImgDesc, BufferedImage> loadBuildingImgs(Building.Type type, String path) {
+		int gestureNum = getGestureNum(type);
+		BufferedImage img = loadImg(path);
+		int width = img.getWidth() / gestureNum;
+
+		if (type == Building.Type.OilRefinery)
+			System.out.println();
+
+		Map<BuildingImgDesc, BufferedImage> buildings = new HashMap<>();
+		for (int gesture = 0; gesture < gestureNum; gesture++) {
+			BufferedImage redImg = Utils.imgSub(img, gesture * width, 0, width, img.getHeight());
+			BufferedImage blueImg = toBlue(redImg);
+			BufferedImage whiteImg = toWhite(redImg);
+			buildings.put(new BuildingImgDesc(type, Team.Red, gesture), redImg);
+			buildings.put(new BuildingImgDesc(type, Team.Blue, gesture), blueImg);
+			buildings.put(new BuildingImgDesc(type, Team.None, gesture), whiteImg);
+		}
+		return buildings;
+
 	}
 
 	private static BufferedImage toBlue(BufferedImage redImg) {
@@ -275,6 +286,14 @@ class Images {
 		});
 	}
 
+	static BufferedImage getUnitImage(IUnit unit, Direction orientation, int gesture) {
+		return getImage(UnitImgDesc.of(unit, orientation, gesture));
+	}
+
+	static BufferedImage getBuildingImage(IBuilding building, int gesture) {
+		return getImage(BuildingImgDesc.of(building, gesture));
+	}
+
 	static BufferedImage getImage(Object obj) {
 		BufferedImage img = getImage0(obj);
 		if (img == null)
@@ -282,49 +301,17 @@ class Images {
 		return img;
 	}
 
-	static BufferedImage getUnitImage(IUnit unit, Direction orientation, int gesture) {
-		return Objects.requireNonNull(units.get(UnitImgDesc.of(unit, orientation, gesture)));
-	}
-
 	private static BufferedImage getImage0(Object obj) {
-		boolean mini = obj instanceof Mini;
-		if (mini)
-			obj = ((Mini) obj).obj;
+		if (obj instanceof IUnit) {
+			IUnit unit = (IUnit) obj;
+			return images.get(UnitImgDesc.of(unit, null, 0));
 
-		if (obj instanceof Terrain) {
-			Terrain terrain = (Terrain) obj;
-			return terrains.get(terrain);
-
-		} else if (obj instanceof Unit) {
-			Unit unit = (Unit) obj;
-			return (mini ? unitsMini : units).get(UnitImgDesc.of(unit, null, 0));
-
-		} else if (obj instanceof UnitDesc) {
-			UnitDesc unit = (UnitDesc) obj;
-			return (mini ? unitsMini : units).get(UnitImgDesc.of(unit, null, 0));
-
-		} else if (obj instanceof Building) {
-			Building building = (Building) obj;
-			return buildings.get(building.type).get(building.getTeam());
-
-		} else if (obj instanceof BuildingDesc) {
-			BuildingDesc building = (BuildingDesc) obj;
-			return buildings.get(building.type).get(building.team);
+		} else if (obj instanceof IBuilding) {
+			IBuilding building = (IBuilding) obj;
+			return images.get(BuildingImgDesc.of(building, 0));
 
 		} else {
-			return ect.get(obj);
-		}
-	}
-
-	static class Mini {
-		private final Object obj;
-
-		private Mini(Object obj) {
-			this.obj = obj;
-		}
-
-		static Mini of(Object obj) {
-			return new Mini(obj);
+			return images.get(obj);
 		}
 	}
 
@@ -349,6 +336,24 @@ class Images {
 		case AirTransporter:
 			return 4;
 		case Turrent:
+			return 1;
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + type);
+		}
+	}
+
+	static int getGestureNum(Building.Type type) {
+		switch (type) {
+		case OilRefinery:
+		case OilRefineryBig:
+			return 7;
+		case OilRig:
+			return 4;
+		case Factory:
+		case Capital:
+		case ControllerLand:
+		case ControllerWater:
+		case ControllerAir:
 			return 1;
 		default:
 			throw new IllegalArgumentException("Unexpected value: " + type);
