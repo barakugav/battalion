@@ -3,6 +3,7 @@ package com.ugav.battalion;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Unit;
 
 class GestureTask implements Runnable {
@@ -13,6 +14,8 @@ class GestureTask implements Runnable {
 	static {
 		Set<Integer> possibleGestureNum = new HashSet<>();
 		for (Unit.Type type : Unit.Type.values())
+			possibleGestureNum.add(Integer.valueOf(Images.getGestureNum(type)));
+		for (Building.Type type : Building.Type.values())
 			possibleGestureNum.add(Integer.valueOf(Images.getGestureNum(type)));
 		int gestureNum = 1;
 		for (int x : Utils.toArray(possibleGestureNum)) {

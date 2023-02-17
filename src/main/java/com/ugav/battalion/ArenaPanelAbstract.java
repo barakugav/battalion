@@ -295,6 +295,10 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		}
 
 		abstract Position pos();
+
+		int getGasture() {
+			return 0;
+		}
 	}
 
 	static class TerrainComp extends ArenaComp {
@@ -467,7 +471,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		@Override
 		void paintComponent(Graphics g) {
 			Position pos = pos();
-			arena.drawRelativeToMap(g, building, pos);
+			arena.drawRelativeToMap(g, Images.getBuildingImage(building, getGasture()), pos);
 		}
 
 		@Override
@@ -524,10 +528,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		Direction getOrientation() {
 			return Direction.XPos;
-		}
-
-		int getGasture() {
-			return 0;
 		}
 
 		@Override

@@ -315,49 +315,50 @@ class Images {
 		}
 	}
 
-	static int getGestureNum(Unit.Type type) {
-		switch (type) {
-		case Soldier:
-		case Bazooka:
-			return 5;
-		case Tank:
-		case TankBig:
-		case TankAntiAir:
-		case Artillery:
-		case Mortar:
-		case SpeedBoat:
-		case Ship:
-		case ShipAntiAir:
-		case ShipArtillery:
-		case Submarine:
-		case ShipTransporter:
-		case Airplane:
-		case Zeppelin:
-		case AirTransporter:
-			return 4;
-		case Turrent:
-			return 1;
-		default:
-			throw new IllegalArgumentException("Unexpected value: " + type);
+	static int getGestureNum(Object obj) {
+		if (obj instanceof Unit.Type) {
+			switch ((Unit.Type) obj) {
+			case Soldier:
+			case Bazooka:
+				return 5;
+			case Tank:
+			case TankBig:
+			case TankAntiAir:
+			case Artillery:
+			case Mortar:
+			case SpeedBoat:
+			case Ship:
+			case ShipAntiAir:
+			case ShipArtillery:
+			case Submarine:
+			case ShipTransporter:
+			case Airplane:
+			case Zeppelin:
+			case AirTransporter:
+				return 4;
+			case Turrent:
+				return 1;
+			default:
+				/* fall through */
+			}
+		} else if (obj instanceof Building.Type) {
+			switch ((Building.Type) obj) {
+			case OilRefinery:
+			case OilRefineryBig:
+				return 7;
+			case OilRig:
+				return 4;
+			case Factory:
+			case Capital:
+			case ControllerLand:
+			case ControllerWater:
+			case ControllerAir:
+				return 1;
+			default:
+				/* fall through */
+			}
 		}
-	}
-
-	static int getGestureNum(Building.Type type) {
-		switch (type) {
-		case OilRefinery:
-		case OilRefineryBig:
-			return 7;
-		case OilRig:
-			return 4;
-		case Factory:
-		case Capital:
-		case ControllerLand:
-		case ControllerWater:
-		case ControllerAir:
-			return 1;
-		default:
-			throw new IllegalArgumentException("Unexpected value: " + type);
-		}
+		throw new IllegalArgumentException("Unexpected value: " + obj);
 	}
 
 }

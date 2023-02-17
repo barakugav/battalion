@@ -32,7 +32,7 @@ import com.ugav.battalion.core.Tile;
 import com.ugav.battalion.core.Unit;
 
 public class GameArenaPanel extends
-		ArenaPanelAbstract<ArenaPanelAbstract.TerrainComp, ArenaPanelAbstract.BuildingComp, GameArenaPanel.EntityLayer.UnitComp>
+		ArenaPanelAbstract<ArenaPanelAbstract.TerrainComp, GameArenaPanel.EntityLayer.BuildingComp, GameArenaPanel.EntityLayer.UnitComp>
 		implements Clearable {
 
 	private final Globals globals;
@@ -215,7 +215,7 @@ public class GameArenaPanel extends
 	}
 
 	class EntityLayer extends
-			ArenaPanelAbstract.EntityLayer<ArenaPanelAbstract.TerrainComp, ArenaPanelAbstract.BuildingComp, EntityLayer.UnitComp> {
+			ArenaPanelAbstract.EntityLayer<ArenaPanelAbstract.TerrainComp, EntityLayer.BuildingComp, EntityLayer.UnitComp> {
 
 		private static final long serialVersionUID = 1L;
 
@@ -451,13 +451,26 @@ public class GameArenaPanel extends
 
 				if (tile.hasBuilding()) {
 					Building building = tile.getBuilding();
-					buildings.put(building, new BuildingComp(GameArenaPanel.this, pos, building));
+					buildings.put(building, new BuildingComp(pos, building));
 				}
 			}
 		}
 
 		private void addUnitComp(Unit unit) {
 			units.put(unit, new UnitComp(unit));
+		}
+
+		class BuildingComp extends ArenaPanelAbstract.BuildingComp {
+
+			BuildingComp(Position pos, Building building) {
+				super(GameArenaPanel.this, pos, building);
+			}
+
+			@Override
+			int getGasture() {
+				return gestureTask.getGesture() % Images.getGestureNum(building().getType());
+			}
+
 		}
 
 		class UnitComp extends ArenaPanelAbstract.UnitComp {
