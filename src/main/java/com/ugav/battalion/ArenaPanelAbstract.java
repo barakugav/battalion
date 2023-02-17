@@ -275,7 +275,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	void drawImage(Graphics g, Object obj, int x, int y) {
 		BufferedImage img = obj instanceof BufferedImage ? (BufferedImage) obj : Images.getImage(obj);
 		assert img.getWidth() == TILE_SIZE_PIXEL : "wrong width (" + img.getWidth() + "):" + obj;
-		g.drawImage(img, x, y + TILE_SIZE_PIXEL - img.getHeight(), img.getWidth(), img.getHeight(), this);
+		g.drawImage(img, x, y + TILE_SIZE_PIXEL - img.getHeight(), this);
 	}
 
 	abstract Terrain getTerrain(Position pos);
@@ -472,6 +472,16 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		void paintComponent(Graphics g) {
 			Position pos = pos();
 			arena.drawRelativeToMap(g, Images.getBuildingImage(building, getGasture()), pos);
+
+			/* Draw flag */
+			BufferedImage flagImg = Images.getFlagImage(building.getTeam(), getFlagGesture());
+			int x = arena.displayedX(pos.x * TILE_SIZE_PIXEL) + 42;
+			int y = arena.displayedY(pos.y * TILE_SIZE_PIXEL) - 3;
+			g.drawImage(flagImg, x, y, arena);
+		}
+
+		int getFlagGesture() {
+			return 0;
 		}
 
 		@Override

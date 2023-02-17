@@ -2,6 +2,7 @@ package com.ugav.battalion;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.IntConsumer;
 
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Unit;
@@ -13,10 +14,13 @@ class GestureTask implements Runnable {
 	private static final int GestureNum;
 	static {
 		Set<Integer> possibleGestureNum = new HashSet<>();
+		IntConsumer addGestureNum = x -> possibleGestureNum.add(Integer.valueOf(x));
 		for (Unit.Type type : Unit.Type.values())
-			possibleGestureNum.add(Integer.valueOf(Images.getGestureNum(type)));
+			addGestureNum.accept(Images.getGestureNum(type));
 		for (Building.Type type : Building.Type.values())
-			possibleGestureNum.add(Integer.valueOf(Images.getGestureNum(type)));
+			addGestureNum.accept(Images.getGestureNum(type));
+		addGestureNum.accept(Images.getGestureNum("Flag"));
+
 		int gestureNum = 1;
 		for (int x : Utils.toArray(possibleGestureNum)) {
 			if (gestureNum >= 1 << 16 && x >= 1 << 16)

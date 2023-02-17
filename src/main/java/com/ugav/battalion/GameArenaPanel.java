@@ -471,6 +471,11 @@ public class GameArenaPanel extends
 				return gestureTask.getGesture() % Images.getGestureNum(building().getType());
 			}
 
+			@Override
+			int getFlagGesture() {
+				return gestureTask.getGesture() % Images.getGestureNum("Flag");
+			}
+
 		}
 
 		class UnitComp extends ArenaPanelAbstract.UnitComp {

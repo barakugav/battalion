@@ -135,6 +135,7 @@ class Images {
 		addBuilding.accept(Building.Type.OilRefinery, "img/building/oil_refinery.png");
 		addBuilding.accept(Building.Type.OilRefineryBig, "img/building/oil_refinery_big.png");
 		addBuilding.accept(Building.Type.OilRig, "img/building/oil_rig.png");
+		images0.putAll(loadFlagImages("img/building/flag.png"));
 
 		/* Ect */
 		for (int quadrant = 0; quadrant < 4; quadrant++) {
@@ -250,10 +251,6 @@ class Images {
 		int gestureNum = getGestureNum(type);
 		BufferedImage img = loadImg(path);
 		int width = img.getWidth() / gestureNum;
-
-		if (type == Building.Type.OilRefinery)
-			System.out.println();
-
 		Map<BuildingImgDesc, BufferedImage> buildings = new HashMap<>();
 		for (int gesture = 0; gesture < gestureNum; gesture++) {
 			BufferedImage redImg = Utils.imgSub(img, gesture * width, 0, width, img.getHeight());
@@ -264,7 +261,27 @@ class Images {
 			buildings.put(new BuildingImgDesc(type, Team.None, gesture), whiteImg);
 		}
 		return buildings;
+	}
 
+	private static Map<Object, BufferedImage> loadFlagImages(String path) {
+		int gestureNum = getGestureNum("Flag");
+		BufferedImage img = loadImg(path);
+		int width = img.getWidth() / gestureNum;
+		Map<Object, BufferedImage> flags = new HashMap<>();
+		for (int gesture = 0; gesture < gestureNum; gesture++) {
+			BufferedImage redImg = Utils.imgSub(img, gesture * width, 0, width, img.getHeight());
+			BufferedImage blueImg = toBlue(redImg);
+			BufferedImage whiteImg = toWhite(redImg);
+			flags.put(flagKey(Team.Red, gesture), redImg);
+			flags.put(flagKey(Team.Blue, gesture), blueImg);
+			flags.put(flagKey(Team.None, gesture), whiteImg);
+		}
+		return flags;
+
+	}
+
+	private static String flagKey(Team team, int gesture) {
+		return "Flag" + team + gesture;
 	}
 
 	private static BufferedImage toBlue(BufferedImage redImg) {
@@ -292,6 +309,10 @@ class Images {
 
 	static BufferedImage getBuildingImage(IBuilding building, int gesture) {
 		return getImage(BuildingImgDesc.of(building, gesture));
+	}
+
+	static BufferedImage getFlagImage(Team team, int gesture) {
+		return getImage(flagKey(team, gesture));
 	}
 
 	static BufferedImage getImage(Object obj) {
@@ -357,7 +378,8 @@ class Images {
 			default:
 				/* fall through */
 			}
-		}
+		} else if ("Flag".equals(obj))
+			return 4;
 		throw new IllegalArgumentException("Unexpected value: " + obj);
 	}
 
