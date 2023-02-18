@@ -9,6 +9,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
+import java.awt.image.RescaleOp;
 import java.awt.image.WritableRaster;
 import java.io.BufferedReader;
 import java.io.File;
@@ -190,13 +191,21 @@ public class Utils {
 		return bimage;
 	}
 
-	public static BufferedImage imgTransparent(Image img, double alpha) {
+	public static BufferedImage imgTransparent(Image img, float alpha) {
 		BufferedImage tImg = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2 = tImg.createGraphics();
-		g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) alpha));
+		g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
 		g2.drawImage(img, 0, 0, null);
 		g2.dispose();
 		return tImg;
+	}
+
+	public static BufferedImage imgDarken(BufferedImage img, float dark) {
+		BufferedImage dImg = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = dImg.createGraphics();
+		g.drawImage(img, 0, 0, null);
+		g.dispose();
+		return new RescaleOp(dark, 0, null).filter(dImg, null);
 	}
 
 	public static BufferedImage imgRotate(BufferedImage img, double theta) {

@@ -39,7 +39,7 @@ public abstract class Entity {
 		onChange().notify(new EntityChange(this));
 	}
 
-	DataChangeNotifier<EntityChange> onChange() {
+	public DataChangeNotifier<EntityChange> onChange() {
 		return arena.onEntityChange;
 	}
 

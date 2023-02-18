@@ -9,9 +9,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
-import java.awt.image.RescaleOp;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.LongToIntFunction;
 
@@ -21,6 +22,7 @@ import javax.swing.JButton;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 
+import com.ugav.battalion.AnimationTask.Animation;
 import com.ugav.battalion.FactoryMenu.UnitBuy;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Game;
@@ -478,42 +480,57 @@ public class GameArenaPanel extends
 
 		}
 
+		private static class UnitMoveAnimation implements Animation {
+
+			private final UnitComp comp;
+			private final List<Position> path;
+			private int cursor;
+			private static final int StepSize = 16;
+
+			UnitMoveAnimation(UnitComp comp, List<Position> path) {
+				this.comp = comp;
+				this.path = Collections.unmodifiableList(new ArrayList<>(path));
+			}
+
+			@Override
+			public boolean advanceAnimationStep() {
+				if (cursor >= path.size() * StepSize)
+					throw new NoSuchElementException();
+
+				int idx = cursor / StepSize;
+				double frac = (cursor % StepSize + 1) / (double) StepSize;
+				Position p1 = path.get(idx);
+				Position p2 = path.get(idx + 1);
+				comp.orientation = Direction.calc(p1, p2);
+				double x = p1.x + (p2.x - p1.x) * frac;
+				double y = p1.y + (p2.y - p1.y) * frac;
+				comp.pos = Position.of(x, y);
+
+				return ++cursor < (path.size() - 1) * StepSize;
+			}
+		}
+
 		class UnitComp extends ArenaPanelAbstract.UnitComp {
 
 			private Direction orientation = Direction.XPos;
-
-			private List<Position> animationMovePath;
-			private int animationCursor;
-			private static final int AnimationStepSize = 16;
+			private UnitMoveAnimation moveAnimation;
+			private final DataChangeRegister register = new DataChangeRegister();
 
 			private static final Color HealthColorHigh = new Color(0, 206, 0);
 			private static final Color HealthColorMed = new Color(255, 130, 4);
 			private static final Color HealthColorLow = new Color(242, 0, 0);
 
 			UnitComp(Unit unit) {
-				super(GameArenaPanel.this, unit);
+				super(GameArenaPanel.this, unit.getPos(), unit);
+
+				register.register(unit.onChange(), e -> {
+					pos = unit.getPos();
+				});
 			}
 
 			@Override
 			Unit unit() {
 				return (Unit) super.unit();
-			}
-
-			@Override
-			Position pos() {
-				if (isAnimated()) {
-					int idx = animationCursor / AnimationStepSize;
-					double frac = (animationCursor % AnimationStepSize + 1) / (double) AnimationStepSize;
-					Position p1 = animationMovePath.get(idx);
-					Position p2 = animationMovePath.get(idx + 1);
-					orientation = Direction.calc(p1, p2);
-					double x = p1.x + (p2.x - p1.x) * frac;
-					double y = p1.y + (p2.y - p1.y) * frac;
-					return Position.of(x, y);
-
-				} else {
-					return unit().getPos();
-				}
 			}
 
 			@Override
@@ -533,8 +550,6 @@ public class GameArenaPanel extends
 
 			@Override
 			void paintComponent(Graphics g) {
-				Position pos = pos();
-
 				final Team playerTeam = Team.Red;
 				if (!isAnimated() && !game.arena().isUnitVisible(pos, playerTeam))
 					return;
@@ -570,44 +585,37 @@ public class GameArenaPanel extends
 			}
 
 			void moveAnimation(List<Position> animationPath, Runnable future) {
-				animationMovePath = new ArrayList<>(animationPath);
-				animationCursor = 0;
-				animationTask.animateAndWait(() -> {
-					if (animationMovePath == null)
-						throw new IllegalStateException();
-					assert animationCursor < animationMovePath.size() * AnimationStepSize;
-					animationCursor++;
-					if (animationCursor < (animationMovePath.size() - 1) * AnimationStepSize) {
-						return true;
-					} else {
-						animationMovePath = null;
-						animationCursor = 0;
-						return false;
-					}
-
-				}, future);
+				if (moveAnimation != null)
+					throw new IllegalStateException();
+				animationTask.animateAndWait((moveAnimation = new UnitMoveAnimation(this, animationPath)), () -> {
+					moveAnimation = null;
+					future.run();
+				});
 			}
 
 			@Override
 			BufferedImage getUnitImg() {
-				BufferedImage orig = super.getUnitImg();
-				if (unit().getTeam() != game.getTurn() || unit().isActive())
-					return orig;
-
-				BufferedImage img = new BufferedImage(orig.getWidth(), orig.getHeight(), BufferedImage.TYPE_INT_ARGB);
-				Graphics2D g = img.createGraphics();
-				g.drawImage(orig, 0, 0, null);
-				g.dispose();
-				return new RescaleOp(.7f, 0, null).filter(img, null);
+				BufferedImage img = super.getUnitImg();
+				if (unit().getTeam() == game.getTurn() && !unit().isActive())
+					img = Utils.imgDarken(img, .7f);
+				if (unit().type.invisible && !isAnimated())
+					img = Utils.imgTransparent(img, .5f);
+				return img;
 			}
 
 			public boolean isAnimated() {
-				return animationMovePath != null && animationMovePath.size() >= 2;
+				return moveAnimation != null;
 			}
 
 			@Override
 			boolean isPaintDelayed() {
 				return isAnimated();
+			}
+
+			@Override
+			public void clear() {
+				register.unregisterAll();
+				super.clear();
 			}
 
 		}
@@ -652,7 +660,7 @@ public class GameArenaPanel extends
 		private void createUnitMenuButton(Images.Label label, boolean enable, ActionListener l) {
 			BufferedImage img = Images.getImage(label);
 			if (!enable)
-				img = Utils.imgTransparent(img, 0.5);
+				img = Utils.imgTransparent(img, .5f);
 			JButton button = new JButton(new ImageIcon(img));
 			button.setBorder(BorderFactory.createEmptyBorder());
 			button.setContentAreaFilled(false);

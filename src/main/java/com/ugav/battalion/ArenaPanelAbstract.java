@@ -218,7 +218,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			comps.addAll(buildings.values());
 			comps.addAll(units.values());
 			comps.sort((o1, o2) -> {
-				Position p1 = o1.pos(), p2 = o2.pos();
+				Position p1 = o1.pos, p2 = o2.pos;
 				if (p1.y != p2.y)
 					return Double.compare(p1.y, p2.y);
 				if (p1.x != p2.x)
@@ -283,9 +283,11 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	abstract static class ArenaComp implements Clearable {
 
 		final ArenaPanelAbstract<?, ?, ?> arena;
+		Position pos;
 
-		ArenaComp(ArenaPanelAbstract<?, ?, ?> arena) {
+		ArenaComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos) {
 			this.arena = Objects.requireNonNull(arena);
+			this.pos = pos;
 		}
 
 		abstract void paintComponent(Graphics g);
@@ -294,8 +296,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			return false;
 		}
 
-		abstract Position pos();
-
 		int getGasture() {
 			return 0;
 		}
@@ -303,16 +303,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	static class TerrainComp extends ArenaComp {
 
-		private final Position pos;
-
 		TerrainComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos) {
-			super(arena);
-			this.pos = Objects.requireNonNull(pos);
-		}
-
-		@Override
-		Position pos() {
-			return pos;
+			super(arena, pos);
 		}
 
 		private boolean inArena(Position p) {
@@ -339,7 +331,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					Terrain.isBridgeVertical(bridgePos, p -> arena.getTerrain(p), arena.arenaWidth, arena.arenaHeight),
 					"Can't determine bridge orientation").booleanValue();
 
-			Position pos = pos();
 			Terrain terrain = arena.getTerrain(pos);
 			if (terrain == Terrain.ClearWater) {
 				arena.drawRelativeToMap(g, terrain, pos);
@@ -434,12 +425,12 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		}
 
 		void drawImage(Graphics g, Object obj) {
-			arena.drawRelativeToMap(g, obj, pos());
+			arena.drawRelativeToMap(g, obj, pos);
 		}
 
 		@Override
 		public String toString() {
-			return "[" + pos() + ", " + arena.getTerrain(pos) + "]";
+			return "[" + pos + ", " + arena.getTerrain(pos) + "]";
 		}
 
 		@Override
@@ -450,12 +441,10 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	static class BuildingComp extends ArenaComp {
 
-		private final Position pos;
 		private final IBuilding building;
 
 		BuildingComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos, IBuilding building) {
-			super(arena);
-			this.pos = Objects.requireNonNull(pos);
+			super(arena, pos);
 			this.building = Objects.requireNonNull(building);
 		}
 
@@ -464,13 +453,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		}
 
 		@Override
-		Position pos() {
-			return pos;
-		}
-
-		@Override
 		void paintComponent(Graphics g) {
-			Position pos = pos();
 			arena.drawRelativeToMap(g, Images.getBuildingImage(building, getGasture()), pos);
 
 			/* Draw flag */
@@ -490,7 +473,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		@Override
 		public String toString() {
-			return "[" + pos() + ", " + building() + "]";
+			return "[" + pos + ", " + building() + "]";
 		}
 
 	}
@@ -499,8 +482,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		private final IUnit unit;
 
-		UnitComp(ArenaPanelAbstract<?, ?, ?> arena, IUnit unit) {
-			super(arena);
+		UnitComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos, IUnit unit) {
+			super(arena, pos);
 			this.unit = Objects.requireNonNull(unit);
 		}
 
@@ -510,7 +493,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		@Override
 		void paintComponent(Graphics g) {
-			Position pos = pos();
 			arena.drawRelativeToMap(g, getUnitImg(), pos);
 
 			IUnit trasportedUnit = unit.getTransportedUnit();
@@ -546,7 +528,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		@Override
 		public String toString() {
-			return "[" + pos() + ", " + unit() + "]";
+			return "[" + pos + ", " + unit() + "]";
 		}
 
 	}

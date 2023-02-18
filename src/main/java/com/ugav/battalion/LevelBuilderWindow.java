@@ -503,7 +503,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				}
 
 				void tileUpdate() {
-					Position pos = pos();
 					TileDesc tile = builder.at(pos);
 
 					if (buildingComp != null && tile.building != buildingComp.building()) {
@@ -526,21 +525,13 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			private class UnitComp extends ArenaPanelAbstract.UnitComp {
 
-				private final Position pos;
-
 				UnitComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos, UnitDesc unit) {
-					super(arena, unit);
-					this.pos = Objects.requireNonNull(pos);
+					super(arena, pos, unit);
 				}
 
 				@Override
 				UnitDesc unit() {
 					return (UnitDesc) super.unit();
-				}
-
-				@Override
-				Position pos() {
-					return pos;
 				}
 
 			}
