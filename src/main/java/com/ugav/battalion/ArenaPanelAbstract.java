@@ -515,11 +515,18 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		}
 
 		BufferedImage getUnitImg() {
-			return Images.getUnitImage(unit, getOrientation(), getGasture());
+			if (isMoving())
+				return Images.getUnitImageMove(unit, getOrientation(), getGasture());
+			else
+				return Images.getUnitImageStand(unit, getOrientation(), getGasture());
 		}
 
 		Direction getOrientation() {
 			return Direction.XPos;
+		}
+
+		boolean isMoving() {
+			return false;
 		}
 
 		@Override

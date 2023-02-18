@@ -514,9 +514,8 @@ public class GameArenaPanel extends
 			int getGasture() {
 				if (unit().getTeam() == game.getTurn() && !unit().isActive())
 					return 0;
-				int gestureNum = Images.getGestureNum(unit().type);
-				if (gestureNum == 5 && !isAnimated())
-					return 0;
+				int gestureNum = isMoving() ? Images.getGestureNumUnitMove(unit().type)
+						: Images.getGestureNumUnitStand(unit().type);
 				return gestureTask.getGesture() % gestureNum;
 			}
 
@@ -600,10 +599,8 @@ public class GameArenaPanel extends
 				float baseAlpha;
 				if (!unit().type.invisible)
 					baseAlpha = 1f;
-				else if (unit().getTeam() == playerTeam)
+				else if (unit().getTeam() == playerTeam || game.arena().isUnitVisible(unit().getPos(), playerTeam))
 					baseAlpha = .5f;
-				else if (game.arena().isUnitVisible(unit().getPos(), playerTeam))
-					baseAlpha = 1f;
 				else
 					baseAlpha = 0f;
 
@@ -612,6 +609,11 @@ public class GameArenaPanel extends
 					img = Utils.imgTransparent(img, alpha0);
 
 				return img;
+			}
+
+			@Override
+			boolean isMoving() {
+				return isAnimated();
 			}
 
 			public boolean isAnimated() {

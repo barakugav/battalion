@@ -15,8 +15,10 @@ class GestureTask implements TickTask {
 	static {
 		Set<Integer> possibleGestureNum = new HashSet<>();
 		IntConsumer addGestureNum = x -> possibleGestureNum.add(Integer.valueOf(x));
-		for (Unit.Type type : Unit.Type.values())
-			addGestureNum.accept(Images.getGestureNum(type));
+		for (Unit.Type type : Unit.Type.values()) {
+			addGestureNum.accept(Images.getGestureNumUnitMove(type));
+			addGestureNum.accept(Images.getGestureNumUnitStand(type));
+		}
 		for (Building.Type type : Building.Type.values())
 			addGestureNum.accept(Images.getGestureNum(type));
 		addGestureNum.accept(Images.getGestureNum("Flag"));

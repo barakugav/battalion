@@ -65,13 +65,29 @@ class Images {
 
 	private static class UnitImgDesc extends ImgDesc {
 
-		private UnitImgDesc(Unit.Type type, Team team, Direction orientation, int gesture) {
-			super(type, team, orientation, Integer.valueOf(gesture));
+		private static final Object StandTag = new Object();
+		private static final Object MoveTag = new Object();
+
+		private UnitImgDesc(Unit.Type type, Team team, Direction orientation, Object gestureTag, int gesture) {
+			super(type, team, orientation, gestureTag, Integer.valueOf(gesture));
 		}
 
-		static UnitImgDesc of(IUnit unit, Direction orientation, int gesture) {
+		static UnitImgDesc ofStand(Unit.Type type, Team team, Direction orientation, int gesture) {
 			orientation = orientation != null ? orientation : Direction.XPos;
-			return new UnitImgDesc(unit.getType(), unit.getTeam(), orientation, gesture);
+			return new UnitImgDesc(type, team, orientation, StandTag, gesture);
+		}
+
+		static UnitImgDesc ofStand(IUnit unit, Direction orientation, int gesture) {
+			return ofStand(unit.getType(), unit.getTeam(), orientation, gesture);
+		}
+
+		static UnitImgDesc ofMove(Unit.Type type, Team team, Direction orientation, int gesture) {
+			orientation = orientation != null ? orientation : Direction.XPos;
+			return new UnitImgDesc(type, team, orientation, MoveTag, gesture);
+		}
+
+		static UnitImgDesc ofMove(IUnit unit, Direction orientation, int gesture) {
+			return ofMove(unit.getType(), unit.getTeam(), orientation, gesture);
 		}
 
 	}
@@ -229,7 +245,11 @@ class Images {
 	}
 
 	private static Map<UnitImgDesc, BufferedImage> loadUnitImgs(Unit.Type type, String path) {
-		int gestureNum = getGestureNum(type);
+		if (type == Unit.Type.Soldier)
+			System.out.println();
+		boolean differentGestures = isUnitHasDifferentStandMoveGesture(type);
+		int gestureNumStand = getGestureNumUnitStand(type);
+		int gestureNum = gestureNumStand + getGestureNumUnitMove0(type);
 		BufferedImage img = loadImg(path);
 		int width = img.getWidth() / 4;
 		int height = img.getHeight() / gestureNum;
@@ -240,8 +260,24 @@ class Images {
 				BufferedImage redImg = Utils.imgSub(img, orientatoinIdx * width, gesture * height, width, height);
 				BufferedImage blueImg = toBlue(redImg);
 				Direction orientatoin = orientationIdxToObj(orientatoinIdx);
-				units.put(new UnitImgDesc(type, Team.Red, orientatoin, gesture), redImg);
-				units.put(new UnitImgDesc(type, Team.Blue, orientatoin, gesture), blueImg);
+
+				int standGesture = -1, moveGesture = -1;
+				if (differentGestures && gesture < gestureNumStand) {
+					standGesture = gesture;
+				} else if (differentGestures && gesture >= gestureNumStand) {
+					moveGesture = gesture - gestureNumStand;
+				} else {
+					standGesture = moveGesture = gesture;
+				}
+
+				if (standGesture >= 0) {
+					units.put(UnitImgDesc.ofStand(type, Team.Red, orientatoin, standGesture), redImg);
+					units.put(UnitImgDesc.ofStand(type, Team.Blue, orientatoin, standGesture), blueImg);
+				}
+				if (moveGesture >= 0) {
+					units.put(UnitImgDesc.ofMove(type, Team.Red, orientatoin, moveGesture), redImg);
+					units.put(UnitImgDesc.ofMove(type, Team.Blue, orientatoin, moveGesture), blueImg);
+				}
 			}
 		}
 		return units;
@@ -303,8 +339,16 @@ class Images {
 		});
 	}
 
-	static BufferedImage getUnitImage(IUnit unit, Direction orientation, int gesture) {
-		return getImage(UnitImgDesc.of(unit, orientation, gesture));
+	static BufferedImage getUnitImageStand(IUnit unit, Direction orientation, int gesture) {
+		if (gesture >= getGestureNumUnitStand(unit.getType()))
+			throw new IllegalArgumentException();
+		return getImage(UnitImgDesc.ofStand(unit, orientation, gesture));
+	}
+
+	static BufferedImage getUnitImageMove(IUnit unit, Direction orientation, int gesture) {
+		if (gesture >= getGestureNumUnitMove(unit.getType()))
+			throw new IllegalArgumentException();
+		return getImage(UnitImgDesc.ofMove(unit, orientation, gesture));
 	}
 
 	static BufferedImage getBuildingImage(IBuilding building, int gesture) {
@@ -325,7 +369,7 @@ class Images {
 	private static BufferedImage getImage0(Object obj) {
 		if (obj instanceof IUnit) {
 			IUnit unit = (IUnit) obj;
-			return images.get(UnitImgDesc.of(unit, null, 0));
+			return images.get(UnitImgDesc.ofStand(unit, null, 0));
 
 		} else if (obj instanceof IBuilding) {
 			IBuilding building = (IBuilding) obj;
@@ -336,33 +380,53 @@ class Images {
 		}
 	}
 
+	static int getGestureNumUnitStand(Unit.Type type) {
+		switch (type) {
+		case Soldier:
+		case Bazooka:
+			return 1;
+		case Tank:
+		case TankBig:
+		case TankAntiAir:
+		case Artillery:
+		case Mortar:
+		case SpeedBoat:
+		case Ship:
+		case ShipAntiAir:
+		case ShipArtillery:
+		case Submarine:
+		case ShipTransporter:
+		case Airplane:
+		case Zeppelin:
+		case AirTransporter:
+			return 4;
+		case Turrent:
+			return 1;
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + type);
+		}
+	}
+
+	static int getGestureNumUnitMove(Unit.Type type) {
+		return isUnitHasDifferentStandMoveGesture(type) ? getGestureNumUnitMove0(type) : getGestureNumUnitStand(type);
+	}
+
+	private static boolean isUnitHasDifferentStandMoveGesture(Unit.Type type) {
+		return getGestureNumUnitMove0(type) > 0;
+	}
+
+	private static int getGestureNumUnitMove0(Unit.Type type) {
+		switch (type) {
+		case Soldier:
+		case Bazooka:
+			return 4;
+		default:
+			return 0;
+		}
+	}
+
 	static int getGestureNum(Object obj) {
-		if (obj instanceof Unit.Type) {
-			switch ((Unit.Type) obj) {
-			case Soldier:
-			case Bazooka:
-				return 5;
-			case Tank:
-			case TankBig:
-			case TankAntiAir:
-			case Artillery:
-			case Mortar:
-			case SpeedBoat:
-			case Ship:
-			case ShipAntiAir:
-			case ShipArtillery:
-			case Submarine:
-			case ShipTransporter:
-			case Airplane:
-			case Zeppelin:
-			case AirTransporter:
-				return 4;
-			case Turrent:
-				return 1;
-			default:
-				/* fall through */
-			}
-		} else if (obj instanceof Building.Type) {
+		if (obj instanceof Building.Type) {
 			switch ((Building.Type) obj) {
 			case OilRefinery:
 			case OilRefineryBig:
