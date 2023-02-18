@@ -22,7 +22,6 @@ import javax.swing.JButton;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 
-import com.ugav.battalion.AnimationTask.Animation;
 import com.ugav.battalion.FactoryMenu.UnitBuy;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Game;
@@ -226,7 +225,7 @@ public class GameArenaPanel extends
 		private Position.Bitmap attackableMap = Position.Bitmap.Empty;
 		private final List<Position> movePath;
 
-		private final AnimationTask animationTask = new AnimationTask();
+		private final Animation.Task animationTask = new Animation.Task();
 		private final GestureTask gestureTask = new GestureTask();
 
 		private final DataChangeRegister register = new DataChangeRegister();
