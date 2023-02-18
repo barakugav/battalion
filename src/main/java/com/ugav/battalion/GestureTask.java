@@ -7,7 +7,7 @@ import java.util.function.IntConsumer;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Unit;
 
-class GestureTask implements Runnable {
+class GestureTask implements TickTask {
 
 	private int counter = 0;
 	private static final int GestureDuration = 16;

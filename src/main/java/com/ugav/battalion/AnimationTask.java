@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.swing.SwingUtilities;
 
-class AnimationTask implements Runnable {
+class AnimationTask implements TickTask {
 
 	private final Collection<AnimationEntry> queue = new ConcurrentLinkedQueue<>();
 

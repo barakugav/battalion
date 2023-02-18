@@ -42,7 +42,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	private int mapPosX, mapPosY;
 	final EntityLayer<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> entityLayer;
 
-	final TickTaskManager tickTaskManager = new TickTaskManager();
+	final TickTask.Manager tickTaskManager = new TickTask.Manager();
 
 	private final KeyListener keyListener;
 	final DataChangeNotifier<DataEvent> onMapMove = new DataChangeNotifier<>();
