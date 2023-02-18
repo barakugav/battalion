@@ -210,7 +210,11 @@ public class GameArenaPanel extends
 	}
 
 	void animateUnitMove(Unit unit, List<Position> path, Runnable future) {
-		entityLayer().units.get(unit).moveAnimation(path, future);
+		entityLayer().units.get(unit).animateMove(path, future);
+	}
+
+	void animateUnitMoveAndAttack(Unit unit, List<Position> path, Position target, Runnable future) {
+		entityLayer().units.get(unit).animateMoveAndAttack(path, target, future);
 	}
 
 	class EntityLayer extends
@@ -552,21 +556,36 @@ public class GameArenaPanel extends
 				}
 			}
 
-			void moveAnimation(List<Position> animationPath, Runnable future) {
+			private void runAnimation(Animation animation, Runnable future) {
 				if (currentAnimation != null)
 					throw new IllegalStateException();
 
-				Animation animation = new Animation.UnitMove(this, animationPath);
+				animationTask.animateAndWait((currentAnimation = animation), () -> {
+					currentAnimation = null;
+					if (future != null)
+						future.run();
+				});
+			}
+
+			private Animation appearDisappearAnimationWrap(Animation animation) {
 				if (unit().type.invisible) {
 					Animation pre = new Animation.UnitReappear(this);
 					Animation post = new Animation.UnitDisappear(this);
 					animation = Animation.of(pre, animation, post);
 				}
+				return animation;
+			}
 
-				animationTask.animateAndWait((currentAnimation = animation), () -> {
-					currentAnimation = null;
-					future.run();
-				});
+			void animateMove(List<Position> animationPath, Runnable future) {
+				Animation animation = new Animation.UnitMove(this, animationPath);
+				animation = appearDisappearAnimationWrap(animation);
+				runAnimation(animation, future);
+			}
+
+			void animateMoveAndAttack(List<Position> animationPath, Position target, Runnable future) {
+				Animation animation = new Animation.UnitMoveAndAttack(this, animationPath, target);
+				animation = appearDisappearAnimationWrap(animation);
+				runAnimation(animation, future);
 			}
 
 			@Override

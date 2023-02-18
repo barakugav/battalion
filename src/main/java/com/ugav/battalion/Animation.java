@@ -22,7 +22,7 @@ interface Animation {
 
 	static class UnitMove implements Animation {
 
-		private final UnitComp comp;
+		final UnitComp comp;
 		private final List<Position> path;
 		private int cursor;
 		private static final int StepSize = 16;
@@ -47,6 +47,24 @@ interface Animation {
 			comp.pos = Position.of(x, y);
 
 			return ++cursor < (path.size() - 1) * StepSize;
+		}
+	}
+
+	static class UnitMoveAndAttack extends UnitMove {
+
+		private final Direction attackingDir;
+
+		UnitMoveAndAttack(UnitComp comp, List<Position> path, Position target) {
+			super(comp, path);
+			attackingDir = Direction.calc(path.get(path.size() - 1), target);
+		}
+
+		@Override
+		public boolean advanceAnimationStep() {
+			if (super.advanceAnimationStep())
+				return true;
+			comp.orientation = attackingDir;
+			return false;
 		}
 	}
 
