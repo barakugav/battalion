@@ -10,9 +10,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.LongToIntFunction;
 
@@ -479,40 +477,11 @@ public class GameArenaPanel extends
 
 		}
 
-		private static class UnitMoveAnimation implements Animation {
-
-			private final UnitComp comp;
-			private final List<Position> path;
-			private int cursor;
-			private static final int StepSize = 16;
-
-			UnitMoveAnimation(UnitComp comp, List<Position> path) {
-				this.comp = comp;
-				this.path = Collections.unmodifiableList(new ArrayList<>(path));
-			}
-
-			@Override
-			public boolean advanceAnimationStep() {
-				if (cursor >= path.size() * StepSize)
-					throw new NoSuchElementException();
-
-				int idx = cursor / StepSize;
-				double frac = (cursor % StepSize + 1) / (double) StepSize;
-				Position p1 = path.get(idx);
-				Position p2 = path.get(idx + 1);
-				comp.orientation = Direction.calc(p1, p2);
-				double x = p1.x + (p2.x - p1.x) * frac;
-				double y = p1.y + (p2.y - p1.y) * frac;
-				comp.pos = Position.of(x, y);
-
-				return ++cursor < (path.size() - 1) * StepSize;
-			}
-		}
-
 		class UnitComp extends ArenaPanelAbstract.UnitComp {
 
-			private Direction orientation = Direction.XPos;
-			private UnitMoveAnimation moveAnimation;
+			Direction orientation = Direction.XPos;
+			float alpha = 0.0f;
+			private Animation currentAnimation;
 			private final DataChangeRegister register = new DataChangeRegister();
 
 			private static final Color HealthColorHigh = new Color(0, 206, 0);
@@ -584,10 +553,18 @@ public class GameArenaPanel extends
 			}
 
 			void moveAnimation(List<Position> animationPath, Runnable future) {
-				if (moveAnimation != null)
+				if (currentAnimation != null)
 					throw new IllegalStateException();
-				animationTask.animateAndWait((moveAnimation = new UnitMoveAnimation(this, animationPath)), () -> {
-					moveAnimation = null;
+
+				Animation animation = new Animation.UnitMove(this, animationPath);
+				if (unit().type.invisible) {
+					Animation pre = new Animation.UnitReappear(this);
+					Animation post = new Animation.UnitDisappear(this);
+					animation = Animation.of(pre, animation, post);
+				}
+
+				animationTask.animateAndWait((currentAnimation = animation), () -> {
+					currentAnimation = null;
 					future.run();
 				});
 			}
@@ -595,15 +572,31 @@ public class GameArenaPanel extends
 			@Override
 			BufferedImage getUnitImg() {
 				BufferedImage img = super.getUnitImg();
+
 				if (unit().getTeam() == game.getTurn() && !unit().isActive())
 					img = Utils.imgDarken(img, .7f);
-				if (unit().type.invisible && !isAnimated())
-					img = Utils.imgTransparent(img, .5f);
+
+				final Team playerTeam = Team.Red;
+
+				float baseAlpha;
+				if (!unit().type.invisible)
+					baseAlpha = 1f;
+				else if (unit().getTeam() == playerTeam)
+					baseAlpha = .5f;
+				else if (game.arena().isUnitVisible(unit().getPos(), playerTeam))
+					baseAlpha = 1f;
+				else
+					baseAlpha = 0f;
+
+				float alpha0 = Math.max(baseAlpha, alpha);
+				if (alpha0 != 1.0)
+					img = Utils.imgTransparent(img, alpha0);
+
 				return img;
 			}
 
 			public boolean isAnimated() {
-				return moveAnimation != null;
+				return currentAnimation != null;
 			}
 
 			@Override

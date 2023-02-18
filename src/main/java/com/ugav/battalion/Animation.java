@@ -1,16 +1,108 @@
 package com.ugav.battalion;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.swing.SwingUtilities;
 
+import com.ugav.battalion.GameArenaPanel.EntityLayer.UnitComp;
+import com.ugav.battalion.core.Position;
+import com.ugav.battalion.core.Position.Direction;
+
 @FunctionalInterface
 interface Animation {
 
 	boolean advanceAnimationStep();
+
+	static class UnitMove implements Animation {
+
+		private final UnitComp comp;
+		private final List<Position> path;
+		private int cursor;
+		private static final int StepSize = 16;
+
+		UnitMove(UnitComp comp, List<Position> path) {
+			this.comp = comp;
+			this.path = Collections.unmodifiableList(new ArrayList<>(path));
+		}
+
+		@Override
+		public boolean advanceAnimationStep() {
+			if (cursor >= path.size() * StepSize)
+				throw new NoSuchElementException();
+
+			int idx = cursor / StepSize;
+			double frac = (cursor % StepSize + 1) / (double) StepSize;
+			Position p1 = path.get(idx);
+			Position p2 = path.get(idx + 1);
+			comp.orientation = Direction.calc(p1, p2);
+			double x = p1.x + (p2.x - p1.x) * frac;
+			double y = p1.y + (p2.y - p1.y) * frac;
+			comp.pos = Position.of(x, y);
+
+			return ++cursor < (path.size() - 1) * StepSize;
+		}
+	}
+
+	static class UnitReappear implements Animation {
+		private final UnitComp comp;
+		private int cursor = 0;
+		private static final int Duration = 30;
+
+		UnitReappear(UnitComp comp) {
+			this.comp = comp;
+		}
+
+		@Override
+		public boolean advanceAnimationStep() {
+			if (cursor >= Duration)
+				throw new NoSuchElementException();
+			comp.alpha = (float) cursor / Duration;
+			return ++cursor < Duration;
+		}
+	}
+
+	static class UnitDisappear implements Animation {
+		private final UnitComp comp;
+		private int cursor = 0;
+		private static final int Duration = 30;
+
+		UnitDisappear(UnitComp comp) {
+			this.comp = comp;
+		}
+
+		@Override
+		public boolean advanceAnimationStep() {
+			if (cursor >= Duration)
+				throw new NoSuchElementException();
+			comp.alpha = (float) (Duration - cursor) / Duration;
+			return ++cursor < Duration;
+		}
+	}
+
+	static Animation of(Animation... animations) {
+		if (animations.length < 2)
+			throw new IllegalArgumentException();
+		return new Animation() {
+
+			int index = 0;
+
+			@Override
+			public boolean advanceAnimationStep() {
+				if (index >= animations.length)
+					throw new NoSuchElementException();
+				if (!animations[index].advanceAnimationStep())
+					index++;
+				return index < animations.length;
+			}
+		};
+	}
 
 	static class Task implements TickTask {
 
