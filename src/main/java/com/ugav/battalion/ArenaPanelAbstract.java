@@ -148,7 +148,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	}
 
 	Position displayedTile(Position pos) {
-		return Position.of(pos.xInt() * TILE_SIZE_PIXEL, pos.yInt() * TILE_SIZE_PIXEL);
+		return Position.of(displayedX(pos.x * TILE_SIZE_PIXEL), displayedY(pos.y * TILE_SIZE_PIXEL));
 	}
 
 	int displayedXInv(int x) {
