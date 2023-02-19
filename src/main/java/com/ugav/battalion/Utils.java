@@ -286,11 +286,16 @@ public class Utils {
 	}
 
 	public static GridBagConstraints gbConstraints(int x, int y, int width, int height) {
+		return gbConstraints(x, y, width, height, GridBagConstraints.NONE);
+	}
+
+	public static GridBagConstraints gbConstraints(int x, int y, int width, int height, int fill) {
 		GridBagConstraints c = new GridBagConstraints();
 		c.gridx = x;
 		c.gridy = y;
 		c.gridwidth = width;
 		c.gridheight = height;
+		c.fill = fill;
 		return c;
 	}
 

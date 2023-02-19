@@ -36,7 +36,7 @@ public class GameArenaPanel extends
 		implements Clearable {
 
 	private final Globals globals;
-	private final LevelGameWindow window;
+	private final GameWindow window;
 	private final Game game;
 	private Position selection;
 	private UnitMenu unitMenu;
@@ -46,7 +46,7 @@ public class GameArenaPanel extends
 
 	private static final long serialVersionUID = 1L;
 
-	GameArenaPanel(LevelGameWindow window) {
+	GameArenaPanel(GameWindow window) {
 		this.window = window;
 		this.globals = window.globals;
 		this.game = window.game;
@@ -573,7 +573,8 @@ public class GameArenaPanel extends
 				isMoving = true;
 				animationTask.animateAndWait(animation, () -> {
 					isMoving = false;
-					animationCount.compareAndSet(1, 0);
+					if (!animationCount.compareAndSet(1, 0))
+						throw new IllegalStateException();
 					if (future != null)
 						future.run();
 				});
@@ -584,7 +585,8 @@ public class GameArenaPanel extends
 					throw new IllegalStateException();
 
 				animationTask.animate(animation, () -> {
-					animationCount.compareAndSet(1, 0);
+					if (!animationCount.compareAndSet(1, 0))
+						throw new IllegalStateException();
 					if (future != null)
 						future.run();
 				});

@@ -17,12 +17,12 @@ import com.ugav.battalion.core.Tile;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.core.Unit.Type;
 
-class GameGUI implements Game {
+class GameGUIImpl implements Game {
 
 	private final Game game;
-	private final LevelGameWindow gui;
+	private final GameWindow gui;
 
-	GameGUI(LevelGameWindow gui, Level level) {
+	GameGUIImpl(GameWindow gui, Level level) {
 		this.gui = Objects.requireNonNull(gui);
 		game = Game.newInstance(level);
 	}

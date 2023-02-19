@@ -1,28 +1,22 @@
 package com.ugav.battalion;
 
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
-import java.awt.event.ActionListener;
-import java.util.HashMap;
-import java.util.Map;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level;
-import com.ugav.battalion.core.Team;
 
-class LevelGameWindow extends JPanel implements Clearable {
+class GameWindow extends JPanel implements Clearable {
 
 	final Globals globals;
-	private final SideMenu menu;
+	private final GameSideMenu menu;
 	final GameArenaPanel arenaPanel;
 
 	final Game game;
@@ -34,19 +28,28 @@ class LevelGameWindow extends JPanel implements Clearable {
 
 	private static final long serialVersionUID = 1L;
 
-	LevelGameWindow(Globals globals, Level level) {
+	GameWindow(Globals globals, Level level) {
 		this.globals = Objects.requireNonNull(globals);
 
 		if (level.width() < GameArenaPanel.DISPLAYED_ARENA_WIDTH
 				|| level.height() < GameArenaPanel.DISPLAYED_ARENA_HEIGHT)
 			throw new IllegalArgumentException("level size is too small");
-		this.game = new GameGUI(this, level);
-		menu = new SideMenu();
+		this.game = new GameGUIImpl(this, level);
+		menu = new GameSideMenu(this);
 		arenaPanel = new GameArenaPanel(this);
 
-		setLayout(new FlowLayout());
-		add(menu);
-		add(arenaPanel);
+		setLayout(new GridBagLayout());
+		GridBagConstraints c = new GridBagConstraints();
+		c.gridy = 0;
+
+		c.gridx = 0;
+		c.weightx = c.gridwidth = 5;
+		c.fill = GridBagConstraints.BOTH;
+		add(menu, c);
+		c.gridx = 5;
+		c.weightx = c.gridwidth = 20;
+		c.fill = GridBagConstraints.NONE;
+		add(arenaPanel, c);
 
 		menu.initGame();
 		arenaPanel.initGame();
@@ -105,7 +108,7 @@ class LevelGameWindow extends JPanel implements Clearable {
 		}
 	}
 
-	private void endTurn() {
+	void endTurn() {
 		debug.println("End turn");
 		gameAction(() -> {
 			game.turnEnd();
@@ -128,55 +131,6 @@ class LevelGameWindow extends JPanel implements Clearable {
 	void resumeActions() {
 		debug.println("Actions resumed");
 		actionsSuspended = false;
-	}
-
-	private class SideMenu extends JPanel implements Clearable {
-
-		private final Map<Team, JLabel> labelMoney;
-		private final DataChangeRegister register = new DataChangeRegister();
-
-		private static final long serialVersionUID = 1L;
-
-		SideMenu() {
-			labelMoney = new HashMap<>();
-			for (Team team : Team.realTeams)
-				labelMoney.put(team, new JLabel());
-
-			JButton buttonEndTurn = new JButton("End Turn");
-			buttonEndTurn.addActionListener(onlyIfActionsEnabled(e -> endTurn()));
-			JButton buttonMainMenu = new JButton("Main Menu");
-			buttonMainMenu.addActionListener(onlyIfActionsEnabled(e -> globals.frame.displayMainMenu()));
-
-			setLayout(new GridLayout(0, 1));
-			for (JLabel label : labelMoney.values())
-				add(label);
-			add(buttonEndTurn);
-			add(buttonMainMenu);
-
-			for (Team team : Team.realTeams)
-				updateMoneyLabel(team, game.getMoney(team));
-		}
-
-		void initGame() {
-			register.register(game.onMoneyChange(), e -> updateMoneyLabel(e.team, e.newAmount));
-		}
-
-		@Override
-		public void clear() {
-			register.unregisterAll();
-		}
-
-		private void updateMoneyLabel(Team team, int money) {
-			labelMoney.get(team).setText(team.toString() + ": " + money);
-		}
-
-		private ActionListener onlyIfActionsEnabled(ActionListener l) {
-			return e -> {
-				if (!isActionSuspended())
-					l.actionPerformed(e);
-			};
-		}
-
 	}
 
 }
