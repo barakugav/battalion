@@ -1,5 +1,7 @@
 package com.ugav.battalion;
 
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -11,6 +13,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.swing.SwingUtilities;
 
+import com.ugav.battalion.ArenaPanelAbstract.ArenaComp;
 import com.ugav.battalion.GameArenaPanel.EntityLayer.UnitComp;
 import com.ugav.battalion.core.Position;
 import com.ugav.battalion.core.Position.Direction;
@@ -104,6 +107,51 @@ interface Animation {
 		}
 	}
 
+	static class UnitDeath implements Animation, ArenaComp {
+		private final ArenaPanelAbstract<?, ?, ?> arena;
+		private final UnitComp comp;
+		private int cursor = 0;
+		private static final int Duration = 30;
+
+		UnitDeath(ArenaPanelAbstract<?, ?, ?> arena, UnitComp comp) {
+			this.arena = arena;
+			this.comp = comp;
+		}
+
+		@Override
+		public boolean advanceAnimationStep() {
+			if (cursor >= Duration)
+				throw new NoSuchElementException();
+			comp.alpha = (float) (Duration - cursor) / Duration;
+			return ++cursor < Duration;
+		}
+
+		@Override
+		public void clear() {
+		}
+
+		@Override
+		public void paintComponent(Graphics g) {
+			Position pos = comp.pos;
+			int gestureNum = Images.getGestureNum("Explosion");
+			int gestureIdx = cursor / (Duration / gestureNum);
+			BufferedImage img = Images.getExplosionImg(gestureIdx);
+
+			Position drawPos = arena.displayedTile(pos);
+			g.drawImage(img, drawPos.xInt(), drawPos.yInt(), null);
+		}
+
+		@Override
+		public int getZOrder() {
+			return 200;
+		}
+
+		@Override
+		public Position pos() {
+			return comp.pos;
+		}
+	}
+
 	static Animation of(Animation... animations) {
 		if (animations.length < 2)
 			throw new IllegalArgumentException();
@@ -165,8 +213,8 @@ interface Animation {
 			}
 		}
 
-		void animate(Animation animation) {
-			animate(animation, false, null);
+		void animate(Animation animation, Runnable future) {
+			animate(animation, false, future);
 		}
 
 		void animateAndWait(Animation animation, Runnable future) {

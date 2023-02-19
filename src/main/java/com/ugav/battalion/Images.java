@@ -152,6 +152,7 @@ class Images {
 		addBuilding.accept(Building.Type.OilRefineryBig, "img/building/oil_refinery_big.png");
 		addBuilding.accept(Building.Type.OilRig, "img/building/oil_rig.png");
 		images0.putAll(loadFlagImages("img/building/flag.png"));
+		images0.putAll(loadExplosionImages("img/gui/explosion.png"));
 
 		/* Ect */
 		for (int quadrant = 0; quadrant < 4; quadrant++) {
@@ -245,8 +246,6 @@ class Images {
 	}
 
 	private static Map<UnitImgDesc, BufferedImage> loadUnitImgs(Unit.Type type, String path) {
-		if (type == Unit.Type.Soldier)
-			System.out.println();
 		boolean differentGestures = isUnitHasDifferentStandMoveGesture(type);
 		int gestureNumStand = getGestureNumUnitStand(type);
 		int gestureNum = gestureNumStand + getGestureNumUnitMove0(type);
@@ -313,11 +312,26 @@ class Images {
 			flags.put(flagKey(Team.None, gesture), whiteImg);
 		}
 		return flags;
-
 	}
 
 	private static String flagKey(Team team, int gesture) {
 		return "Flag" + team + gesture;
+	}
+
+	private static Map<Object, BufferedImage> loadExplosionImages(String path) {
+		int gestureNum = getGestureNum("Explosion");
+		BufferedImage fullImg = loadImg(path);
+		int width = fullImg.getWidth() / gestureNum;
+		Map<Object, BufferedImage> flags = new HashMap<>();
+		for (int gesture = 0; gesture < gestureNum; gesture++) {
+			BufferedImage img = Utils.imgSub(fullImg, gesture * width, 0, width, fullImg.getHeight());
+			flags.put(explosionKey(gesture), img);
+		}
+		return flags;
+	}
+
+	private static String explosionKey(int gesture) {
+		return "Explosion" + gesture;
 	}
 
 	private static BufferedImage toBlue(BufferedImage redImg) {
@@ -339,34 +353,38 @@ class Images {
 		});
 	}
 
-	static BufferedImage getUnitImageStand(IUnit unit, Direction orientation, int gesture) {
+	static BufferedImage getUnitImgStand(IUnit unit, Direction orientation, int gesture) {
 		if (gesture >= getGestureNumUnitStand(unit.getType()))
 			throw new IllegalArgumentException();
-		return getImage(UnitImgDesc.ofStand(unit, orientation, gesture));
+		return getImg(UnitImgDesc.ofStand(unit, orientation, gesture));
 	}
 
-	static BufferedImage getUnitImageMove(IUnit unit, Direction orientation, int gesture) {
+	static BufferedImage getUnitImgMove(IUnit unit, Direction orientation, int gesture) {
 		if (gesture >= getGestureNumUnitMove(unit.getType()))
 			throw new IllegalArgumentException();
-		return getImage(UnitImgDesc.ofMove(unit, orientation, gesture));
+		return getImg(UnitImgDesc.ofMove(unit, orientation, gesture));
 	}
 
-	static BufferedImage getBuildingImage(IBuilding building, int gesture) {
-		return getImage(BuildingImgDesc.of(building, gesture));
+	static BufferedImage getBuildingImg(IBuilding building, int gesture) {
+		return getImg(BuildingImgDesc.of(building, gesture));
 	}
 
-	static BufferedImage getFlagImage(Team team, int gesture) {
-		return getImage(flagKey(team, gesture));
+	static BufferedImage getFlagImg(Team team, int gesture) {
+		return getImg(flagKey(team, gesture));
 	}
 
-	static BufferedImage getImage(Object obj) {
-		BufferedImage img = getImage0(obj);
+	static BufferedImage getExplosionImg(int gesture) {
+		return getImg(explosionKey(gesture));
+	}
+
+	static BufferedImage getImg(Object obj) {
+		BufferedImage img = getImg0(obj);
 		if (img == null)
 			throw new IllegalArgumentException("No image found for object: " + obj);
 		return img;
 	}
 
-	private static BufferedImage getImage0(Object obj) {
+	private static BufferedImage getImg0(Object obj) {
 		if (obj instanceof IUnit) {
 			IUnit unit = (IUnit) obj;
 			return images.get(UnitImgDesc.ofStand(unit, null, 0));
@@ -442,8 +460,12 @@ class Images {
 			default:
 				/* fall through */
 			}
-		} else if ("Flag".equals(obj))
+		} else if ("Flag".equals(obj)) {
 			return 4;
+		} else if ("Explosion".equals(obj)) {
+			return 3;
+		}
+
 		throw new IllegalArgumentException("Unexpected value: " + obj);
 	}
 

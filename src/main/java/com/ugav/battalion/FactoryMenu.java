@@ -66,10 +66,10 @@ class FactoryMenu extends JDialog {
 
 			Building.UnitSale unitSale = sales.get(unit);
 			if (unitSale != null) {
-				upperComp = new JLabel(new ImageIcon(Images.getImage(UnitDesc.of(unit, factory.getTeam()))));
+				upperComp = new JLabel(new ImageIcon(Images.getImg(UnitDesc.of(unit, factory.getTeam()))));
 				lowerComp = new JLabel(Integer.toString(unitSale.price));
 			} else {
-				upperComp = new JLabel(new ImageIcon(Images.getImage(Images.Label.UnitLocked)));
+				upperComp = new JLabel(new ImageIcon(Images.getImg(Images.Label.UnitLocked)));
 				lowerComp = new JLabel("none");
 			}
 

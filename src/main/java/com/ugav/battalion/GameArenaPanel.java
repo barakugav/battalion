@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongToIntFunction;
 
 import javax.swing.BorderFactory;
@@ -184,11 +185,13 @@ public class GameArenaPanel extends
 		add(unitMenu, JLayeredPane.POPUP_LAYER);
 		Dimension unitMenuSize = unitMenu.getPreferredSize();
 
-		int unitXMiddle = displayedX((unit.getPos().x + 0.5) * TILE_SIZE_PIXEL);
+		Position pos = displayedTile(unit.getPos());
+
+		int unitXMiddle = pos.xInt() + TILE_SIZE_PIXEL / 2;
 		int x = unitXMiddle - unitMenuSize.width / 2;
 		x = Math.max(0, Math.min(x, getWidth() - unitMenuSize.width));
 
-		int unitY = displayedY(unit.getPos().y * TILE_SIZE_PIXEL);
+		int unitY = pos.yInt();
 		int yOverlap = (int) (TILE_SIZE_PIXEL * 0.25);
 		int y = unitY - unitMenuSize.height + yOverlap;
 		y = Math.max(0, Math.min(y, getHeight() - unitMenuSize.height));
@@ -210,11 +213,13 @@ public class GameArenaPanel extends
 	}
 
 	void animateUnitMove(Unit unit, List<Position> path, Runnable future) {
-		entityLayer().units.get(unit).animateMove(path, future);
+		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
+		comp.animateMove(path, future);
 	}
 
 	void animateUnitMoveAndAttack(Unit unit, List<Position> path, Position target, Runnable future) {
-		entityLayer().units.get(unit).animateMoveAndAttack(path, target, future);
+		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
+		comp.animateMoveAndAttack(path, target, future);
 	}
 
 	class EntityLayer extends
@@ -243,20 +248,31 @@ public class GameArenaPanel extends
 			register.register(game.onUnitRemove(), e -> {
 				if (e.unit.getPos().equals(selection))
 					clearSelection();
-				UnitComp unitComp = units.remove(e.unit);
-				if (unitComp != null)
-					unitComp.clear();
-			});
-			register.register(game.arena().onEntityChange, e -> {
-				if (e.source instanceof Unit) {
-					Unit unit = (Unit) e.source;
-					UnitComp unitComp = units.get(unit);
-					if (unit.isDead()) {
-						units.remove(unit);
+				if (e.unit.isDead()) {
+					UnitComp unitComp = (UnitComp) comps.get(e.unit);
+					Animation.UnitDeath animation = new Animation.UnitDeath(GameArenaPanel.this, unitComp);
+					comps.put(animation, animation);
+					unitComp.runAnimationAsync(animation, () -> {
+						comps.remove(animation);
+						comps.remove(e.unit);
 						unitComp.clear();
-					}
+					});
+				} else {
+					UnitComp unitComp = (UnitComp) comps.remove(e.unit);
+					if (unitComp != null)
+						unitComp.clear();
 				}
 			});
+//			register.register(game.arena().onEntityChange, e -> {
+//				if (e.source instanceof Unit) {
+//					Unit unit = (Unit) e.source;
+//					UnitComp unitComp = (UnitComp) comps.get(unit);
+//					if (unit.isDead()) {
+//						comps.remove(unit);
+//						unitComp.clear();
+//					}
+//				}
+//			});
 			register.register(game.onTurnEnd(), e -> clearSelection());
 
 			register.register(onHoverChange, e -> hoveredUpdated(e.pos));
@@ -353,12 +369,12 @@ public class GameArenaPanel extends
 			super.paintComponent(g);
 
 			if (selection != null) {
-				terrains.get(selection).drawImage(g, Images.Label.Selection);
-				for (Position pos : passableMap)
-					terrains.get(pos).drawImage(g, Images.Label.Passable);
-				for (Position pos : attackableMap)
-					terrains.get(pos).drawImage(g, Images.Label.Attackable);
+				drawRelativeToMap(g, Images.Label.Selection, selection);
 
+				for (Position pos : passableMap)
+					drawRelativeToMap(g, Images.Label.Passable, pos);
+				for (Position pos : attackableMap)
+					drawRelativeToMap(g, Images.Label.Attackable, pos);
 			}
 			if (isUnitSelected()) {
 				if (movePath.isEmpty()) {
@@ -368,17 +384,19 @@ public class GameArenaPanel extends
 						int idx = (int) idx0;
 						Position p1 = idx >= 0 ? movePath.get(idx) : selection;
 						Position p2 = movePath.get(idx + 1);
-						if (p1.distNorm1(p2) != 1)
-							throw new IllegalStateException();
-						if (p1.add(Direction.XPos).equals(p2))
+						Direction dir = Direction.calc(p1, p2);
+						switch (dir) {
+						case XPos:
 							return 0;
-						if (p1.add(Direction.YNeg).equals(p2))
+						case YNeg:
 							return 1;
-						if (p1.add(Direction.XNeg).equals(p2))
+						case XNeg:
 							return 2;
-						if (p1.add(Direction.YPos).equals(p2))
+						case YPos:
 							return 3;
-						throw new IllegalStateException();
+						default:
+							throw new IllegalArgumentException("Unexpected value: " + dir);
+						}
 					};
 
 					int sourceDir = calcDir.applyAsInt(-1);
@@ -448,19 +466,19 @@ public class GameArenaPanel extends
 			for (Position pos : game.arena().positions()) {
 				TerrainComp tileComp = new TerrainComp(GameArenaPanel.this, pos);
 				Tile tile = game.getTile(pos);
-				terrains.put(pos, tileComp);
+				comps.put("Terrain " + pos, tileComp);
 				if (tile.hasUnit())
 					addUnitComp(tile.getUnit());
 
 				if (tile.hasBuilding()) {
 					Building building = tile.getBuilding();
-					buildings.put(building, new BuildingComp(pos, building));
+					comps.put(building, new BuildingComp(pos, building));
 				}
 			}
 		}
 
 		private void addUnitComp(Unit unit) {
-			units.put(unit, new UnitComp(unit));
+			comps.put(unit, new UnitComp(unit));
 		}
 
 		class BuildingComp extends ArenaPanelAbstract.BuildingComp {
@@ -483,9 +501,8 @@ public class GameArenaPanel extends
 
 		class UnitComp extends ArenaPanelAbstract.UnitComp {
 
-			Direction orientation = Direction.XPos;
 			float alpha = 0.0f;
-			private Animation currentAnimation;
+			private final AtomicInteger animationCount = new AtomicInteger();
 			private final DataChangeRegister register = new DataChangeRegister();
 
 			private static final Color HealthColorHigh = new Color(0, 206, 0);
@@ -506,21 +523,16 @@ public class GameArenaPanel extends
 			}
 
 			@Override
-			Direction getOrientation() {
-				return orientation;
-			}
-
-			@Override
 			int getGasture() {
 				if (unit().getTeam() == game.getTurn() && !unit().isActive())
 					return 0;
-				int gestureNum = isMoving() ? Images.getGestureNumUnitMove(unit().type)
+				int gestureNum = isMoving ? Images.getGestureNumUnitMove(unit().type)
 						: Images.getGestureNumUnitStand(unit().type);
 				return gestureTask.getGesture() % gestureNum;
 			}
 
 			@Override
-			void paintComponent(Graphics g) {
+			public void paintComponent(Graphics g) {
 				final Team playerTeam = Team.Red;
 				if (!isAnimated() && !game.arena().isUnitVisible(pos, playerTeam))
 					return;
@@ -529,7 +541,7 @@ public class GameArenaPanel extends
 				super.paintComponent(g);
 
 				/* Draw health bar */
-				if (unit().getHealth() != unit().type.health) {
+				if (unit().getHealth() != 0 && unit().getHealth() != unit().type.health) {
 					double health = (double) unit().getHealth() / unit().type.health;
 
 					BufferedImage healthBar = new BufferedImage(17, 9, BufferedImage.TYPE_INT_RGB);
@@ -549,24 +561,36 @@ public class GameArenaPanel extends
 						int barHeight = (int) (7 * barPrec);
 						healthBarG.fillRect(1 + bar * 4, 8 - barHeight, 3, barHeight);
 					}
-					int x = displayedX(pos.x * TILE_SIZE_PIXEL) + 32;
-					int y = displayedY(pos.y * TILE_SIZE_PIXEL) + 42;
-					g.drawImage(healthBar, x, y, null);
+					Position pos = arena.displayedTile(this.pos);
+					g.drawImage(healthBar, pos.xInt() + 32, pos.yInt() + 42, null);
 				}
 			}
 
-			private void runAnimation(Animation animation, Runnable future) {
-				if (currentAnimation != null)
+			private synchronized void runMoveAnimation(Animation animation, Runnable future) {
+				if (!animationCount.compareAndSet(0, 1))
 					throw new IllegalStateException();
 
-				animationTask.animateAndWait((currentAnimation = animation), () -> {
-					currentAnimation = null;
+				isMoving = true;
+				animationTask.animateAndWait(animation, () -> {
+					isMoving = false;
+					animationCount.compareAndSet(1, 0);
 					if (future != null)
 						future.run();
 				});
 			}
 
-			private Animation appearDisappearAnimationWrap(Animation animation) {
+			private synchronized void runAnimationAsync(Animation animation, Runnable future) {
+				if (!animationCount.compareAndSet(0, 1))
+					throw new IllegalStateException();
+
+				animationTask.animate(animation, () -> {
+					animationCount.compareAndSet(1, 0);
+					if (future != null)
+						future.run();
+				});
+			}
+
+			private synchronized Animation appearDisappearAnimationWrap(Animation animation) {
 				if (unit().type.invisible) {
 					Animation pre = new Animation.UnitReappear(this);
 					Animation post = new Animation.UnitDisappear(this);
@@ -575,16 +599,16 @@ public class GameArenaPanel extends
 				return animation;
 			}
 
-			void animateMove(List<Position> animationPath, Runnable future) {
+			synchronized void animateMove(List<Position> animationPath, Runnable future) {
 				Animation animation = new Animation.UnitMove(this, animationPath);
 				animation = appearDisappearAnimationWrap(animation);
-				runAnimation(animation, future);
+				runMoveAnimation(animation, future);
 			}
 
-			void animateMoveAndAttack(List<Position> animationPath, Position target, Runnable future) {
+			synchronized void animateMoveAndAttack(List<Position> animationPath, Position target, Runnable future) {
 				Animation animation = new Animation.UnitMoveAndAttack(this, animationPath, target);
 				animation = appearDisappearAnimationWrap(animation);
-				runAnimation(animation, future);
+				runMoveAnimation(animation, future);
 			}
 
 			@Override
@@ -597,7 +621,9 @@ public class GameArenaPanel extends
 				final Team playerTeam = Team.Red;
 
 				float baseAlpha;
-				if (!unit().type.invisible)
+				if (unit().isDead())
+					baseAlpha = 0f;
+				else if (!unit().type.invisible)
 					baseAlpha = 1f;
 				else if (unit().getTeam() == playerTeam || game.arena().isUnitVisible(unit().getPos(), playerTeam))
 					baseAlpha = .5f;
@@ -611,18 +637,13 @@ public class GameArenaPanel extends
 				return img;
 			}
 
-			@Override
-			boolean isMoving() {
-				return isAnimated();
-			}
-
 			public boolean isAnimated() {
-				return currentAnimation != null;
+				return animationCount.get() > 0;
 			}
 
 			@Override
-			boolean isPaintDelayed() {
-				return isAnimated();
+			public int getZOrder() {
+				return isAnimated() ? 100 : 0;
 			}
 
 			@Override
@@ -671,7 +692,7 @@ public class GameArenaPanel extends
 		}
 
 		private void createUnitMenuButton(Images.Label label, boolean enable, ActionListener l) {
-			BufferedImage img = Images.getImage(label);
+			BufferedImage img = Images.getImg(label);
 			if (!enable)
 				img = Utils.imgTransparent(img, .5f);
 			JButton button = new JButton(new ImageIcon(img));

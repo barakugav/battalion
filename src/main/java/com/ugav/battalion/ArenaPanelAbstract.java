@@ -15,7 +15,6 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -148,6 +147,10 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		return (int) (y - mapPosY);
 	}
 
+	Position displayedTile(Position pos) {
+		return Position.of(pos.xInt() * TILE_SIZE_PIXEL, pos.yInt() * TILE_SIZE_PIXEL);
+	}
+
 	int displayedXInv(int x) {
 		return x + mapPosX;
 	}
@@ -169,10 +172,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			extends JPanel implements Clearable {
 
 		private final ArenaPanelAbstract<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> arena;
-
-		final Map<Position, TerrainCompImpl> terrains = new HashMap<>();
-		final Map<IBuilding, BuildingCompImpl> buildings = new IdentityHashMap<>();
-		final Map<IUnit, UnitCompImpl> units = new IdentityHashMap<>();
+		final Map<Object, ArenaComp> comps = new HashMap<>();
 
 		private Position hovered;
 
@@ -213,16 +213,16 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		@Override
 		protected void paintComponent(Graphics g) {
-			List<ArenaComp> comps = new ArrayList<>(terrains.size() + buildings.size() + units.size());
-			comps.addAll(terrains.values());
-			comps.addAll(buildings.values());
-			comps.addAll(units.values());
+			List<ArenaComp> comps = new ArrayList<>(this.comps.values());
 			comps.sort((o1, o2) -> {
-				Position p1 = o1.pos, p2 = o2.pos;
-				if (p1.y != p2.y)
-					return Double.compare(p1.y, p2.y);
-				if (p1.x != p2.x)
-					return Double.compare(p1.x, p2.x);
+				int c;
+				if ((c = Integer.compare(o1.getZOrder(), o2.getZOrder())) != 0)
+					return c;
+				Position p1 = o1.pos(), p2 = o2.pos();
+				if ((c = Double.compare(p1.y, p2.y)) != 0)
+					return c;
+				if ((c = Double.compare(p1.x, p2.x)) != 0)
+					return c;
 				if ((o1 instanceof TerrainComp) ^ (o2 instanceof TerrainComp))
 					return o1 instanceof TerrainComp ? -1 : 1;
 				if ((o1 instanceof BuildingComp) ^ (o2 instanceof BuildingComp))
@@ -232,11 +232,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				return 0;
 			});
 			for (ArenaComp comp : comps)
-				if (!comp.isPaintDelayed())
-					comp.paintComponent(g);
-			for (ArenaComp comp : comps)
-				if (comp.isPaintDelayed())
-					comp.paintComponent(g);
+				comp.paintComponent(g);
 		}
 
 		@Override
@@ -245,15 +241,9 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		}
 
 		void removeAllArenaComps() {
-			for (TerrainCompImpl tile : terrains.values())
-				tile.clear();
-			terrains.clear();
-			for (BuildingCompImpl building : buildings.values())
-				building.clear();
-			buildings.clear();
-			for (UnitCompImpl unit : units.values())
-				unit.clear();
-			units.clear();
+			for (ArenaComp comp : comps.values())
+				comp.clear();
+			comps.clear();
 		}
 
 		@Override
@@ -273,35 +263,44 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	}
 
 	void drawImage(Graphics g, Object obj, int x, int y) {
-		BufferedImage img = obj instanceof BufferedImage ? (BufferedImage) obj : Images.getImage(obj);
+		BufferedImage img = obj instanceof BufferedImage ? (BufferedImage) obj : Images.getImg(obj);
 		assert img.getWidth() == TILE_SIZE_PIXEL : "wrong width (" + img.getWidth() + "):" + obj;
 		g.drawImage(img, x, y + TILE_SIZE_PIXEL - img.getHeight(), this);
 	}
 
 	abstract Terrain getTerrain(Position pos);
 
-	abstract static class ArenaComp implements Clearable {
+	static interface ArenaComp extends Clearable {
+
+		void paintComponent(Graphics g);
+
+		int getZOrder();
+
+		Position pos();
+	}
+
+	abstract static class ArenaCompAbstract implements ArenaComp {
 
 		final ArenaPanelAbstract<?, ?, ?> arena;
 		Position pos;
 
-		ArenaComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos) {
+		ArenaCompAbstract(ArenaPanelAbstract<?, ?, ?> arena, Position pos) {
 			this.arena = Objects.requireNonNull(arena);
 			this.pos = pos;
 		}
 
-		abstract void paintComponent(Graphics g);
-
-		boolean isPaintDelayed() {
-			return false;
+		@Override
+		public int getZOrder() {
+			return 0;
 		}
 
-		int getGasture() {
-			return 0;
+		@Override
+		public Position pos() {
+			return pos;
 		}
 	}
 
-	static class TerrainComp extends ArenaComp {
+	static class TerrainComp extends ArenaCompAbstract {
 
 		TerrainComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos) {
 			super(arena, pos);
@@ -312,7 +311,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		}
 
 		@Override
-		void paintComponent(Graphics g) {
+		public void paintComponent(Graphics g) {
 			IntFunction<Pair<Direction, Direction>> quadrantToDirs = quadrant -> {
 				switch (quadrant) {
 				case 0:
@@ -439,7 +438,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	}
 
-	static class BuildingComp extends ArenaComp {
+	static class BuildingComp extends ArenaCompAbstract {
 
 		private final IBuilding building;
 
@@ -453,14 +452,17 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		}
 
 		@Override
-		void paintComponent(Graphics g) {
-			arena.drawRelativeToMap(g, Images.getBuildingImage(building, getGasture()), pos);
+		public void paintComponent(Graphics g) {
+			arena.drawRelativeToMap(g, Images.getBuildingImg(building, getGasture()), pos);
 
 			/* Draw flag */
-			BufferedImage flagImg = Images.getFlagImage(building.getTeam(), getFlagGesture());
-			int x = arena.displayedX(pos.x * TILE_SIZE_PIXEL) + 42;
-			int y = arena.displayedY(pos.y * TILE_SIZE_PIXEL) - 3;
-			g.drawImage(flagImg, x, y, arena);
+			BufferedImage flagImg = Images.getFlagImg(building.getTeam(), getFlagGesture());
+			Position pos = arena.displayedTile(this.pos);
+			g.drawImage(flagImg, pos.xInt() + 42, pos.yInt() - 3, arena);
+		}
+
+		int getGasture() {
+			return 0;
 		}
 
 		int getFlagGesture() {
@@ -478,9 +480,11 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	}
 
-	static abstract class UnitComp extends ArenaComp {
+	static abstract class UnitComp extends ArenaCompAbstract {
 
 		private final IUnit unit;
+		volatile Direction orientation = Direction.XPos;
+		volatile boolean isMoving = false;
 
 		UnitComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos, IUnit unit) {
 			super(arena, pos);
@@ -492,19 +496,20 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		}
 
 		@Override
-		void paintComponent(Graphics g) {
+		public void paintComponent(Graphics g) {
 			arena.drawRelativeToMap(g, getUnitImg(), pos);
 
 			IUnit trasportedUnit = unit.getTransportedUnit();
 			if (trasportedUnit != null) {
-				BufferedImage imgBig = Images.getImage(trasportedUnit);
+				BufferedImage imgBig = Images.getImg(trasportedUnit);
 				final int miniWidth = 28;
 				int height = imgBig.getHeight() * miniWidth / imgBig.getWidth();
 				BufferedImage img = Utils
 						.bufferedImageFromImage(imgBig.getScaledInstance(miniWidth, height, Image.SCALE_SMOOTH));
 
-				int x = arena.displayedX(pos.x * TILE_SIZE_PIXEL) + 1;
-				int y = arena.displayedY(pos.y * TILE_SIZE_PIXEL) + TILE_SIZE_PIXEL - img.getHeight() - 1;
+				Position pos = arena.displayedTile(this.pos);
+				int x = pos.xInt() + 1;
+				int y = pos.yInt() + TILE_SIZE_PIXEL - img.getHeight() - 1;
 				int w = img.getWidth(), h = img.getHeight();
 				g.setColor(Color.LIGHT_GRAY);
 				g.fillRect(x, y, w, h);
@@ -515,18 +520,14 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		}
 
 		BufferedImage getUnitImg() {
-			if (isMoving())
-				return Images.getUnitImageMove(unit, getOrientation(), getGasture());
+			if (isMoving)
+				return Images.getUnitImgMove(unit, orientation, getGasture());
 			else
-				return Images.getUnitImageStand(unit, getOrientation(), getGasture());
+				return Images.getUnitImgStand(unit, orientation, getGasture());
 		}
 
-		Direction getOrientation() {
-			return Direction.XPos;
-		}
-
-		boolean isMoving() {
-			return false;
+		int getGasture() {
+			return 0;
 		}
 
 		@Override

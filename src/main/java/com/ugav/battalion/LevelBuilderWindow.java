@@ -138,7 +138,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		private JButton createEntityTabButton(Object drawable) {
 			final int ImgButtonSize = 20;
-			Image img = Images.getImage(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize, Image.SCALE_SMOOTH);
+			Image img = Images.getImg(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize, Image.SCALE_SMOOTH);
 			JButton button = new JButton(new ImageIcon(img));
 //			button.setBorder(BorderFactory.createEmptyBorder());
 			button.setContentAreaFilled(false);
@@ -204,8 +204,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			}
 
 			void setIcons(Object iconTag) {
-				BufferedImage img = Images.getImage(iconTag);
-				BufferedImage selectImg = Images.getImage(Images.Label.Selection);
+				BufferedImage img = Images.getImg(iconTag);
+				BufferedImage selectImg = Images.getImg(Images.Label.Selection);
 				for (BufferedImage i : List.of(img, selectImg))
 					if (i.getWidth() != IconWidth || i.getHeight() > IconHeight)
 						throw new IllegalArgumentException("icon too big for entity: " + iconTag);
@@ -479,8 +479,11 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			EntityLayer(ArenaPanel arena) {
 				super(arena);
 
-				register.register(builder.onTileChange,
-						e -> terrains.computeIfAbsent(e.pos, TerrainComp::new).tileUpdate());
+				register.register(builder.onTileChange, e -> {
+					TerrainComp comp = (TerrainComp) comps.computeIfAbsent(terrainKey(e.pos),
+							k -> new TerrainComp(e.pos));
+					comp.tileUpdate();
+				});
 			}
 
 			void reset() {
@@ -488,9 +491,13 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 				for (Position pos : Utils.iterable(new Position.Iterator2D(builder.width(), builder.height()))) {
 					TerrainComp tileComp = new TerrainComp(pos);
-					terrains.put(pos, tileComp);
+					comps.put(terrainKey(pos), tileComp);
 					tileComp.tileUpdate();
 				}
+			}
+
+			private Object terrainKey(Position pos) {
+				return "Terrain " + pos;
 			}
 
 			private class TerrainComp extends ArenaPanelAbstract.TerrainComp {
@@ -506,19 +513,18 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					TileDesc tile = builder.at(pos);
 
 					if (buildingComp != null && tile.building != buildingComp.building()) {
-						buildings.remove(buildingComp.building()).clear();
+						comps.remove(buildingComp.building()).clear();
 						buildingComp = null;
 					}
 					if (tile.building != null && buildingComp == null)
-						entityLayer.buildings.put(tile.building,
-								buildingComp = new BuildingComp(ArenaPanel.this, pos, tile.building));
+						comps.put(tile.building, buildingComp = new BuildingComp(ArenaPanel.this, pos, tile.building));
 
 					if (unitComp != null && tile.unit != unitComp.unit()) {
-						units.remove(unitComp.unit()).clear();
+						comps.remove(unitComp.unit()).clear();
 						unitComp = null;
 					}
 					if (tile.unit != null && unitComp == null)
-						units.put(tile.unit, unitComp = new UnitComp(ArenaPanel.this, pos, tile.unit));
+						comps.put(tile.unit, unitComp = new UnitComp(ArenaPanel.this, pos, tile.unit));
 				}
 
 			}
