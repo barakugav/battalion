@@ -70,6 +70,8 @@ public class GameArenaPanel extends
 	}
 
 	void initGame() {
+		tickTaskManager.start();
+
 		entityLayer().reset();
 
 		mapViewSet(Position.of(0, 0));
@@ -282,8 +284,6 @@ public class GameArenaPanel extends
 
 			tickTaskManager.addTask(100, animationTask);
 			tickTaskManager.addTask(100, gestureTask);
-
-			tickTaskManager.start();
 		}
 
 		@Override

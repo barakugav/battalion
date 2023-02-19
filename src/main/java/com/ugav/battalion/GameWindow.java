@@ -35,8 +35,8 @@ class GameWindow extends JPanel implements Clearable {
 				|| level.height() < GameArenaPanel.DISPLAYED_ARENA_HEIGHT)
 			throw new IllegalArgumentException("level size is too small");
 		this.game = new GameGUIImpl(this, level);
-		menu = new GameSideMenu(this);
 		arenaPanel = new GameArenaPanel(this);
+		menu = new GameSideMenu(this);
 
 		setLayout(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();

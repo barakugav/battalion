@@ -105,6 +105,7 @@ class Images {
 	}
 
 	private static final Map<Object, BufferedImage> images;
+	private static final Map<Object, BufferedImage> miniMapImages;
 	static {
 		Map<Object, BufferedImage> images0 = new HashMap<>();
 
@@ -220,6 +221,22 @@ class Images {
 		addUnitMenuIcon.accept(Label.UnitMenuCancel, "img/gui/unit_menu_cancel.png");
 
 		images = Collections.unmodifiableMap(images0);
+
+		Map<Object, BufferedImage> miniMapImages0 = new HashMap<>();
+		miniMapImages0.put(Terrain.Category.FlatLand, loadImg("img/gui/minimap_land.png"));
+		miniMapImages0.put(Terrain.Category.RoughLand, loadImg("img/gui/minimap_land.png"));
+		miniMapImages0.put(Terrain.Category.ExtremeLand, loadImg("img/gui/minimap_extreme_land.png"));
+		miniMapImages0.put(Terrain.Category.Water, loadImg("img/gui/minimap_water.png"));
+		miniMapImages0.put(Terrain.Category.Shore, loadImg("img/gui/minimap_shore.png"));
+		miniMapImages0.put(Terrain.Category.Road, loadImg("img/gui/minimap_road.png"));
+		miniMapImages0.put(Terrain.Category.BridgeLow, loadImg("img/gui/minimap_road.png"));
+		miniMapImages0.put(Terrain.Category.BridgeHigh, loadImg("img/gui/minimap_road.png"));
+		miniMapImages0.put("Unit" + Team.Red, loadImg("img/gui/minimap_unit.png"));
+		miniMapImages0.put("Unit" + Team.Blue, toBlue(loadImg("img/gui/minimap_unit.png")));
+		miniMapImages0.put("Building" + Team.Red, loadImg("img/gui/minimap_building.png"));
+		miniMapImages0.put("Building" + Team.Blue, toBlue(loadImg("img/gui/minimap_building.png")));
+		miniMapImages0.put("Building" + Team.None, toWhite(loadImg("img/gui/minimap_building.png")));
+		miniMapImages = Collections.unmodifiableMap(miniMapImages0);
 	}
 
 	private static BufferedImage loadImg(String path) {
@@ -353,6 +370,27 @@ class Images {
 		});
 	}
 
+	static BufferedImage getImg(Object obj) {
+		BufferedImage img = getImg0(obj);
+		if (img == null)
+			throw new IllegalArgumentException("No image found for object: " + obj);
+		return img;
+	}
+
+	private static BufferedImage getImg0(Object obj) {
+		if (obj instanceof IUnit) {
+			IUnit unit = (IUnit) obj;
+			return images.get(UnitImgDesc.ofStand(unit, null, 0));
+
+		} else if (obj instanceof IBuilding) {
+			IBuilding building = (IBuilding) obj;
+			return images.get(BuildingImgDesc.of(building, 0));
+
+		} else {
+			return images.get(obj);
+		}
+	}
+
 	static BufferedImage getUnitImgStand(IUnit unit, Direction orientation, int gesture) {
 		if (gesture >= getGestureNumUnitStand(unit.getType()))
 			throw new IllegalArgumentException();
@@ -377,25 +415,16 @@ class Images {
 		return getImg(explosionKey(gesture));
 	}
 
-	static BufferedImage getImg(Object obj) {
-		BufferedImage img = getImg0(obj);
-		if (img == null)
-			throw new IllegalArgumentException("No image found for object: " + obj);
-		return img;
+	static BufferedImage getMinimapTerrain(Terrain.Category terrain) {
+		return Objects.requireNonNull(miniMapImages.get(terrain), "img not found for terrain: " + terrain);
 	}
 
-	private static BufferedImage getImg0(Object obj) {
-		if (obj instanceof IUnit) {
-			IUnit unit = (IUnit) obj;
-			return images.get(UnitImgDesc.ofStand(unit, null, 0));
+	static BufferedImage getMinimapUnit(Team team) {
+		return Objects.requireNonNull(miniMapImages.get("Unit" + team), "unit img not found for team: " + team);
+	}
 
-		} else if (obj instanceof IBuilding) {
-			IBuilding building = (IBuilding) obj;
-			return images.get(BuildingImgDesc.of(building, 0));
-
-		} else {
-			return images.get(obj);
-		}
+	static BufferedImage getMinimapBuilding(Team team) {
+		return Objects.requireNonNull(miniMapImages.get("Building" + team), "building img not found for team: " + team);
 	}
 
 	static int getGestureNumUnitStand(Unit.Type type) {

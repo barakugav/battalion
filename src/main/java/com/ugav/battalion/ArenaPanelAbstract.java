@@ -159,6 +159,10 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		return y + mapPosY;
 	}
 
+	Position getCurrentMapOrigin() {
+		return Position.of(mapPosX, mapPosY);
+	}
+
 	@Override
 	public void clear() {
 		tickTaskManager.stop();

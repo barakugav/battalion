@@ -1,12 +1,15 @@
 package com.ugav.battalion;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -18,9 +21,14 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
+import com.ugav.battalion.core.Arena;
+import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Level.UnitDesc;
+import com.ugav.battalion.core.Position;
 import com.ugav.battalion.core.Position.Direction;
 import com.ugav.battalion.core.Team;
+import com.ugav.battalion.core.Terrain;
+import com.ugav.battalion.core.Tile;
 import com.ugav.battalion.core.Unit;
 
 public class GameSideMenu extends JPanel implements Clearable {
@@ -67,7 +75,9 @@ public class GameSideMenu extends JPanel implements Clearable {
 	private JPanel createMinimapPanel() {
 		JPanel panel = new JPanel();
 		panel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-		panel.add(new JLabel("Minimap"));
+
+		panel.add(new MiniMap());
+
 		return panel;
 	}
 
@@ -193,6 +203,55 @@ public class GameSideMenu extends JPanel implements Clearable {
 			if (!window.isActionSuspended())
 				l.actionPerformed(e);
 		};
+	}
+
+	private class MiniMap extends JPanel {
+
+		private static final long serialVersionUID = 1L;
+
+		private final Arena arena;
+		private static final int TileSize = 6;
+		private static final Color CurrentMapColor = Color.YELLOW;
+
+		MiniMap() {
+			arena = window.game.arena();
+			setPreferredSize(new Dimension(arena.width() * TileSize, arena.height() * TileSize));
+
+			window.arenaPanel.tickTaskManager.addTask(1000, this::repaint);
+		}
+
+		private void drawImg(Graphics g, Position pos, BufferedImage img) {
+			g.drawImage(img, pos.xInt() * TileSize, pos.yInt() * TileSize, null);
+		}
+
+		@Override
+		public void paintComponent(Graphics g) {
+			for (Position pos : arena.positions()) {
+				Tile tile = arena.at(pos);
+
+				Terrain terrain = tile.getTerrain();
+				drawImg(g, pos, Images.getMinimapTerrain(terrain.category));
+
+				if (tile.hasBuilding()) {
+					Building building = tile.getBuilding();
+					drawImg(g, pos, Images.getMinimapBuilding(building.getTeam()));
+				}
+
+				if (tile.hasUnit()) {
+					Unit unit = tile.getUnit();
+					drawImg(g, pos, Images.getMinimapUnit(unit.getTeam()));
+				}
+			}
+
+			Position currentMapPos = window.arenaPanel.getCurrentMapOrigin();
+			int x = (int) (currentMapPos.x / ArenaPanelAbstract.TILE_SIZE_PIXEL * TileSize);
+			int y = (int) (currentMapPos.y / ArenaPanelAbstract.TILE_SIZE_PIXEL * TileSize);
+			int width = TileSize * ArenaPanelAbstract.DISPLAYED_ARENA_WIDTH;
+			int height = TileSize * ArenaPanelAbstract.DISPLAYED_ARENA_HEIGHT;
+			g.setColor(CurrentMapColor);
+			g.drawRect(x, y, width, height);
+		}
+
 	}
 
 }
