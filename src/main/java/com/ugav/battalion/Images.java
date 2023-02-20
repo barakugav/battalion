@@ -153,7 +153,8 @@ class Images {
 		addBuilding.accept(Building.Type.OilRefineryBig, "img/building/oil_refinery_big.png");
 		addBuilding.accept(Building.Type.OilRig, "img/building/oil_rig.png");
 		images0.putAll(loadFlagImages("img/building/flag.png"));
-		images0.putAll(loadExplosionImages("img/gui/explosion.png"));
+		images0.putAll(loadAttackImages("img/gui/attack_animation.png"));
+		images0.putAll(loadExplosionImages("img/gui/explosion_animation.png"));
 
 		/* Ect */
 		for (int quadrant = 0; quadrant < 4; quadrant++) {
@@ -335,6 +336,22 @@ class Images {
 		return "Flag" + team + gesture;
 	}
 
+	private static Map<Object, BufferedImage> loadAttackImages(String path) {
+		int gestureNum = getGestureNum("Attack");
+		BufferedImage fullImg = loadImg(path);
+		int width = fullImg.getWidth() / gestureNum;
+		Map<Object, BufferedImage> flags = new HashMap<>();
+		for (int gesture = 0; gesture < gestureNum; gesture++) {
+			BufferedImage img = Utils.imgSub(fullImg, gesture * width, 0, width, fullImg.getHeight());
+			flags.put(attackKey(gesture), img);
+		}
+		return flags;
+	}
+
+	private static String attackKey(int gesture) {
+		return "Attack" + gesture;
+	}
+
 	private static Map<Object, BufferedImage> loadExplosionImages(String path) {
 		int gestureNum = getGestureNum("Explosion");
 		BufferedImage fullImg = loadImg(path);
@@ -409,6 +426,10 @@ class Images {
 
 	static BufferedImage getFlagImg(Team team, int gesture) {
 		return getImg(flagKey(team, gesture));
+	}
+
+	static BufferedImage getAttackImg(int gesture) {
+		return getImg(attackKey(gesture));
 	}
 
 	static BufferedImage getExplosionImg(int gesture) {
@@ -491,8 +512,10 @@ class Images {
 			}
 		} else if ("Flag".equals(obj)) {
 			return 4;
-		} else if ("Explosion".equals(obj)) {
+		} else if ("Attack".equals(obj)) {
 			return 3;
+		} else if ("Explosion".equals(obj)) {
+			return 15;
 		}
 
 		throw new IllegalArgumentException("Unexpected value: " + obj);

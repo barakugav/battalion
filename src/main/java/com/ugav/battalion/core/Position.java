@@ -102,6 +102,21 @@ public class Position implements Comparable<Position> {
 			throw new IllegalArgumentException();
 		}
 
+		public double dist(Position source, Position dest) {
+			switch (this) {
+			case XPos:
+				return dest.x - source.x;
+			case XNeg:
+				return -(dest.x - source.x);
+			case YPos:
+				return dest.y - source.y;
+			case YNeg:
+				return -(dest.y - source.y);
+			default:
+				throw new IllegalStateException();
+			}
+		}
+
 	};
 
 	public static class Iterator2D implements Iterator<Position> {

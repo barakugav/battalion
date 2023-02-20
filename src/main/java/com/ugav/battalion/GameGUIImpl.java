@@ -102,7 +102,7 @@ class GameGUIImpl implements Game {
 	@Override
 	public void attackRange(Unit attacker, Unit target) {
 		checkCorrectThread();
-		run(() -> game.attackRange(attacker, target));
+		gui.arenaPanel.animateUnitAttackRange(attacker, target.getPos(), () -> game.attackRange(attacker, target));
 	}
 
 	@Override

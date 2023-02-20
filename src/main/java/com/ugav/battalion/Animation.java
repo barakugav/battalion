@@ -40,6 +40,9 @@ interface Animation {
 			if (cursor >= path.size() * StepSize)
 				throw new NoSuchElementException();
 
+			if (cursor == 0)
+				comp.isMoving = true;
+
 			int idx = cursor / StepSize;
 			double frac = (cursor % StepSize + 1) / (double) StepSize;
 			Position p1 = path.get(idx);
@@ -49,25 +52,77 @@ interface Animation {
 			double y = p1.y + (p2.y - p1.y) * frac;
 			comp.pos = Position.of(x, y);
 
-			return ++cursor < (path.size() - 1) * StepSize;
+			boolean moreToAnimation = ++cursor < (path.size() - 1) * StepSize;
+			if (!moreToAnimation)
+				comp.isMoving = false;
+			return moreToAnimation;
 		}
 	}
 
-	static class UnitMoveAndAttack extends UnitMove {
+	static class Attack implements Animation, ArenaComp {
+		private final ArenaPanelAbstract<?, ?, ?> arena;
+		private final UnitComp comp;
+		private final Position target;
+		private Position basePos;
+		private int cursor = 0;
+		private static final int Duration = 20;
 
-		private final Direction attackingDir;
-
-		UnitMoveAndAttack(UnitComp comp, List<Position> path, Position target) {
-			super(comp, path);
-			attackingDir = Direction.calc(path.get(path.size() - 1), target);
+		Attack(ArenaPanelAbstract<?, ?, ?> arena, UnitComp comp, Position target) {
+			this.arena = arena;
+			this.comp = comp;
+			this.target = target;
 		}
 
 		@Override
 		public boolean advanceAnimationStep() {
-			if (super.advanceAnimationStep())
-				return true;
-			comp.orientation = attackingDir;
-			return false;
+			if (cursor >= Duration)
+				throw new NoSuchElementException();
+
+			if (cursor == 0) {
+				basePos = comp.pos;
+
+				Direction orientation = null;
+				for (Direction dir : Direction.values())
+					if (orientation == null || orientation.dist(comp.pos, target) < dir.dist(comp.pos, target))
+						orientation = dir;
+				comp.orientation = orientation;
+
+				arena.entityLayer.comps.put(this, this);
+			}
+
+			double yOffset = (Math.abs(Duration / 2 - cursor) - Duration / 2) / 30.0;
+			comp.pos = Position.of(basePos.x, basePos.y + yOffset);
+
+			boolean moveToAnimate = ++cursor < Duration;
+			if (!moveToAnimate) {
+				arena.entityLayer.comps.remove(this);
+				comp.pos = basePos;
+			}
+			return moveToAnimate;
+		}
+
+		@Override
+		public void clear() {
+		}
+
+		@Override
+		public void paintComponent(Graphics g) {
+			int gestureNum = Images.getGestureNum("Attack");
+			int gestureIdx = (int) (cursor / ((double) Duration / gestureNum));
+			BufferedImage img = Images.getAttackImg(gestureIdx);
+
+			Position drawPos = arena.displayedTile(target);
+			g.drawImage(img, drawPos.xInt(), drawPos.yInt(), null);
+		}
+
+		@Override
+		public int getZOrder() {
+			return 200;
+		}
+
+		@Override
+		public Position pos() {
+			return comp.pos;
 		}
 	}
 
@@ -111,7 +166,7 @@ interface Animation {
 		private final ArenaPanelAbstract<?, ?, ?> arena;
 		private final UnitComp comp;
 		private int cursor = 0;
-		private static final int Duration = 30;
+		private static final int Duration = 90;
 
 		UnitDeath(ArenaPanelAbstract<?, ?, ?> arena, UnitComp comp) {
 			this.arena = arena;
@@ -122,8 +177,15 @@ interface Animation {
 		public boolean advanceAnimationStep() {
 			if (cursor >= Duration)
 				throw new NoSuchElementException();
+			if (cursor == 0)
+				arena.entityLayer.comps.put(this, this);
+
 			comp.alpha = (float) (Duration - cursor) / Duration;
-			return ++cursor < Duration;
+
+			boolean moreToAnimate = ++cursor < Duration;
+			if (!moreToAnimate)
+				arena.entityLayer.comps.remove(this);
+			return moreToAnimate;
 		}
 
 		@Override
@@ -134,7 +196,7 @@ interface Animation {
 		public void paintComponent(Graphics g) {
 			Position pos = comp.pos;
 			int gestureNum = Images.getGestureNum("Explosion");
-			int gestureIdx = cursor / (Duration / gestureNum);
+			int gestureIdx = (int) (cursor / ((double) Duration / gestureNum));
 			BufferedImage img = Images.getExplosionImg(gestureIdx);
 
 			Position drawPos = arena.displayedTile(pos);
@@ -178,7 +240,6 @@ interface Animation {
 
 		final DataChangeNotifier<DataEvent> onAnimationBegin = new DataChangeNotifier<>();
 		final DataChangeNotifier<DataEvent> onAnimationEnd = new DataChangeNotifier<>();
-//		final DataChangeNotifier<DataEvent> onAnimationStep = new DataChangeNotifier<>();
 
 		Task() {
 		}
@@ -204,9 +265,6 @@ interface Animation {
 				isAnimationRunning = true;
 				onAnimationBegin.notify(new DataEvent(Task.this));
 			}
-//			if (animated) {
-//				onAnimationStep.notify(new DataEvent(Animation.this));
-//			}
 			if (!animated && isAnimationRunning) {
 				isAnimationRunning = false;
 				onAnimationEnd.notify(new DataEvent(Task.this));

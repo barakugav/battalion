@@ -263,6 +263,11 @@ public class GameArenaPanel extends
 		comp.animateMoveAndAttack(path, target, future);
 	}
 
+	void animateUnitAttackRange(Unit unit, Position target, Runnable future) {
+		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
+		comp.animateAttackRange(target, future);
+	}
+
 	class EntityLayer extends
 			ArenaPanelAbstract.EntityLayer<ArenaPanelAbstract.TerrainComp, EntityLayer.BuildingComp, EntityLayer.UnitComp> {
 
@@ -291,10 +296,7 @@ public class GameArenaPanel extends
 					clearSelection();
 				if (e.unit.isDead()) {
 					UnitComp unitComp = (UnitComp) comps.get(e.unit);
-					Animation.UnitDeath animation = new Animation.UnitDeath(GameArenaPanel.this, unitComp);
-					comps.put(animation, animation);
-					unitComp.runAnimationAsync(animation, () -> {
-						comps.remove(animation);
+					unitComp.runAnimationAsync(new Animation.UnitDeath(GameArenaPanel.this, unitComp), () -> {
 						comps.remove(e.unit);
 						unitComp.clear();
 					});
@@ -304,16 +306,6 @@ public class GameArenaPanel extends
 						unitComp.clear();
 				}
 			});
-//			register.register(game.arena().onEntityChange, e -> {
-//				if (e.source instanceof Unit) {
-//					Unit unit = (Unit) e.source;
-//					UnitComp unitComp = (UnitComp) comps.get(unit);
-//					if (unit.isDead()) {
-//						comps.remove(unit);
-//						unitComp.clear();
-//					}
-//				}
-//			});
 			register.register(onSelectionChange, e -> {
 				passableMap = Position.Bitmap.Empty;
 				reachableMap = Position.Bitmap.Empty;
@@ -617,13 +609,11 @@ public class GameArenaPanel extends
 				}
 			}
 
-			private synchronized void runMoveAnimation(Animation animation, Runnable future) {
+			private synchronized void runAnimationAndWait(Animation animation, Runnable future) {
 				if (!animationCount.compareAndSet(0, 1))
 					throw new IllegalStateException();
 
-				isMoving = true;
 				animationTask.animateAndWait(animation, () -> {
-					isMoving = false;
 					if (!animationCount.compareAndSet(1, 0))
 						throw new IllegalStateException();
 					if (future != null)
@@ -655,13 +645,20 @@ public class GameArenaPanel extends
 			synchronized void animateMove(List<Position> animationPath, Runnable future) {
 				Animation animation = new Animation.UnitMove(this, animationPath);
 				animation = appearDisappearAnimationWrap(animation);
-				runMoveAnimation(animation, future);
+				runAnimationAndWait(animation, future);
 			}
 
 			synchronized void animateMoveAndAttack(List<Position> animationPath, Position target, Runnable future) {
-				Animation animation = new Animation.UnitMoveAndAttack(this, animationPath, target);
+				Animation animation = Animation.of(new Animation.UnitMove(this, animationPath),
+						new Animation.Attack(arena, this, target));
 				animation = appearDisappearAnimationWrap(animation);
-				runMoveAnimation(animation, future);
+				runAnimationAndWait(animation, future);
+			}
+
+			synchronized void animateAttackRange(Position target, Runnable future) {
+				Animation animation = new Animation.Attack(arena, this, target);
+				animation = appearDisappearAnimationWrap(animation);
+				runAnimationAndWait(animation, future);
 			}
 
 			@Override
