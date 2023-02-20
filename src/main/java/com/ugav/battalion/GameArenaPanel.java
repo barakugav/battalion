@@ -23,6 +23,7 @@ import javax.swing.JPanel;
 
 import com.ugav.battalion.FactoryMenu.UnitBuy;
 import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.Entity;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Position;
 import com.ugav.battalion.core.Position.Direction;
@@ -43,6 +44,8 @@ public class GameArenaPanel extends
 
 	private final DebugPrintsManager debug = new DebugPrintsManager(true); // TODO
 	private final DataChangeRegister register = new DataChangeRegister();
+	final DataChangeNotifier<EntityClick> onEntityClick = new DataChangeNotifier<>();
+	final DataChangeNotifier<SelectionChange> onSelectionChange = new DataChangeNotifier<>();
 
 	private static final long serialVersionUID = 1L;
 
@@ -105,20 +108,17 @@ public class GameArenaPanel extends
 		Tile tile = game.getTile(pos);
 
 		if (tile.hasUnit()) {
+			onEntityClick.notify(new EntityClick(this, pos, tile.getUnit()));
 			if (!tile.getUnit().isActive())
 				return;
-			debug.println("Selected unit ", pos);
-			selection = pos;
-			Unit unit = tile.getUnit();
-			entityLayer().passableMap = unit.getPassableMap();
-			entityLayer().reachableMap = unit.getReachableMap();
-			entityLayer().attackableMap = unit.getAttackableMap();
+			setSelection(pos);
 
 		} else if (tile.hasBuilding()) {
+			onEntityClick.notify(new EntityClick(this, pos, tile.getBuilding()));
 			if (!tile.getBuilding().isActive())
 				return;
-			debug.println("Selected building ", pos);
-			selection = pos;
+			setSelection(pos);
+
 			Building building = tile.getBuilding();
 			if (building.type.canBuildUnits) {
 				FactoryMenu factoryMenu = new FactoryMenu(globals.frame, game, building);
@@ -146,6 +146,8 @@ public class GameArenaPanel extends
 				});
 				factoryMenu.setVisible(true);
 			}
+		} else {
+			onEntityClick.notify(new EntityClick(this, pos, tile.getTerrain()));
 		}
 	}
 
@@ -205,13 +207,50 @@ public class GameArenaPanel extends
 	}
 
 	private void clearSelection() {
+		setSelection(null);
+	}
+
+	private void setSelection(Position newSelection) {
+		debug.println("setSelection ", newSelection);
+		selection = newSelection;
+		onSelectionChange.notify(new SelectionChange(this, newSelection, getSelectedEntity()));
+	}
+
+	Entity getSelectedEntity() {
 		if (selection == null)
-			return;
-		debug.println("clearSelection ", selection);
-		selection = null;
-		entityLayer().reachableMap = Position.Bitmap.Empty;
-		entityLayer().attackableMap = Position.Bitmap.Empty;
-		entityLayer().movePath.clear();
+			return null;
+		Tile tile = game.arena().at(selection);
+		if (tile.hasUnit())
+			return tile.getUnit();
+		if (tile.hasBuilding())
+			return tile.getBuilding();
+		throw new IllegalStateException();
+	}
+
+	static class SelectionChange extends DataEvent {
+
+		final Position pos;
+		final Entity obj;
+
+		public SelectionChange(Object source, Position pos, Entity obj) {
+			super(source);
+			this.pos = pos;
+			this.obj = obj;
+		}
+
+	}
+
+	static class EntityClick extends DataEvent {
+
+		final Position pos;
+		final Object obj;
+
+		public EntityClick(Object source, Position pos, Object obj) {
+			super(source);
+			this.pos = pos;
+			this.obj = obj;
+		}
+
 	}
 
 	void animateUnitMove(Unit unit, List<Position> path, Runnable future) {
@@ -275,6 +314,18 @@ public class GameArenaPanel extends
 //					}
 //				}
 //			});
+			register.register(onSelectionChange, e -> {
+				passableMap = Position.Bitmap.Empty;
+				reachableMap = Position.Bitmap.Empty;
+				attackableMap = Position.Bitmap.Empty;
+				movePath.clear();
+				if (e.obj instanceof Unit) {
+					Unit unit = (Unit) e.obj;
+					passableMap = unit.getPassableMap();
+					reachableMap = unit.getReachableMap();
+					attackableMap = unit.getAttackableMap();
+				}
+			});
 			register.register(game.onTurnEnd(), e -> clearSelection());
 
 			register.register(onHoverChange, e -> hoveredUpdated(e.pos));

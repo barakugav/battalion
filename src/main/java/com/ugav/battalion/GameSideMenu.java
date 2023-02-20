@@ -1,5 +1,6 @@
 package com.ugav.battalion;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -19,6 +20,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 
 import com.ugav.battalion.core.Arena;
@@ -37,11 +39,6 @@ public class GameSideMenu extends JPanel implements Clearable {
 	private final Map<Team, JLabel> labelMoney;
 	private final DataChangeRegister register = new DataChangeRegister();
 
-	private final JPanel minimapPanel;
-	private final JPanel teamsPanel;
-	private final JPanel descriptionPanel;
-	private final JPanel buttonsPanel;
-
 	private static final long serialVersionUID = 1L;
 
 	GameSideMenu(GameWindow window) {
@@ -56,27 +53,34 @@ public class GameSideMenu extends JPanel implements Clearable {
 		c.fill = GridBagConstraints.BOTH;
 
 		c.gridy = 0;
-		c.weighty = 2;
-		add(minimapPanel = createMinimapPanel(), c);
+		c.weighty = 0;
+		add(createMinimapPanel(), c);
 		c.gridy = 2;
 		c.weighty = 2;
-		add(teamsPanel = createTeamsPanel(), c);
+		add(createTeamsPanel(), c);
 		c.gridy = 4;
 		c.weighty = 2;
-		add(descriptionPanel = createDescriptionPanel(), c);
+		add(createDescriptionPanel(), c);
 		c.gridy = 6;
 		c.weighty = 1;
-		add(buttonsPanel = createButtonsPannel(), c);
+		add(createButtonsPannel(), c);
 
 		for (Team team : Team.realTeams)
 			updateMoneyLabel(team, window.game.getMoney(team));
 	}
 
 	private JPanel createMinimapPanel() {
-		JPanel panel = new JPanel();
-		panel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+		JPanel panel = new JPanel(new GridBagLayout());
+		panel.setBackground(Color.BLACK);
+		panel.setOpaque(true);
 
-		panel.add(new MiniMap());
+		MiniMap miniMap = new MiniMap();
+		panel.add(miniMap, Utils.gbConstraints(0, 0, 1, 1));
+
+		Dimension miniMapSize = miniMap.getPreferredSize();
+		if (miniMapSize.width > 150 || miniMapSize.height > 150)
+			throw new IllegalArgumentException("Map too big for minimap");
+		panel.setPreferredSize(new Dimension(150, 150));
 
 		return panel;
 	}
@@ -164,15 +168,260 @@ public class GameSideMenu extends JPanel implements Clearable {
 	}
 
 	private JPanel createDescriptionPanel() {
-		JPanel panel = new JPanel();
+		JPanel panel = new JPanel(new BorderLayout());
+		panel.setPreferredSize(new Dimension(100, 100));
 		panel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-		panel.add(new JLabel("Description"));
+
+		createDescriptionPanelTerrain(panel);
+		createDescriptionPanelBuilding(panel);
+		createDescriptionPanelUnit(panel);
+
 		return panel;
+	}
+
+	private void createDescriptionPanelTerrain(JPanel parent) {
+		JPanel panel = new JPanel(new GridBagLayout());
+
+		JLabel title = new JLabel("", SwingConstants.CENTER);
+		Font titleFont = title.getFont();
+		Font titleFontNew = new Font(titleFont.getName(), Font.BOLD, titleFont.getSize());
+		title.setFont(titleFontNew);
+
+		JTextArea text = new JTextArea();
+		text.setWrapStyleWord(true);
+		text.setLineWrap(true);
+		text.setOpaque(false);
+		JLabel image = new JLabel();
+		JLabel techs = new JLabel();
+
+		GridBagConstraints c = new GridBagConstraints();
+
+		c.gridx = 0;
+		c.gridy = 0;
+		c.gridwidth = 2;
+		c.gridheight = 1;
+		c.weighty = 0;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		panel.add(title, c);
+		c.gridx = 0;
+		c.gridy = 1;
+		c.gridwidth = 2;
+		c.gridheight = 1;
+		c.weighty = 1;
+		c.weightx = 1;
+		c.fill = GridBagConstraints.BOTH;
+		panel.add(text, c);
+		c.gridx = 0;
+		c.gridy = 2;
+		c.gridwidth = 1;
+		c.gridheight = 1;
+		c.weighty = 0;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		panel.add(image, c);
+		c.gridx = 1;
+		c.gridy = 2;
+		c.gridwidth = 1;
+		c.gridheight = 1;
+		c.weighty = 0;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		panel.add(techs, c);
+
+		register.register(window.arenaPanel.onEntityClick, e -> {
+			if (e.obj == null)
+				return;
+			if (!(e.obj instanceof Terrain)) {
+				parent.remove(panel);
+				parent.revalidate();
+				parent.repaint();
+				return;
+			}
+			Terrain terrain = (Terrain) e.obj;
+
+			title.setText(terrain.category.toString());
+			text.setText("description about " + terrain.category.toString());
+			image.setIcon(new ImageIcon(Images.getImg(terrain)));
+
+			parent.add(panel);
+			panel.revalidate();
+			panel.repaint();
+		});
+	}
+
+	private void createDescriptionPanelBuilding(JPanel parent) {
+		JPanel panel = new JPanel(new GridBagLayout());
+
+		JLabel title = new JLabel("", SwingConstants.CENTER);
+		Font titleFont = title.getFont();
+		Font titleFontNew = new Font(titleFont.getName(), Font.BOLD, titleFont.getSize());
+		title.setFont(titleFontNew);
+
+		JTextArea text = new JTextArea();
+		text.setWrapStyleWord(true);
+		text.setLineWrap(true);
+		text.setOpaque(false);
+		JLabel image = new JLabel();
+		JLabel techs = new JLabel();
+
+		GridBagConstraints c = new GridBagConstraints();
+
+		c.gridx = 0;
+		c.gridy = 0;
+		c.gridwidth = 2;
+		c.gridheight = 1;
+		c.weighty = 0;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		panel.add(title, c);
+		c.gridx = 0;
+		c.gridy = 1;
+		c.gridwidth = 2;
+		c.gridheight = 1;
+		c.weighty = 1;
+		c.weightx = 1;
+		c.fill = GridBagConstraints.BOTH;
+		panel.add(text, c);
+		c.gridx = 0;
+		c.gridy = 2;
+		c.gridwidth = 1;
+		c.gridheight = 1;
+		c.weighty = 0;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		panel.add(image, c);
+		c.gridx = 1;
+		c.gridy = 2;
+		c.gridwidth = 1;
+		c.gridheight = 1;
+		c.weighty = 0;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		panel.add(techs, c);
+
+		register.register(window.arenaPanel.onEntityClick, e -> {
+			if (e.obj == null)
+				return;
+			if (!(e.obj instanceof Building)) {
+				parent.remove(panel);
+				parent.revalidate();
+				parent.repaint();
+				return;
+			}
+			Building building = (Building) e.obj;
+
+			title.setText(building.type.toString());
+			text.setText("description about " + building.type.toString());
+			image.setIcon(new ImageIcon(Images.getBuildingImg(building, 0)));
+
+			parent.add(panel);
+			panel.revalidate();
+			panel.repaint();
+		});
+	}
+
+	private void createDescriptionPanelUnit(JPanel parent) {
+		JPanel panel = new JPanel(new GridBagLayout());
+
+		JLabel title = new JLabel("", SwingConstants.CENTER);
+		Font titleFont = title.getFont();
+		Font boldFont = new Font(titleFont.getName(), Font.BOLD, titleFont.getSize());
+		title.setFont(boldFont);
+
+		JLabel image = new JLabel();
+
+		JPanel stats = new JPanel(new GridBagLayout());
+		GridBagConstraints c = new GridBagConstraints();
+		c.gridx = 0;
+		c.weighty = c.gridheight = 1;
+		c.weightx = c.gridwidth = 1;
+		c.fill = GridBagConstraints.BOTH;
+		JLabel healthLabel = new JLabel("Health:");
+		healthLabel.setFont(boldFont);
+		c.gridy = 0;
+		stats.add(healthLabel, c);
+		JLabel health = new JLabel();
+		c.gridy = 1;
+		stats.add(health, c);
+		JLabel damageLabel = new JLabel("Damage:");
+		damageLabel.setFont(boldFont);
+		c.gridy = 2;
+		stats.add(damageLabel, c);
+		JLabel damage = new JLabel();
+		c.gridy = 3;
+		stats.add(damage, c);
+		JLabel moveLabel = new JLabel("Move:");
+		moveLabel.setFont(boldFont);
+		c.gridy = 4;
+		stats.add(moveLabel, c);
+		JLabel move = new JLabel();
+		c.gridy = 5;
+		stats.add(move, c);
+
+		JTextArea text = new JTextArea();
+		text.setWrapStyleWord(true);
+		text.setLineWrap(true);
+		text.setOpaque(false);
+		JLabel techs = new JLabel();
+
+		c.gridx = 0;
+		c.gridy = 0;
+		c.gridwidth = 2;
+		c.gridheight = 1;
+		c.weighty = 0;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		panel.add(title, c);
+		c.gridx = 0;
+		c.gridy = 1;
+		c.gridwidth = 1;
+		c.gridheight = 1;
+		c.weighty = 0;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		panel.add(image, c);
+		c.gridx = 1;
+		c.gridy = 1;
+		c.gridwidth = 1;
+		c.gridheight = 1;
+		c.weighty = 0;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		panel.add(stats, c);
+		c.gridx = 0;
+		c.gridy = 2;
+		c.gridwidth = 2;
+		c.gridheight = 1;
+		c.weighty = 1;
+		c.weightx = 1;
+		c.fill = GridBagConstraints.BOTH;
+		panel.add(text, c);
+		c.gridx = 0;
+		c.gridy = 3;
+		c.gridwidth = 2;
+		c.gridheight = 1;
+		c.weighty = 0;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		panel.add(techs, c);
+
+		register.register(window.arenaPanel.onEntityClick, e -> {
+			if (e.obj == null)
+				return;
+			if (!(e.obj instanceof Unit)) {
+				parent.remove(panel);
+				parent.revalidate();
+				parent.repaint();
+				return;
+			}
+			Unit unit = (Unit) e.obj;
+
+			title.setText(unit.type.toString());
+			image.setIcon(new ImageIcon(Images.getUnitImgStand(unit, Direction.XPos, 0)));
+			health.setText("" + unit.getHealth() + "/" + unit.type.health);
+			damage.setText("" + unit.type.damage);
+			move.setText("" + unit.type.moveLimit);
+			text.setText("description about " + unit.type.toString());
+
+			parent.add(panel);
+			panel.revalidate();
+			panel.repaint();
+		});
 	}
 
 	private JPanel createButtonsPannel() {
 		JPanel panel = new JPanel(new GridLayout(0, 1));
-		panel.setBackground(Color.yellow);
 
 		JButton buttonEndTurn = new JButton("End Turn");
 		buttonEndTurn.addActionListener(onlyIfActionsEnabled(e -> window.endTurn()));
@@ -246,8 +495,8 @@ public class GameSideMenu extends JPanel implements Clearable {
 			Position currentMapPos = window.arenaPanel.getCurrentMapOrigin();
 			int x = (int) (currentMapPos.x / ArenaPanelAbstract.TILE_SIZE_PIXEL * TileSize);
 			int y = (int) (currentMapPos.y / ArenaPanelAbstract.TILE_SIZE_PIXEL * TileSize);
-			int width = TileSize * ArenaPanelAbstract.DISPLAYED_ARENA_WIDTH;
-			int height = TileSize * ArenaPanelAbstract.DISPLAYED_ARENA_HEIGHT;
+			int width = TileSize * ArenaPanelAbstract.DISPLAYED_ARENA_WIDTH - 1;
+			int height = TileSize * ArenaPanelAbstract.DISPLAYED_ARENA_HEIGHT - 1;
 			g.setColor(CurrentMapColor);
 			g.drawRect(x, y, width, height);
 		}
