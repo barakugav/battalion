@@ -37,7 +37,9 @@ interface Animation {
 		private static final int StepSize = 16;
 
 		UnitMove(UnitComp comp, List<Position> path) {
-			this.comp = comp;
+			if (path.isEmpty())
+				throw new IllegalArgumentException();
+			this.comp = Objects.requireNonNull(comp);
 			this.path = Collections.unmodifiableList(new ArrayList<>(path));
 		}
 
@@ -48,19 +50,22 @@ interface Animation {
 
 		@Override
 		public boolean advanceAnimationStep() {
-			if (cursor >= path.size() * StepSize)
+			int length = path.size() - 1;
+			if (length == 0)
+				return false;
+			if (cursor >= length * StepSize)
 				throw new NoSuchElementException();
 
 			int idx = cursor / StepSize;
-			double frac = (cursor % StepSize + 1) / (double) StepSize;
 			Position p1 = path.get(idx);
 			Position p2 = path.get(idx + 1);
 			comp.orientation = Direction.calc(p1, p2);
+			double frac = (cursor % StepSize + 1) / (double) StepSize;
 			double x = p1.x + (p2.x - p1.x) * frac;
 			double y = p1.y + (p2.y - p1.y) * frac;
 			comp.pos = Position.of(x, y);
 
-			return ++cursor < (path.size() - 1) * StepSize;
+			return ++cursor < length * StepSize;
 		}
 
 		@Override
