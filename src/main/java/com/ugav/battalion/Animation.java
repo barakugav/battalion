@@ -23,6 +23,12 @@ interface Animation {
 
 	boolean advanceAnimationStep();
 
+	default void beforeFirst() {
+	};
+
+	default void afterLast() {
+	};
+
 	static class UnitMove implements Animation {
 
 		final UnitComp comp;
@@ -36,12 +42,14 @@ interface Animation {
 		}
 
 		@Override
+		public void beforeFirst() {
+			comp.isAnimated = comp.isMoving = true;
+		}
+
+		@Override
 		public boolean advanceAnimationStep() {
 			if (cursor >= path.size() * StepSize)
 				throw new NoSuchElementException();
-
-			if (cursor == 0)
-				comp.isMoving = true;
 
 			int idx = cursor / StepSize;
 			double frac = (cursor % StepSize + 1) / (double) StepSize;
@@ -52,11 +60,14 @@ interface Animation {
 			double y = p1.y + (p2.y - p1.y) * frac;
 			comp.pos = Position.of(x, y);
 
-			boolean moreToAnimation = ++cursor < (path.size() - 1) * StepSize;
-			if (!moreToAnimation)
-				comp.isMoving = false;
-			return moreToAnimation;
+			return ++cursor < (path.size() - 1) * StepSize;
 		}
+
+		@Override
+		public void afterLast() {
+			comp.isAnimated = comp.isMoving = false;
+		}
+
 	}
 
 	static class Attack implements Animation, ArenaComp {
@@ -74,31 +85,34 @@ interface Animation {
 		}
 
 		@Override
+		public void beforeFirst() {
+			comp.isAnimated = true;
+
+			basePos = comp.pos;
+
+			Direction orientation = null;
+			for (Direction dir : Direction.values())
+				if (orientation == null || orientation.dist(comp.pos, target) < dir.dist(comp.pos, target))
+					orientation = dir;
+			comp.orientation = orientation;
+
+			arena.entityLayer.comps.put(this, this);
+		}
+
+		@Override
 		public boolean advanceAnimationStep() {
 			if (cursor >= Duration)
 				throw new NoSuchElementException();
-
-			if (cursor == 0) {
-				basePos = comp.pos;
-
-				Direction orientation = null;
-				for (Direction dir : Direction.values())
-					if (orientation == null || orientation.dist(comp.pos, target) < dir.dist(comp.pos, target))
-						orientation = dir;
-				comp.orientation = orientation;
-
-				arena.entityLayer.comps.put(this, this);
-			}
-
 			double yOffset = (Math.abs(Duration / 2 - cursor) - Duration / 2) / 30.0;
 			comp.pos = Position.of(basePos.x, basePos.y + yOffset);
+			return ++cursor < Duration;
+		}
 
-			boolean moveToAnimate = ++cursor < Duration;
-			if (!moveToAnimate) {
-				arena.entityLayer.comps.remove(this);
-				comp.pos = basePos;
-			}
-			return moveToAnimate;
+		@Override
+		public void afterLast() {
+			comp.isAnimated = false;
+			arena.entityLayer.comps.remove(this);
+			comp.pos = basePos;
 		}
 
 		@Override
@@ -136,11 +150,21 @@ interface Animation {
 		}
 
 		@Override
+		public void beforeFirst() {
+			comp.isAnimated = true;
+		}
+
+		@Override
 		public boolean advanceAnimationStep() {
 			if (cursor >= Duration)
 				throw new NoSuchElementException();
 			comp.alpha = (float) cursor / Duration;
 			return ++cursor < Duration;
+		}
+
+		@Override
+		public void afterLast() {
+			comp.isAnimated = false;
 		}
 	}
 
@@ -154,11 +178,21 @@ interface Animation {
 		}
 
 		@Override
+		public void beforeFirst() {
+			comp.isAnimated = true;
+		}
+
+		@Override
 		public boolean advanceAnimationStep() {
 			if (cursor >= Duration)
 				throw new NoSuchElementException();
 			comp.alpha = (float) (Duration - cursor) / Duration;
 			return ++cursor < Duration;
+		}
+
+		@Override
+		public void afterLast() {
+			comp.isAnimated = false;
 		}
 	}
 
@@ -174,18 +208,23 @@ interface Animation {
 		}
 
 		@Override
+		public void beforeFirst() {
+			comp.isAnimated = true;
+			arena.entityLayer.comps.put(this, this);
+		}
+
+		@Override
 		public boolean advanceAnimationStep() {
 			if (cursor >= Duration)
 				throw new NoSuchElementException();
-			if (cursor == 0)
-				arena.entityLayer.comps.put(this, this);
-
 			comp.alpha = (float) (Duration - cursor) / Duration;
+			return ++cursor < Duration;
+		}
 
-			boolean moreToAnimate = ++cursor < Duration;
-			if (!moreToAnimate)
-				arena.entityLayer.comps.remove(this);
-			return moreToAnimate;
+		@Override
+		public void afterLast() {
+			arena.entityLayer.comps.remove(this);
+			comp.isAnimated = false;
 		}
 
 		@Override
@@ -214,19 +253,141 @@ interface Animation {
 		}
 	}
 
+	static class MapMove implements Animation {
+
+		private final ArenaPanelAbstract<?, ?, ?> arena;
+		private final Position target;
+		private static final double StepSize = 0.1;
+
+		MapMove(ArenaPanelAbstract<?, ?, ?> arena, Position target) {
+			this.arena = arena;
+			this.target = target;
+		}
+
+		Position getTarget() {
+			return target;
+		}
+
+		@Override
+		public void beforeFirst() {
+		}
+
+		@Override
+		public boolean advanceAnimationStep() {
+			if (arena.mapPos.equals(target))
+				return false;
+
+			double dx = target.x - arena.mapPos.x;
+			double dy = target.y - arena.mapPos.y;
+			double l = Math.sqrt(dx * dx + dy * dy);
+			double stepSize = StepSize * Math.sqrt(l);
+			if (arena.mapPos.dist(target) > stepSize) {
+				double x = arena.mapPos.x + dx / l * stepSize;
+				double y = arena.mapPos.y + dy / l * stepSize;
+				arena.mapPos = Position.of(x, y);
+				return true;
+			} else {
+				arena.mapPos = target;
+				return false;
+			}
+		}
+
+		@Override
+		public void afterLast() {
+			arena.mapPos = target;
+		}
+
+		static class Manager implements TickTask {
+			private final ArenaPanelAbstract<?, ?, ?> arena;
+			private Animation.MapMove animation;
+			private Position userChoosenPos;
+
+			Manager(ArenaPanelAbstract<?, ?, ?> arena) {
+				this.arena = Objects.requireNonNull(arena);
+			}
+
+			synchronized void userMapMove(Direction dir) {
+				if (animation != null)
+					return; /* User input is ignored during animation */
+
+				Position userChoosenPosNew = (userChoosenPos == null ? arena.mapPos : userChoosenPos).add(dir);
+				if (userChoosenPosNew.dist(arena.mapPos) >= 3)
+					return;
+				if (!userChoosenPosNew.isInRect(arena.arenaWidth() - ArenaPanelAbstract.DISPLAYED_ARENA_WIDTH,
+						arena.arenaHeight() - ArenaPanelAbstract.DISPLAYED_ARENA_HEIGHT))
+					return;
+
+				userChoosenPos = userChoosenPosNew;
+			}
+
+			synchronized Animation createAnimation(Position target) {
+				return new MapMove(arena, target) {
+
+					@Override
+					public void beforeFirst() {
+						synchronized (Manager.this) {
+							if (animation != null)
+								throw new IllegalStateException();
+							userChoosenPos = null;
+							animation = this;
+						}
+						super.beforeFirst();
+					}
+
+					@Override
+					public void afterLast() {
+						super.afterLast();
+						synchronized (Manager.this) {
+							if (animation != this)
+								throw new IllegalStateException();
+							animation = null;
+						}
+					}
+				};
+			}
+
+			@Override
+			public synchronized void run() {
+				if (userChoosenPos == null)
+					return;
+				double dx = userChoosenPos.x - arena.mapPos.x;
+				double dy = userChoosenPos.y - arena.mapPos.y;
+				if (dx == 0 && dy == 0)
+					return;
+				double l = Math.sqrt(dx * dx + dy * dy);
+				double stepSize = StepSize * Math.sqrt(l);
+				if (arena.mapPos.dist(userChoosenPos) > stepSize) {
+					double x = arena.mapPos.x + dx / l * stepSize;
+					double y = arena.mapPos.y + dy / l * stepSize;
+					arena.mapPos = Position.of(x, y);
+				} else {
+					arena.mapPos = userChoosenPos;
+				}
+			}
+
+		}
+
+	}
+
 	static Animation of(Animation... animations) {
 		if (animations.length < 2)
 			throw new IllegalArgumentException();
 		return new Animation() {
 
 			int index = 0;
+			int currentAnimationStepCount;
 
 			@Override
 			public boolean advanceAnimationStep() {
 				if (index >= animations.length)
 					throw new NoSuchElementException();
-				if (!animations[index].advanceAnimationStep())
+				if (++currentAnimationStepCount == 1)
+					animations[index].beforeFirst();
+				if (!animations[index].advanceAnimationStep()) {
+					animations[index].afterLast();
 					index++;
+					currentAnimationStepCount = 0;
+				}
 				return index < animations.length;
 			}
 		};
@@ -251,8 +412,11 @@ interface Animation {
 			for (Iterator<AnimationEntry> it = queue.iterator(); it.hasNext();) {
 				AnimationEntry entry = it.next();
 				animated = true;
+				if (++entry.animationCount == 1)
+					entry.animation.beforeFirst();
 				if (!entry.animation.advanceAnimationStep()) {
 					it.remove();
+					entry.animation.afterLast();
 					if (entry.future != null)
 						entry.future.run();
 					synchronized (entry) {
@@ -302,6 +466,7 @@ interface Animation {
 		private static class AnimationEntry {
 			final Animation animation;
 			final Runnable future;
+			int animationCount;
 
 			AnimationEntry(Animation animation, Runnable future) {
 				this.animation = Objects.requireNonNull(animation);

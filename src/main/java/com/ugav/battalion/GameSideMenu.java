@@ -493,8 +493,8 @@ public class GameSideMenu extends JPanel implements Clearable {
 			}
 
 			Position currentMapPos = window.arenaPanel.getCurrentMapOrigin();
-			int x = (int) (currentMapPos.x / ArenaPanelAbstract.TILE_SIZE_PIXEL * TileSize);
-			int y = (int) (currentMapPos.y / ArenaPanelAbstract.TILE_SIZE_PIXEL * TileSize);
+			int x = (int) (currentMapPos.x * TileSize);
+			int y = (int) (currentMapPos.y * TileSize);
 			int width = TileSize * ArenaPanelAbstract.DISPLAYED_ARENA_WIDTH - 1;
 			int height = TileSize * ArenaPanelAbstract.DISPLAYED_ARENA_HEIGHT - 1;
 			g.setColor(CurrentMapColor);

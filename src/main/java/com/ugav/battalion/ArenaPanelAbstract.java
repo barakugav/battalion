@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
@@ -37,25 +38,51 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	private int arenaWidth;
 	private int arenaHeight;
-	private Position mapPos;
-	private int mapPosX, mapPosY;
+	Position mapPos;
+
 	final EntityLayer<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> entityLayer;
 
+	final Animation.MapMove.Manager mapMoveAnimation = new Animation.MapMove.Manager(this);
 	final TickTask.Manager tickTaskManager = new TickTask.Manager();
 
 	private final KeyListener keyListener;
 	final DataChangeNotifier<DataEvent> onMapMove = new DataChangeNotifier<>();
 
+	final Animation.Task animationTask = new Animation.Task();
+	private final AtomicBoolean isAnimationActive = new AtomicBoolean();
+
 	static final int TILE_SIZE_PIXEL = 56;
 	static final int DISPLAYED_ARENA_WIDTH = Level.MINIMUM_WIDTH;
 	static final int DISPLAYED_ARENA_HEIGHT = Level.MINIMUM_WIDTH;
 
-	private static final int MapMoveSpeed = 4;
 	private static final long serialVersionUID = 1L;
+
+	synchronized void runAnimationAndWait(Animation animation, Runnable future) {
+		if (!isAnimationActive.compareAndSet(false, true))
+			throw new IllegalStateException();
+
+		animationTask.animateAndWait(animation, () -> {
+			if (!isAnimationActive.compareAndSet(true, false))
+				throw new IllegalStateException();
+			if (future != null)
+				future.run();
+		});
+	}
+
+	synchronized void runAnimationAsync(Animation animation, Runnable future) {
+		if (!isAnimationActive.compareAndSet(false, true))
+			throw new IllegalStateException();
+
+		animationTask.animate(animation, () -> {
+			if (!isAnimationActive.compareAndSet(true, false))
+				throw new IllegalStateException();
+			if (future != null)
+				future.run();
+		});
+	}
 
 	ArenaPanelAbstract() {
 		mapPos = Position.of(0, 0);
-		mapPosX = mapPosY = 0;
 
 		entityLayer = createEntityLayer();
 		add(entityLayer, JLayeredPane.DEFAULT_LAYER);
@@ -66,11 +93,13 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			@Override
 			public void keyPressed(KeyEvent e) {
 				Position.Direction dir = keyToDir(e.getKeyCode());
-				if (dir != null)
-					mapViewMove(dir);
+				if (dir != null) {
+					mapMoveAnimation.userMapMove(dir);
+					onMapMove.notify(new DataEvent(this));
+				}
 			}
 
-			private Position.Direction keyToDir(int keyCode) {
+			private static Position.Direction keyToDir(int keyCode) {
 				switch (keyCode) {
 				case KeyEvent.VK_LEFT:
 				case KeyEvent.VK_A:
@@ -87,23 +116,13 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				default:
 					return null;
 				}
-
 			}
 		});
 
 		tickTaskManager.addTask(1000, this::repaint);
 
-		tickTaskManager.addTask(100, () -> {
-			double dx = mapPos.x * TILE_SIZE_PIXEL - mapPosX;
-			double dy = mapPos.y * TILE_SIZE_PIXEL - mapPosY;
-			if (dx == 0 && dy == 0)
-				return;
-			int speed = MapMoveSpeed;
-			double cx = dx / Math.sqrt(dx * dx + dy * dy) * speed;
-			double cy = dy / Math.sqrt(dx * dx + dy * dy) * speed;
-			mapPosX += Math.abs(cx) >= Math.abs(dx) ? dx : cx;
-			mapPosY += Math.abs(cy) >= Math.abs(dy) ? dy : cy;
-		});
+		tickTaskManager.addTask(100, mapMoveAnimation);
+		tickTaskManager.addTask(100, animationTask);
 	}
 
 	EntityLayer<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> createEntityLayer() {
@@ -122,12 +141,12 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		this.arenaHeight = height;
 	}
 
-	void mapViewMove(Position.Direction dir) {
-		Position mapPosNew = mapPos.add(dir);
-		if (!mapPosNew.isInRect(arenaWidth - DISPLAYED_ARENA_WIDTH, arenaHeight - DISPLAYED_ARENA_HEIGHT))
-			return;
-		onMapMove.notify(new DataEvent(this));
-		mapPos = mapPosNew;
+	int arenaWidth() {
+		return arenaWidth;
+	}
+
+	int arenaHeight() {
+		return arenaHeight;
 	}
 
 	void mapViewSet(Position pos) {
@@ -135,16 +154,14 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			return;
 		onMapMove.notify(new DataEvent(this));
 		mapPos = pos;
-		mapPosX = (int) (pos.x * TILE_SIZE_PIXEL);
-		mapPosY = (int) (pos.y * TILE_SIZE_PIXEL);
 	}
 
 	int displayedX(double x) {
-		return (int) (x - mapPosX);
+		return (int) (x - mapPos.x * TILE_SIZE_PIXEL);
 	}
 
 	int displayedY(double y) {
-		return (int) (y - mapPosY);
+		return (int) (y - mapPos.y * TILE_SIZE_PIXEL);
 	}
 
 	Position displayedTile(Position pos) {
@@ -152,15 +169,15 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	}
 
 	int displayedXInv(int x) {
-		return x + mapPosX;
+		return (int) (x + mapPos.x * TILE_SIZE_PIXEL);
 	}
 
 	int displayedYInv(int y) {
-		return y + mapPosY;
+		return (int) (y + mapPos.y * TILE_SIZE_PIXEL);
 	}
 
 	Position getCurrentMapOrigin() {
-		return Position.of(mapPosX, mapPosY);
+		return mapPos;
 	}
 
 	@Override
