@@ -88,21 +88,22 @@ class GameGUIImpl implements Game {
 	public void move(Unit unit, List<Position> path) {
 		checkCorrectThread();
 		List<Position> animationPath = Utils.listOf(unit.getPos(), path);
-		gui.arenaPanel.animateUnitMove(unit, animationPath, () -> game.move(unit, path));
+		run(() -> gui.arenaPanel.animateUnitMove(unit, animationPath, () -> game.move(unit, path)));
 	}
 
 	@Override
 	public void moveAndAttack(Unit attacker, List<Position> path, Unit target) {
 		checkCorrectThread();
 		List<Position> animationPath = Utils.listOf(attacker.getPos(), path);
-		gui.arenaPanel.animateUnitMoveAndAttack(attacker, animationPath, target.getPos(),
-				() -> game.moveAndAttack(attacker, path, target));
+		run(() -> gui.arenaPanel.animateUnitMoveAndAttack(attacker, animationPath, target.getPos(),
+				() -> game.moveAndAttack(attacker, path, target)));
 	}
 
 	@Override
 	public void attackRange(Unit attacker, Unit target) {
 		checkCorrectThread();
-		gui.arenaPanel.animateUnitAttackRange(attacker, target.getPos(), () -> game.attackRange(attacker, target));
+		run(() -> gui.arenaPanel.animateUnitAttackRange(attacker, target.getPos(),
+				() -> game.attackRange(attacker, target)));
 	}
 
 	@Override
@@ -158,15 +159,17 @@ class GameGUIImpl implements Game {
 			throw new IllegalStateException("Can't change the data from GUI thread");
 	}
 
-	private static void run(Runnable runnable) {
+	private void run(Runnable runnable) {
 		try {
 			SwingUtilities.invokeAndWait(runnable);
+			while (gui.arenaPanel.isAnimationActive())
+				;
 		} catch (InvocationTargetException | InterruptedException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	private static <R> R run(Supplier<R> runnable) {
+	private <R> R run(Supplier<R> runnable) {
 		Utils.Holder<R> holder = new Utils.Holder<>();
 		run(() -> {
 			holder.val = runnable.get();

@@ -140,40 +140,43 @@ interface Animation {
 		}
 	}
 
-	static class UnitReappear implements Animation {
+	static class UnitAppear implements Animation {
 		private final UnitComp comp;
 		private int cursor = 0;
 		private static final int Duration = 30;
 
-		UnitReappear(UnitComp comp) {
+		UnitAppear(UnitComp comp) {
 			this.comp = comp;
 		}
 
 		@Override
 		public void beforeFirst() {
 			comp.isAnimated = true;
+			comp.baseAlphaMax = 0;
 		}
 
 		@Override
 		public boolean advanceAnimationStep() {
 			if (cursor >= Duration)
 				throw new NoSuchElementException();
-			comp.alpha = (float) cursor / Duration;
+			comp.alpha = (float) (cursor + 1) / Duration;
 			return ++cursor < Duration;
 		}
 
 		@Override
 		public void afterLast() {
+			comp.baseAlphaMax = 1;
+			comp.alpha = 1;
 			comp.isAnimated = false;
 		}
 	}
 
-	static class UnitDisappear implements Animation {
+	static class UnitAppearDisappear implements Animation {
 		private final UnitComp comp;
 		private int cursor = 0;
-		private static final int Duration = 30;
+		private static final int Duration = 60;
 
-		UnitDisappear(UnitComp comp) {
+		UnitAppearDisappear(UnitComp comp) {
 			this.comp = comp;
 		}
 
@@ -186,7 +189,10 @@ interface Animation {
 		public boolean advanceAnimationStep() {
 			if (cursor >= Duration)
 				throw new NoSuchElementException();
-			comp.alpha = (float) (Duration - cursor - 1) / Duration;
+			if (cursor < Duration / 2)
+				comp.alpha = (float) (cursor + 1) / (Duration / 2);
+			else
+				comp.alpha = (float) (Duration - cursor) / (Duration / 2);
 			return ++cursor < Duration;
 		}
 

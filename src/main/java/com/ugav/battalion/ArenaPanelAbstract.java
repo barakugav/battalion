@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
@@ -49,7 +49,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	final DataChangeNotifier<DataEvent> onMapMove = new DataChangeNotifier<>();
 
 	final Animation.Task animationTask = new Animation.Task();
-	private final AtomicBoolean isAnimationActive = new AtomicBoolean();
+	private final AtomicInteger animationsActive = new AtomicInteger();
 
 	static final int TILE_SIZE_PIXEL = 56;
 	static final int DISPLAYED_ARENA_WIDTH = Level.MINIMUM_WIDTH;
@@ -57,28 +57,18 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	private static final long serialVersionUID = 1L;
 
-	synchronized void runAnimationAndWait(Animation animation, Runnable future) {
-		if (!isAnimationActive.compareAndSet(false, true))
-			throw new IllegalStateException();
+	synchronized void runAnimationAsync(Animation animation, Runnable future) {
+		animationsActive.incrementAndGet();
 
-		animationTask.animateAndWait(animation, () -> {
-			if (!isAnimationActive.compareAndSet(true, false))
-				throw new IllegalStateException();
+		animationTask.animate(animation, () -> {
 			if (future != null)
 				future.run();
+			animationsActive.decrementAndGet();
 		});
 	}
 
-	synchronized void runAnimationAsync(Animation animation, Runnable future) {
-		if (!isAnimationActive.compareAndSet(false, true))
-			throw new IllegalStateException();
-
-		animationTask.animate(animation, () -> {
-			if (!isAnimationActive.compareAndSet(true, false))
-				throw new IllegalStateException();
-			if (future != null)
-				future.run();
-		});
+	boolean isAnimationActive() {
+		return animationsActive.get() > 0;
 	}
 
 	ArenaPanelAbstract() {

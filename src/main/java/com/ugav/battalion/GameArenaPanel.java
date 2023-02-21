@@ -255,19 +255,89 @@ public class GameArenaPanel extends
 
 	}
 
+	void animateUnitAdd(Unit unit, Runnable future) {
+		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
+		Animation animation;
+		if (!unit.type.invisible)
+			animation = new Animation.UnitAppear(comp);
+		else
+			animation = new Animation.UnitAppearDisappear(comp);
+		animation = makeSureAnimationIsVisible(animation, unit.getPos());
+		runAnimationAsync(animation, future);
+	}
+
 	void animateUnitMove(Unit unit, List<Position> path, Runnable future) {
 		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
-		comp.animateMove(path, future);
+		Animation animation = new Animation.UnitMove(comp, path);
+		animation = appearDisappearAnimationWrap(comp, animation);
+		animation = makeSureAnimationIsVisible(animation, path);
+		runAnimationAsync(animation, future);
 	}
 
 	void animateUnitMoveAndAttack(Unit unit, List<Position> path, Position target, Runnable future) {
 		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
-		comp.animateMoveAndAttack(path, target, future);
+		Animation animation = Animation.of(new Animation.UnitMove(comp, path),
+				new Animation.Attack(this, comp, target));
+		animation = appearDisappearAnimationWrap(comp, animation);
+		animation = makeSureAnimationIsVisible(animation, path, target);
+		runAnimationAsync(animation, future);
 	}
 
 	void animateUnitAttackRange(Unit unit, Position target, Runnable future) {
 		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
-		comp.animateAttackRange(target, future);
+		Animation animation = new Animation.Attack(this, comp, target);
+		animation = appearDisappearAnimationWrap(comp, animation);
+		animation = makeSureAnimationIsVisible(animation, unit.getPos(), target);
+		runAnimationAsync(animation, future);
+	}
+
+	private static Animation appearDisappearAnimationWrap(EntityLayer.UnitComp unitComp, Animation animation) {
+		if (unitComp.unit().type.invisible)
+			animation = Animation.of(new Animation.UnitAppearDisappear(unitComp), animation);
+		return animation;
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private Animation makeSureAnimationIsVisible(Animation animation, Object... positions0) {
+		List<Position> positions = new ArrayList<>();
+		for (Object pos0 : positions0) {
+			if (pos0 instanceof Position)
+				positions.add((Position) pos0);
+			else if (pos0 instanceof List<?>)
+				positions.addAll((List) pos0);
+		}
+		if (positions.isEmpty())
+			throw new IllegalArgumentException();
+		Position p0 = positions.get(0);
+		int xmin = p0.xInt(), xmax = p0.xInt();
+		int ymin = p0.yInt(), ymax = p0.yInt();
+		for (Position pos : positions) {
+			xmin = Math.min(xmin, pos.xInt());
+			xmax = Math.max(xmax, pos.xInt());
+			ymin = Math.min(ymin, pos.yInt());
+			ymax = Math.max(ymax, pos.yInt());
+		}
+		Position topLeft = Position.of(xmin, ymin);
+		Position bottomRight = Position.of(xmax, ymax);
+		boolean topLeftVisible = topLeft.isInRect(mapPos.x, mapPos.y, mapPos.x + DISPLAYED_ARENA_WIDTH,
+				mapPos.y + DISPLAYED_ARENA_HEIGHT);
+		boolean bottomRightVisible = bottomRight.isInRect(mapPos.x, mapPos.y, mapPos.x + DISPLAYED_ARENA_WIDTH,
+				mapPos.y + DISPLAYED_ARENA_HEIGHT);
+		if (topLeftVisible && bottomRightVisible)
+			return animation; /* already visible */
+
+		if (xmin > xmax + DISPLAYED_ARENA_WIDTH || ymin > ymax + DISPLAYED_ARENA_HEIGHT)
+			throw new IllegalArgumentException("can't display rect [" + topLeft + ", " + bottomRight + "]");
+		int x = xmin + (xmax - xmin) / 2 - DISPLAYED_ARENA_WIDTH / 2;
+		x = Math.max(0, Math.min(game.width() - DISPLAYED_ARENA_WIDTH, x));
+		int y = ymin + (ymax - ymin) / 2 - DISPLAYED_ARENA_HEIGHT / 2;
+		y = Math.max(0, Math.min(game.height() - DISPLAYED_ARENA_WIDTH, y));
+
+		for (Position pos : positions)
+			if (!pos.isInRect(x, y, x + DISPLAYED_ARENA_WIDTH - 1, y + DISPLAYED_ARENA_HEIGHT - 1))
+				throw new IllegalStateException();
+
+		return Animation.of(mapMoveAnimation.createAnimation(Position.of(x, y)), animation);
 	}
 
 	class EntityLayer extends
@@ -291,7 +361,10 @@ public class GameArenaPanel extends
 		}
 
 		void initUI() {
-			register.register(game.onUnitAdd(), e -> addUnitComp(e.unit));
+			register.register(game.onUnitAdd(), e -> {
+				addUnitComp(e.unit);
+				animateUnitAdd(e.unit, null);
+			});
 			register.register(game.onUnitRemove(), e -> {
 				if (e.unit.getPos().equals(selection))
 					clearSelection();
@@ -326,49 +399,6 @@ public class GameArenaPanel extends
 			register.register(onHoverChange, e -> hoveredUpdated(e.pos));
 
 			tickTaskManager.addTask(100, gestureTask);
-		}
-
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		private Animation makeSureAnimationIsVisible(Animation animation, Object... positions0) {
-			List<Position> positions = new ArrayList<>();
-			for (Object pos0 : positions0) {
-				if (pos0 instanceof Position)
-					positions.add((Position) pos0);
-				else if (pos0 instanceof List<?>)
-					positions.addAll((List) pos0);
-			}
-			if (positions.isEmpty())
-				throw new IllegalArgumentException();
-			Position p0 = positions.get(0);
-			int xmin = p0.xInt(), xmax = p0.xInt();
-			int ymin = p0.yInt(), ymax = p0.yInt();
-			for (Position pos : positions) {
-				xmin = Math.min(xmin, pos.xInt());
-				xmax = Math.max(xmax, pos.xInt());
-				ymin = Math.min(ymin, pos.yInt());
-				ymax = Math.max(ymax, pos.yInt());
-			}
-			Position topLeft = Position.of(xmin, ymin);
-			Position bottomRight = Position.of(xmax, ymax);
-			boolean topLeftVisible = topLeft.isInRect(mapPos.x, mapPos.y, mapPos.x + DISPLAYED_ARENA_WIDTH,
-					mapPos.y + DISPLAYED_ARENA_HEIGHT);
-			boolean bottomRightVisible = bottomRight.isInRect(mapPos.x, mapPos.y, mapPos.x + DISPLAYED_ARENA_WIDTH,
-					mapPos.y + DISPLAYED_ARENA_HEIGHT);
-			if (topLeftVisible && bottomRightVisible)
-				return animation; /* already visible */
-
-			if (xmin > xmax + DISPLAYED_ARENA_WIDTH || ymin > ymax + DISPLAYED_ARENA_HEIGHT)
-				throw new IllegalArgumentException("can't display rect [" + topLeft + ", " + bottomRight + "]");
-			int x = xmin + (xmax - xmin) / 2 - DISPLAYED_ARENA_WIDTH / 2;
-			x = Math.max(0, Math.min(game.width() - DISPLAYED_ARENA_WIDTH, x));
-			int y = ymin + (ymax - ymin) / 2 - DISPLAYED_ARENA_HEIGHT / 2;
-			y = Math.max(0, Math.min(game.height() - DISPLAYED_ARENA_WIDTH, y));
-
-			for (Position pos : positions)
-				if (!pos.isInRect(x, y, x + DISPLAYED_ARENA_WIDTH - 1, y + DISPLAYED_ARENA_HEIGHT - 1))
-					throw new IllegalStateException();
-
-			return Animation.of(mapMoveAnimation.createAnimation(Position.of(x, y)), animation);
 		}
 
 		@Override
@@ -562,8 +592,10 @@ public class GameArenaPanel extends
 			}
 		}
 
-		private void addUnitComp(Unit unit) {
-			comps.put(unit, new UnitComp(unit));
+		private UnitComp addUnitComp(Unit unit) {
+			UnitComp comp = new UnitComp(unit);
+			comps.put(unit, comp);
+			return comp;
 		}
 
 		class BuildingComp extends ArenaPanelAbstract.BuildingComp {
@@ -588,6 +620,7 @@ public class GameArenaPanel extends
 
 			volatile boolean isAnimated;
 			float alpha = 0.0f;
+			float baseAlphaMax = 1.0f;
 			private final DataChangeRegister register = new DataChangeRegister();
 
 			private static final Color HealthColorHigh = new Color(0, 206, 0);
@@ -597,9 +630,7 @@ public class GameArenaPanel extends
 			UnitComp(Unit unit) {
 				super(GameArenaPanel.this, unit.getPos(), unit);
 
-				register.register(unit.onChange(), e -> {
-					pos = unit.getPos();
-				});
+				register.register(unit.onChange(), e -> pos = unit.getPos());
 			}
 
 			@Override
@@ -651,37 +682,6 @@ public class GameArenaPanel extends
 				}
 			}
 
-			private synchronized Animation appearDisappearAnimationWrap(Animation animation) {
-				if (unit().type.invisible) {
-					Animation reappear = new Animation.UnitReappear(this);
-					Animation disappear = new Animation.UnitDisappear(this);
-					animation = Animation.of(reappear, disappear, animation);
-				}
-				return animation;
-			}
-
-			synchronized void animateMove(List<Position> animationPath, Runnable future) {
-				Animation animation = new Animation.UnitMove(this, animationPath);
-				animation = appearDisappearAnimationWrap(animation);
-				animation = makeSureAnimationIsVisible(animation, animationPath);
-				runAnimationAndWait(animation, future);
-			}
-
-			synchronized void animateMoveAndAttack(List<Position> animationPath, Position target, Runnable future) {
-				Animation animation = Animation.of(new Animation.UnitMove(this, animationPath),
-						new Animation.Attack(arena, this, target));
-				animation = appearDisappearAnimationWrap(animation);
-				animation = makeSureAnimationIsVisible(animation, animationPath, target);
-				runAnimationAndWait(animation, future);
-			}
-
-			synchronized void animateAttackRange(Position target, Runnable future) {
-				Animation animation = new Animation.Attack(arena, this, target);
-				animation = appearDisappearAnimationWrap(animation);
-				animation = makeSureAnimationIsVisible(animation, unit().getPos(), target);
-				runAnimationAndWait(animation, future);
-			}
-
 			@Override
 			BufferedImage getUnitImg() {
 				BufferedImage img = super.getUnitImg();
@@ -689,6 +689,14 @@ public class GameArenaPanel extends
 				if (unit().getTeam() == game.getTurn() && !unit().isActive())
 					img = Utils.imgDarken(img, .7f);
 
+				float alpha0 = Math.max(calcBaseAlpha(), alpha);
+				if (alpha0 != 1.0)
+					img = Utils.imgTransparent(img, alpha0);
+
+				return img;
+			}
+
+			float calcBaseAlpha() {
 				final Team playerTeam = Team.Red;
 
 				float baseAlpha;
@@ -700,12 +708,7 @@ public class GameArenaPanel extends
 					baseAlpha = .5f;
 				else
 					baseAlpha = 0f;
-
-				float alpha0 = Math.max(baseAlpha, alpha);
-				if (alpha0 != 1.0)
-					img = Utils.imgTransparent(img, alpha0);
-
-				return img;
+				return Math.min(baseAlpha, baseAlphaMax);
 			}
 
 			@Override
