@@ -122,7 +122,7 @@ interface Animation {
 
 		@Override
 		public Position pos() {
-			return comp.pos;
+			return target;
 		}
 	}
 
