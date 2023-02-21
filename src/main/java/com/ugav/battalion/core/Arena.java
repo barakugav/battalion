@@ -20,8 +20,20 @@ public class Arena {
 
 	public final DataChangeNotifier<EntityChange> onEntityChange = new DataChangeNotifier<>();
 
-	Arena(Level level) {
+	private Arena(Level level) {
 		tiles = Position.Array.fromFunc(level.width(), level.height(), pos -> createTile(level.at(pos), pos));
+	}
+
+	private Arena(Arena arena) {
+		tiles = Position.Array.fromFunc(arena.width(), arena.height(), pos -> Tile.copyOf(arena.at(pos)));
+	}
+
+	static Arena fromLevel(Level level) {
+		return new Arena(level);
+	}
+
+	static Arena copyOf(Arena arena) {
+		return new Arena(arena);
 	}
 
 	public int width() {
@@ -122,7 +134,7 @@ public class Arena {
 		Terrain terrain = desc.terrain;
 		Building building = createBuilding(desc.building, pos);
 		Unit unit = createUnit(desc.unit, pos);
-		return new Tile(terrain, building, unit);
+		return Tile.of(terrain, building, unit);
 	}
 
 	private Building createBuilding(BuildingDesc desc, Position pos) {

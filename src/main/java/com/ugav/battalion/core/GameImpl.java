@@ -29,22 +29,36 @@ class GameImpl implements Game {
 	final DataChangeNotifier<DataEvent> onTurnEnd = new DataChangeNotifier<>();
 	final DataChangeNotifier<GameEnd> onGameEnd = new DataChangeNotifier<>();
 
-	public GameImpl(Level level) {
-		arena = new Arena(level);
+	private GameImpl(Level level) {
+		arena = Arena.fromLevel(level);
 		teamData = new HashMap<>();
 		turnIterator = Utils.iteratorRepeatInfty(Team.realTeams);
 		turn = turnIterator.next();
 		winner = null;
-		for (Position pos : arena.positions()) {
-			Tile tile = arena.at(pos);
-			if (!tile.hasUnit())
-				continue;
-			Unit u = tile.getUnit();
-			u.setPos(pos);
-		}
 
 		for (Team team : Team.realTeams)
 			teamData.put(team, new TeamData(level.getStartingMoney(team)));
+	}
+
+	private GameImpl(Game game) {
+		arena = Arena.copyOf(game.arena());
+		teamData = new HashMap<>();
+		turnIterator = Utils.iteratorRepeatInfty(Team.realTeams);
+		for (;;)
+			if ((turn = turnIterator.next()).equals(game.getTurn()))
+				break;
+		winner = game.getWinner();
+
+		for (Team team : Team.realTeams)
+			teamData.put(team, new TeamData(game.getMoney(team)));
+	}
+
+	public static Game fromLevel(Level level) {
+		return new GameImpl(level);
+	}
+
+	public static Game copyOf(Game game) {
+		return new GameImpl(game);
 	}
 
 	@Override

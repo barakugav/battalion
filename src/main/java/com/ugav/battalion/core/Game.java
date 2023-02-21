@@ -55,7 +55,7 @@ public interface Game {
 	public DataChangeNotifier<GameEnd> onGameEnd();
 
 	public static Game newInstance(Level level) {
-		return new GameImpl(level);
+		return GameImpl.fromLevel(level);
 	}
 
 	public static class EntityChange extends DataEvent {

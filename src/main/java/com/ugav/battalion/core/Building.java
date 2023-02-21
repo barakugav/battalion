@@ -116,6 +116,15 @@ public class Building extends Entity implements IBuilding {
 		return new Building(arena, desc.type, desc.team);
 	}
 
+	public static Building copyOf(Arena arena, Building building) {
+		Building copy = new Building(arena, building.type, building.getTeam());
+		copy.setActive(building.isActive());
+		copy.pos = building.pos;
+		copy.conquerTeam = building.conquerTeam;
+		copy.conquerProgress = building.conquerProgress;
+		return copy;
+	}
+
 	public Position getPos() {
 		return pos;
 	}

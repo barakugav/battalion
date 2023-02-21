@@ -8,10 +8,22 @@ public class Tile {
 	private final Building building;
 	private Unit unit;
 
-	Tile(Terrain terrain, Building building, Unit unit) {
+	private Tile(Terrain terrain, Building building, Unit unit) {
 		this.terrain = Objects.requireNonNull(terrain);
 		this.building = building;
 		this.unit = unit;
+	}
+
+	static Tile of(Terrain terrain, Building building, Unit unit) {
+		return new Tile(terrain, building, unit);
+	}
+
+	static Tile copyOf(Tile tile) {
+		Terrain terrain = tile.getTerrain();
+		Building building = tile.hasBuilding() ? Building.copyOf(tile.getBuilding().getArena(), tile.getBuilding())
+				: null;
+		Unit unit = tile.hasUnit() ? Unit.copyOf(tile.getUnit().arena, tile.getUnit()) : null;
+		return new Tile(terrain, building, unit);
 	}
 
 	public Terrain getTerrain() {

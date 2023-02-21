@@ -42,6 +42,22 @@ public class Unit extends Entity implements IUnit {
 		}
 	}
 
+	static Unit copyOf(Arena arena, Unit unit) {
+		Unit copy;
+		if (!unit.type.transportUnits) {
+			copy = new Unit(arena, unit.type, unit.getTeam(), null);
+		} else {
+			Unit transportedUnit = unit.getTransportedUnit();
+			if (transportedUnit.type.transportUnits || unit.getTeam() != transportedUnit.getTeam())
+				throw new IllegalArgumentException();
+			copy = newTrasportUnit(arena, unit.getType(), copyOf(arena, transportedUnit));
+		}
+		copy.pos = unit.pos;
+		copy.health = unit.health;
+		copy.setActive(unit.isActive());
+		return copy;
+	}
+
 	static Unit newTrasportUnit(Arena arena, Type type, Unit unit) {
 		if (!type.transportUnits || unit.type.category != Unit.Category.Land)
 			throw new IllegalArgumentException();
