@@ -186,12 +186,13 @@ interface Animation {
 		public boolean advanceAnimationStep() {
 			if (cursor >= Duration)
 				throw new NoSuchElementException();
-			comp.alpha = (float) (Duration - cursor) / Duration;
+			comp.alpha = (float) (Duration - cursor - 1) / Duration;
 			return ++cursor < Duration;
 		}
 
 		@Override
 		public void afterLast() {
+			comp.alpha = 0;
 			comp.isAnimated = false;
 		}
 	}
@@ -217,12 +218,13 @@ interface Animation {
 		public boolean advanceAnimationStep() {
 			if (cursor >= Duration)
 				throw new NoSuchElementException();
-			comp.alpha = (float) (Duration - cursor) / Duration;
+			comp.alpha = (float) (Duration - cursor - 1) / Duration;
 			return ++cursor < Duration;
 		}
 
 		@Override
 		public void afterLast() {
+			comp.alpha = 0;
 			arena.entityLayer.comps.remove(this);
 			comp.isAnimated = false;
 		}

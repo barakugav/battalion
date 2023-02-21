@@ -653,9 +653,9 @@ public class GameArenaPanel extends
 
 			private synchronized Animation appearDisappearAnimationWrap(Animation animation) {
 				if (unit().type.invisible) {
-					Animation pre = new Animation.UnitReappear(this);
-					Animation post = new Animation.UnitDisappear(this);
-					animation = Animation.of(pre, animation, post);
+					Animation reappear = new Animation.UnitReappear(this);
+					Animation disappear = new Animation.UnitDisappear(this);
+					animation = Animation.of(reappear, disappear, animation);
 				}
 				return animation;
 			}
