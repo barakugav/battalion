@@ -258,7 +258,7 @@ public class Utils {
 		return l;
 	}
 
-	static <T> List<T> listCollect(Iterable<T> it) {
+	public static <T> List<T> listCollect(Iterable<T> it) {
 		if (it instanceof Collection<?>)
 			return new ArrayList<>((Collection<T>) it);
 		return listCollect(it.iterator());

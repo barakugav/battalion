@@ -58,6 +58,10 @@ public interface Game {
 		return GameImpl.fromLevel(level);
 	}
 
+	public static Game copyOf(Game game) {
+		return GameImpl.copyOf(game);
+	}
+
 	public static class EntityChange extends DataEvent {
 
 		public EntityChange(Entity source) {

@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+import com.ugav.battalion.computer.Player;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level;
 
@@ -20,7 +21,7 @@ class GameWindow extends JPanel implements Clearable {
 	final GameArenaPanel arenaPanel;
 
 	final Game game;
-	private final ComputerPlayer computer = new ComputerPlayer.Random();
+	private final Player computer = new Player.Random();
 	private final DebugPrintsManager debug = new DebugPrintsManager(true); // TODO
 	private final DataChangeRegister register = new DataChangeRegister();
 
