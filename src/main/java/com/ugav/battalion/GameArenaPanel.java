@@ -542,7 +542,7 @@ public class GameArenaPanel extends
 				movePath.clear();
 				movePath.addAll(unit.calcPath(destination));
 			}
-			List<Position> path = game.calcRealPath(unit, movePath);
+			List<Position> path = new ArrayList<>(movePath);
 			debug.println("Move ", unit.getPos(), " ", destination);
 			window.gameAction(() -> game.move(unit, path));
 		}
@@ -559,7 +559,7 @@ public class GameArenaPanel extends
 						movePath.addAll(Objects.requireNonNull(attacker.calcPathForAttack(targetPos)));
 					}
 				}
-				List<Position> path = game.calcRealPath(attacker, movePath);
+				List<Position> path = new ArrayList<>(movePath);
 				window.gameAction(() -> game.moveAndAttack(attacker, path, target));
 				break;
 

@@ -87,16 +87,21 @@ class GameGUIImpl implements Game {
 	@Override
 	public void move(Unit unit, List<Position> path) {
 		checkCorrectThread();
-		List<Position> animationPath = Utils.listOf(unit.getPos(), path);
-		run(() -> gui.arenaPanel.animateUnitMove(unit, animationPath, () -> game.move(unit, path)));
+		List<Position> realPath = game.calcRealPath(unit, path);
+		List<Position> animationPath = Utils.listOf(unit.getPos(), realPath);
+		run(() -> gui.arenaPanel.animateUnitMove(unit, animationPath, () -> game.move(unit, realPath)));
 	}
 
 	@Override
 	public void moveAndAttack(Unit attacker, List<Position> path, Unit target) {
 		checkCorrectThread();
-		List<Position> animationPath = Utils.listOf(attacker.getPos(), path);
-		run(() -> gui.arenaPanel.animateUnitMoveAndAttack(attacker, animationPath, target.getPos(),
-				() -> game.moveAndAttack(attacker, path, target)));
+		List<Position> realPath = game.calcRealPath(attacker, path);
+		List<Position> animationPath = Utils.listOf(attacker.getPos(), realPath);
+		if (path.size() == realPath.size())
+			run(() -> gui.arenaPanel.animateUnitMoveAndAttack(attacker, animationPath, target.getPos(),
+					() -> game.moveAndAttack(attacker, path, target)));
+		else
+			run(() -> gui.arenaPanel.animateUnitMove(attacker, animationPath, () -> game.move(attacker, realPath)));
 	}
 
 	@Override

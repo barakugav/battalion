@@ -197,6 +197,8 @@ class GameImpl implements Game {
 
 		if (!path.isEmpty() && !attacker.isMoveValid(path))
 			throw new IllegalStateException();
+		if (!path.get(path.size() - 1).neighbors().contains(target.getPos()))
+			throw new IllegalStateException();
 		if (!isAttackValid(attacker, target))
 			throw new IllegalStateException();
 
