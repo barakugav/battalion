@@ -19,6 +19,7 @@ import javax.swing.JPanel;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level.UnitDesc;
+import com.ugav.battalion.util.Utils;
 import com.ugav.battalion.core.Unit;
 
 class FactoryMenu extends JDialog {

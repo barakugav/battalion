@@ -6,9 +6,9 @@ import java.util.Objects;
 
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
-import com.ugav.battalion.core.Iter;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.util.Iter;
 
 public class PlayerMiniMaxAlphaBeta implements Player {
 

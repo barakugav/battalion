@@ -5,11 +5,11 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
 
-import com.ugav.battalion.Utils;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.util.Utils;
 
 public interface Player {
 

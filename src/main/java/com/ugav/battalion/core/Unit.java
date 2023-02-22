@@ -454,7 +454,6 @@ public class Unit extends Entity implements IUnit {
 					|| target.getTeam() == getTeam())
 				return false;
 			return canAttack(target);
-
 		});
 	}
 

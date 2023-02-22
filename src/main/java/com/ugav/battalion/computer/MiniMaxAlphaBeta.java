@@ -2,11 +2,10 @@ package com.ugav.battalion.computer;
 
 import java.util.Objects;
 
-import com.ugav.battalion.Utils;
 import com.ugav.battalion.computer.MiniMaxAlphaBeta.IGame;
 import com.ugav.battalion.computer.MiniMaxAlphaBeta.IMove;
 import com.ugav.battalion.computer.MiniMaxAlphaBeta.IPosition;
-import com.ugav.battalion.core.Iter;
+import com.ugav.battalion.util.Iter;
 
 class MiniMaxAlphaBeta<Move extends IMove, Position extends IPosition<Move>, Game extends IGame<Move, Position>> {
 
@@ -27,7 +26,7 @@ class MiniMaxAlphaBeta<Move extends IMove, Position extends IPosition<Move>, Gam
 //		double bestEval = game.evaluate(position, us);
 //		alpha = Math.max(alpha, bestEval);
 
-		for (Move move : Utils.iterable(position.availableMoves())) {
+		for (Move move : position.availableMoves().forEach()) {
 			Position child = game.getMovedPosition(position, move);
 			double val = evaluate(child, 1, alpha, beta, us);
 			if (val > bestEval) {
@@ -44,7 +43,7 @@ class MiniMaxAlphaBeta<Move extends IMove, Position extends IPosition<Move>, Gam
 			return game.evaluate(position, us);
 		if (position.getTurn() == us) {
 			double val = Double.MIN_VALUE;
-			for (Move move : Utils.iterable(position.availableMoves())) {
+			for (Move move : position.availableMoves().forEach()) {
 				Position child = game.getMovedPosition(position, move);
 				val = Math.max(val, evaluate(child, depth + 1, alpha, beta, us));
 				if (val > beta)
@@ -54,7 +53,7 @@ class MiniMaxAlphaBeta<Move extends IMove, Position extends IPosition<Move>, Gam
 			return val;
 		} else {
 			double val = Double.MAX_VALUE;
-			for (Move move : Utils.iterable(position.availableMoves())) {
+			for (Move move : position.availableMoves().forEach()) {
 				Position child = game.getMovedPosition(position, move);
 				val = Math.min(val, evaluate(child, depth + 1, alpha, beta, us));
 				if (val < alpha)

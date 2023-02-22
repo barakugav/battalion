@@ -7,6 +7,8 @@ import com.ugav.battalion.DataChangeNotifier;
 import com.ugav.battalion.core.Game.EntityChange;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
+import com.ugav.battalion.util.ICollection;
+import com.ugav.battalion.util.Iter;
 
 @SuppressWarnings("unchecked")
 public class Arena {
@@ -90,7 +92,7 @@ public class Arena {
 
 		@Override
 		public Iter<Cell> iterator() {
-			return new Cell.Iterator2D(width(), height());
+			return new Cell.Iter2D(width(), height());
 		}
 
 	}

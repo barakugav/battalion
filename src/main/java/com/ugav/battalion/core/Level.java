@@ -51,7 +51,7 @@ public class Level {
 
 		if (width() != other.width() || height() != other.height())
 			return false;
-		for (Cell pos : Cell.Iterator2D.of(width(), height()).forEach())
+		for (Cell pos : Cell.Iter2D.of(width(), height()).forEach())
 			if (!Objects.equals(at(pos), other.at(pos)))
 				return false;
 		return true;
@@ -60,7 +60,7 @@ public class Level {
 	@Override
 	public int hashCode() {
 		int hash = 1;
-		for (Cell pos : Cell.Iterator2D.of(width(), height()).forEach())
+		for (Cell pos : Cell.Iter2D.of(width(), height()).forEach())
 			hash = 31 * hash + Objects.hashCode(at(pos));
 		return hash;
 	}

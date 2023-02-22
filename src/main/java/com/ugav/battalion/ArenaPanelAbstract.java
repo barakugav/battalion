@@ -32,6 +32,7 @@ import com.ugav.battalion.core.IBuilding;
 import com.ugav.battalion.core.IUnit;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Terrain;
+import com.ugav.battalion.util.Utils;
 
 abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.TerrainComp, BuildingCompImpl extends ArenaPanelAbstract.BuildingComp, UnitCompImpl extends ArenaPanelAbstract.UnitComp>
 		extends JLayeredPane implements Clearable {

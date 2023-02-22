@@ -79,7 +79,7 @@ public class LevelBuilder {
 	}
 
 	public Level buildLevel() {
-		for (Cell pos : Cell.Iterator2D.of(width(), height()).forEach()) {
+		for (Cell pos : Cell.Iter2D.of(width(), height()).forEach()) {
 			String errStr = checkValidTile(pos, at(pos));
 			if (errStr != null)
 				throw new IllegalStateException("Can't build level, error at " + pos + ": " + errStr);

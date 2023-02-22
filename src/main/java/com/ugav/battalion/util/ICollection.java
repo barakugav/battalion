@@ -1,4 +1,4 @@
-package com.ugav.battalion.core;
+package com.ugav.battalion.util;
 
 import java.util.AbstractCollection;
 import java.util.Collection;

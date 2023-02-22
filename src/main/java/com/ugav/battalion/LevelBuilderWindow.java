@@ -36,6 +36,7 @@ import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.core.Unit.Category;
 import com.ugav.battalion.core.Unit.Type;
+import com.ugav.battalion.util.Utils;
 
 class LevelBuilderWindow extends JPanel implements Clearable {
 
@@ -489,7 +490,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			void reset() {
 				removeAllArenaComps();
 
-				for (Cell pos : Cell.Iterator2D.of(builder.width(), builder.height()).forEach()) {
+				for (Cell pos : Cell.Iter2D.of(builder.width(), builder.height()).forEach()) {
 					TerrainComp tileComp = new TerrainComp(pos);
 					comps.put(terrainKey(pos), tileComp);
 					tileComp.tileUpdate();

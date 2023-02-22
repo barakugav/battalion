@@ -16,6 +16,7 @@ import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.core.Unit.Type;
+import com.ugav.battalion.util.Utils;
 
 class GameGUIImpl implements Game {
 

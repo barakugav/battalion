@@ -7,6 +7,8 @@ import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import com.ugav.battalion.util.Iter;
+
 public class Cell implements Comparable<Cell> {
 
 	public final short x;
@@ -93,12 +95,12 @@ public class Cell implements Comparable<Cell> {
 		return x1 <= x && x <= x2 && y1 <= y && y <= y2;
 	}
 
-	public static class Iterator2D implements Iter<Cell> {
+	public static class Iter2D implements Iter<Cell> {
 
 		private final int width, height;
 		private int x, y;
 
-		public Iterator2D(int width, int height) {
+		public Iter2D(int width, int height) {
 			if (width < 0 || height < 0)
 				throw new IllegalArgumentException();
 			this.width = width;
@@ -106,8 +108,8 @@ public class Cell implements Comparable<Cell> {
 			x = y = 0;
 		}
 
-		public static Iterator2D of(int width, int height) {
-			return new Iterator2D(width, height);
+		public static Iter2D of(int width, int height) {
+			return new Iter2D(width, height);
 		}
 
 		@Override
@@ -141,7 +143,7 @@ public class Cell implements Comparable<Cell> {
 
 		public static Bitmap fromPredicate(int width, int height, Predicate<Cell> predicate) {
 			boolean[][] map = new boolean[width][height];
-			for (Cell pos : Iterator2D.of(width, height).forEach())
+			for (Cell pos : Iter2D.of(width, height).forEach())
 				map[pos.x][pos.y] = predicate.test(pos);
 			return new Bitmap(map);
 		}
@@ -169,7 +171,7 @@ public class Cell implements Comparable<Cell> {
 
 		@Override
 		public Iterator<Cell> iterator() {
-			return new Iterator2D(width(), height()).filter(this);
+			return new Iter2D(width(), height()).filter(this);
 		}
 
 		public Bitmap not() {
@@ -214,7 +216,7 @@ public class Cell implements Comparable<Cell> {
 
 		public static <T> Array<T> fromFunc(int width, int height, Function<Cell, T> func) {
 			Array<T> arr = new Array<>(width, height);
-			for (Cell pos : Iterator2D.of(width, height).forEach())
+			for (Cell pos : Iter2D.of(width, height).forEach())
 				arr.set(pos, func.apply(pos));
 			return arr;
 		}
@@ -247,7 +249,7 @@ public class Cell implements Comparable<Cell> {
 
 		public Object[][] toArray() {
 			Object[][] arr = new Object[width()][height()];
-			for (Cell pos : Iterator2D.of(width(), height()).forEach())
+			for (Cell pos : Iter2D.of(width(), height()).forEach())
 				arr[pos.x][pos.y] = at(pos);
 			return arr;
 		}

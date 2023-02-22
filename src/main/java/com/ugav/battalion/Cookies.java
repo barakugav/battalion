@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.ugav.battalion.util.Utils;
+
 class Cookies {
 
 	static final String LEVEL_DISK_LAST_DIR = "LEVEL_DISK_LAST_DIR";

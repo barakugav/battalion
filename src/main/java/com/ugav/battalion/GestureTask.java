@@ -6,6 +6,7 @@ import java.util.function.IntConsumer;
 
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.util.Utils;
 
 class GestureTask implements TickTask {
 

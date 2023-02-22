@@ -11,9 +11,9 @@ import java.util.Set;
 
 import com.ugav.battalion.DataChangeNotifier;
 import com.ugav.battalion.DataEvent;
-import com.ugav.battalion.Utils;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Unit.Weapon;
+import com.ugav.battalion.util.Utils;
 
 class GameImpl implements Game {
 

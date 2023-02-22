@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
+import com.ugav.battalion.util.Utils;
 
 class Position implements Comparable<Position> {
 
