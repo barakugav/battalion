@@ -18,11 +18,10 @@ public class Tile {
 		return new Tile(terrain, building, unit);
 	}
 
-	static Tile copyOf(Tile tile) {
+	static Tile copyOf(Arena arena, Tile tile) {
 		Terrain terrain = tile.getTerrain();
-		Building building = tile.hasBuilding() ? Building.copyOf(tile.getBuilding().getArena(), tile.getBuilding())
-				: null;
-		Unit unit = tile.hasUnit() ? Unit.copyOf(tile.getUnit().arena, tile.getUnit()) : null;
+		Building building = tile.hasBuilding() ? Building.copyOf(arena, tile.getBuilding()) : null;
+		Unit unit = tile.hasUnit() ? Unit.copyOf(arena, tile.getUnit()) : null;
 		return new Tile(terrain, building, unit);
 	}
 

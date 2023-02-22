@@ -18,7 +18,7 @@ public class Arena {
 	}
 
 	private Arena(Arena arena) {
-		tiles = Position.Array.fromFunc(arena.width(), arena.height(), pos -> Tile.copyOf(arena.at(pos)));
+		tiles = Position.Array.fromFunc(arena.width(), arena.height(), pos -> Tile.copyOf(this, arena.at(pos)));
 	}
 
 	static Arena fromLevel(Level level) {
