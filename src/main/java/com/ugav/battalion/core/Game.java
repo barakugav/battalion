@@ -14,7 +14,11 @@ public interface Game {
 
 	public int height();
 
-	public Tile getTile(Cell pos);
+	public Terrain getTerrain(Cell pos);
+
+	public Unit getUnit(Cell pos);
+
+	public Building getBuilding(Cell pos);
 
 	public Team getTurn();
 

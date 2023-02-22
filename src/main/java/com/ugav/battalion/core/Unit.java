@@ -114,7 +114,7 @@ public class Unit extends Entity implements IUnit {
 				return false;
 			prev = p;
 		}
-		return !arena.at(path.get(path.size() - 1)).hasUnit();
+		return arena.unit(path.get(path.size() - 1)) == null;
 	}
 
 	boolean isAttackValid(Unit target) {
@@ -292,7 +292,7 @@ public class Unit extends Entity implements IUnit {
 
 	private Cell.Bitmap getReachableMap(boolean invisiableEnable) {
 		return getPassableMap(invisiableEnable)
-				.and(p -> !arena.at(p).hasUnit() || (invisiableEnable && !arena.isUnitVisible(p, getTeam())));
+				.and(p -> arena.unit(p) == null || (invisiableEnable && !arena.isUnitVisible(p, getTeam())));
 	}
 
 	public Cell.Bitmap getPassableMap() {
@@ -315,11 +315,12 @@ public class Unit extends Entity implements IUnit {
 		int maxMove = type.moveLimit;
 		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
 			for (Cell p : arena.positions()) {
-				Tile tile = arena.at(p);
-				if (distanceMap[p.x][p.y] >= 0 || !type.canStandOn(tile.getTerrain()))
+				Terrain terrain = arena.terrain(p);
+				if (distanceMap[p.x][p.y] >= 0 || !type.canStandOn(terrain))
 					continue;
-				if (tile.hasUnit() && !(invisiableEnable && !arena.isUnitVisible(p, getTeam()))
-						&& tile.getUnit().getTeam() != getTeam())
+				Unit unit = arena.unit(p);
+				if (unit != null && !(invisiableEnable && !arena.isUnitVisible(p, getTeam()))
+						&& unit.getTeam() != getTeam())
 					continue;
 
 				for (Cell neighbor : p.neighbors()) {
@@ -386,13 +387,13 @@ public class Unit extends Entity implements IUnit {
 
 		boolean[][] attackableMap = new boolean[arena.width()][arena.height()];
 		for (Cell p : reachableMap) {
-			for (Cell neighbor : p.neighbors()) {
-				if (!arena.isValidPos(neighbor))
+			for (Cell n : p.neighbors()) {
+				if (!arena.isValidPos(n))
 					continue;
-				if (!arena.at(neighbor).hasUnit() || (invisiableEnable && !arena.isUnitVisible(neighbor, getTeam())))
+				Unit neighbor = arena.unit(n);
+				if (neighbor == null || (invisiableEnable && !arena.isUnitVisible(n, getTeam())))
 					continue;
-				Unit other = arena.at(neighbor).getUnit();
-				attackableMap[neighbor.x][neighbor.y] = other.getTeam() != getTeam() && canAttack(other);
+				attackableMap[n.x][n.y] = neighbor.getTeam() != getTeam() && canAttack(neighbor);
 			}
 		}
 
@@ -402,12 +403,13 @@ public class Unit extends Entity implements IUnit {
 	private Cell.Bitmap getAttackableMapLongRange(boolean invisiableEnable) {
 		return Cell.Bitmap.fromPredicate(arena.width(), arena.height(), p -> {
 			int distance = getPos().distNorm1(p);
-			if (!arena.at(p).hasUnit() || (invisiableEnable && !arena.isUnitVisible(p, getTeam())))
+			Unit target = arena.unit(p);
+			if (target == null || (invisiableEnable && !arena.isUnitVisible(p, getTeam())))
 				return false;
-			Unit other = arena.at(p).getUnit();
-			if (!(type.weapon.minRange <= distance && distance <= type.weapon.maxRange) || other.getTeam() == getTeam())
+			if (!(type.weapon.minRange <= distance && distance <= type.weapon.maxRange)
+					|| target.getTeam() == getTeam())
 				return false;
-			return canAttack(other);
+			return canAttack(target);
 
 		});
 	}

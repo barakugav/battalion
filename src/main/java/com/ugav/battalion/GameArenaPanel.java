@@ -28,7 +28,6 @@ import com.ugav.battalion.core.Entity;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
-import com.ugav.battalion.core.Tile;
 import com.ugav.battalion.core.Unit;
 
 public class GameArenaPanel extends
@@ -90,7 +89,7 @@ public class GameArenaPanel extends
 	}
 
 	private boolean isUnitSelected() {
-		return selection != null && game.getTile(selection).hasUnit();
+		return selection != null && game.getUnit(selection) != null;
 	}
 
 	private void tileClicked(Cell pos) {
@@ -107,21 +106,19 @@ public class GameArenaPanel extends
 	}
 
 	private void trySelect(Cell pos) {
-		Tile tile = game.getTile(pos);
-
-		if (tile.hasUnit()) {
-			onEntityClick.notify(new EntityClick(this, pos, tile.getUnit()));
-			if (!tile.getUnit().isActive())
+		Unit unit = game.getUnit(pos);
+		Building building = game.getBuilding(pos);
+		if (unit != null) {
+			onEntityClick.notify(new EntityClick(this, pos, unit));
+			if (!unit.isActive())
+				return;
+			setSelection(pos);
+		} else if (building != null) {
+			onEntityClick.notify(new EntityClick(this, pos, building));
+			if (!building.isActive())
 				return;
 			setSelection(pos);
 
-		} else if (tile.hasBuilding()) {
-			onEntityClick.notify(new EntityClick(this, pos, tile.getBuilding()));
-			if (!tile.getBuilding().isActive())
-				return;
-			setSelection(pos);
-
-			Building building = tile.getBuilding();
 			if (building.type.canBuildUnits) {
 				FactoryMenu factoryMenu = new FactoryMenu(globals.frame, game, building);
 				DataListener<UnitBuy> unitButListener = e -> {
@@ -148,14 +145,15 @@ public class GameArenaPanel extends
 				});
 				factoryMenu.setVisible(true);
 			}
+
 		} else {
-			onEntityClick.notify(new EntityClick(this, pos, tile.getTerrain()));
+			onEntityClick.notify(new EntityClick(this, pos, game.getTerrain(pos)));
 		}
 	}
 
 	private void unitSecondSelection(Cell target) {
-		Tile targetTile = game.getTile(target);
-		Unit selectedUnit = game.getTile(selection).getUnit();
+		Unit targetUnit = game.getUnit(target);
+		Unit selectedUnit = game.getUnit(selection);
 
 		if (selection.equals(target)) {
 			/* double click */
@@ -166,8 +164,8 @@ public class GameArenaPanel extends
 				entityLayer().unitMove(selectedUnit, target);
 			clearSelection();
 
-		} else if (game.isAttackValid(selectedUnit, targetTile.getUnit())) {
-			entityLayer().unitAttack(selectedUnit, targetTile.getUnit());
+		} else if (game.isAttackValid(selectedUnit, targetUnit)) {
+			entityLayer().unitAttack(selectedUnit, targetUnit);
 			clearSelection();
 
 		} else {
@@ -221,11 +219,12 @@ public class GameArenaPanel extends
 	Entity getSelectedEntity() {
 		if (selection == null)
 			return null;
-		Tile tile = game.arena().at(selection);
-		if (tile.hasUnit())
-			return tile.getUnit();
-		if (tile.hasBuilding())
-			return tile.getBuilding();
+		Unit unit = game.getUnit(selection);
+		if (unit != null)
+			return unit;
+		Building building = game.getBuilding(selection);
+		if (building != null)
+			return building;
 		throw new IllegalStateException();
 	}
 
@@ -421,7 +420,7 @@ public class GameArenaPanel extends
 		}
 
 		private void updateAttackMovePath(Cell targetPos) {
-			Unit attacker = game.getTile(selection).getUnit();
+			Unit attacker = game.getUnit(selection);
 			switch (attacker.type.weapon.type) {
 			case LongRange:
 				movePath.clear();
@@ -429,8 +428,8 @@ public class GameArenaPanel extends
 
 			case CloseRange:
 				Cell last = movePath.isEmpty() ? attacker.getPos() : movePath.get(movePath.size() - 1);
-				if (targetPos.neighbors().contains(last) && (!game.arena().isUnitVisible(last, game.getTurn())
-						|| game.getTile(last).getUnit() == attacker))
+				if (targetPos.neighbors().contains(last)
+						&& (!game.arena().isUnitVisible(last, game.getTurn()) || game.getUnit(last) == attacker))
 					break;
 				movePath.clear();
 				movePath.addAll(Objects.requireNonNull(attacker.calcPathForAttack(targetPos)));
@@ -446,7 +445,7 @@ public class GameArenaPanel extends
 		}
 
 		private void updateMovePath(Cell targetPos) {
-			Unit unit = game.getTile(selection).getUnit();
+			Unit unit = game.getUnit(selection);
 
 			/* Update move path from unit position to hovered position */
 			Cell last = movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1);
@@ -579,16 +578,17 @@ public class GameArenaPanel extends
 		void reset() {
 			removeAllArenaComps();
 			for (Cell pos : game.arena().positions()) {
-				TerrainComp tileComp = new TerrainComp(GameArenaPanel.this, pos);
-				Tile tile = game.getTile(pos);
-				comps.put("Terrain " + pos, tileComp);
-				if (tile.hasUnit())
-					addUnitComp(tile.getUnit());
+				TerrainComp terrainComp = new TerrainComp(GameArenaPanel.this, pos);
+				comps.put("Terrain " + pos, terrainComp);
 
-				if (tile.hasBuilding()) {
-					Building building = tile.getBuilding();
+				Unit unit = game.getUnit(pos);
+				if (unit != null)
+					addUnitComp(unit);
+
+				Building building = game.getBuilding(pos);
+				if (building != null)
 					comps.put(building, new BuildingComp(pos, building));
-				}
+
 			}
 		}
 
@@ -782,7 +782,7 @@ public class GameArenaPanel extends
 
 	@Override
 	Terrain getTerrain(Cell pos) {
-		return game.getTile(pos).getTerrain();
+		return game.getTerrain(pos);
 	}
 
 }

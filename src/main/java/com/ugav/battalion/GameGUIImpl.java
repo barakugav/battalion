@@ -13,7 +13,7 @@ import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Team;
-import com.ugav.battalion.core.Tile;
+import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.core.Unit.Type;
 
@@ -43,8 +43,18 @@ class GameGUIImpl implements Game {
 	}
 
 	@Override
-	public Tile getTile(Cell pos) {
-		return game.getTile(pos);
+	public Terrain getTerrain(Cell pos) {
+		return game.getTerrain(pos);
+	}
+
+	@Override
+	public Unit getUnit(Cell pos) {
+		return game.getUnit(pos);
+	}
+
+	@Override
+	public Building getBuilding(Cell pos) {
+		return game.getBuilding(pos);
 	}
 
 	@Override

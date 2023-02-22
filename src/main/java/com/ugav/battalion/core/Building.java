@@ -176,8 +176,7 @@ public class Building extends Entity implements IBuilding {
 				.hasNext();
 		boolean canBuildWaterUnits = arena.buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildWater)
 				.hasNext()
-				&& EnumSet.of(Terrain.Category.Water, Terrain.Category.Shore)
-						.contains(arena.at(pos).getTerrain().category);
+				&& EnumSet.of(Terrain.Category.Water, Terrain.Category.Shore).contains(arena.terrain(pos).category);
 		boolean canBuildAirUnits = arena.buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildAir)
 				.hasNext();
 

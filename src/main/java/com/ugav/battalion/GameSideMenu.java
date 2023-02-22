@@ -30,7 +30,6 @@ import com.ugav.battalion.core.Direction;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
-import com.ugav.battalion.core.Tile;
 import com.ugav.battalion.core.Unit;
 
 public class GameSideMenu extends JPanel implements Clearable {
@@ -476,20 +475,16 @@ public class GameSideMenu extends JPanel implements Clearable {
 		@Override
 		public void paintComponent(Graphics g) {
 			for (Cell pos : arena.positions()) {
-				Tile tile = arena.at(pos);
-
-				Terrain terrain = tile.getTerrain();
+				Terrain terrain = arena.terrain(pos);
 				drawImg(g, pos, Images.getMinimapTerrain(terrain.category));
 
-				if (tile.hasBuilding()) {
-					Building building = tile.getBuilding();
+				Building building = arena.building(pos);
+				if (building != null)
 					drawImg(g, pos, Images.getMinimapBuilding(building.getTeam()));
-				}
 
-				if (tile.hasUnit()) {
-					Unit unit = tile.getUnit();
+				Unit unit = arena.unit(pos);
+				if (unit != null)
 					drawImg(g, pos, Images.getMinimapUnit(unit.getTeam()));
-				}
 			}
 
 			Position currentMapPos = window.arenaPanel.getCurrentMapOrigin();

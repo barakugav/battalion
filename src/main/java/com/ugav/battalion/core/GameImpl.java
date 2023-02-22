@@ -77,8 +77,18 @@ class GameImpl implements Game {
 	}
 
 	@Override
-	public Tile getTile(Cell pos) {
-		return arena.at(pos);
+	public Terrain getTerrain(Cell pos) {
+		return arena.terrain(pos);
+	}
+
+	@Override
+	public Unit getUnit(Cell pos) {
+		return arena.unit(pos);
+	}
+
+	@Override
+	public Building getBuilding(Cell pos) {
+		return arena.building(pos);
 	}
 
 	@Override
@@ -97,41 +107,38 @@ class GameImpl implements Game {
 	}
 
 	private void turnBegin() {
-		for (Tile tile : arena.tiles()) {
-			if (tile.hasBuilding()) {
-				Building building = tile.getBuilding();
-				building.setActive(building.canBeActive() && building.getTeam() == turn);
-			}
-			if (tile.hasUnit()) {
-				Unit unit = tile.getUnit();
-				unit.setActive(unit.getTeam() == turn);
-			}
-		}
+		for (Building building : arena.buildings().forEach())
+			building.setActive(building.canBeActive() && building.getTeam() == turn);
+
+		for (Unit unit : arena.units().forEach())
+			unit.setActive(unit.getTeam() == turn);
 	}
 
 	@Override
 	public void turnEnd() {
 		Set<Team> moneyChanged = new HashSet<>();
-		for (Tile tile : arena.tiles()) {
-			if (tile.hasBuilding()) {
-				Building building = tile.getBuilding();
-				int gain = building.getMoneyGain();
-				if (gain != 0 && teamData.containsKey(building.getTeam())) {
-					teamData.get(building.getTeam()).money += gain;
-					moneyChanged.add(building.getTeam());
-				}
+		for (Building building : arena.buildings().forEach()) {
+			int gain = building.getMoneyGain();
+			if (gain != 0 && teamData.containsKey(building.getTeam())) {
+				teamData.get(building.getTeam()).money += gain;
+				moneyChanged.add(building.getTeam());
 			}
 		}
+
 		for (Team team : moneyChanged)
 			onMoneyChange.notify(new MoneyChange(this, team, teamData.get(team).money));
 
 		turn = turnIterator.next();
 
 		/* Conquer buildings */
-		for (Tile tile : arena.tiles())
-			if (tile.hasBuilding() && tile.hasUnit() && tile.getUnit().type.canConquer
-					&& tile.getUnit().getTeam() == turn)
-				tile.getBuilding().tryConquer(tile.getUnit().getTeam());
+		for (Cell cell : arena.positions()) {
+			Building building = arena.building(cell);
+			Unit unit = arena.unit(cell);
+			if (building == null || unit == null)
+				continue;
+			if (unit.type.canConquer && unit.getTeam() == turn)
+				building.tryConquer(unit.getTeam());
+		}
 
 		turnBegin();
 
@@ -169,8 +176,8 @@ class GameImpl implements Game {
 	private void move0(Unit unit, List<Cell> path) {
 		Cell source = unit.getPos();
 		Cell destination = path.get(path.size() - 1);
-		arena.at(source).removeUnit();
-		arena.at(destination).setUnit(unit);
+		arena.removeUnit(source);
+		arena.setUnit(destination, unit);
 		unit.setPos(destination);
 	}
 
@@ -228,7 +235,7 @@ class GameImpl implements Game {
 	private void doDamage(Unit attacker, Unit target) {
 		int damage = attacker.getDamge(target);
 		if (target.getHealth() <= damage) {
-			arena.at(target.getPos()).removeUnit();
+			arena.removeUnit(target.getPos());
 			target.setHealth(0);
 			onUnitRemove.notify(new UnitRemove(this, target));
 
@@ -243,7 +250,7 @@ class GameImpl implements Game {
 	@Override
 	public Unit buildUnit(Building factory, Unit.Type unitType) {
 		Cell pos = factory.getPos();
-		if (!factory.type.canBuildUnits || !factory.isActive() || arena.at(pos).hasUnit())
+		if (!factory.type.canBuildUnits || !factory.isActive() || arena.unit(pos) != null)
 			throw new IllegalStateException();
 
 		Map<Unit.Type, Building.UnitSale> sales = factory.getAvailableUnits();
@@ -256,7 +263,7 @@ class GameImpl implements Game {
 		data.money -= sale.price;
 		Unit unit = Unit.valueOf(arena, UnitDesc.of(unitType, team));
 		unit.setPos(pos);
-		arena.at(pos).setUnit(unit);
+		arena.setUnit(pos, unit);
 
 		onMoneyChange.notify(new MoneyChange(this, team, data.money));
 		onUnitAdd.notify(new UnitAdd(this, unit));
@@ -270,15 +277,15 @@ class GameImpl implements Game {
 
 		if (!transportedUnit.isActive() || transportedUnit.type.category != Unit.Category.Land)
 			throw new IllegalArgumentException();
-		if (!transportType.transportUnits || !transportType.canStandOn(arena.at(pos).getTerrain()))
+		if (!transportType.transportUnits || !transportType.canStandOn(arena.terrain(pos)))
 			throw new IllegalArgumentException();
 
 		transportedUnit.setActive(false);
-		arena.at(pos).removeUnit();
+		arena.removeUnit(pos);
 		onUnitRemove.notify(new UnitRemove(this, transportedUnit));
 
 		Unit newUnit = Unit.newTrasportUnit(arena, transportType, transportedUnit);
-		arena.at(pos).setUnit(newUnit);
+		arena.setUnit(pos, newUnit);
 		newUnit.setPos(pos);
 		newUnit.setActive(false);
 
@@ -296,14 +303,14 @@ class GameImpl implements Game {
 		if (!trasportedUnit.isActive() || !trasportedUnit.type.transportUnits)
 			throw new IllegalArgumentException();
 		Unit transportedUnit = trasportedUnit.getTransportedUnit();
-		if (!transportedUnit.type.canStandOn(arena.at(pos).getTerrain()))
+		if (!transportedUnit.type.canStandOn(arena.terrain(pos)))
 			throw new IllegalArgumentException();
 
 		trasportedUnit.setActive(false);
-		arena.at(pos).removeUnit();
+		arena.removeUnit(pos);
 		onUnitRemove.notify(new UnitRemove(this, trasportedUnit));
 
-		arena.at(pos).setUnit(transportedUnit);
+		arena.setUnit(pos, transportedUnit);
 		transportedUnit.setPos(pos);
 		transportedUnit.setActive(true);
 
