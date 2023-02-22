@@ -291,11 +291,8 @@ public class Unit extends Entity implements IUnit {
 	}
 
 	private Position.Bitmap getReachableMap(boolean invisiableEnable) {
-		return getPassableMap(invisiableEnable).and(p -> {
-			if (!arena.at(p).hasUnit() || (invisiableEnable && !arena.isUnitVisible(p, getTeam())))
-				return true;
-			return arena.at(p).getUnit() == this;
-		});
+		return getPassableMap(invisiableEnable)
+				.and(p -> !arena.at(p).hasUnit() || (invisiableEnable && !arena.isUnitVisible(p, getTeam())));
 	}
 
 	public Position.Bitmap getPassableMap() {
