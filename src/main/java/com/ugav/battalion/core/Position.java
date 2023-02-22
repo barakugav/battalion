@@ -1,7 +1,6 @@
 package com.ugav.battalion.core;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -119,7 +118,7 @@ public class Position implements Comparable<Position> {
 
 	};
 
-	public static class Iterator2D implements Iterator<Position> {
+	public static class Iterator2D implements Iter<Position> {
 
 		private final int width, height;
 		private int x, y;
@@ -184,7 +183,7 @@ public class Position implements Comparable<Position> {
 
 		public static Bitmap fromPredicate(int width, int height, Predicate<Position> predicate) {
 			boolean[][] map = new boolean[width][height];
-			for (Position pos : Utils.iterable(new Iterator2D(width, height)))
+			for (Position pos : Iterator2D.of(width, height).forEach())
 				map[pos.xInt()][pos.yInt()] = predicate.test(pos);
 			return new Bitmap(map);
 		}
@@ -213,9 +212,7 @@ public class Position implements Comparable<Position> {
 
 		@Override
 		public Iterator<Position> iterator() {
-			if (width() == 0 || height() == 0)
-				return Collections.emptyIterator();
-			return Utils.iteratorIf(new Iterator2D(width(), height()), this);
+			return new Iterator2D(width(), height()).filter(this);
 		}
 
 		public Bitmap not() {
@@ -260,7 +257,7 @@ public class Position implements Comparable<Position> {
 
 		public static <T> Array<T> fromFunc(int width, int height, Function<Position, T> func) {
 			Array<T> arr = new Array<>(width, height);
-			for (Position pos : Utils.iterable(new Position.Iterator2D(width, height)))
+			for (Position pos : Iterator2D.of(width, height).forEach())
 				arr.set(pos, func.apply(pos));
 			return arr;
 		}
@@ -293,7 +290,7 @@ public class Position implements Comparable<Position> {
 
 		public Object[][] toArray() {
 			Object[][] arr = new Object[width()][height()];
-			for (Position pos : Utils.iterable(new Position.Iterator2D(width(), height())))
+			for (Position pos : Iterator2D.of(width(), height()).forEach())
 				arr[pos.xInt()][pos.yInt()] = at(pos);
 			return arr;
 		}

@@ -1,7 +1,5 @@
 package com.ugav.battalion.computer;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -27,11 +25,11 @@ public interface Player {
 			Set<Unit> failedToMove = Collections.newSetFromMap(new IdentityHashMap<>());
 
 			for (;;) {
-				Collection<Unit> units = game.arena().units(me);
-				units.removeIf(u -> !u.isActive() || failedToMove.contains(u));
+				List<Unit> units = game.arena().units(me).filter(u -> u.isActive() && !failedToMove.contains(u))
+						.collectList();
 				if (units.isEmpty())
 					break;
-				Unit unit = new ArrayList<>(units).get(rand.nextInt(units.size()));
+				Unit unit = units.get(rand.nextInt(units.size()));
 				List<Position> reachable = Utils.listCollect(unit.getReachableMap());
 				reachable.remove(unit.getPos());
 				if (reachable.isEmpty()) {

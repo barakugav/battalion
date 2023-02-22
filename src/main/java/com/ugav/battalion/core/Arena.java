@@ -1,12 +1,5 @@
 package com.ugav.battalion.core;
 
-import java.util.AbstractCollection;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.function.Predicate;
-
 import com.ugav.battalion.DataChangeNotifier;
 import com.ugav.battalion.Utils;
 import com.ugav.battalion.core.Game.EntityChange;
@@ -52,82 +45,56 @@ public class Arena {
 		return pos.isInRect(width() - 1, height() - 1);
 	}
 
-	public Collection<Position> positions() {
-		return new AbstractCollection<>() {
+	private class Positions extends ICollection.Abstract<Position> {
 
-			@Override
-			public int size() {
-				return width() * height();
-			}
+		@Override
+		public int size() {
+			return width() * height();
+		}
 
-			@Override
-			public Iterator<Position> iterator() {
-				return new Position.Iterator2D(width(), height());
-			}
+		@Override
+		public Iter<Position> iterator() {
+			return new Position.Iterator2D(width(), height());
+		}
 
-		};
 	}
 
-	public Collection<Tile> tiles() {
-		return new AbstractCollection<>() {
+	private final Positions positionsView = new Positions();
 
-			@Override
-			public int size() {
-				return width() * height();
-			}
-
-			@Override
-			public Iterator<Tile> iterator() {
-				return new Iterator<>() {
-
-					Iterator<Position> posIt = positions().iterator();
-
-					@Override
-					public boolean hasNext() {
-						return posIt.hasNext();
-					}
-
-					@Override
-					public Tile next() {
-						return at(posIt.next());
-					}
-
-				};
-			}
-
-		};
+	public ICollection<Position> positions() {
+		return positionsView;
 	}
 
-	public Collection<Building> buildings() {
-		return buildings(b -> true);
+	private class Tiles extends ICollection.Abstract<Tile> {
+
+		@Override
+		public int size() {
+			return width() * height();
+		}
+
+		@Override
+		public Iter<Tile> iterator() {
+			return positions().iterator().map(p -> at(p));
+		}
+
 	}
 
-	public Collection<Building> buildings(Team team, Predicate<Building> filter) {
-		return buildings(filter.and(b -> team == b.getTeam()));
+	private final Tiles tilesView = new Tiles();
+
+	public ICollection<Tile> tiles() {
+		return tilesView;
 	}
 
-	public Collection<Building> buildings(Predicate<Building> filter) {
-		List<Building> buildings = new ArrayList<>();
-		for (Tile tile : tiles())
-			if (tile.hasBuilding() && filter.test(tile.getBuilding()))
-				buildings.add(tile.getBuilding());
-		return buildings;
+	public Iter<Building> buildings() {
+		return tiles().iterator().filter(Tile::hasBuilding).map(Tile::getBuilding);
 	}
 
-	public Collection<Unit> units() {
-		return units(u -> true);
+	public Iter<Unit> units(Team team) {
+		return units().filter(u -> team == u.getTeam());
 	}
 
-	public Collection<Unit> units(Team team) {
-		return units(u -> team == u.getTeam());
-	}
-
-	public Collection<Unit> units(Predicate<? super Unit> filter) {
-		List<Unit> units = new ArrayList<>();
-		for (Tile tile : tiles())
-			if (tile.hasUnit() && filter.test(tile.getUnit()))
-				units.add(tile.getUnit());
-		return units;
+	public Iter<Unit> units() {
+		return tiles().iterator().filter(Tile::hasUnit).map(Tile::getUnit);
 	}
 
 	private Tile createTile(TileDesc desc, Position pos) {

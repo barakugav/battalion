@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import com.ugav.battalion.Utils;
 import com.ugav.battalion.core.Unit.Type;
 
 public class Level {
@@ -52,7 +51,7 @@ public class Level {
 
 		if (width() != other.width() || height() != other.height())
 			return false;
-		for (Position pos : Utils.iterable(new Position.Iterator2D(width(), height())))
+		for (Position pos : Position.Iterator2D.of(width(), height()).forEach())
 			if (!Objects.equals(at(pos), other.at(pos)))
 				return false;
 		return true;
@@ -61,7 +60,7 @@ public class Level {
 	@Override
 	public int hashCode() {
 		int hash = 1;
-		for (Position pos : Utils.iterable(new Position.Iterator2D(width(), height())))
+		for (Position pos : Position.Iterator2D.of(width(), height()).forEach())
 			hash = 31 * hash + Objects.hashCode(at(pos));
 		return hash;
 	}

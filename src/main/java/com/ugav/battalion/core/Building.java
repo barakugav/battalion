@@ -171,10 +171,15 @@ public class Building extends Entity implements IBuilding {
 		Map<Unit.Type, UnitSale> sales = new HashMap<>();
 		Consumer<UnitSale> addSale = sale -> sales.put(sale.type, sale);
 
-		boolean canBuildLandUnits = !arena.buildings(getTeam(), b -> b.type.allowUnitBuildLand).isEmpty();
-		boolean canBuildWaterUnits = !arena.buildings(getTeam(), b -> b.type.allowUnitBuildWater).isEmpty() && EnumSet
-				.of(Terrain.Category.Water, Terrain.Category.Shore).contains(arena.at(pos).getTerrain().category);
-		boolean canBuildAirUnits = !arena.buildings(getTeam(), b -> b.type.allowUnitBuildAir).isEmpty();
+		Team team = getTeam();
+		boolean canBuildLandUnits = arena.buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildLand)
+				.hasNext();
+		boolean canBuildWaterUnits = arena.buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildWater)
+				.hasNext()
+				&& EnumSet.of(Terrain.Category.Water, Terrain.Category.Shore)
+						.contains(arena.at(pos).getTerrain().category);
+		boolean canBuildAirUnits = arena.buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildAir)
+				.hasNext();
 
 		if (canBuildLandUnits) {
 			addSale.accept(UnitSale.of(Unit.Type.Soldier, 75));

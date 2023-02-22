@@ -10,7 +10,6 @@ import java.util.function.Function;
 
 import com.ugav.battalion.DataChangeNotifier;
 import com.ugav.battalion.DataEvent;
-import com.ugav.battalion.Utils;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.TileDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
@@ -81,7 +80,7 @@ public class LevelBuilder {
 	}
 
 	public Level buildLevel() {
-		for (Position pos : Utils.iterable(new Position.Iterator2D(width(), height()))) {
+		for (Position pos : Position.Iterator2D.of(width(), height()).forEach()) {
 			String errStr = checkValidTile(pos, at(pos));
 			if (errStr != null)
 				throw new IllegalStateException("Can't build level, error at " + pos + ": " + errStr);

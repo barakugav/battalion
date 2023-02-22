@@ -141,7 +141,7 @@ class GameImpl implements Game {
 	private Set<Team> getAliveTeams() {
 		Set<Team> alive = EnumSet.noneOf(Team.class);
 		for (Team team : Team.realTeams)
-			if (!arena.units(team).isEmpty())
+			if (arena.units(team).hasNext())
 				alive.add(team);
 		return alive;
 	}

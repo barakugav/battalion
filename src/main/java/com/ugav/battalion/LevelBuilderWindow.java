@@ -489,7 +489,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			void reset() {
 				removeAllArenaComps();
 
-				for (Position pos : Utils.iterable(new Position.Iterator2D(builder.width(), builder.height()))) {
+				for (Position pos : Position.Iterator2D.of(builder.width(), builder.height()).forEach()) {
 					TerrainComp tileComp = new TerrainComp(pos);
 					comps.put(terrainKey(pos), tileComp);
 					tileComp.tileUpdate();

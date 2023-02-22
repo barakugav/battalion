@@ -23,8 +23,12 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
+
+import com.ugav.battalion.core.Iter;
 
 public class Utils {
 
@@ -46,11 +50,36 @@ public class Utils {
 		};
 	}
 
-	public static <E> Iterator<E> iteratorIf(Iterator<E> it, Predicate<? super E> condition) {
+	public static <T, R> Iter<R> iteratorMap(Iterator<T> it, Function<? super T, ? extends R> map) {
+		return new IteratorMap<>(it, map);
+	}
+
+	private static class IteratorMap<T, R> implements Iter<R> {
+		private final Iterator<T> it;
+		private final Function<? super T, ? extends R> map;
+
+		IteratorMap(Iterator<T> it, Function<? super T, ? extends R> map) {
+			this.it = Objects.requireNonNull(it);
+			this.map = Objects.requireNonNull(map);
+		}
+
+		@Override
+		public boolean hasNext() {
+			return it.hasNext();
+		}
+
+		@Override
+		public R next() {
+			return map.apply(it.next());
+		}
+
+	}
+
+	public static <E> Iter<E> iteratorIf(Iterator<E> it, Predicate<? super E> condition) {
 		return new IteratorIf<>(it, condition);
 	}
 
-	private static class IteratorIf<E> implements Iterator<E> {
+	private static class IteratorIf<E> implements Iter<E> {
 
 		private final Iterator<E> it;
 		private final Predicate<? super E> condition;

@@ -4,9 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -26,6 +23,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.Iter;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.TileDesc;
@@ -76,7 +74,7 @@ class LevelSerializerXML implements LevelSerializer {
 			levelElm.appendChild(teamsElm);
 
 			Element tilesElm = dom.createElement("tiles");
-			for (Position pos : Utils.iterable(new Position.Iterator2D(level.width(), level.height()))) {
+			for (Position pos : Position.Iterator2D.of(level.width(), level.height()).forEach()) {
 				TileDesc tile = level.at(pos);
 				Element tileElm = dom.createElement("tile");
 				addValueChild(dom, tileElm, "x", Integer.toString(pos.xInt()));
@@ -130,8 +128,8 @@ class LevelSerializerXML implements LevelSerializer {
 		}
 	}
 
-	private static Iterator<Node> childrenNodes(Node parent) {
-		return new Iterator<>() {
+	private static Iter<Node> childrenNodes(Node parent) {
+		return new Iter<>() {
 
 			final NodeList nodes = parent.getChildNodes();
 			int idx = 0;
@@ -150,16 +148,12 @@ class LevelSerializerXML implements LevelSerializer {
 		};
 	}
 
-	private static Iterable<Element> childElms(Node parent) {
-		List<Element> elms = new ArrayList<>();
-		for (Node n : Utils.iterable(childrenNodes(parent)))
-			if (n.getNodeType() == Node.ELEMENT_NODE)
-				elms.add((Element) n);
-		return elms;
+	private static Iter<Element> childElms(Node parent) {
+		return childrenNodes(parent).filter(n -> n.getNodeType() == Node.ELEMENT_NODE).map(n -> (Element) n);
 	}
 
 	private static Element childElmMaybeNull(Node parent, String tag) {
-		for (Element elm : childElms(parent))
+		for (Element elm : childElms(parent).forEach())
 			if (tag.equals(elm.getTagName()))
 				return elm;
 		return null;
@@ -190,13 +184,13 @@ class LevelSerializerXML implements LevelSerializer {
 
 			LevelBuilder builder = new LevelBuilder(width, height);
 
-			for (Element teamElm : childElms(childElm(levelElm, "teams"))) {
+			for (Element teamElm : childElms(childElm(levelElm, "teams")).forEach()) {
 				Team team = Team.valueOf(childData(teamElm, "color"));
 				int startingMoney = Integer.parseInt(childData(teamElm, "startingMoney"));
 				builder.setStartingMoney(team, startingMoney);
 			}
 
-			for (Element tileElm : childElms(childElm(levelElm, "tiles"))) {
+			for (Element tileElm : childElms(childElm(levelElm, "tiles")).forEach()) {
 				int x = Integer.parseInt(childData(tileElm, "x"));
 				int y = Integer.parseInt(childData(tileElm, "y"));
 				Terrain terrain = Terrain.valueOf(childData(tileElm, "terrain"));
