@@ -122,27 +122,17 @@ public class Position implements Comparable<Position> {
 
 		private final int width, height;
 		private int x, y;
-		private final boolean yfirst; // TODO needed?
 
 		public Iterator2D(int width, int height) {
-			this(width, height, true);
-		}
-
-		public Iterator2D(int width, int height, boolean yfirst) {
 			if (width < 0 || height < 0)
 				throw new IllegalArgumentException();
 			this.width = width;
 			this.height = height;
 			x = y = 0;
-			this.yfirst = yfirst;
 		}
 
 		public static Iterator2D of(int width, int height) {
 			return new Iterator2D(width, height);
-		}
-
-		public static Iterator2D xFirst(int width, int height) {
-			return new Iterator2D(width, height, false);
 		}
 
 		@Override
@@ -155,16 +145,10 @@ public class Position implements Comparable<Position> {
 			if (!hasNext())
 				throw new NoSuchElementException();
 			Position pos = Position.of(x, y);
-			if (yfirst) {
-				if (++y >= height) {
-					y = 0;
-					x++;
-				}
-			} else {
-				if (++x >= height) {
-					x = 0;
-					y++;
-				}
+
+			if (++x >= width) {
+				x = 0;
+				y++;
 			}
 			return pos;
 		}
