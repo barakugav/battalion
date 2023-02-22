@@ -290,7 +290,18 @@ public class Unit extends Entity implements IUnit {
 		return getReachableMap(true);
 	}
 
-	private Cell.Bitmap getReachableMap(boolean invisiableEnable) {
+	private final Arena.Cached<Cell.Bitmap> reachableMapInvisiableEnable;
+	private final Arena.Cached<Cell.Bitmap> reachableMapInvisiableDisable;
+	{
+		reachableMapInvisiableEnable = arena.newCached(() -> getReachableMap0(true));
+		reachableMapInvisiableDisable = arena.newCached(() -> getReachableMap0(false));
+	}
+
+	Cell.Bitmap getReachableMap(boolean invisiableEnable) {
+		return invisiableEnable ? reachableMapInvisiableEnable.get() : reachableMapInvisiableDisable.get();
+	}
+
+	private Cell.Bitmap getReachableMap0(boolean invisiableEnable) {
 		return getPassableMap(invisiableEnable)
 				.and(p -> arena.unit(p) == null || (invisiableEnable && !arena.isUnitVisible(p, getTeam())));
 	}
@@ -299,12 +310,34 @@ public class Unit extends Entity implements IUnit {
 		return getPassableMap(true);
 	}
 
+	private final Arena.Cached<Cell.Bitmap> passableMapInvisiableEnable;
+	private final Arena.Cached<Cell.Bitmap> passableMapInvisiableDisable;
+	{
+		passableMapInvisiableEnable = arena.newCached(() -> getPassableMap0(true));
+		passableMapInvisiableDisable = arena.newCached(() -> getPassableMap0(false));
+	}
+
 	Cell.Bitmap getPassableMap(boolean invisiableEnable) {
+		return invisiableEnable ? passableMapInvisiableEnable.get() : passableMapInvisiableDisable.get();
+	}
+
+	private Cell.Bitmap getPassableMap0(boolean invisiableEnable) {
 		int[][] distanceMap = calcDistanceMap(invisiableEnable);
 		return Cell.Bitmap.fromPredicate(arena.width(), arena.height(), p -> distanceMap[p.x][p.y] >= 0);
 	}
 
+	private final Arena.Cached<int[][]> distanceMapInvisiableEnable;
+	private final Arena.Cached<int[][]> distanceMapInvisiableDisable;
+	{
+		distanceMapInvisiableEnable = arena.newCached(() -> calcDistanceMap0(true));
+		distanceMapInvisiableDisable = arena.newCached(() -> calcDistanceMap0(false));
+	}
+
 	private int[][] calcDistanceMap(boolean invisiableEnable) {
+		return invisiableEnable ? distanceMapInvisiableEnable.get() : distanceMapInvisiableDisable.get();
+	}
+
+	private int[][] calcDistanceMap0(boolean invisiableEnable) {
 		int width = arena.width(), height = arena.height();
 
 		int[][] distanceMap = new int[width][height];
@@ -369,7 +402,18 @@ public class Unit extends Entity implements IUnit {
 		return getAttackableMap(true);
 	}
 
+	private final Arena.Cached<Cell.Bitmap> attackableMapInvisiableEnable;
+	private final Arena.Cached<Cell.Bitmap> attackableMapInvisiableDisable;
+	{
+		attackableMapInvisiableEnable = arena.newCached(() -> getAttackableMap0(true));
+		attackableMapInvisiableDisable = arena.newCached(() -> getAttackableMap0(false));
+	}
+
 	private Cell.Bitmap getAttackableMap(boolean invisiableEnable) {
+		return invisiableEnable ? attackableMapInvisiableEnable.get() : attackableMapInvisiableDisable.get();
+	}
+
+	private Cell.Bitmap getAttackableMap0(boolean invisiableEnable) {
 		switch (type.weapon.type) {
 		case CloseRange:
 			return getAttackableMapCloseRange(invisiableEnable);

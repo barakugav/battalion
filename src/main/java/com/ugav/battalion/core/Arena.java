@@ -1,12 +1,14 @@
 package com.ugav.battalion.core;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import com.ugav.battalion.DataChangeNotifier;
 import com.ugav.battalion.core.Game.EntityChange;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
 
+@SuppressWarnings("unchecked")
 public class Arena {
 
 	private final Cell.Array<Terrain> terrains;
@@ -66,11 +68,13 @@ public class Arena {
 	void setUnit(Cell pos, Unit unit) {
 		assert units.at(pos) == null;
 		units.set(pos, Objects.requireNonNull(unit));
+		increaseModCount();
 	}
 
 	void removeUnit(Cell pos) {
 		assert units.at(pos) != null;
 		units.set(pos, null);
+		increaseModCount();
 	}
 
 	public boolean isValidPos(Cell pos) {
@@ -125,23 +129,70 @@ public class Arena {
 		return unit;
 	}
 
+	private final Cached<Cell.Bitmap>[] visibleUnitBitmap;
+	{
+		visibleUnitBitmap = new Cached[Team.values().length];
+		for (int i = 0; i < visibleUnitBitmap.length; i++) {
+			Team viewer = Team.values()[i];
+			visibleUnitBitmap[i] = newCached(() -> Cell.Bitmap.fromPredicate(width(), height(), pos -> {
+				Unit unit = unit(pos);
+				if (unit == null)
+					return false;
+
+				if (!unit.type.invisible || unit.getTeam() == viewer)
+					return true;
+				for (Cell n : pos.neighbors()) {
+					if (!isValidPos(n))
+						continue;
+					Unit neighbor = this.unit(n);
+					if (neighbor != null && neighbor.getTeam() == viewer)
+						return true;
+				}
+				return false;
+			}));
+		}
+
+	}
+
+	private Cell.Bitmap getVisibleUnitBitmap(Team viewer) {
+		return visibleUnitBitmap[viewer.ordinal()].get();
+	}
+
 	public boolean isUnitVisible(Cell pos, Team viewer) {
 		if (!isValidPos(pos))
 			throw new IllegalArgumentException();
-		Unit unit = unit(pos);
-		if (unit == null)
-			return false;
+		return getVisibleUnitBitmap(viewer).contains(pos);
+	}
 
-		if (!unit.type.invisible || unit.getTeam() == viewer)
-			return true;
-		for (Cell n : pos.neighbors()) {
-			if (!isValidPos(n))
-				continue;
-			Unit neighbor = this.unit(n);
-			if (neighbor != null && neighbor.getTeam() == viewer)
-				return true;
+	private volatile int modCount;
+
+	private void increaseModCount() {
+		modCount++;
+	}
+
+	<T> Cached<T> newCached(Supplier<? extends T> calc) {
+		return new Cached<>(calc);
+	}
+
+	class Cached<T> implements Supplier<T> {
+		private volatile T val;
+		private volatile int cachedModcount;
+		private final Supplier<? extends T> calc;
+
+		Cached(Supplier<? extends T> calc) {
+			cachedModcount = -1;
+			this.calc = Objects.requireNonNull(calc);
 		}
-		return false;
+
+		@Override
+		public T get() {
+			if (modCount != cachedModcount) {
+				val = calc.get();
+				cachedModcount = modCount;
+			}
+			return val;
+		}
+
 	}
 
 }
