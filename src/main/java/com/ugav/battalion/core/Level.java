@@ -9,18 +9,18 @@ import com.ugav.battalion.core.Unit.Type;
 
 public class Level {
 
-	private final Position.Array<TileDesc> tiles;
+	private final Cell.Array<TileDesc> tiles;
 	private final Map<Team, Integer> startingMoney;
 
 	public static final int MINIMUM_WIDTH = 10;
 	public static final int MINIMUM_HEIGHT = 10;
 
-	Level(Position.Array<TileDesc> tiles, Map<Team, Integer> startingMoney) {
+	Level(Cell.Array<TileDesc> tiles, Map<Team, Integer> startingMoney) {
 		int width = tiles.width();
 		int height = tiles.height();
 		if (width < MINIMUM_WIDTH || height < MINIMUM_HEIGHT)
 			throw new IllegalArgumentException("illegal size: " + width + " " + height);
-		this.tiles = Position.Array.fromFunc(width, height, tiles);
+		this.tiles = Cell.Array.fromFunc(width, height, tiles);
 		this.startingMoney = Collections.unmodifiableMap(new HashMap<>(startingMoney));
 	}
 
@@ -32,7 +32,7 @@ public class Level {
 		return tiles.height();
 	}
 
-	public TileDesc at(Position pos) {
+	public TileDesc at(Cell pos) {
 		return tiles.at(pos);
 	}
 
@@ -51,7 +51,7 @@ public class Level {
 
 		if (width() != other.width() || height() != other.height())
 			return false;
-		for (Position pos : Position.Iterator2D.of(width(), height()).forEach())
+		for (Cell pos : Cell.Iterator2D.of(width(), height()).forEach())
 			if (!Objects.equals(at(pos), other.at(pos)))
 				return false;
 		return true;
@@ -60,7 +60,7 @@ public class Level {
 	@Override
 	public int hashCode() {
 		int hash = 1;
-		for (Position pos : Position.Iterator2D.of(width(), height()).forEach())
+		for (Cell pos : Cell.Iterator2D.of(width(), height()).forEach())
 			hash = 31 * hash + Objects.hashCode(at(pos));
 		return hash;
 	}

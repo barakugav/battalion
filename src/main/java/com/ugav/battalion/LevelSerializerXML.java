@@ -23,13 +23,13 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Iter;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.TileDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.LevelBuilder;
-import com.ugav.battalion.core.Position;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
@@ -74,11 +74,11 @@ class LevelSerializerXML implements LevelSerializer {
 			levelElm.appendChild(teamsElm);
 
 			Element tilesElm = dom.createElement("tiles");
-			for (Position pos : Position.Iterator2D.of(level.width(), level.height()).forEach()) {
+			for (Cell pos : Cell.Iterator2D.of(level.width(), level.height()).forEach()) {
 				TileDesc tile = level.at(pos);
 				Element tileElm = dom.createElement("tile");
-				addValueChild(dom, tileElm, "x", Integer.toString(pos.xInt()));
-				addValueChild(dom, tileElm, "y", Integer.toString(pos.yInt()));
+				addValueChild(dom, tileElm, "x", Integer.toString(pos.x));
+				addValueChild(dom, tileElm, "y", Integer.toString(pos.y));
 
 				addValueChild(dom, tileElm, "terrain", tile.terrain);
 
@@ -223,7 +223,7 @@ class LevelSerializerXML implements LevelSerializer {
 					}
 				}
 
-				builder.setTile(Position.of(x, y), terrain, building, unit);
+				builder.setTile(Cell.of(x, y), terrain, building, unit);
 			}
 
 			return builder.buildLevel();

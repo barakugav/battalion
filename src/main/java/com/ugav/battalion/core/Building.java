@@ -98,7 +98,7 @@ public class Building extends Entity implements IBuilding {
 	}
 
 	public final Type type;
-	private Position pos;
+	private Cell pos;
 	private Team conquerTeam;
 	private int conquerProgress;
 
@@ -125,11 +125,11 @@ public class Building extends Entity implements IBuilding {
 		return copy;
 	}
 
-	public Position getPos() {
+	public Cell getPos() {
 		return pos;
 	}
 
-	void setPos(Position pos) {
+	void setPos(Cell pos) {
 		this.pos = pos;
 	}
 

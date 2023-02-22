@@ -25,12 +25,12 @@ import javax.swing.JTextField;
 
 import com.ugav.battalion.ArenaPanelAbstract.BuildingComp;
 import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.TileDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.LevelBuilder;
-import com.ugav.battalion.core.Position;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
@@ -387,7 +387,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		ArenaPanel() {
 			register.register(builder.onResetChange, e -> reset());
-			register.register(entityLayer.onTileClick, e -> tileClicked(e.pos));
+			register.register(entityLayer.onTileClick, e -> tileClicked(e.cell));
 
 			tickTaskManager.start();
 		}
@@ -408,7 +408,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			super.clear();
 		}
 
-		private void tileClicked(Position pos) {
+		private void tileClicked(Cell pos) {
 			Object selectedObj = menu.selectedButton.entity;
 
 			if (selectedObj != null) {
@@ -465,7 +465,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		}
 
 		@Override
-		Terrain getTerrain(Position pos) {
+		Terrain getTerrain(Cell pos) {
 			return builder.at(pos).terrain;
 		}
 
@@ -489,14 +489,14 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			void reset() {
 				removeAllArenaComps();
 
-				for (Position pos : Position.Iterator2D.of(builder.width(), builder.height()).forEach()) {
+				for (Cell pos : Cell.Iterator2D.of(builder.width(), builder.height()).forEach()) {
 					TerrainComp tileComp = new TerrainComp(pos);
 					comps.put(terrainKey(pos), tileComp);
 					tileComp.tileUpdate();
 				}
 			}
 
-			private Object terrainKey(Position pos) {
+			private Object terrainKey(Cell pos) {
 				return "Terrain " + pos;
 			}
 
@@ -505,7 +505,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				BuildingComp buildingComp;
 				UnitComp unitComp;
 
-				TerrainComp(Position pos) {
+				TerrainComp(Cell pos) {
 					super(ArenaPanel.this, pos);
 				}
 
@@ -531,7 +531,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			private class UnitComp extends ArenaPanelAbstract.UnitComp {
 
-				UnitComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos, UnitDesc unit) {
+				UnitComp(ArenaPanelAbstract<?, ?, ?> arena, Cell pos, UnitDesc unit) {
 					super(arena, pos, unit);
 				}
 

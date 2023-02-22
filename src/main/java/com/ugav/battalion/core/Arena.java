@@ -9,16 +9,16 @@ import com.ugav.battalion.core.Level.UnitDesc;
 
 public class Arena {
 
-	private final Position.Array<Tile> tiles;
+	private final Cell.Array<Tile> tiles;
 
 	public final DataChangeNotifier<EntityChange> onEntityChange = new DataChangeNotifier<>();
 
 	private Arena(Level level) {
-		tiles = Position.Array.fromFunc(level.width(), level.height(), pos -> createTile(level.at(pos), pos));
+		tiles = Cell.Array.fromFunc(level.width(), level.height(), pos -> createTile(level.at(pos), pos));
 	}
 
 	private Arena(Arena arena) {
-		tiles = Position.Array.fromFunc(arena.width(), arena.height(), pos -> Tile.copyOf(this, arena.at(pos)));
+		tiles = Cell.Array.fromFunc(arena.width(), arena.height(), pos -> Tile.copyOf(this, arena.at(pos)));
 	}
 
 	static Arena fromLevel(Level level) {
@@ -37,15 +37,15 @@ public class Arena {
 		return tiles.height();
 	}
 
-	public Tile at(Position pos) {
+	public Tile at(Cell pos) {
 		return tiles.at(pos);
 	}
 
-	public boolean isValidPos(Position pos) {
+	public boolean isValidPos(Cell pos) {
 		return pos.isInRect(width() - 1, height() - 1);
 	}
 
-	private class Positions extends ICollection.Abstract<Position> {
+	private class Cells extends ICollection.Abstract<Cell> {
 
 		@Override
 		public int size() {
@@ -53,16 +53,16 @@ public class Arena {
 		}
 
 		@Override
-		public Iter<Position> iterator() {
-			return new Position.Iterator2D(width(), height());
+		public Iter<Cell> iterator() {
+			return new Cell.Iterator2D(width(), height());
 		}
 
 	}
 
-	private final Positions positionsView = new Positions();
+	private final Cells cellsView = new Cells();
 
-	public ICollection<Position> positions() {
-		return positionsView;
+	public ICollection<Cell> positions() {
+		return cellsView;
 	}
 
 	private class Tiles extends ICollection.Abstract<Tile> {
@@ -97,14 +97,14 @@ public class Arena {
 		return tiles().iterator().filter(Tile::hasUnit).map(Tile::getUnit);
 	}
 
-	private Tile createTile(TileDesc desc, Position pos) {
+	private Tile createTile(TileDesc desc, Cell pos) {
 		Terrain terrain = desc.terrain;
 		Building building = createBuilding(desc.building, pos);
 		Unit unit = createUnit(desc.unit, pos);
 		return Tile.of(terrain, building, unit);
 	}
 
-	private Building createBuilding(BuildingDesc desc, Position pos) {
+	private Building createBuilding(BuildingDesc desc, Cell pos) {
 		if (desc == null)
 			return null;
 		Building building = Building.valueOf(this, desc);
@@ -112,7 +112,7 @@ public class Arena {
 		return building;
 	}
 
-	private Unit createUnit(UnitDesc desc, Position pos) {
+	private Unit createUnit(UnitDesc desc, Cell pos) {
 		if (desc == null)
 			return null;
 		Unit unit = Unit.valueOf(this, desc);
@@ -120,7 +120,7 @@ public class Arena {
 		return unit;
 	}
 
-	public boolean isUnitVisible(Position pos, Team viewer) {
+	public boolean isUnitVisible(Cell pos, Team viewer) {
 		if (!isValidPos(pos))
 			throw new IllegalArgumentException();
 		if (!at(pos).hasUnit())
@@ -129,7 +129,7 @@ public class Arena {
 
 		if (!unit.type.invisible || unit.getTeam() == viewer)
 			return true;
-		for (Position n : pos.neighbors()) {
+		for (Cell n : pos.neighbors()) {
 			if (!isValidPos(n))
 				continue;
 			Tile tile = at(n);

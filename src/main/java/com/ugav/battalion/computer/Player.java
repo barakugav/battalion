@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Set;
 
 import com.ugav.battalion.Utils;
+import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
-import com.ugav.battalion.core.Position;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Unit;
 
@@ -30,12 +30,12 @@ public interface Player {
 				if (units.isEmpty())
 					break;
 				Unit unit = units.get(rand.nextInt(units.size()));
-				List<Position> reachable = Utils.listCollect(unit.getReachableMap());
+				List<Cell> reachable = Utils.listCollect(unit.getReachableMap());
 				reachable.remove(unit.getPos());
 				if (reachable.isEmpty()) {
 					failedToMove.add(unit);
 				} else {
-					Position destination = reachable.get(rand.nextInt(reachable.size()));
+					Cell destination = reachable.get(rand.nextInt(reachable.size()));
 					game.move(unit, game.calcRealPath(unit, unit.calcPath(destination)));
 				}
 			}

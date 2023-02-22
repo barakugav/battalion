@@ -14,7 +14,7 @@ public interface Game {
 
 	public int height();
 
-	public Tile getTile(Position pos);
+	public Tile getTile(Cell pos);
 
 	public Team getTurn();
 
@@ -28,11 +28,11 @@ public interface Game {
 
 	public Team getWinner();
 
-	public List<Position> calcRealPath(Unit unit, List<Position> path);
+	public List<Cell> calcRealPath(Unit unit, List<Cell> path);
 
-	public void move(Unit unit, List<Position> path);
+	public void move(Unit unit, List<Cell> path);
 
-	public void moveAndAttack(Unit attacker, List<Position> path, Unit target);
+	public void moveAndAttack(Unit attacker, List<Cell> path, Unit target);
 
 	public void attackRange(Unit attacker, Unit target);
 

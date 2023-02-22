@@ -14,9 +14,9 @@ import java.util.function.BiConsumer;
 import javax.imageio.ImageIO;
 
 import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.Direction;
 import com.ugav.battalion.core.IBuilding;
 import com.ugav.battalion.core.IUnit;
-import com.ugav.battalion.core.Position.Direction;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;

@@ -5,8 +5,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import com.ugav.battalion.core.Position.Direction;
-
 public enum Terrain {
 
 	FlatLand1(Category.FlatLand), FlatLand2(Category.FlatLand), FlatLand3(Category.FlatLand),
@@ -34,18 +32,17 @@ public enum Terrain {
 		FlatLand, RoughLand, ExtremeLand, Road, BridgeLow, BridgeHigh, Shore, Water;
 	}
 
-	public static Set<Direction> getBridgeConnection(Position pos, Function<Position, Terrain> terrain, int width,
-			int high) {
+	public static Set<Direction> getBridgeConnection(Cell pos, Function<Cell, Terrain> terrain, int width, int high) {
 		Set<Terrain.Category> connectCategoties = EnumSet.of(Terrain.Category.Road, Terrain.Category.BridgeLow,
 				Terrain.Category.BridgeHigh);
-		Predicate<Position> isInRange = p -> p.isInRect(width - 1, high - 1);
+		Predicate<Cell> isInRange = p -> p.isInRect(width - 1, high - 1);
 
 		if (!EnumSet.of(Terrain.BridgeLow, Terrain.BridgeHigh).contains(terrain.apply(pos)))
 			throw new IllegalArgumentException("terrain is not a bridge at: " + pos);
 
 		Set<Direction> connections = EnumSet.noneOf(Direction.class);
 		for (Direction dir : EnumSet.of(Direction.XPos, Direction.YNeg, Direction.XNeg, Direction.YPos)) {
-			Position p = pos.add(dir);
+			Cell p = pos.add(dir);
 			if (!isInRange.test(p))
 				continue;
 			Terrain.Category c = terrain.apply(p).category;
@@ -56,7 +53,7 @@ public enum Terrain {
 		return connections;
 	}
 
-	public static Boolean isBridgeVertical(Position pos, Function<Position, Terrain> terrain, int width, int high) {
+	public static Boolean isBridgeVertical(Cell pos, Function<Cell, Terrain> terrain, int width, int high) {
 		if (!EnumSet.of(Terrain.BridgeLow, Terrain.BridgeHigh).contains(terrain.apply(pos)))
 			throw new IllegalArgumentException("terrain is not a bridge at: " + pos);
 

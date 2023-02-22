@@ -25,9 +25,9 @@ import javax.swing.SwingConstants;
 
 import com.ugav.battalion.core.Arena;
 import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.Cell;
+import com.ugav.battalion.core.Direction;
 import com.ugav.battalion.core.Level.UnitDesc;
-import com.ugav.battalion.core.Position;
-import com.ugav.battalion.core.Position.Direction;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Tile;
@@ -469,13 +469,13 @@ public class GameSideMenu extends JPanel implements Clearable {
 			window.arenaPanel.tickTaskManager.addTask(1000, this::repaint);
 		}
 
-		private void drawImg(Graphics g, Position pos, BufferedImage img) {
-			g.drawImage(img, pos.xInt() * TileSize, pos.yInt() * TileSize, null);
+		private void drawImg(Graphics g, Cell pos, BufferedImage img) {
+			g.drawImage(img, pos.x * TileSize, pos.y * TileSize, null);
 		}
 
 		@Override
 		public void paintComponent(Graphics g) {
-			for (Position pos : arena.positions()) {
+			for (Cell pos : arena.positions()) {
 				Tile tile = arena.at(pos);
 
 				Terrain terrain = tile.getTerrain();

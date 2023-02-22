@@ -9,9 +9,9 @@ import javax.swing.SwingUtilities;
 
 import com.ugav.battalion.core.Arena;
 import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level;
-import com.ugav.battalion.core.Position;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Tile;
 import com.ugav.battalion.core.Unit;
@@ -43,7 +43,7 @@ class GameGUIImpl implements Game {
 	}
 
 	@Override
-	public Tile getTile(Position pos) {
+	public Tile getTile(Cell pos) {
 		return game.getTile(pos);
 	}
 
@@ -80,23 +80,23 @@ class GameGUIImpl implements Game {
 	}
 
 	@Override
-	public List<Position> calcRealPath(Unit unit, List<Position> path) {
+	public List<Cell> calcRealPath(Unit unit, List<Cell> path) {
 		return game.calcRealPath(unit, path);
 	}
 
 	@Override
-	public void move(Unit unit, List<Position> path) {
+	public void move(Unit unit, List<Cell> path) {
 		checkCorrectThread();
-		List<Position> realPath = game.calcRealPath(unit, path);
-		List<Position> animationPath = Utils.listOf(unit.getPos(), realPath);
+		List<Cell> realPath = game.calcRealPath(unit, path);
+		List<Cell> animationPath = Utils.listOf(unit.getPos(), realPath);
 		run(() -> gui.arenaPanel.animateUnitMove(unit, animationPath, () -> game.move(unit, realPath)));
 	}
 
 	@Override
-	public void moveAndAttack(Unit attacker, List<Position> path, Unit target) {
+	public void moveAndAttack(Unit attacker, List<Cell> path, Unit target) {
 		checkCorrectThread();
-		List<Position> realPath = game.calcRealPath(attacker, path);
-		List<Position> animationPath = Utils.listOf(attacker.getPos(), realPath);
+		List<Cell> realPath = game.calcRealPath(attacker, path);
+		List<Cell> animationPath = Utils.listOf(attacker.getPos(), realPath);
 		if (path.size() == realPath.size())
 			run(() -> gui.arenaPanel.animateUnitMoveAndAttack(attacker, animationPath, target.getPos(),
 					() -> game.moveAndAttack(attacker, path, target)));

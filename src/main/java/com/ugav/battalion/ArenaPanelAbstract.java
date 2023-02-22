@@ -26,11 +26,11 @@ import java.util.function.Predicate;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 
+import com.ugav.battalion.core.Cell;
+import com.ugav.battalion.core.Direction;
 import com.ugav.battalion.core.IBuilding;
 import com.ugav.battalion.core.IUnit;
 import com.ugav.battalion.core.Level;
-import com.ugav.battalion.core.Position;
-import com.ugav.battalion.core.Position.Direction;
 import com.ugav.battalion.core.Terrain;
 
 abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.TerrainComp, BuildingCompImpl extends ArenaPanelAbstract.BuildingComp, UnitCompImpl extends ArenaPanelAbstract.UnitComp>
@@ -82,27 +82,27 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		entityLayer.addKeyListener(keyListener = new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				Position.Direction dir = keyToDir(e.getKeyCode());
+				Direction dir = keyToDir(e.getKeyCode());
 				if (dir != null) {
 					mapMoveAnimation.userMapMove(dir);
 					onMapMove.notify(new DataEvent(this));
 				}
 			}
 
-			private static Position.Direction keyToDir(int keyCode) {
+			private static Direction keyToDir(int keyCode) {
 				switch (keyCode) {
 				case KeyEvent.VK_LEFT:
 				case KeyEvent.VK_A:
-					return Position.Direction.XNeg;
+					return Direction.XNeg;
 				case KeyEvent.VK_RIGHT:
 				case KeyEvent.VK_D:
-					return Position.Direction.XPos;
+					return Direction.XPos;
 				case KeyEvent.VK_UP:
 				case KeyEvent.VK_W:
-					return Position.Direction.YNeg;
+					return Direction.YNeg;
 				case KeyEvent.VK_DOWN:
 				case KeyEvent.VK_S:
-					return Position.Direction.YPos;
+					return Direction.YPos;
 				default:
 					return null;
 				}
@@ -154,8 +154,12 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		return (int) (y - mapPos.y * TILE_SIZE_PIXEL);
 	}
 
-	Position displayedTile(Position pos) {
-		return Position.of(displayedX(pos.x * TILE_SIZE_PIXEL), displayedY(pos.y * TILE_SIZE_PIXEL));
+	int displayedXCell(double x) {
+		return displayedX(x * TILE_SIZE_PIXEL);
+	}
+
+	int displayedYCell(double y) {
+		return displayedY(y * TILE_SIZE_PIXEL);
 	}
 
 	int displayedXInv(int x) {
@@ -185,7 +189,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		private final ArenaPanelAbstract<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> arena;
 		final Map<Object, ArenaComp> comps = new HashMap<>();
 
-		private Position hovered;
+		private Cell hovered;
 
 		final DataChangeNotifier<HoverChangeEvent> onHoverChange = new DataChangeNotifier<>();
 		final DataChangeNotifier<TileClickEvent> onTileClick = new DataChangeNotifier<>();
@@ -204,16 +208,16 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					requestFocusInWindow();
 					int clickx = EntityLayer.this.arena.displayedXInv(e.getX()) / TILE_SIZE_PIXEL;
 					int clicky = EntityLayer.this.arena.displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
-					onTileClick.notify(new TileClickEvent(EntityLayer.this.arena, Position.of(clickx, clicky)));
+					onTileClick.notify(new TileClickEvent(EntityLayer.this.arena, Cell.of(clickx, clicky)));
 				}
 			});
 			addMouseMotionListener(mouseMotionListener = new MouseAdapter() {
 				@Override
 				public void mouseMoved(MouseEvent e) {
-					int x = EntityLayer.this.arena.displayedXInv(e.getX()) / TILE_SIZE_PIXEL,
-							y = EntityLayer.this.arena.displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
+					int x = EntityLayer.this.arena.displayedXInv(e.getX()) / TILE_SIZE_PIXEL;
+					int y = EntityLayer.this.arena.displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
 					if (hovered == null || hovered.x != x || hovered.y != y) {
-						hovered = Position.of(x, y);
+						hovered = Cell.of(x, y);
 						onHoverChange.notify(new HoverChangeEvent(EntityLayer.this.arena, hovered));
 					}
 				}
@@ -267,10 +271,18 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	}
 
+	void drawRelativeToMap(Graphics g, Object obj, Cell pos) {
+		drawRelativeToMap(g, obj, pos.x, pos.y);
+	}
+
 	void drawRelativeToMap(Graphics g, Object obj, Position pos) {
-		int x = displayedX(pos.x * TILE_SIZE_PIXEL);
-		int y = displayedY(pos.y * TILE_SIZE_PIXEL);
-		drawImage(g, obj, x, y);
+		drawRelativeToMap(g, obj, pos.x, pos.y);
+	}
+
+	void drawRelativeToMap(Graphics g, Object obj, double x, double y) {
+		int x0 = displayedX(x * TILE_SIZE_PIXEL);
+		int y0 = displayedY(y * TILE_SIZE_PIXEL);
+		drawImage(g, obj, x0, y0);
 	}
 
 	void drawImage(Graphics g, Object obj, int x, int y) {
@@ -279,7 +291,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		g.drawImage(img, x, y + TILE_SIZE_PIXEL - img.getHeight(), this);
 	}
 
-	abstract Terrain getTerrain(Position pos);
+	abstract Terrain getTerrain(Cell cell);
 
 	static interface ArenaComp extends Clearable {
 
@@ -293,11 +305,9 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	abstract static class ArenaCompAbstract implements ArenaComp {
 
 		final ArenaPanelAbstract<?, ?, ?> arena;
-		Position pos;
 
-		ArenaCompAbstract(ArenaPanelAbstract<?, ?, ?> arena, Position pos) {
+		ArenaCompAbstract(ArenaPanelAbstract<?, ?, ?> arena) {
 			this.arena = Objects.requireNonNull(arena);
-			this.pos = pos;
 		}
 
 		@Override
@@ -306,18 +316,19 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		}
 
 		@Override
-		public Position pos() {
-			return pos;
-		}
+		abstract public Position pos();
 	}
 
 	static class TerrainComp extends ArenaCompAbstract {
 
-		TerrainComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos) {
-			super(arena, pos);
+		final Cell pos;
+
+		TerrainComp(ArenaPanelAbstract<?, ?, ?> arena, Cell pos) {
+			super(arena);
+			this.pos = pos;
 		}
 
-		private boolean inArena(Position p) {
+		private boolean inArena(Cell p) {
 			return p.isInRect(arena.arenaWidth - 1, arena.arenaHeight - 1);
 		}
 
@@ -337,7 +348,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					throw new IllegalArgumentException("Unexpected value: " + quadrant);
 				}
 			};
-			Predicate<Position> isBridgeHorizontal = bridgePos -> Objects.requireNonNull(
+			Predicate<Cell> isBridgeHorizontal = bridgePos -> Objects.requireNonNull(
 					Terrain.isBridgeVertical(bridgePos, p -> arena.getTerrain(p), arena.arenaWidth, arena.arenaHeight),
 					"Can't determine bridge orientation").booleanValue();
 
@@ -346,10 +357,10 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				arena.drawRelativeToMap(g, terrain, pos);
 				for (int quadrant = 0; quadrant < 4; quadrant++) {
 					Pair<Direction, Direction> dirs = quadrantToDirs.apply(quadrant);
-					Position p1 = pos.add(dirs.e1), p2 = pos.add(dirs.e2), p3 = pos.add(dirs.e1).add(dirs.e2);
+					Cell p1 = pos.add(dirs.e1), p2 = pos.add(dirs.e2), p3 = pos.add(dirs.e1).add(dirs.e2);
 					Set<Terrain.Category> waters = EnumSet.of(Terrain.Category.Water, Terrain.Category.BridgeLow,
 							Terrain.Category.BridgeHigh, Terrain.Category.Shore);
-					Predicate<Position> isWater = p -> !inArena(p) || waters.contains(arena.getTerrain(p).category);
+					Predicate<Cell> isWater = p -> !inArena(p) || waters.contains(arena.getTerrain(p).category);
 					boolean c1 = !isWater.test(p1), c2 = !isWater.test(p2), c3 = !isWater.test(p3);
 
 					if (c1 || c2 || c3) {
@@ -362,7 +373,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			} else if (terrain == Terrain.Road) {
 				String variant = "";
 				for (Direction dir : List.of(Direction.XPos, Direction.YNeg, Direction.XNeg, Direction.YPos)) {
-					Position p = pos.add(dir);
+					Cell p = pos.add(dir);
 					Set<Terrain.Category> roads = EnumSet.of(Terrain.Category.Road, Terrain.Category.BridgeLow,
 							Terrain.Category.BridgeHigh);
 					variant += inArena(p) && roads.contains(arena.getTerrain(p).category) ? "v" : "x";
@@ -372,7 +383,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			} else if (EnumSet.of(Terrain.BridgeLow, Terrain.BridgeHigh).contains(terrain)) {
 				Set<Direction> ends = EnumSet.noneOf(Direction.class);
 				for (Direction dir : EnumSet.of(Direction.XPos, Direction.YNeg, Direction.XNeg, Direction.YPos)) {
-					Position p = pos.add(dir);
+					Cell p = pos.add(dir);
 					Set<Terrain.Category> endCategoties = EnumSet.of(Terrain.Category.Road, Terrain.Category.FlatLand,
 							Terrain.Category.RoughLand, Terrain.Category.ExtremeLand, Terrain.Category.Shore);
 					if (inArena(p) && endCategoties.contains(arena.getTerrain(p).category))
@@ -396,12 +407,12 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 				for (int quadrant = 0; quadrant < 4; quadrant++) {
 					Pair<Direction, Direction> dirs = quadrantToDirs.apply(quadrant);
-					Position p1 = pos.add(dirs.e1), p2 = pos.add(dirs.e2), p3 = pos.add(dirs.e1).add(dirs.e2);
-					Predicate<Position> isWater = p -> (!inArena(p)
+					Cell p1 = pos.add(dirs.e1), p2 = pos.add(dirs.e2), p3 = pos.add(dirs.e1).add(dirs.e2);
+					Predicate<Cell> isWater = p -> (!inArena(p)
 							|| EnumSet.of(Terrain.Category.Water, Terrain.Category.Shore, Terrain.Category.BridgeLow,
 									Terrain.Category.BridgeHigh).contains(arena.getTerrain(p).category));
 					Predicate<Direction> isBridge = dir -> {
-						Position p = pos.add(dir);
+						Cell p = pos.add(dir);
 						if (!inArena(p) || !EnumSet.of(Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh)
 								.contains(arena.getTerrain(p).category))
 							return false;
@@ -447,15 +458,22 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		public void clear() {
 		}
 
+		@Override
+		public Position pos() {
+			return Position.of(pos);
+		}
+
 	}
 
 	static class BuildingComp extends ArenaCompAbstract {
 
 		private final IBuilding building;
+		private final Cell pos;
 
-		BuildingComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos, IBuilding building) {
-			super(arena, pos);
+		BuildingComp(ArenaPanelAbstract<?, ?, ?> arena, Cell pos, IBuilding building) {
+			super(arena);
 			this.building = Objects.requireNonNull(building);
+			this.pos = Objects.requireNonNull(pos);
 		}
 
 		IBuilding building() {
@@ -468,8 +486,14 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 			/* Draw flag */
 			BufferedImage flagImg = Images.getFlagImg(building.getTeam(), getFlagGesture());
-			Position pos = arena.displayedTile(this.pos);
-			g.drawImage(flagImg, pos.xInt() + 42, pos.yInt() - 3, arena);
+			int x = arena.displayedXCell(pos.x) + 42;
+			int y = arena.displayedYCell(pos.y) - 3;
+			g.drawImage(flagImg, x, y, arena);
+		}
+
+		@Override
+		public Position pos() {
+			return Position.of(pos);
 		}
 
 		int getGasture() {
@@ -494,12 +518,14 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	static abstract class UnitComp extends ArenaCompAbstract {
 
 		private final IUnit unit;
+		volatile Position pos;
 		volatile Direction orientation = Direction.XPos;
 		volatile boolean isMoving = false;
 
-		UnitComp(ArenaPanelAbstract<?, ?, ?> arena, Position pos, IUnit unit) {
-			super(arena, pos);
+		UnitComp(ArenaPanelAbstract<?, ?, ?> arena, Cell pos, IUnit unit) {
+			super(arena);
 			this.unit = Objects.requireNonNull(unit);
+			this.pos = Position.of(pos);
 		}
 
 		IUnit unit() {
@@ -518,9 +544,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				BufferedImage img = Utils
 						.bufferedImageFromImage(imgBig.getScaledInstance(miniWidth, height, Image.SCALE_SMOOTH));
 
-				Position pos = arena.displayedTile(this.pos);
-				int x = pos.xInt() + 1;
-				int y = pos.yInt() + TILE_SIZE_PIXEL - img.getHeight() - 1;
+				int x = arena.displayedXCell(pos.x) + 1;
+				int y = arena.displayedYCell(pos.y) + TILE_SIZE_PIXEL - img.getHeight() - 1;
 				int w = img.getWidth(), h = img.getHeight();
 				g.setColor(Color.LIGHT_GRAY);
 				g.fillRect(x, y, w, h);
@@ -535,6 +560,11 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				return Images.getUnitImgMove(unit, orientation, getGasture());
 			else
 				return Images.getUnitImgStand(unit, orientation, getGasture());
+		}
+
+		@Override
+		public Position pos() {
+			return pos;
 		}
 
 		int getGasture() {
@@ -554,22 +584,22 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	static class HoverChangeEvent extends DataEvent {
 
-		final Position pos;
+		final Cell cell;
 
-		HoverChangeEvent(ArenaPanelAbstract<?, ?, ?> source, Position pos) {
+		HoverChangeEvent(ArenaPanelAbstract<?, ?, ?> source, Cell cell) {
 			super(source);
-			this.pos = pos;
+			this.cell = cell;
 		}
 
 	}
 
 	static class TileClickEvent extends DataEvent {
 
-		final Position pos;
+		final Cell cell;
 
-		TileClickEvent(ArenaPanelAbstract<?, ?, ?> source, Position pos) {
+		TileClickEvent(ArenaPanelAbstract<?, ?, ?> source, Cell cell) {
 			super(source);
-			this.pos = pos;
+			this.cell = cell;
 		}
 
 	}

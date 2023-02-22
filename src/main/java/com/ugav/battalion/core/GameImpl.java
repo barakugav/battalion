@@ -77,7 +77,7 @@ class GameImpl implements Game {
 	}
 
 	@Override
-	public Tile getTile(Position pos) {
+	public Tile getTile(Cell pos) {
 		return arena.at(pos);
 	}
 
@@ -159,28 +159,28 @@ class GameImpl implements Game {
 	}
 
 	@Override
-	public void move(Unit unit, List<Position> path) {
+	public void move(Unit unit, List<Cell> path) {
 		if (path.isEmpty() || !isMoveValid(unit, path))
 			throw new IllegalStateException();
 		move0(unit, path);
 		unit.setActive(false);
 	}
 
-	private void move0(Unit unit, List<Position> path) {
-		Position source = unit.getPos();
-		Position destination = path.get(path.size() - 1);
+	private void move0(Unit unit, List<Cell> path) {
+		Cell source = unit.getPos();
+		Cell destination = path.get(path.size() - 1);
 		arena.at(source).removeUnit();
 		arena.at(destination).setUnit(unit);
 		unit.setPos(destination);
 	}
 
-	private boolean isMoveValid(Unit unit, List<Position> path) {
+	private boolean isMoveValid(Unit unit, List<Cell> path) {
 		return unit.getTeam() == turn && unit.isActive() && unit.isMoveValid(path);
 	}
 
 	@Override
-	public List<Position> calcRealPath(Unit unit, List<Position> path) {
-		Position.Bitmap passableMap = unit.getPassableMap(false);
+	public List<Cell> calcRealPath(Unit unit, List<Cell> path) {
+		Cell.Bitmap passableMap = unit.getPassableMap(false);
 		for (int i = 0; i < path.size(); i++) {
 			if (!passableMap.contains(path.get(i))) {
 				path = path.subList(0, i);
@@ -191,7 +191,7 @@ class GameImpl implements Game {
 	}
 
 	@Override
-	public void moveAndAttack(Unit attacker, List<Position> path, Unit target) {
+	public void moveAndAttack(Unit attacker, List<Cell> path, Unit target) {
 		if (attacker.type.weapon.type != Weapon.Type.CloseRange)
 			throw new UnsupportedOperationException("Only close range weapon are supported");
 
@@ -242,7 +242,7 @@ class GameImpl implements Game {
 
 	@Override
 	public Unit buildUnit(Building factory, Unit.Type unitType) {
-		Position pos = factory.getPos();
+		Cell pos = factory.getPos();
 		if (!factory.type.canBuildUnits || !factory.isActive() || arena.at(pos).hasUnit())
 			throw new IllegalStateException();
 
@@ -266,7 +266,7 @@ class GameImpl implements Game {
 
 	@Override
 	public Unit unitTransport(Unit transportedUnit, Unit.Type transportType) {
-		Position pos = transportedUnit.getPos();
+		Cell pos = transportedUnit.getPos();
 
 		if (!transportedUnit.isActive() || transportedUnit.type.category != Unit.Category.Land)
 			throw new IllegalArgumentException();
@@ -291,7 +291,7 @@ class GameImpl implements Game {
 
 	@Override
 	public Unit transportFinish(Unit trasportedUnit) {
-		Position pos = trasportedUnit.getPos();
+		Cell pos = trasportedUnit.getPos();
 
 		if (!trasportedUnit.isActive() || !trasportedUnit.type.transportUnits)
 			throw new IllegalArgumentException();

@@ -16,7 +16,7 @@ import com.ugav.battalion.core.Level.UnitDesc;
 public class Unit extends Entity implements IUnit {
 
 	public final Type type;
-	private Position pos;
+	private Cell pos;
 	private int health;
 	private final Unit transportedUnit; /* valid only if type.canTransportUnits */
 
@@ -84,14 +84,14 @@ public class Unit extends Entity implements IUnit {
 		return health <= 0;
 	}
 
-	void setPos(Position pos) {
+	void setPos(Cell pos) {
 		if (Objects.equals(this.pos, pos))
 			return;
 		this.pos = pos;
 		onChange().notify(new EntityChange(this));
 	}
 
-	public Position getPos() {
+	public Cell getPos() {
 		return pos;
 	}
 
@@ -104,13 +104,13 @@ public class Unit extends Entity implements IUnit {
 		return type.transportUnits ? Objects.requireNonNull(transportedUnit) : null;
 	}
 
-	boolean isMoveValid(List<Position> path) {
+	boolean isMoveValid(List<Cell> path) {
 		if (path.isEmpty() || path.size() > type.moveLimit)
 			return false;
 		int[][] distanceMap = calcDistanceMap(false);
-		Position prev = getPos();
-		for (Position p : path) {
-			if (!prev.neighbors().contains(p) || distanceMap[p.xInt()][p.yInt()] < 0)
+		Cell prev = getPos();
+		for (Cell p : path) {
+			if (!prev.neighbors().contains(p) || distanceMap[p.x][p.y] < 0)
 				return false;
 			prev = p;
 		}
@@ -286,22 +286,22 @@ public class Unit extends Entity implements IUnit {
 		return type.canAttack.contains(other.type.category);
 	}
 
-	public Position.Bitmap getReachableMap() {
+	public Cell.Bitmap getReachableMap() {
 		return getReachableMap(true);
 	}
 
-	private Position.Bitmap getReachableMap(boolean invisiableEnable) {
+	private Cell.Bitmap getReachableMap(boolean invisiableEnable) {
 		return getPassableMap(invisiableEnable)
 				.and(p -> !arena.at(p).hasUnit() || (invisiableEnable && !arena.isUnitVisible(p, getTeam())));
 	}
 
-	public Position.Bitmap getPassableMap() {
+	public Cell.Bitmap getPassableMap() {
 		return getPassableMap(true);
 	}
 
-	Position.Bitmap getPassableMap(boolean invisiableEnable) {
+	Cell.Bitmap getPassableMap(boolean invisiableEnable) {
 		int[][] distanceMap = calcDistanceMap(invisiableEnable);
-		return Position.Bitmap.fromPredicate(arena.width(), arena.height(), p -> distanceMap[p.xInt()][p.yInt()] >= 0);
+		return Cell.Bitmap.fromPredicate(arena.width(), arena.height(), p -> distanceMap[p.x][p.y] >= 0);
 	}
 
 	private int[][] calcDistanceMap(boolean invisiableEnable) {
@@ -310,21 +310,21 @@ public class Unit extends Entity implements IUnit {
 		int[][] distanceMap = new int[width][height];
 		for (int x = 0; x < width; x++)
 			Arrays.fill(distanceMap[x], -1);
-		distanceMap[pos.xInt()][pos.yInt()] = 0;
+		distanceMap[pos.x][pos.y] = 0;
 
 		int maxMove = type.moveLimit;
 		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
-			for (Position p : arena.positions()) {
+			for (Cell p : arena.positions()) {
 				Tile tile = arena.at(p);
-				if (distanceMap[p.xInt()][p.yInt()] >= 0 || !type.canStandOn(tile.getTerrain()))
+				if (distanceMap[p.x][p.y] >= 0 || !type.canStandOn(tile.getTerrain()))
 					continue;
 				if (tile.hasUnit() && !(invisiableEnable && !arena.isUnitVisible(p, getTeam()))
 						&& tile.getUnit().getTeam() != getTeam())
 					continue;
 
-				for (Position neighbor : p.neighbors()) {
-					if (arena.isValidPos(neighbor) && distanceMap[neighbor.xInt()][neighbor.yInt()] == moveLen - 1) {
-						distanceMap[p.xInt()][p.yInt()] = moveLen;
+				for (Cell neighbor : p.neighbors()) {
+					if (arena.isValidPos(neighbor) && distanceMap[neighbor.x][neighbor.y] == moveLen - 1) {
+						distanceMap[p.x][p.y] = moveLen;
 						break;
 					}
 				}
@@ -333,16 +333,15 @@ public class Unit extends Entity implements IUnit {
 		return distanceMap;
 	}
 
-	public List<Position> calcPath(Position destination) {
+	public List<Cell> calcPath(Cell destination) {
 		int[][] distanceMap = calcDistanceMap(true);
-		if (distanceMap[destination.xInt()][destination.yInt()] < 0)
+		if (distanceMap[destination.x][destination.y] < 0)
 			throw new IllegalArgumentException("Can't reach " + destination);
-		List<Position> path = new ArrayList<>(distanceMap[destination.xInt()][destination.yInt()]);
-		for (Position p = destination; !p.equals(getPos());) {
+		List<Cell> path = new ArrayList<>(distanceMap[destination.x][destination.y]);
+		for (Cell p = destination; !p.equals(getPos());) {
 			path.add(p);
-			for (Position next : p.neighbors()) {
-				if (arena.isValidPos(next)
-						&& distanceMap[next.xInt()][next.yInt()] == distanceMap[p.xInt()][p.yInt()] - 1) {
+			for (Cell next : p.neighbors()) {
+				if (arena.isValidPos(next) && distanceMap[next.x][next.y] == distanceMap[p.x][p.y] - 1) {
 					p = next;
 					break;
 				}
@@ -352,57 +351,57 @@ public class Unit extends Entity implements IUnit {
 		return path;
 	}
 
-	public List<Position> calcPathForAttack(Position targetPos) {
-		Position.Bitmap reachableMap = getReachableMap();
-		List<Position> bestPath = null;
-		for (Position p : targetPos.neighbors()) {
+	public List<Cell> calcPathForAttack(Cell targetPos) {
+		Cell.Bitmap reachableMap = getReachableMap();
+		List<Cell> bestPath = null;
+		for (Cell p : targetPos.neighbors()) {
 			if (!reachableMap.contains(p))
 				continue;
-			List<Position> path = calcPath(p);
+			List<Cell> path = calcPath(p);
 			if (bestPath == null || path.size() < bestPath.size())
 				bestPath = path;
 		}
 		return bestPath;
 	}
 
-	public Position.Bitmap getAttackableMap() {
+	public Cell.Bitmap getAttackableMap() {
 		return getAttackableMap(true);
 	}
 
-	private Position.Bitmap getAttackableMap(boolean invisiableEnable) {
+	private Cell.Bitmap getAttackableMap(boolean invisiableEnable) {
 		switch (type.weapon.type) {
 		case CloseRange:
 			return getAttackableMapCloseRange(invisiableEnable);
 		case LongRange:
 			return getAttackableMapLongRange(invisiableEnable);
 		case None:
-			return Position.Bitmap.Empty;
+			return Cell.Bitmap.Empty;
 		default:
 			throw new IllegalArgumentException("Unexpected value: " + type.weapon.type);
 		}
 	}
 
-	private Position.Bitmap getAttackableMapCloseRange(boolean invisiableEnable) {
-		Position.Bitmap reachableMap = getReachableMap(invisiableEnable);
+	private Cell.Bitmap getAttackableMapCloseRange(boolean invisiableEnable) {
+		Cell.Bitmap reachableMap = getReachableMap(invisiableEnable);
 
 		boolean[][] attackableMap = new boolean[arena.width()][arena.height()];
-		for (Position p : reachableMap) {
-			for (Position neighbor : p.neighbors()) {
+		for (Cell p : reachableMap) {
+			for (Cell neighbor : p.neighbors()) {
 				if (!arena.isValidPos(neighbor))
 					continue;
 				if (!arena.at(neighbor).hasUnit() || (invisiableEnable && !arena.isUnitVisible(neighbor, getTeam())))
 					continue;
 				Unit other = arena.at(neighbor).getUnit();
-				attackableMap[neighbor.xInt()][neighbor.yInt()] = other.getTeam() != getTeam() && canAttack(other);
+				attackableMap[neighbor.x][neighbor.y] = other.getTeam() != getTeam() && canAttack(other);
 			}
 		}
 
-		return new Position.Bitmap(attackableMap);
+		return new Cell.Bitmap(attackableMap);
 	}
 
-	private Position.Bitmap getAttackableMapLongRange(boolean invisiableEnable) {
-		return Position.Bitmap.fromPredicate(arena.width(), arena.height(), p -> {
-			int distance = (int) getPos().distNorm1(p);
+	private Cell.Bitmap getAttackableMapLongRange(boolean invisiableEnable) {
+		return Cell.Bitmap.fromPredicate(arena.width(), arena.height(), p -> {
+			int distance = getPos().distNorm1(p);
 			if (!arena.at(p).hasUnit() || (invisiableEnable && !arena.isUnitVisible(p, getTeam())))
 				return false;
 			Unit other = arena.at(p).getUnit();

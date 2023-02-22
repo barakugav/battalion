@@ -15,8 +15,8 @@ import javax.swing.SwingUtilities;
 
 import com.ugav.battalion.ArenaPanelAbstract.ArenaComp;
 import com.ugav.battalion.GameArenaPanel.EntityLayer.UnitComp;
-import com.ugav.battalion.core.Position;
-import com.ugav.battalion.core.Position.Direction;
+import com.ugav.battalion.core.Cell;
+import com.ugav.battalion.core.Direction;
 
 @FunctionalInterface
 interface Animation {
@@ -32,11 +32,11 @@ interface Animation {
 	static class UnitMove implements Animation {
 
 		final UnitComp comp;
-		private final List<Position> path;
+		private final List<Cell> path;
 		private int cursor;
 		private static final int StepSize = 16;
 
-		UnitMove(UnitComp comp, List<Position> path) {
+		UnitMove(UnitComp comp, List<Cell> path) {
 			if (path.isEmpty())
 				throw new IllegalArgumentException();
 			this.comp = Objects.requireNonNull(comp);
@@ -57,9 +57,9 @@ interface Animation {
 				throw new NoSuchElementException();
 
 			int idx = cursor / StepSize;
-			Position p1 = path.get(idx);
-			Position p2 = path.get(idx + 1);
-			comp.orientation = Direction.calc(p1, p2);
+			Cell p1 = path.get(idx);
+			Cell p2 = path.get(idx + 1);
+			comp.orientation = Cell.diffDir(p1, p2);
 			double frac = (cursor % StepSize + 1) / (double) StepSize;
 			double x = p1.x + (p2.x - p1.x) * frac;
 			double y = p1.y + (p2.y - p1.y) * frac;
@@ -78,12 +78,12 @@ interface Animation {
 	static class Attack implements Animation, ArenaComp {
 		private final ArenaPanelAbstract<?, ?, ?> arena;
 		private final UnitComp comp;
-		private final Position target;
+		private final Cell target;
 		private Position basePos;
 		private int cursor = 0;
 		private static final int Duration = 20;
 
-		Attack(ArenaPanelAbstract<?, ?, ?> arena, UnitComp comp, Position target) {
+		Attack(ArenaPanelAbstract<?, ?, ?> arena, UnitComp comp, Cell target) {
 			this.arena = arena;
 			this.comp = comp;
 			this.target = target;
@@ -96,8 +96,10 @@ interface Animation {
 			basePos = comp.pos;
 
 			Direction orientation = null;
+			Position targetPos = Position.of(target);
 			for (Direction dir : Direction.values())
-				if (orientation == null || orientation.dist(comp.pos, target) < dir.dist(comp.pos, target))
+				if (orientation == null
+						|| Position.dist(comp.pos, targetPos, orientation) < Position.dist(comp.pos, targetPos, dir))
 					orientation = dir;
 			comp.orientation = orientation;
 
@@ -130,8 +132,9 @@ interface Animation {
 			int gestureIdx = (int) (cursor / ((double) Duration / gestureNum));
 			BufferedImage img = Images.getAttackImg(gestureIdx);
 
-			Position drawPos = arena.displayedTile(target);
-			g.drawImage(img, drawPos.xInt(), drawPos.yInt(), null);
+			int x = arena.displayedXCell(target.x);
+			int y = arena.displayedYCell(target.y);
+			g.drawImage(img, x, y, null);
 		}
 
 		@Override
@@ -141,7 +144,7 @@ interface Animation {
 
 		@Override
 		public Position pos() {
-			return target;
+			return Position.of(target);
 		}
 	}
 
@@ -251,8 +254,9 @@ interface Animation {
 			int gestureIdx = (int) (cursor / ((double) Duration / gestureNum));
 			BufferedImage img = Images.getExplosionImg(gestureIdx);
 
-			Position drawPos = arena.displayedTile(pos);
-			g.drawImage(img, drawPos.xInt(), drawPos.yInt(), null);
+			int x = arena.displayedXCell(pos.x);
+			int y = arena.displayedYCell(pos.y);
+			g.drawImage(img, x, y, null);
 		}
 
 		@Override
@@ -275,10 +279,6 @@ interface Animation {
 		MapMove(ArenaPanelAbstract<?, ?, ?> arena, Position target) {
 			this.arena = arena;
 			this.target = target;
-		}
-
-		Position getTarget() {
-			return target;
 		}
 
 		@Override
