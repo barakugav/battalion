@@ -22,6 +22,7 @@ class GameWindow extends JPanel implements Clearable {
 
 	final Game game;
 	private final Player computer = new Player.Random();
+//	private final Player computer = new PlayerMiniMaxAlphaBeta();
 	private final DebugPrintsManager debug = new DebugPrintsManager(true); // TODO
 	private final DataChangeRegister register = new DataChangeRegister();
 
