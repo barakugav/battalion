@@ -112,9 +112,12 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		}
 
 		private static void unitAvailableMovesChangePosition(Unit unit, Cell.Bitmap reachable, List<Move> moves) {
-			Cell unitPos = unit.getPos();
-			for (Cell destination : reachable)
+			int unitPos = unit.getPos();
+
+			for (Iter.Int it = reachable.cells(); it.hasNext();) {
+				int destination = it.next();
 				moves.add(new UnitMove(unitPos, destination));
+			}
 		}
 
 		private static void unitAvailableMovesAttack(Unit unit, Cell.Bitmap reachable, Cell.Bitmap attackable,
@@ -135,17 +138,21 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 
 		private static void unitAvailableMovesAttackAndMove(Unit unit, Cell.Bitmap reachable, Cell.Bitmap attackable,
 				List<Move> moves) {
-			Cell attackerPos = unit.getPos();
-			for (Cell target : attackable)
-				for (Cell destination : target.neighbors())
+			int attackerPos = unit.getPos();
+			for (Iter.Int it = attackable.cells(); it.hasNext();) {
+				int target = it.next();
+				for (int destination : Cell.neighbors(target))
 					if (reachable.contains(destination))
 						moves.add(new UnitMoveAndAttack(attackerPos, destination, target));
+			}
 		}
 
 		private static void unitAvailableMovesAttackRange(Unit unit, Cell.Bitmap attackable, List<Move> moves) {
-			Cell attackerPos = unit.getPos();
-			for (Cell target : attackable)
+			int attackerPos = unit.getPos();
+			for (Iter.Int it = attackable.cells(); it.hasNext();) {
+				int target = it.next();
 				moves.add(new UnitAttackLongRange(attackerPos, target));
+			}
 		}
 	}
 
@@ -156,10 +163,10 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 	}
 
 	private static class UnitMove extends Move {
-		private final Cell source;
-		private final Cell destination;
+		private final int source;
+		private final int destination;
 
-		UnitMove(Cell source, Cell destination) {
+		UnitMove(int source, int destination) {
 			this.source = source;
 			this.destination = destination;
 		}
@@ -172,17 +179,17 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 
 		@Override
 		public String toString() {
-			return "UnitMove(" + source + ", " + destination + ")";
+			return "UnitMove(" + Cell.toString(source) + ", " + Cell.toString(destination) + ")";
 		}
 
 	}
 
 	private static class UnitMoveAndAttack extends Move {
-		private final Cell attacker;
-		private final Cell destination;
-		private final Cell target;
+		private final int attacker;
+		private final int destination;
+		private final int target;
 
-		UnitMoveAndAttack(Cell attacker, Cell destination, Cell target) {
+		UnitMoveAndAttack(int attacker, int destination, int target) {
 			this.attacker = attacker;
 			this.destination = destination;
 			this.target = target;
@@ -191,8 +198,8 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		@Override
 		void apply(Game game) {
 			Unit unit = game.getUnit(attacker);
-			List<Cell> path = unit.calcPath(destination);
-			List<Cell> realPath = game.calcRealPath(unit, path);
+			List<Integer> path = unit.calcPath(destination);
+			List<Integer> realPath = game.calcRealPath(unit, path);
 			if (path.size() == realPath.size())
 				game.moveAndAttack(unit, realPath, game.getUnit(target));
 			else
@@ -201,16 +208,17 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 
 		@Override
 		public String toString() {
-			return "UnitMoveAndAttack(" + attacker + ", " + destination + ", " + target + ")";
+			return "UnitMoveAndAttack(" + Cell.toString(attacker) + ", " + Cell.toString(destination) + ", "
+					+ Cell.toString(target) + ")";
 		}
 
 	}
 
 	private static class UnitAttackLongRange extends Move {
-		private final Cell attacker;
-		private final Cell target;
+		private final int attacker;
+		private final int target;
 
-		UnitAttackLongRange(Cell attacker, Cell target) {
+		UnitAttackLongRange(int attacker, int target) {
 			this.attacker = attacker;
 			this.target = target;
 		}
@@ -222,7 +230,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 
 		@Override
 		public String toString() {
-			return "UnitAttackLongRange(" + attacker + ", " + target + ")";
+			return "UnitAttackLongRange(" + Cell.toString(attacker) + ", " + Cell.toString(target) + ")";
 		}
 
 	}

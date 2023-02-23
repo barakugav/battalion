@@ -32,11 +32,11 @@ interface Animation {
 	static class UnitMove implements Animation {
 
 		final UnitComp comp;
-		private final List<Cell> path;
+		private final List<Integer> path;
 		private int cursor;
 		private static final int StepSize = 16;
 
-		UnitMove(UnitComp comp, List<Cell> path) {
+		UnitMove(UnitComp comp, List<Integer> path) {
 			if (path.isEmpty())
 				throw new IllegalArgumentException();
 			this.comp = Objects.requireNonNull(comp);
@@ -57,12 +57,14 @@ interface Animation {
 				throw new NoSuchElementException();
 
 			int idx = cursor / StepSize;
-			Cell p1 = path.get(idx);
-			Cell p2 = path.get(idx + 1);
+			int p1 = path.get(idx);
+			int p2 = path.get(idx + 1);
 			comp.orientation = Cell.diffDir(p1, p2);
 			double frac = (cursor % StepSize + 1) / (double) StepSize;
-			double x = p1.x + (p2.x - p1.x) * frac;
-			double y = p1.y + (p2.y - p1.y) * frac;
+			int x1 = Cell.x(p1), x2 = Cell.x(p2);
+			int y1 = Cell.y(p1), y2 = Cell.y(p2);
+			double x = x1 + (x2 - x1) * frac;
+			double y = y1 + (y2 - y1) * frac;
 			comp.pos = Position.of(x, y);
 
 			return ++cursor < length * StepSize;
@@ -78,12 +80,12 @@ interface Animation {
 	static class Attack implements Animation, ArenaComp {
 		private final ArenaPanelAbstract<?, ?, ?> arena;
 		private final UnitComp comp;
-		private final Cell target;
+		private final int target;
 		private Position basePos;
 		private int cursor = 0;
 		private static final int Duration = 20;
 
-		Attack(ArenaPanelAbstract<?, ?, ?> arena, UnitComp comp, Cell target) {
+		Attack(ArenaPanelAbstract<?, ?, ?> arena, UnitComp comp, int target) {
 			this.arena = arena;
 			this.comp = comp;
 			this.target = target;
@@ -132,8 +134,8 @@ interface Animation {
 			int gestureIdx = (int) (cursor / ((double) Duration / gestureNum));
 			BufferedImage img = Images.getAttackImg(gestureIdx);
 
-			int x = arena.displayedXCell(target.x);
-			int y = arena.displayedYCell(target.y);
+			int x = arena.displayedXCell(Cell.x(target));
+			int y = arena.displayedYCell(Cell.y(target));
 			g.drawImage(img, x, y, null);
 		}
 

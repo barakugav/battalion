@@ -36,6 +36,7 @@ import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.core.Unit.Category;
 import com.ugav.battalion.core.Unit.Type;
+import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Utils;
 
 class LevelBuilderWindow extends JPanel implements Clearable {
@@ -388,7 +389,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		ArenaPanel() {
 			register.register(builder.onResetChange, e -> reset());
-			register.register(entityLayer.onTileClick, e -> tileClicked(e.cell));
+			register.register(entityLayer.onTileClick, e -> cellClicked(e.cell));
 
 			tickTaskManager.start();
 		}
@@ -409,11 +410,11 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			super.clear();
 		}
 
-		private void tileClicked(Cell pos) {
+		private void cellClicked(int cell) {
 			Object selectedObj = menu.selectedButton.entity;
 
 			if (selectedObj != null) {
-				TileDesc tile = builder.at(pos);
+				TileDesc tile = builder.at(cell);
 				if (selectedObj instanceof Terrain) {
 					Terrain terrain = (Terrain) selectedObj;
 
@@ -431,12 +432,12 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 							unit = oldUnit;
 					}
 
-					builder.setTile(pos, terrain, building, unit);
+					builder.setTile(cell, terrain, building, unit);
 
 				} else if (selectedObj instanceof BuildingDesc) {
 					BuildingDesc building = BuildingDesc.copyOf((BuildingDesc) selectedObj);
 					if (building.type.canBuildOn(tile.terrain))
-						builder.setTile(pos, tile.terrain, building, tile.unit);
+						builder.setTile(cell, tile.terrain, building, tile.unit);
 					// TODO else user message
 
 				} else if (selectedObj instanceof UnitDesc) {
@@ -445,19 +446,19 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					UnitDesc oldUnit;
 					if (tile.hasUnit() && (oldUnit = tile.getUnit()).team == unit.team && oldUnit.type.transportUnits
 							&& !unit.type.transportUnits && unit.type.category == Category.Land)
-						builder.setTile(pos, tile.terrain, tile.building, UnitDesc.transporter(oldUnit.type, unit));
+						builder.setTile(cell, tile.terrain, tile.building, UnitDesc.transporter(oldUnit.type, unit));
 
 					else if (unit.type.canStandOn(tile.terrain))
-						builder.setTile(pos, tile.terrain, tile.building, unit);
+						builder.setTile(cell, tile.terrain, tile.building, unit);
 					// TODO else user message
 
 				} else if (selectedObj == Menu.removeBuildingObj) {
 					if (tile.hasBuilding())
-						builder.setTile(pos, tile.terrain, null, tile.unit);
+						builder.setTile(cell, tile.terrain, null, tile.unit);
 
 				} else if (selectedObj == Menu.removeUnitObj) {
 					if (tile.hasUnit())
-						builder.setTile(pos, tile.terrain, tile.building, null);
+						builder.setTile(cell, tile.terrain, tile.building, null);
 
 				} else {
 					throw new IllegalArgumentException("Unknown menu selected object: " + selectedObj);
@@ -466,8 +467,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		}
 
 		@Override
-		Terrain getTerrain(Cell pos) {
-			return builder.at(pos).terrain;
+		Terrain getTerrain(int cell) {
+			return builder.at(cell).terrain;
 		}
 
 		private class EntityLayer
@@ -481,8 +482,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				super(arena);
 
 				register.register(builder.onTileChange, e -> {
-					TerrainComp comp = (TerrainComp) comps.computeIfAbsent(terrainKey(e.pos),
-							k -> new TerrainComp(e.pos));
+					TerrainComp comp = (TerrainComp) comps.computeIfAbsent(terrainKey(e.cell),
+							k -> new TerrainComp(e.cell));
 					comp.tileUpdate();
 				});
 			}
@@ -490,15 +491,16 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			void reset() {
 				removeAllArenaComps();
 
-				for (Cell pos : Cell.Iter2D.of(builder.width(), builder.height()).forEach()) {
-					TerrainComp tileComp = new TerrainComp(pos);
-					comps.put(terrainKey(pos), tileComp);
+				for (Iter.Int it = Cell.Iter2D.of(builder.width(), builder.height()); it.hasNext();) {
+					int cell = it.next();
+					TerrainComp tileComp = new TerrainComp(cell);
+					comps.put(terrainKey(cell), tileComp);
 					tileComp.tileUpdate();
 				}
 			}
 
-			private Object terrainKey(Cell pos) {
-				return "Terrain " + pos;
+			private Object terrainKey(int cell) {
+				return "Terrain " + cell;
 			}
 
 			private class TerrainComp extends ArenaPanelAbstract.TerrainComp {
@@ -506,8 +508,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				BuildingComp buildingComp;
 				UnitComp unitComp;
 
-				TerrainComp(Cell pos) {
-					super(ArenaPanel.this, pos);
+				TerrainComp(int cell) {
+					super(ArenaPanel.this, cell);
 				}
 
 				void tileUpdate() {
@@ -532,7 +534,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			private class UnitComp extends ArenaPanelAbstract.UnitComp {
 
-				UnitComp(ArenaPanelAbstract<?, ?, ?> arena, Cell pos, UnitDesc unit) {
+				UnitComp(ArenaPanelAbstract<?, ?, ?> arena, int pos, UnitDesc unit) {
 					super(arena, pos, unit);
 				}
 

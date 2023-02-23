@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.ugav.battalion.core.Unit.Type;
+import com.ugav.battalion.util.Iter;
 
 public class Level {
 
@@ -20,7 +21,7 @@ public class Level {
 		int height = tiles.height();
 		if (width < MINIMUM_WIDTH || height < MINIMUM_HEIGHT)
 			throw new IllegalArgumentException("illegal size: " + width + " " + height);
-		this.tiles = Cell.Array.fromFunc(width, height, tiles);
+		this.tiles = Cell.Array.fromFunc(width, height, cell -> tiles.at(cell));
 		this.startingMoney = Collections.unmodifiableMap(new HashMap<>(startingMoney));
 	}
 
@@ -32,8 +33,8 @@ public class Level {
 		return tiles.height();
 	}
 
-	public TileDesc at(Cell pos) {
-		return tiles.at(pos);
+	public TileDesc at(int cell) {
+		return tiles.at(cell);
 	}
 
 	public int getStartingMoney(Team team) {
@@ -51,17 +52,20 @@ public class Level {
 
 		if (width() != other.width() || height() != other.height())
 			return false;
-		for (Cell pos : Cell.Iter2D.of(width(), height()).forEach())
-			if (!Objects.equals(at(pos), other.at(pos)))
+
+		for (Iter.Int it = Cell.Iter2D.of(width(), height()); it.hasNext();) {
+			int cell = it.next();
+			if (!Objects.equals(at(cell), other.at(cell)))
 				return false;
+		}
 		return true;
 	}
 
 	@Override
 	public int hashCode() {
 		int hash = 1;
-		for (Cell pos : Cell.Iter2D.of(width(), height()).forEach())
-			hash = 31 * hash + Objects.hashCode(at(pos));
+		for (Iter.Int it = Cell.Iter2D.of(width(), height()); it.hasNext();)
+			hash = 31 * hash + Objects.hashCode(at(it.next()));
 		return hash;
 	}
 

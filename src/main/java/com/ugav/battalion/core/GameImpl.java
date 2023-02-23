@@ -13,6 +13,7 @@ import com.ugav.battalion.DataChangeNotifier;
 import com.ugav.battalion.DataEvent;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Unit.Weapon;
+import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Utils;
 
 class GameImpl implements Game {
@@ -67,31 +68,6 @@ class GameImpl implements Game {
 	}
 
 	@Override
-	public int width() {
-		return arena.width();
-	}
-
-	@Override
-	public int height() {
-		return arena.height();
-	}
-
-	@Override
-	public Terrain getTerrain(Cell pos) {
-		return arena.terrain(pos);
-	}
-
-	@Override
-	public Unit getUnit(Cell pos) {
-		return arena.unit(pos);
-	}
-
-	@Override
-	public Building getBuilding(Cell pos) {
-		return arena.building(pos);
-	}
-
-	@Override
 	public Team getTurn() {
 		return turn;
 	}
@@ -131,7 +107,8 @@ class GameImpl implements Game {
 		turn = turnIterator.next();
 
 		/* Conquer buildings */
-		for (Cell cell : arena.positions()) {
+		for (Iter.Int it = Cell.Iter2D.of(arena.width(), arena.height()); it.hasNext();) {
+			int cell = it.next();
 			Building building = arena.building(cell);
 			Unit unit = arena.unit(cell);
 			if (building == null || unit == null)
@@ -166,27 +143,27 @@ class GameImpl implements Game {
 	}
 
 	@Override
-	public void move(Unit unit, List<Cell> path) {
+	public void move(Unit unit, List<Integer> path) {
 		if (path.isEmpty() || !isMoveValid(unit, path))
 			throw new IllegalStateException();
 		move0(unit, path);
 		unit.setActive(false);
 	}
 
-	private void move0(Unit unit, List<Cell> path) {
-		Cell source = unit.getPos();
-		Cell destination = path.get(path.size() - 1);
+	private void move0(Unit unit, List<Integer> path) {
+		int source = unit.getPos();
+		int destination = path.get(path.size() - 1);
 		arena.removeUnit(source);
 		arena.setUnit(destination, unit);
 		unit.setPos(destination);
 	}
 
-	private boolean isMoveValid(Unit unit, List<Cell> path) {
+	private boolean isMoveValid(Unit unit, List<Integer> path) {
 		return unit.getTeam() == turn && unit.isActive() && unit.isMoveValid(path);
 	}
 
 	@Override
-	public List<Cell> calcRealPath(Unit unit, List<Cell> path) {
+	public List<Integer> calcRealPath(Unit unit, List<Integer> path) {
 		Cell.Bitmap passableMap = unit.getPassableMap(false);
 		for (int i = 0; i < path.size(); i++) {
 			if (!passableMap.contains(path.get(i))) {
@@ -198,13 +175,13 @@ class GameImpl implements Game {
 	}
 
 	@Override
-	public void moveAndAttack(Unit attacker, List<Cell> path, Unit target) {
+	public void moveAndAttack(Unit attacker, List<Integer> path, Unit target) {
 		if (attacker.type.weapon.type != Weapon.Type.CloseRange)
 			throw new UnsupportedOperationException("Only close range weapon are supported");
 
 		if (!path.isEmpty() && !attacker.isMoveValid(path))
 			throw new IllegalStateException();
-		if (!path.get(path.size() - 1).neighbors().contains(target.getPos()))
+		if (!Cell.areNeighbors(path.get(path.size() - 1), target.getPos()))
 			throw new IllegalStateException();
 		if (!isAttackValid(attacker, target))
 			throw new IllegalStateException();
@@ -249,7 +226,7 @@ class GameImpl implements Game {
 
 	@Override
 	public Unit buildUnit(Building factory, Unit.Type unitType) {
-		Cell pos = factory.getPos();
+		int pos = factory.getPos();
 		if (!factory.type.canBuildUnits || !factory.isActive() || arena.unit(pos) != null)
 			throw new IllegalStateException();
 
@@ -273,7 +250,7 @@ class GameImpl implements Game {
 
 	@Override
 	public Unit unitTransport(Unit transportedUnit, Unit.Type transportType) {
-		Cell pos = transportedUnit.getPos();
+		int pos = transportedUnit.getPos();
 
 		if (!transportedUnit.isActive() || transportedUnit.type.category != Unit.Category.Land)
 			throw new IllegalArgumentException();
@@ -298,7 +275,7 @@ class GameImpl implements Game {
 
 	@Override
 	public Unit transportFinish(Unit trasportedUnit) {
-		Cell pos = trasportedUnit.getPos();
+		int pos = trasportedUnit.getPos();
 
 		if (!trasportedUnit.isActive() || !trasportedUnit.type.transportUnits)
 			throw new IllegalArgumentException();

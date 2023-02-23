@@ -9,11 +9,9 @@ import javax.swing.SwingUtilities;
 
 import com.ugav.battalion.core.Arena;
 import com.ugav.battalion.core.Building;
-import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Team;
-import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.core.Unit.Type;
 import com.ugav.battalion.util.Utils;
@@ -31,31 +29,6 @@ class GameGUIImpl implements Game {
 	@Override
 	public Arena arena() {
 		return game.arena();
-	}
-
-	@Override
-	public int width() {
-		return game.width();
-	}
-
-	@Override
-	public int height() {
-		return game.height();
-	}
-
-	@Override
-	public Terrain getTerrain(Cell pos) {
-		return game.getTerrain(pos);
-	}
-
-	@Override
-	public Unit getUnit(Cell pos) {
-		return game.getUnit(pos);
-	}
-
-	@Override
-	public Building getBuilding(Cell pos) {
-		return game.getBuilding(pos);
 	}
 
 	@Override
@@ -91,23 +64,23 @@ class GameGUIImpl implements Game {
 	}
 
 	@Override
-	public List<Cell> calcRealPath(Unit unit, List<Cell> path) {
+	public List<Integer> calcRealPath(Unit unit, List<Integer> path) {
 		return game.calcRealPath(unit, path);
 	}
 
 	@Override
-	public void move(Unit unit, List<Cell> path) {
+	public void move(Unit unit, List<Integer> path) {
 		checkCorrectThread();
-		List<Cell> realPath = game.calcRealPath(unit, path);
-		List<Cell> animationPath = Utils.listOf(unit.getPos(), realPath);
+		List<Integer> realPath = game.calcRealPath(unit, path);
+		List<Integer> animationPath = Utils.listOf(unit.getPos(), realPath);
 		run(() -> gui.arenaPanel.animateUnitMove(unit, animationPath, () -> game.move(unit, realPath)));
 	}
 
 	@Override
-	public void moveAndAttack(Unit attacker, List<Cell> path, Unit target) {
+	public void moveAndAttack(Unit attacker, List<Integer> path, Unit target) {
 		checkCorrectThread();
-		List<Cell> realPath = game.calcRealPath(attacker, path);
-		List<Cell> animationPath = Utils.listOf(attacker.getPos(), realPath);
+		List<Integer> realPath = game.calcRealPath(attacker, path);
+		List<Integer> animationPath = Utils.listOf(attacker.getPos(), realPath);
 		if (path.size() == realPath.size())
 			run(() -> gui.arenaPanel.animateUnitMoveAndAttack(attacker, animationPath, target.getPos(),
 					() -> game.moveAndAttack(attacker, path, target)));

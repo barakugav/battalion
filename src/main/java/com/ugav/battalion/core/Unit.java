@@ -12,11 +12,12 @@ import java.util.function.Consumer;
 
 import com.ugav.battalion.core.Game.EntityChange;
 import com.ugav.battalion.core.Level.UnitDesc;
+import com.ugav.battalion.util.Iter;
 
 public class Unit extends Entity implements IUnit {
 
 	public final Type type;
-	private Cell pos;
+	private int pos;
 	private int health;
 	private final Unit transportedUnit; /* valid only if type.canTransportUnits */
 
@@ -84,14 +85,14 @@ public class Unit extends Entity implements IUnit {
 		return health <= 0;
 	}
 
-	void setPos(Cell pos) {
-		if (Objects.equals(this.pos, pos))
+	void setPos(int cell) {
+		if (this.pos == cell)
 			return;
-		this.pos = pos;
+		this.pos = cell;
 		onChange().notify(new EntityChange(this));
 	}
 
-	public Cell getPos() {
+	public int getPos() {
 		return pos;
 	}
 
@@ -104,13 +105,13 @@ public class Unit extends Entity implements IUnit {
 		return type.transportUnits ? Objects.requireNonNull(transportedUnit) : null;
 	}
 
-	boolean isMoveValid(List<Cell> path) {
+	boolean isMoveValid(List<Integer> path) {
 		if (path.isEmpty() || path.size() > type.moveLimit)
 			return false;
 		int[][] distanceMap = calcDistanceMap(false);
-		Cell prev = getPos();
-		for (Cell p : path) {
-			if (!prev.neighbors().contains(p) || distanceMap[p.x][p.y] < 0)
+		int prev = getPos();
+		for (int p : path) {
+			if (!Cell.areNeighbors(prev, p) || distanceMap[Cell.x(p)][Cell.y(p)] < 0)
 				return false;
 			prev = p;
 		}
@@ -323,7 +324,8 @@ public class Unit extends Entity implements IUnit {
 
 	private Cell.Bitmap getPassableMap0(boolean invisiableEnable) {
 		int[][] distanceMap = calcDistanceMap(invisiableEnable);
-		return Cell.Bitmap.fromPredicate(arena.width(), arena.height(), p -> distanceMap[p.x][p.y] >= 0);
+		return Cell.Bitmap.fromPredicate(arena.width(), arena.height(),
+				cell -> distanceMap[Cell.x(cell)][Cell.y(cell)] >= 0);
 	}
 
 	private final Arena.Cached<int[][]> distanceMapInvisiableEnable;
@@ -344,20 +346,20 @@ public class Unit extends Entity implements IUnit {
 		for (int x = 0; x < width; x++)
 			Arrays.fill(distanceMap[x], -1);
 
-		Cell[] fifo = new Cell[Math.min(4 * type.moveLimit * type.moveLimit, width * height)];
+		int[] fifo = new int[Math.min(4 * type.moveLimit * type.moveLimit, width * height)];
 		int fifoBegin = 0, fifoEnd = 0;
-		distanceMap[pos.x][pos.y] = 0;
+		distanceMap[Cell.x(pos)][Cell.y(pos)] = 0;
 		fifo[fifoEnd++] = pos;
 
 		while (fifoBegin != fifoEnd) {
-			Cell p = fifo[fifoBegin++];
-			int d = distanceMap[p.x][p.y];
+			int p = fifo[fifoBegin++];
+			int d = distanceMap[Cell.x(p)][Cell.y(p)];
 			assert d >= 0;
 
 			if (d >= type.moveLimit)
 				continue;
-			for (Cell neighbor : p.neighbors()) {
-				if (!arena.isValidPos(neighbor) || distanceMap[neighbor.x][neighbor.y] >= 0)
+			for (int neighbor : Cell.neighbors(p)) {
+				if (!arena.isValidCell(neighbor) || distanceMap[Cell.x(neighbor)][Cell.y(neighbor)] >= 0)
 					continue;
 				Terrain terrain = arena.terrain(neighbor);
 				if (!type.canStandOn(terrain))
@@ -367,24 +369,24 @@ public class Unit extends Entity implements IUnit {
 						&& unit.getTeam() != getTeam())
 					continue;
 
-				distanceMap[neighbor.x][neighbor.y] = d + 1;
+				distanceMap[Cell.x(neighbor)][Cell.y(neighbor)] = d + 1;
 				fifo[fifoEnd++] = neighbor;
 			}
 		}
-		Arrays.fill(fifo, null);
 
 		return distanceMap;
 	}
 
-	public List<Cell> calcPath(Cell destination) {
+	public List<Integer> calcPath(int destination) {
 		int[][] distanceMap = calcDistanceMap(true);
-		if (distanceMap[destination.x][destination.y] < 0)
+		if (distanceMap[Cell.x(destination)][Cell.y(destination)] < 0)
 			throw new IllegalArgumentException("Can't reach " + destination);
-		List<Cell> path = new ArrayList<>(distanceMap[destination.x][destination.y]);
-		for (Cell p = destination; !p.equals(getPos());) {
+		List<Integer> path = new ArrayList<>(distanceMap[Cell.x(destination)][Cell.y(destination)]);
+		for (int p = destination; p != getPos();) {
 			path.add(p);
-			for (Cell next : p.neighbors()) {
-				if (arena.isValidPos(next) && distanceMap[next.x][next.y] == distanceMap[p.x][p.y] - 1) {
+			for (int next : Cell.neighbors(p)) {
+				if (arena.isValidCell(next)
+						&& distanceMap[Cell.x(next)][Cell.y(next)] == distanceMap[Cell.x(p)][Cell.y(p)] - 1) {
 					p = next;
 					break;
 				}
@@ -394,13 +396,13 @@ public class Unit extends Entity implements IUnit {
 		return path;
 	}
 
-	public List<Cell> calcPathForAttack(Cell targetPos) {
+	public List<Integer> calcPathForAttack(int targetPos) {
 		Cell.Bitmap reachableMap = getReachableMap();
-		List<Cell> bestPath = null;
-		for (Cell p : targetPos.neighbors()) {
+		List<Integer> bestPath = null;
+		for (int p : Cell.neighbors(targetPos)) {
 			if (!reachableMap.contains(p))
 				continue;
-			List<Cell> path = calcPath(p);
+			List<Integer> path = calcPath(p);
 			if (bestPath == null || path.size() < bestPath.size())
 				bestPath = path;
 		}
@@ -437,25 +439,26 @@ public class Unit extends Entity implements IUnit {
 
 	private Cell.Bitmap getAttackableMapCloseRange(boolean invisiableEnable) {
 		Cell.Bitmap reachableMap = getReachableMap(invisiableEnable);
+		Cell.Bitmap attackableMap = Cell.Bitmap.ofFalse(arena.width(), arena.height());
 
-		boolean[][] attackableMap = new boolean[arena.width()][arena.height()];
-		for (Cell p : reachableMap) {
-			for (Cell n : p.neighbors()) {
-				if (!arena.isValidPos(n))
+		for (Iter.Int it = reachableMap.cells(); it.hasNext();) {
+			int cell = it.next();
+			for (int n : Cell.neighbors(cell)) {
+				if (!arena.isValidCell(n))
 					continue;
 				Unit neighbor = arena.unit(n);
 				if (neighbor == null || (invisiableEnable && !arena.isUnitVisible(n, getTeam())))
 					continue;
-				attackableMap[n.x][n.y] = neighbor.getTeam() != getTeam() && canAttack(neighbor);
+				attackableMap.set(n, neighbor.getTeam() != getTeam() && canAttack(neighbor));
 			}
 		}
 
-		return new Cell.Bitmap(attackableMap);
+		return attackableMap;
 	}
 
 	private Cell.Bitmap getAttackableMapLongRange(boolean invisiableEnable) {
 		return Cell.Bitmap.fromPredicate(arena.width(), arena.height(), p -> {
-			int distance = getPos().distNorm1(p);
+			int distance = Cell.distNorm1(getPos(), p);
 			Unit target = arena.unit(p);
 			if (target == null || (invisiableEnable && !arena.isUnitVisible(p, getTeam())))
 				return false;

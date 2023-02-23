@@ -28,10 +28,11 @@ import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
 import com.ugav.battalion.core.Level.UnitDesc;
-import com.ugav.battalion.util.Utils;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.util.Iter;
+import com.ugav.battalion.util.Utils;
 
 public class GameSideMenu extends JPanel implements Clearable {
 
@@ -469,23 +470,24 @@ public class GameSideMenu extends JPanel implements Clearable {
 			window.arenaPanel.tickTaskManager.addTask(1000, this::repaint);
 		}
 
-		private void drawImg(Graphics g, Cell pos, BufferedImage img) {
-			g.drawImage(img, pos.x * TileSize, pos.y * TileSize, null);
+		private void drawImg(Graphics g, int cell, BufferedImage img) {
+			g.drawImage(img, Cell.x(cell) * TileSize, Cell.y(cell) * TileSize, null);
 		}
 
 		@Override
 		public void paintComponent(Graphics g) {
-			for (Cell pos : arena.positions()) {
-				Terrain terrain = arena.terrain(pos);
-				drawImg(g, pos, Images.getMinimapTerrain(terrain.category));
+			for (Iter.Int it = arena.cells(); it.hasNext();) {
+				int cell = it.next();
+				Terrain terrain = arena.terrain(cell);
+				drawImg(g, cell, Images.getMinimapTerrain(terrain.category));
 
-				Building building = arena.building(pos);
+				Building building = arena.building(cell);
 				if (building != null)
-					drawImg(g, pos, Images.getMinimapBuilding(building.getTeam()));
+					drawImg(g, cell, Images.getMinimapBuilding(building.getTeam()));
 
-				Unit unit = arena.unit(pos);
+				Unit unit = arena.unit(cell);
 				if (unit != null)
-					drawImg(g, pos, Images.getMinimapUnit(unit.getTeam()));
+					drawImg(g, cell, Images.getMinimapUnit(unit.getTeam()));
 			}
 
 			Position currentMapPos = window.arenaPanel.getCurrentMapOrigin();

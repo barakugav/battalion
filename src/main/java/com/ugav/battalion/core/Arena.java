@@ -7,7 +7,6 @@ import com.ugav.battalion.DataChangeNotifier;
 import com.ugav.battalion.core.Game.EntityChange;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
-import com.ugav.battalion.util.ICollection;
 import com.ugav.battalion.util.Iter;
 
 @SuppressWarnings("unchecked")
@@ -21,7 +20,7 @@ public class Arena {
 
 	private Arena(Level level) {
 		int w = level.width(), h = level.height();
-		terrains = Cell.Array.fromFunc(w, h, pos -> level.at(pos).terrain);
+		terrains = Cell.Array.fromFunc(w, h, cell -> level.at(cell).terrain);
 		units = Cell.Array.fromFunc(w, h, pos -> createUnit(level.at(pos).unit, pos));
 		buildings = Cell.Array.fromFunc(w, h, pos -> createBuilding(level.at(pos).building, pos));
 	}
@@ -55,56 +54,40 @@ public class Arena {
 		return terrains.height();
 	}
 
-	public Terrain terrain(Cell pos) {
-		return terrains.at(pos);
+	public Terrain terrain(int cell) {
+		return terrains.at(cell);
 	}
 
-	public Unit unit(Cell pos) {
-		return units.at(pos);
+	public Unit unit(int cell) {
+		return units.at(cell);
 	}
 
-	public Building building(Cell pos) {
-		return buildings.at(pos);
+	public Building building(int cell) {
+		return buildings.at(cell);
 	}
 
-	void setUnit(Cell pos, Unit unit) {
-		assert units.at(pos) == null;
-		units.set(pos, Objects.requireNonNull(unit));
+	void setUnit(int cell, Unit unit) {
+		assert units.at(cell) == null;
+		units.set(cell, Objects.requireNonNull(unit));
 		increaseModCount();
 	}
 
-	void removeUnit(Cell pos) {
-		assert units.at(pos) != null;
-		units.set(pos, null);
+	void removeUnit(int cell) {
+		assert units.at(cell) != null;
+		units.set(cell, null);
 		increaseModCount();
 	}
 
-	public boolean isValidPos(Cell pos) {
-		return pos.isInRect(width() - 1, height() - 1);
+	public boolean isValidCell(int cell) {
+		return Cell.isInRect(cell, width() - 1, height() - 1);
 	}
 
-	private class Cells extends ICollection.Abstract<Cell> {
-
-		@Override
-		public int size() {
-			return width() * height();
-		}
-
-		@Override
-		public Iter<Cell> iterator() {
-			return new Cell.Iter2D(width(), height());
-		}
-
-	}
-
-	private final Cells cellsView = new Cells();
-
-	public ICollection<Cell> positions() {
-		return cellsView;
+	public Iter.Int cells() {
+		return new Cell.Iter2D(width(), height());
 	}
 
 	public Iter<Building> buildings() {
-		return positions().iterator().map(this::building).filter(Objects::nonNull);
+		return cells().map(this::building).filter(Objects::nonNull);
 	}
 
 	public Iter<Unit> units(Team team) {
@@ -112,22 +95,22 @@ public class Arena {
 	}
 
 	public Iter<Unit> units() {
-		return positions().iterator().map(this::unit).filter(Objects::nonNull);
+		return cells().map(this::unit).filter(Objects::nonNull);
 	}
 
-	private Building createBuilding(BuildingDesc desc, Cell pos) {
+	private Building createBuilding(BuildingDesc desc, int cell) {
 		if (desc == null)
 			return null;
 		Building building = Building.valueOf(this, desc);
-		building.setPos(pos);
+		building.setPos(cell);
 		return building;
 	}
 
-	private Unit createUnit(UnitDesc desc, Cell pos) {
+	private Unit createUnit(UnitDesc desc, int cell) {
 		if (desc == null)
 			return null;
 		Unit unit = Unit.valueOf(this, desc);
-		unit.setPos(pos);
+		unit.setPos(cell);
 		return unit;
 	}
 
@@ -143,8 +126,8 @@ public class Arena {
 
 				if (!unit.type.invisible || unit.getTeam() == viewer)
 					return true;
-				for (Cell n : pos.neighbors()) {
-					if (!isValidPos(n))
+				for (int n : Cell.neighbors(pos)) {
+					if (!isValidCell(n))
 						continue;
 					Unit neighbor = this.unit(n);
 					if (neighbor != null && neighbor.getTeam() == viewer)
@@ -160,10 +143,10 @@ public class Arena {
 		return visibleUnitBitmap[viewer.ordinal()].get();
 	}
 
-	public boolean isUnitVisible(Cell pos, Team viewer) {
-		if (!isValidPos(pos))
+	public boolean isUnitVisible(int cell, Team viewer) {
+		if (!isValidCell(cell))
 			throw new IllegalArgumentException();
-		return getVisibleUnitBitmap(viewer).contains(pos);
+		return getVisibleUnitBitmap(viewer).contains(cell);
 	}
 
 	private volatile int modCount;

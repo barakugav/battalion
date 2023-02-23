@@ -1,11 +1,14 @@
 package com.ugav.battalion.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
 public interface Iter<E> extends Iterator<E> {
@@ -24,11 +27,11 @@ public interface Iter<E> extends Iterator<E> {
 		};
 	}
 
-	public static class IterMap<T, R> implements Iter<R> {
+	public static class Map<T, R> implements Iter<R> {
 		private final Iterator<T> it;
 		private final Function<? super T, ? extends R> map;
 
-		IterMap(Iterator<T> it, Function<? super T, ? extends R> map) {
+		Map(Iterator<T> it, Function<? super T, ? extends R> map) {
 			this.it = Objects.requireNonNull(it);
 			this.map = Objects.requireNonNull(map);
 		}
@@ -46,19 +49,19 @@ public interface Iter<E> extends Iterator<E> {
 	}
 
 	default <T> Iter<T> map(Function<? super E, ? extends T> map) {
-		return new IterMap<>(this, map);
+		return new Map<>(this, map);
 	}
 
-	public static class IterIf<E> implements Iter<E> {
+	public static class Filter<E> implements Iter<E> {
 
 		private final Iterator<E> it;
-		private final Predicate<? super E> condition;
+		private final Predicate<? super E> filter;
 		private Object nextElm;
 		private static final Object NoElm = new Object();
 
-		public IterIf(Iterator<E> it, Predicate<? super E> condition) {
+		public Filter(Iterator<E> it, Predicate<? super E> filter) {
 			this.it = it;
-			this.condition = condition;
+			this.filter = filter;
 			nextElm = NoElm;
 		}
 
@@ -68,7 +71,7 @@ public interface Iter<E> extends Iterator<E> {
 				return true;
 			for (; it.hasNext();) {
 				E e = it.next();
-				if (condition.test(e)) {
+				if (filter.test(e)) {
 					nextElm = e;
 					return true;
 				}
@@ -88,7 +91,7 @@ public interface Iter<E> extends Iterator<E> {
 	}
 
 	default Iter<E> filter(Predicate<? super E> filter) {
-		return new IterIf<>(this, filter);
+		return new Filter<>(this, filter);
 	}
 
 	default List<E> collectList() {
@@ -102,12 +105,12 @@ public interface Iter<E> extends Iterator<E> {
 		return iterable(this);
 	}
 
-	static class EmptyIter<E> implements Iter<E> {
+	static class Empty<E> implements Iter<E> {
 
 		@SuppressWarnings("rawtypes")
-		private static final EmptyIter INSTANCE = new EmptyIter();
+		private static final Empty INSTANCE = new Empty();
 
-		private EmptyIter() {
+		private Empty() {
 		}
 
 		@Override
@@ -124,7 +127,7 @@ public interface Iter<E> extends Iterator<E> {
 
 	@SuppressWarnings("unchecked")
 	static <E> Iter<E> empty() {
-		return EmptyIter.INSTANCE;
+		return Empty.INSTANCE;
 	}
 
 	static class IterWrapper<E> implements Iter<E> {
@@ -149,6 +152,123 @@ public interface Iter<E> extends Iterator<E> {
 
 	static <E> Iter<E> of(Iterator<E> it) {
 		return (it instanceof Iter<E>) ? (Iter<E>) it : new IterWrapper<>(it);
+	}
+
+	public interface Int {
+
+		boolean hasNext();
+
+		int next();
+
+		public static class Map<R> implements Iter<R> {
+			private final Iter.Int it;
+			private final IntFunction<? extends R> map;
+
+			Map(Iter.Int it, IntFunction<? extends R> map) {
+				this.it = Objects.requireNonNull(it);
+				this.map = Objects.requireNonNull(map);
+			}
+
+			@Override
+			public boolean hasNext() {
+				return it.hasNext();
+			}
+
+			@Override
+			public R next() {
+				return map.apply(it.next());
+			}
+
+		}
+
+		default <T> Iter<T> map(IntFunction<? extends T> map) {
+			return new Map<>(this, map);
+		}
+
+		public static class Filter implements Iter.Int {
+
+			private final Iter.Int it;
+			private final IntPredicate filter;
+			private int nextElm;
+			private boolean nextValid;
+
+			public Filter(Iter.Int it, IntPredicate filter) {
+				this.it = it;
+				this.filter = filter;
+				nextValid = false;
+			}
+
+			@Override
+			public boolean hasNext() {
+				if (nextValid)
+					return true;
+				for (; it.hasNext();) {
+					int e = it.next();
+					if (filter.test(e)) {
+						nextElm = e;
+						nextValid = true;
+						return true;
+					}
+				}
+				return false;
+			}
+
+			@Override
+			public int next() {
+				if (!hasNext())
+					throw new NoSuchElementException();
+				nextValid = false;
+				return nextElm;
+			}
+		}
+
+		default Iter.Int filter(IntPredicate filter) {
+			return new Filter(this, filter);
+		}
+
+		default List<Integer> collectList() {
+			List<Integer> l = new ArrayList<>();
+			while (hasNext())
+				l.add(next());
+			return l;
+		}
+
+		default int[] collectArray() {
+			int[] arr = new int[16];
+			int size = 0;
+			while (hasNext()) {
+				if (size >= arr.length)
+					arr = Arrays.copyOf(arr, size * 2);
+				arr[size++] = next();
+			}
+			if (size != arr.length)
+				arr = Arrays.copyOf(arr, size);
+			return arr;
+		}
+
+		static class Empty implements Iter.Int {
+
+			private static final Empty INSTANCE = new Empty();
+
+			private Empty() {
+			}
+
+			@Override
+			public boolean hasNext() {
+				return false;
+			}
+
+			@Override
+			public int next() {
+				throw new NoSuchElementException();
+			}
+
+		}
+
+		static Iter.Int empty() {
+			return Empty.INSTANCE;
+		}
+
 	}
 
 }

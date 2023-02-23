@@ -10,15 +10,25 @@ public interface Game {
 
 	public Arena arena();
 
-	public int width();
+	default int width() {
+		return arena().width();
+	}
 
-	public int height();
+	default int height() {
+		return arena().height();
+	}
 
-	public Terrain getTerrain(Cell pos);
+	default Terrain getTerrain(int cell) {
+		return arena().terrain(cell);
+	}
 
-	public Unit getUnit(Cell pos);
+	default Unit getUnit(int cell) {
+		return arena().unit(cell);
+	}
 
-	public Building getBuilding(Cell pos);
+	default Building getBuilding(int cell) {
+		return arena().building(cell);
+	}
 
 	public Team getTurn();
 
@@ -32,11 +42,11 @@ public interface Game {
 
 	public Team getWinner();
 
-	public List<Cell> calcRealPath(Unit unit, List<Cell> path);
+	public List<Integer> calcRealPath(Unit unit, List<Integer> path);
 
-	public void move(Unit unit, List<Cell> path);
+	public void move(Unit unit, List<Integer> path);
 
-	public void moveAndAttack(Unit attacker, List<Cell> path, Unit target);
+	public void moveAndAttack(Unit attacker, List<Integer> path, Unit target);
 
 	public void attackRange(Unit attacker, Unit target);
 

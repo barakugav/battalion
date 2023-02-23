@@ -6,13 +6,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import com.ugav.battalion.DataChangeNotifier;
 import com.ugav.battalion.DataEvent;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.TileDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
+import com.ugav.battalion.util.Iter;
 
 public class LevelBuilder {
 
@@ -46,24 +47,24 @@ public class LevelBuilder {
 		onResetChange.notify(new LevelReset(this));
 	}
 
-	public TileDesc at(Cell pos) {
-		return tiles.at(pos);
+	public TileDesc at(int cell) {
+		return tiles.at(cell);
 	}
 
-	public LevelBuilder setTile(Cell pos, TileDesc tile) {
-		String errStr = checkValidTile(pos, tile);
+	public LevelBuilder setTile(int cell, TileDesc tile) {
+		String errStr = checkValidTile(cell, tile);
 		if (errStr != null) {
 			/* TODO: message to user */
 			System.err.println("Can't set tile: " + errStr);
 		} else {
-			tiles.set(pos, tile);
-			onTileChange.notify(new TileChange(this, pos));
+			tiles.set(cell, tile);
+			onTileChange.notify(new TileChange(this, cell));
 		}
 		return this;
 	}
 
-	public LevelBuilder setTile(Cell pos, Terrain terrain, BuildingDesc buiding, UnitDesc unit) {
-		return setTile(pos, TileDesc.of(terrain, buiding, unit));
+	public LevelBuilder setTile(int cell, Terrain terrain, BuildingDesc buiding, UnitDesc unit) {
+		return setTile(cell, TileDesc.of(terrain, buiding, unit));
 	}
 
 	public int width() {
@@ -79,16 +80,17 @@ public class LevelBuilder {
 	}
 
 	public Level buildLevel() {
-		for (Cell pos : Cell.Iter2D.of(width(), height()).forEach()) {
-			String errStr = checkValidTile(pos, at(pos));
+		for (Iter.Int it = Cell.Iter2D.of(width(), height()); it.hasNext();) {
+			int cell = it.next();
+			String errStr = checkValidTile(cell, at(cell));
 			if (errStr != null)
-				throw new IllegalStateException("Can't build level, error at " + pos + ": " + errStr);
+				throw new IllegalStateException("Can't build level, error at " + cell + ": " + errStr);
 		}
 		return new Level(tiles, startingMoney);
 	}
 
-	private String checkValidTile(Cell pos, TileDesc tile) {
-		if (!pos.isInRect(width() - 1, height() - 1))
+	private String checkValidTile(int cell, TileDesc tile) {
+		if (!Cell.isInRect(cell, width() - 1, height() - 1))
 			return "out of bound";
 		if (tile.hasBuilding())
 			if (!tile.building.type.canBuildOn(tile.terrain))
@@ -97,14 +99,14 @@ public class LevelBuilder {
 			if (!tile.unit.type.canStandOn(tile.terrain))
 				return "unit can't stand on terrain";
 
-		Function<Cell, Terrain> terrain = p -> pos.equals(p) ? tile.terrain : tiles.at(p).terrain;
-		List<Cell> checkBridge = new ArrayList<>(List.of(pos));
+		IntFunction<Terrain> terrain = p -> cell == p ? tile.terrain : tiles.at(p).terrain;
+		List<Integer> checkBridge = new ArrayList<>(List.of(cell));
 		for (Direction dir : Direction.values()) {
-			Cell p = pos.add(dir);
-			if (p.isInRect(width() - 1, height() - 1))
+			int p = Cell.add(cell, dir);
+			if (Cell.isInRect(p, width() - 1, height() - 1))
 				checkBridge.add(p);
 		}
-		for (Cell bridgePos : checkBridge) {
+		for (int bridgePos : checkBridge) {
 			if (EnumSet.of(Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh)
 					.contains(terrain.apply(bridgePos).category))
 				if (Terrain.isBridgeVertical(bridgePos, terrain, width(), height()) == null)
@@ -115,11 +117,11 @@ public class LevelBuilder {
 
 	public static class TileChange extends DataEvent {
 
-		public final Cell pos;
+		public final int cell;
 
-		public TileChange(LevelBuilder source, Cell pos) {
+		public TileChange(LevelBuilder source, int cell) {
 			super(source);
-			this.pos = pos;
+			this.cell = cell;
 		}
 
 	}

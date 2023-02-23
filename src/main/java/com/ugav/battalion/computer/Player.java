@@ -5,11 +5,9 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
 
-import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Unit;
-import com.ugav.battalion.util.Utils;
 
 public interface Player {
 
@@ -30,12 +28,12 @@ public interface Player {
 				if (units.isEmpty())
 					break;
 				Unit unit = units.get(rand.nextInt(units.size()));
-				List<Cell> reachable = Utils.listCollect(unit.getReachableMap());
-				reachable.remove(unit.getPos());
+				List<Integer> reachable = unit.getReachableMap().cells().collectList();
+				reachable.remove(Integer.valueOf(unit.getPos()));
 				if (reachable.isEmpty()) {
 					failedToMove.add(unit);
 				} else {
-					Cell destination = reachable.get(rand.nextInt(reachable.size()));
+					int destination = reachable.get(rand.nextInt(reachable.size()));
 					game.move(unit, game.calcRealPath(unit, unit.calcPath(destination)));
 				}
 			}

@@ -28,11 +28,11 @@ import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.TileDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
-import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.core.LevelBuilder;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.util.Iter;
 
 class LevelSerializerXML implements LevelSerializer {
 
@@ -74,11 +74,12 @@ class LevelSerializerXML implements LevelSerializer {
 			levelElm.appendChild(teamsElm);
 
 			Element tilesElm = dom.createElement("tiles");
-			for (Cell pos : Cell.Iter2D.of(level.width(), level.height()).forEach()) {
-				TileDesc tile = level.at(pos);
+			for (Iter.Int it = Cell.Iter2D.of(level.width(), level.height()); it.hasNext();) {
+				int cell = it.next();
+				TileDesc tile = level.at(cell);
 				Element tileElm = dom.createElement("tile");
-				addValueChild(dom, tileElm, "x", Integer.toString(pos.x));
-				addValueChild(dom, tileElm, "y", Integer.toString(pos.y));
+				addValueChild(dom, tileElm, "x", Integer.toString(Cell.x(cell)));
+				addValueChild(dom, tileElm, "y", Integer.toString(Cell.y(cell)));
 
 				addValueChild(dom, tileElm, "terrain", tile.terrain);
 
@@ -223,7 +224,7 @@ class LevelSerializerXML implements LevelSerializer {
 					}
 				}
 
-				builder.setTile(Cell.of(x, y), terrain, building, unit);
+				builder.setTile(Cell.valueOf(x, y), terrain, building, unit);
 			}
 
 			return builder.buildLevel();

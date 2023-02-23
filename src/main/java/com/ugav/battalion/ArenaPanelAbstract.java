@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
 import javax.swing.JLayeredPane;
@@ -190,7 +191,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		private final ArenaPanelAbstract<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> arena;
 		final Map<Object, ArenaComp> comps = new HashMap<>();
 
-		private Cell hovered;
+		private int hovered = Cell.valueOf(-1, -1);
 
 		final DataChangeNotifier<HoverChangeEvent> onHoverChange = new DataChangeNotifier<>();
 		final DataChangeNotifier<TileClickEvent> onTileClick = new DataChangeNotifier<>();
@@ -209,7 +210,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					requestFocusInWindow();
 					int clickx = EntityLayer.this.arena.displayedXInv(e.getX()) / TILE_SIZE_PIXEL;
 					int clicky = EntityLayer.this.arena.displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
-					onTileClick.notify(new TileClickEvent(EntityLayer.this.arena, Cell.of(clickx, clicky)));
+					onTileClick.notify(new TileClickEvent(EntityLayer.this.arena, Cell.valueOf(clickx, clicky)));
 				}
 			});
 			addMouseMotionListener(mouseMotionListener = new MouseAdapter() {
@@ -217,8 +218,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				public void mouseMoved(MouseEvent e) {
 					int x = EntityLayer.this.arena.displayedXInv(e.getX()) / TILE_SIZE_PIXEL;
 					int y = EntityLayer.this.arena.displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
-					if (hovered == null || hovered.x != x || hovered.y != y) {
-						hovered = Cell.of(x, y);
+					if (Cell.x(hovered) != x || Cell.y(hovered) != y) {
+						hovered = Cell.valueOf(x, y);
 						onHoverChange.notify(new HoverChangeEvent(EntityLayer.this.arena, hovered));
 					}
 				}
@@ -272,8 +273,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	}
 
-	void drawRelativeToMap(Graphics g, Object obj, Cell pos) {
-		drawRelativeToMap(g, obj, pos.x, pos.y);
+	void drawRelativeToMap(Graphics g, Object obj, int cell) {
+		drawRelativeToMap(g, obj, Cell.x(cell), Cell.y(cell));
 	}
 
 	void drawRelativeToMap(Graphics g, Object obj, Position pos) {
@@ -292,7 +293,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		g.drawImage(img, x, y + TILE_SIZE_PIXEL - img.getHeight(), this);
 	}
 
-	abstract Terrain getTerrain(Cell cell);
+	abstract Terrain getTerrain(int cell);
 
 	static interface ArenaComp extends Clearable {
 
@@ -322,15 +323,15 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	static class TerrainComp extends ArenaCompAbstract {
 
-		final Cell pos;
+		final int pos;
 
-		TerrainComp(ArenaPanelAbstract<?, ?, ?> arena, Cell pos) {
+		TerrainComp(ArenaPanelAbstract<?, ?, ?> arena, int pos) {
 			super(arena);
 			this.pos = pos;
 		}
 
-		private boolean inArena(Cell p) {
-			return p.isInRect(arena.arenaWidth - 1, arena.arenaHeight - 1);
+		private boolean inArena(int p) {
+			return Cell.isInRect(p, arena.arenaWidth - 1, arena.arenaHeight - 1);
 		}
 
 		@Override
@@ -349,7 +350,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					throw new IllegalArgumentException("Unexpected value: " + quadrant);
 				}
 			};
-			Predicate<Cell> isBridgeHorizontal = bridgePos -> Objects.requireNonNull(
+			IntPredicate isBridgeHorizontal = bridgePos -> Objects.requireNonNull(
 					Terrain.isBridgeVertical(bridgePos, p -> arena.getTerrain(p), arena.arenaWidth, arena.arenaHeight),
 					"Can't determine bridge orientation").booleanValue();
 
@@ -358,10 +359,11 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				arena.drawRelativeToMap(g, terrain, pos);
 				for (int quadrant = 0; quadrant < 4; quadrant++) {
 					Pair<Direction, Direction> dirs = quadrantToDirs.apply(quadrant);
-					Cell p1 = pos.add(dirs.e1), p2 = pos.add(dirs.e2), p3 = pos.add(dirs.e1).add(dirs.e2);
+					int p1 = Cell.add(pos, dirs.e1), p2 = Cell.add(pos, dirs.e2),
+							p3 = Cell.add(Cell.add(pos, dirs.e1), dirs.e2);
 					Set<Terrain.Category> waters = EnumSet.of(Terrain.Category.Water, Terrain.Category.BridgeLow,
 							Terrain.Category.BridgeHigh, Terrain.Category.Shore);
-					Predicate<Cell> isWater = p -> !inArena(p) || waters.contains(arena.getTerrain(p).category);
+					IntPredicate isWater = p -> !inArena(p) || waters.contains(arena.getTerrain(p).category);
 					boolean c1 = !isWater.test(p1), c2 = !isWater.test(p2), c3 = !isWater.test(p3);
 
 					if (c1 || c2 || c3) {
@@ -374,7 +376,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			} else if (terrain == Terrain.Road) {
 				String variant = "";
 				for (Direction dir : List.of(Direction.XPos, Direction.YNeg, Direction.XNeg, Direction.YPos)) {
-					Cell p = pos.add(dir);
+					int p = Cell.add(pos, dir);
 					Set<Terrain.Category> roads = EnumSet.of(Terrain.Category.Road, Terrain.Category.BridgeLow,
 							Terrain.Category.BridgeHigh);
 					variant += inArena(p) && roads.contains(arena.getTerrain(p).category) ? "v" : "x";
@@ -384,7 +386,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			} else if (EnumSet.of(Terrain.BridgeLow, Terrain.BridgeHigh).contains(terrain)) {
 				Set<Direction> ends = EnumSet.noneOf(Direction.class);
 				for (Direction dir : EnumSet.of(Direction.XPos, Direction.YNeg, Direction.XNeg, Direction.YPos)) {
-					Cell p = pos.add(dir);
+					int p = Cell.add(pos, dir);
 					Set<Terrain.Category> endCategoties = EnumSet.of(Terrain.Category.Road, Terrain.Category.FlatLand,
 							Terrain.Category.RoughLand, Terrain.Category.ExtremeLand, Terrain.Category.Shore);
 					if (inArena(p) && endCategoties.contains(arena.getTerrain(p).category))
@@ -408,12 +410,13 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 				for (int quadrant = 0; quadrant < 4; quadrant++) {
 					Pair<Direction, Direction> dirs = quadrantToDirs.apply(quadrant);
-					Cell p1 = pos.add(dirs.e1), p2 = pos.add(dirs.e2), p3 = pos.add(dirs.e1).add(dirs.e2);
-					Predicate<Cell> isWater = p -> (!inArena(p)
+					int p1 = Cell.add(pos, dirs.e1), p2 = Cell.add(pos, dirs.e2),
+							p3 = Cell.add(Cell.add(pos, dirs.e1), dirs.e2);
+					IntPredicate isWater = p -> (!inArena(p)
 							|| EnumSet.of(Terrain.Category.Water, Terrain.Category.Shore, Terrain.Category.BridgeLow,
 									Terrain.Category.BridgeHigh).contains(arena.getTerrain(p).category));
 					Predicate<Direction> isBridge = dir -> {
-						Cell p = pos.add(dir);
+						int p = Cell.add(pos, dir);
 						if (!inArena(p) || !EnumSet.of(Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh)
 								.contains(arena.getTerrain(p).category))
 							return false;
@@ -469,12 +472,12 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	static class BuildingComp extends ArenaCompAbstract {
 
 		private final IBuilding building;
-		private final Cell pos;
+		private final int pos;
 
-		BuildingComp(ArenaPanelAbstract<?, ?, ?> arena, Cell pos, IBuilding building) {
+		BuildingComp(ArenaPanelAbstract<?, ?, ?> arena, int pos, IBuilding building) {
 			super(arena);
 			this.building = Objects.requireNonNull(building);
-			this.pos = Objects.requireNonNull(pos);
+			this.pos = pos;
 		}
 
 		IBuilding building() {
@@ -487,8 +490,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 			/* Draw flag */
 			BufferedImage flagImg = Images.getFlagImg(building.getTeam(), getFlagGesture());
-			int x = arena.displayedXCell(pos.x) + 42;
-			int y = arena.displayedYCell(pos.y) - 3;
+			int x = arena.displayedXCell(Cell.x(pos)) + 42;
+			int y = arena.displayedYCell(Cell.y(pos)) - 3;
 			g.drawImage(flagImg, x, y, arena);
 		}
 
@@ -523,7 +526,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		volatile Direction orientation = Direction.XPos;
 		volatile boolean isMoving = false;
 
-		UnitComp(ArenaPanelAbstract<?, ?, ?> arena, Cell pos, IUnit unit) {
+		UnitComp(ArenaPanelAbstract<?, ?, ?> arena, int pos, IUnit unit) {
 			super(arena);
 			this.unit = Objects.requireNonNull(unit);
 			this.pos = Position.of(pos);
@@ -585,9 +588,9 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	static class HoverChangeEvent extends DataEvent {
 
-		final Cell cell;
+		final int cell;
 
-		HoverChangeEvent(ArenaPanelAbstract<?, ?, ?> source, Cell cell) {
+		HoverChangeEvent(ArenaPanelAbstract<?, ?, ?> source, int cell) {
 			super(source);
 			this.cell = cell;
 		}
@@ -596,9 +599,9 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	static class TileClickEvent extends DataEvent {
 
-		final Cell cell;
+		final int cell;
 
-		TileClickEvent(ArenaPanelAbstract<?, ?, ?> source, Cell cell) {
+		TileClickEvent(ArenaPanelAbstract<?, ?, ?> source, int cell) {
 			super(source);
 			this.cell = cell;
 		}
