@@ -397,16 +397,25 @@ public class Unit extends Entity implements IUnit {
 	}
 
 	public List<Integer> calcPathForAttack(int targetPos) {
-		Cell.Bitmap reachableMap = getReachableMap();
-		List<Integer> bestPath = null;
-		for (int p : Cell.neighbors(targetPos)) {
-			if (!reachableMap.contains(p))
+		int[][] distanceMap = calcDistanceMap(true);
+		final int NoValue = Cell.valueOf(-1, -1);
+		int destination = NoValue;
+		int length = Integer.MAX_VALUE;
+		for (int dest : Cell.neighbors(targetPos)) {
+			if (!arena.isValidCell(dest))
 				continue;
-			List<Integer> path = calcPath(p);
-			if (bestPath == null || path.size() < bestPath.size())
-				bestPath = path;
+			int l = distanceMap[Cell.x(dest)][Cell.y(dest)];
+			if (l < 0)
+				continue;
+			if (destination == NoValue || length > l) {
+				destination = dest;
+				length = l;
+			}
 		}
-		return bestPath;
+		if (destination == NoValue)
+			throw new IllegalArgumentException("Can't attack target: " + Cell.toString(targetPos));
+
+		return calcPath(destination);
 	}
 
 	public Cell.Bitmap getAttackableMap() {
