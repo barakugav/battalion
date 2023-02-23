@@ -36,6 +36,7 @@ import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.core.Unit.Category;
 import com.ugav.battalion.core.Unit.Type;
+import com.ugav.battalion.util.DebugPrintsManager;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Utils;
 

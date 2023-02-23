@@ -29,6 +29,7 @@ import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.util.DebugPrintsManager;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Utils;
 

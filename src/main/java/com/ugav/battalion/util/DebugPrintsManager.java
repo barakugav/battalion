@@ -1,8 +1,8 @@
-package com.ugav.battalion;
+package com.ugav.battalion.util;
 
 import java.io.PrintStream;
 
-class DebugPrintsManager {
+public class DebugPrintsManager {
 
 	private boolean enable;
 	private PrintStream printStream;

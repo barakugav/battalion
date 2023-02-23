@@ -19,10 +19,10 @@ class MiniMaxAlphaBeta<Move extends IMove, Position extends IPosition<Move>, Gam
 
 	Move chooseMove(Position position) {
 		final int us = position.getTurn();
-		double alpha = Double.MIN_VALUE, beta = Double.MAX_VALUE;
+		double alpha = Double.MAX_VALUE, beta = Double.MAX_VALUE;
 
 		Move bestMove = null;
-		double bestEval = Double.MIN_VALUE;
+		double bestEval = -Double.MAX_VALUE;
 //		double bestEval = game.evaluate(position, us);
 //		alpha = Math.max(alpha, bestEval);
 
@@ -42,7 +42,7 @@ class MiniMaxAlphaBeta<Move extends IMove, Position extends IPosition<Move>, Gam
 		if (depth == maxDepth || position.isTerminated())
 			return game.evaluate(position, us);
 		if (position.getTurn() == us) {
-			double val = Double.MIN_VALUE;
+			double val = -Double.MAX_VALUE;
 			for (Move move : position.availableMoves().forEach()) {
 				Position child = game.getMovedPosition(position, move);
 				val = Math.max(val, evaluate(child, depth + 1, alpha, beta, us));

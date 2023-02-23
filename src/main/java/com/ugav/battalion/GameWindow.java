@@ -11,8 +11,10 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import com.ugav.battalion.computer.Player;
+import com.ugav.battalion.computer.PlayerMiniMaxAlphaBeta;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level;
+import com.ugav.battalion.util.DebugPrintsManager;
 
 class GameWindow extends JPanel implements Clearable {
 
@@ -21,8 +23,8 @@ class GameWindow extends JPanel implements Clearable {
 	final GameArenaPanel arenaPanel;
 
 	final Game game;
-	private final Player computer = new Player.Random();
-//	private final Player computer = new PlayerMiniMaxAlphaBeta();
+//	private final Player computer = new Player.Random();
+	private final Player computer = new PlayerMiniMaxAlphaBeta();
 	private final DebugPrintsManager debug = new DebugPrintsManager(true); // TODO
 	private final DataChangeRegister register = new DataChangeRegister();
 
