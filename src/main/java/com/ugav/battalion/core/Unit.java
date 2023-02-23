@@ -343,27 +343,36 @@ public class Unit extends Entity implements IUnit {
 		int[][] distanceMap = new int[width][height];
 		for (int x = 0; x < width; x++)
 			Arrays.fill(distanceMap[x], -1);
-		distanceMap[pos.x][pos.y] = 0;
 
-		int maxMove = type.moveLimit;
-		for (int moveLen = 1; moveLen <= maxMove; moveLen++) {
-			for (Cell p : arena.positions()) {
-				Terrain terrain = arena.terrain(p);
-				if (distanceMap[p.x][p.y] >= 0 || !type.canStandOn(terrain))
+		Cell[] fifo = new Cell[Math.min(4 * type.moveLimit * type.moveLimit, width * height)];
+		int fifoBegin = 0, fifoEnd = 0;
+		distanceMap[pos.x][pos.y] = 0;
+		fifo[fifoEnd++] = pos;
+
+		while (fifoBegin != fifoEnd) {
+			Cell p = fifo[fifoBegin++];
+			int d = distanceMap[p.x][p.y];
+			assert d >= 0;
+
+			if (d >= type.moveLimit)
+				continue;
+			for (Cell neighbor : p.neighbors()) {
+				if (!arena.isValidPos(neighbor) || distanceMap[neighbor.x][neighbor.y] >= 0)
 					continue;
-				Unit unit = arena.unit(p);
-				if (unit != null && !(invisiableEnable && !arena.isUnitVisible(p, getTeam()))
+				Terrain terrain = arena.terrain(neighbor);
+				if (!type.canStandOn(terrain))
+					continue;
+				Unit unit = arena.unit(neighbor);
+				if (unit != null && !(invisiableEnable && !arena.isUnitVisible(neighbor, getTeam()))
 						&& unit.getTeam() != getTeam())
 					continue;
 
-				for (Cell neighbor : p.neighbors()) {
-					if (arena.isValidPos(neighbor) && distanceMap[neighbor.x][neighbor.y] == moveLen - 1) {
-						distanceMap[p.x][p.y] = moveLen;
-						break;
-					}
-				}
+				distanceMap[neighbor.x][neighbor.y] = d + 1;
+				fifo[fifoEnd++] = neighbor;
 			}
 		}
+		Arrays.fill(fifo, null);
+
 		return distanceMap;
 	}
 
