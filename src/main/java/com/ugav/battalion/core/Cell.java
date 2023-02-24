@@ -1,5 +1,6 @@
 package com.ugav.battalion.core;
 
+import java.util.BitSet;
 import java.util.NoSuchElementException;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
@@ -128,29 +129,34 @@ public class Cell {
 
 	public static class Bitmap {
 
-		private final boolean[][] map;
+		private final BitSet map;
+		private final int width, height;
 
-		public static final Bitmap Empty = new Bitmap(new boolean[0][0]);
+		public static Bitmap empty() {
+			return new Bitmap(0, 0);
+		}
 
-		public Bitmap(boolean[][] map) {
-			this.map = map;
+		private Bitmap(int width, int height) {
+			this.width = width;
+			this.height = height;
+			this.map = new BitSet(width * height);
 		}
 
 		public static Bitmap fromPredicate(int width, int height, IntPredicate predicate) {
-			boolean[][] map = new boolean[width][height];
+			Bitmap map = new Bitmap(width, height);
 			for (Iter.Int it = Iter2D.of(width, height); it.hasNext();) {
 				int cell = it.next();
-				map[x(cell)][y(cell)] = predicate.test(cell);
+				map.set(cell, predicate.test(cell));
 			}
-			return new Bitmap(map);
+			return map;
 		}
 
 		public int width() {
-			return map.length;
+			return width;
 		}
 
 		public int height() {
-			return map.length != 0 ? map[0].length : 0;
+			return height;
 		}
 
 		public boolean contains(int cell) {
@@ -158,7 +164,7 @@ public class Cell {
 		}
 
 		public boolean contains(int x, int y) {
-			return 0 <= x && x < width() && 0 <= y && y < height() && map[x][y];
+			return isInRange(x, y) && map.get(indexOf(x, y));
 		}
 
 		public void set(int cell, boolean val) {
@@ -166,27 +172,29 @@ public class Cell {
 		}
 
 		public void set(int x, int y, boolean val) {
-			map[x][y] = val;
+			if (!isInRange(x, y))
+				throw new IndexOutOfBoundsException();
+			map.set(indexOf(x, y), val);
 		}
 
 		public Iter.Int cells() {
-			return Iter2D.of(width(), height()).filter(this::contains);
+			return Iter2D.of(width, height).filter(this::contains);
 		}
 
 		public Bitmap not() {
-			return fromPredicate(width(), height(), cell -> !contains(cell));
+			return fromPredicate(width, height, cell -> !contains(cell));
 		}
 
 		public Bitmap and(IntPredicate predicate) {
-			return fromPredicate(width(), height(), cell -> contains(cell) && predicate.test(cell));
+			return fromPredicate(width, height, cell -> contains(cell) && predicate.test(cell));
 		}
 
 		public Bitmap or(IntPredicate predicate) {
-			return fromPredicate(width(), height(), cell -> contains(cell) || predicate.test(cell));
+			return fromPredicate(width, height, cell -> contains(cell) || predicate.test(cell));
 		}
 
 		public Bitmap xor(IntPredicate predicate) {
-			return fromPredicate(width(), height(), cell -> contains(cell) ^ predicate.test(cell));
+			return fromPredicate(width, height, cell -> contains(cell) ^ predicate.test(cell));
 		}
 
 		public static Bitmap ofTrue(int width, int height) {
@@ -195,6 +203,14 @@ public class Cell {
 
 		public static Bitmap ofFalse(int width, int height) {
 			return fromPredicate(width, height, p -> false);
+		}
+
+		private int indexOf(int x, int y) {
+			return x * width + y;
+		}
+
+		private boolean isInRange(int x, int y) {
+			return 0 <= x && x < width && 0 <= y && y < height;
 		}
 
 	}

@@ -477,7 +477,7 @@ public class Unit extends Entity implements IUnit {
 		case LongRange:
 			return getAttackableMapLongRange(invisiableEnable);
 		case None:
-			return Cell.Bitmap.Empty;
+			return Cell.Bitmap.empty();
 		default:
 			throw new IllegalArgumentException("Unexpected value: " + type.weapon.type);
 		}

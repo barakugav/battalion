@@ -349,9 +349,9 @@ public class GameArenaPanel extends
 
 		private static final long serialVersionUID = 1L;
 
-		private Cell.Bitmap passableMap = Cell.Bitmap.Empty;
-		private Cell.Bitmap reachableMap = Cell.Bitmap.Empty;
-		private Cell.Bitmap attackableMap = Cell.Bitmap.Empty;
+		private Cell.Bitmap passableMap = Cell.Bitmap.empty();
+		private Cell.Bitmap reachableMap = Cell.Bitmap.empty();
+		private Cell.Bitmap attackableMap = Cell.Bitmap.empty();
 		private final List<Integer> movePath;
 
 		private final GestureTask gestureTask = new GestureTask();
@@ -387,9 +387,9 @@ public class GameArenaPanel extends
 				}
 			});
 			register.register(onSelectionChange, e -> {
-				passableMap = Cell.Bitmap.Empty;
-				reachableMap = Cell.Bitmap.Empty;
-				attackableMap = Cell.Bitmap.Empty;
+				passableMap = Cell.Bitmap.empty();
+				reachableMap = Cell.Bitmap.empty();
+				attackableMap = Cell.Bitmap.empty();
 				movePath.clear();
 				if (e.obj instanceof Unit) {
 					Unit unit = (Unit) e.obj;
