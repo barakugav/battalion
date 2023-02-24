@@ -372,4 +372,72 @@ public interface ListInt {
 
 	}
 
+	public static ListInt of(int... data) {
+		return new ListInt() {
+
+			@Override
+			public int size() {
+				return data.length;
+			}
+
+			@Override
+			public int set(int index, int x) {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public void removeIndex(int index) {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public boolean remove(int x) {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public Iter.Int iterator(int beginIdx) {
+				if (beginIdx < 0 || beginIdx > size())
+					throw new IndexOutOfBoundsException(beginIdx);
+				return new Iter.Int() {
+
+					int idx = beginIdx;
+
+					@Override
+					public boolean hasNext() {
+						return idx < size();
+					}
+
+					@Override
+					public int next() {
+						if (!hasNext())
+							throw new NoSuchElementException();
+						return data[idx++];
+					}
+
+				};
+			}
+
+			@Override
+			public int get(int index) {
+				return data[index];
+			}
+
+			@Override
+			public void clear() {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public boolean addAll(ListInt l) {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public boolean add(int e) {
+				throw new UnsupportedOperationException();
+			}
+		};
+	}
+
 }

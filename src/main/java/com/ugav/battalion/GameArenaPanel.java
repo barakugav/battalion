@@ -265,7 +265,7 @@ public class GameArenaPanel extends
 			animation = new Animation.UnitAppear(comp);
 		else
 			animation = new Animation.UnitAppearDisappear(comp);
-		animation = makeSureAnimationIsVisible(animation, unit.getPos());
+		animation = makeSureAnimationIsVisible(animation, ListInt.of(unit.getPos()));
 		runAnimationAsync(animation, future);
 	}
 
@@ -282,7 +282,10 @@ public class GameArenaPanel extends
 		Animation animation = Animation.of(new Animation.UnitMove(comp, path),
 				new Animation.Attack(this, comp, target));
 		animation = appearDisappearAnimationWrap(comp, animation);
-		animation = makeSureAnimationIsVisible(animation, path, target);
+		ListInt animatedCells = new ListInt.Array(path.size() + 1);
+		animatedCells.addAll(path);
+		animatedCells.add(target);
+		animation = makeSureAnimationIsVisible(animation, animatedCells);
 		runAnimationAsync(animation, future);
 	}
 
@@ -290,7 +293,7 @@ public class GameArenaPanel extends
 		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
 		Animation animation = new Animation.Attack(this, comp, target);
 		animation = appearDisappearAnimationWrap(comp, animation);
-		animation = makeSureAnimationIsVisible(animation, unit.getPos(), target);
+		animation = makeSureAnimationIsVisible(animation, ListInt.of(unit.getPos(), target));
 		runAnimationAsync(animation, future);
 	}
 
@@ -300,17 +303,7 @@ public class GameArenaPanel extends
 		return animation;
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Animation makeSureAnimationIsVisible(Animation animation, Object... cells0) {
-		ListInt cells = new ListInt.Array();
-		for (Object cell0 : cells0) {
-			if (cell0 instanceof Integer)
-				cells.add(((Integer) cell0).intValue());
-			else if (cell0 instanceof ListInt)
-				cells.addAll((ListInt) cell0);
-			else
-				throw new IllegalArgumentException("unsupported cell(s) type: " + cells0);
-		}
+	private Animation makeSureAnimationIsVisible(Animation animation, ListInt cells) {
 		if (cells.isEmpty())
 			throw new IllegalArgumentException();
 		int p0 = cells.get(0);
@@ -379,7 +372,7 @@ public class GameArenaPanel extends
 				if (e.unit.isDead()) {
 					UnitComp unitComp = (UnitComp) comps.get(e.unit);
 					Animation animation = new Animation.UnitDeath(GameArenaPanel.this, unitComp);
-					animation = makeSureAnimationIsVisible(animation, e.unit.getPos());
+					animation = makeSureAnimationIsVisible(animation, ListInt.of(e.unit.getPos()));
 					runAnimationAsync(animation, () -> {
 						comps.remove(e.unit);
 						unitComp.clear();
