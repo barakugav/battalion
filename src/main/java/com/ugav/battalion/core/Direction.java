@@ -11,4 +11,19 @@ public enum Direction {
 		this.dy = dc;
 	}
 
+	Direction opposite() {
+		switch (this) {
+		case XPos:
+			return XNeg;
+		case XNeg:
+			return XPos;
+		case YPos:
+			return YNeg;
+		case YNeg:
+			return YPos;
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + this);
+		}
+	}
+
 };

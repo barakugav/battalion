@@ -547,12 +547,12 @@ public class GameArenaPanel extends
 				movePath.addAll(unit.calcPath(destination));
 			}
 			List<Integer> path = new ArrayList<>(movePath);
-			debug.println("Move ", unit.getPos(), " ", destination);
+			debug.println("Move ", Cell.toString(unit.getPos()), " ", Cell.toString(destination));
 			window.gameAction(() -> game.move(unit, path));
 		}
 
 		private void unitAttack(Unit attacker, Unit target) {
-			debug.println("Attack ", attacker.getPos(), " ", target.getPos());
+			debug.println("Attack ", Cell.toString(attacker.getPos()), " ", Cell.toString(target.getPos()));
 			switch (attacker.type.weapon.type) {
 			case CloseRange:
 				int moveTarget = movePath.isEmpty() ? attacker.getPos() : movePath.get(movePath.size() - 1);
