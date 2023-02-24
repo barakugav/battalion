@@ -2,11 +2,8 @@ package com.ugav.battalion;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -17,6 +14,7 @@ import com.ugav.battalion.ArenaPanelAbstract.ArenaComp;
 import com.ugav.battalion.GameArenaPanel.EntityLayer.UnitComp;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
+import com.ugav.battalion.util.ListInt;
 
 @FunctionalInterface
 interface Animation {
@@ -32,15 +30,15 @@ interface Animation {
 	static class UnitMove implements Animation {
 
 		final UnitComp comp;
-		private final List<Integer> path;
+		private final ListInt path;
 		private int cursor;
 		private static final int StepSize = 16;
 
-		UnitMove(UnitComp comp, List<Integer> path) {
+		UnitMove(UnitComp comp, ListInt path) {
 			if (path.isEmpty())
 				throw new IllegalArgumentException();
 			this.comp = Objects.requireNonNull(comp);
-			this.path = Collections.unmodifiableList(new ArrayList<>(path));
+			this.path = path.copy().unmodifiableView();
 		}
 
 		@Override

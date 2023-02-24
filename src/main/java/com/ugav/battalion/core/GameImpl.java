@@ -1,11 +1,9 @@
 package com.ugav.battalion.core;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,6 +12,7 @@ import com.ugav.battalion.DataEvent;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Unit.Weapon;
 import com.ugav.battalion.util.Iter;
+import com.ugav.battalion.util.ListInt;
 import com.ugav.battalion.util.Utils;
 
 class GameImpl implements Game {
@@ -143,27 +142,27 @@ class GameImpl implements Game {
 	}
 
 	@Override
-	public void move(Unit unit, List<Integer> path) {
+	public void move(Unit unit, ListInt path) {
 		if (path.isEmpty() || !isMoveValid(unit, path))
 			throw new IllegalStateException();
 		move0(unit, path);
 		unit.setActive(false);
 	}
 
-	private void move0(Unit unit, List<Integer> path) {
+	private void move0(Unit unit, ListInt path) {
 		int source = unit.getPos();
-		int destination = path.get(path.size() - 1);
+		int destination = path.last();
 		arena.removeUnit(source);
 		arena.setUnit(destination, unit);
 		unit.setPos(destination);
 	}
 
-	private boolean isMoveValid(Unit unit, List<Integer> path) {
+	private boolean isMoveValid(Unit unit, ListInt path) {
 		return unit.getTeam() == turn && unit.isActive() && unit.isMoveValid(path);
 	}
 
 	@Override
-	public List<Integer> calcRealPath(Unit unit, List<Integer> path) {
+	public ListInt calcRealPath(Unit unit, ListInt path) {
 		Cell.Bitmap passableMap = unit.getPassableMap(false);
 		for (int i = 0; i < path.size(); i++) {
 			if (!passableMap.contains(path.get(i))) {
@@ -171,17 +170,17 @@ class GameImpl implements Game {
 				break;
 			}
 		}
-		return new ArrayList<>(path);
+		return new ListInt.Array(path);
 	}
 
 	@Override
-	public void moveAndAttack(Unit attacker, List<Integer> path, Unit target) {
+	public void moveAndAttack(Unit attacker, ListInt path, Unit target) {
 		if (attacker.type.weapon.type != Weapon.Type.CloseRange)
 			throw new UnsupportedOperationException("Only close range weapon are supported");
 
 		if (!path.isEmpty() && !attacker.isMoveValid(path))
 			throw new IllegalStateException();
-		if (!Cell.areNeighbors(path.get(path.size() - 1), target.getPos()))
+		if (!Cell.areNeighbors(path.last(), target.getPos()))
 			throw new IllegalStateException();
 		if (!isAttackValid(attacker, target))
 			throw new IllegalStateException();

@@ -1,9 +1,7 @@
 package com.ugav.battalion.core;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.IntFunction;
@@ -14,6 +12,7 @@ import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.TileDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.util.Iter;
+import com.ugav.battalion.util.ListInt;
 
 public class LevelBuilder {
 
@@ -100,13 +99,16 @@ public class LevelBuilder {
 				return "unit can't stand on terrain";
 
 		IntFunction<Terrain> terrain = p -> cell == p ? tile.terrain : tiles.at(p).terrain;
-		List<Integer> checkBridge = new ArrayList<>(List.of(cell));
+		ListInt checkBridge = new ListInt.Array();
+		checkBridge.add(cell);
 		for (Direction dir : Direction.values()) {
 			int p = Cell.add(cell, dir);
 			if (Cell.isInRect(p, width() - 1, height() - 1))
 				checkBridge.add(p);
 		}
-		for (int bridgePos : checkBridge) {
+
+		for (Iter.Int it = checkBridge.iterator(); it.hasNext();) {
+			int bridgePos = it.next();
 			if (EnumSet.of(Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh)
 					.contains(terrain.apply(bridgePos).category))
 				if (Terrain.isBridgeVertical(bridgePos, terrain, width(), height()) == null)

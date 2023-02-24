@@ -1,10 +1,10 @@
 package com.ugav.battalion.core;
 
-import java.util.List;
 import java.util.Objects;
 
 import com.ugav.battalion.DataChangeNotifier;
 import com.ugav.battalion.DataEvent;
+import com.ugav.battalion.util.ListInt;
 
 public interface Game {
 
@@ -42,11 +42,11 @@ public interface Game {
 
 	public Team getWinner();
 
-	public List<Integer> calcRealPath(Unit unit, List<Integer> path);
+	public ListInt calcRealPath(Unit unit, ListInt path);
 
-	public void move(Unit unit, List<Integer> path);
+	public void move(Unit unit, ListInt path);
 
-	public void moveAndAttack(Unit attacker, List<Integer> path, Unit target);
+	public void moveAndAttack(Unit attacker, ListInt path, Unit target);
 
 	public void attackRange(Unit attacker, Unit target);
 

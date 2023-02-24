@@ -1,7 +1,6 @@
 package com.ugav.battalion;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -14,6 +13,7 @@ import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.core.Unit.Type;
+import com.ugav.battalion.util.ListInt;
 import com.ugav.battalion.util.Utils;
 
 class GameGUIImpl implements Game {
@@ -64,23 +64,27 @@ class GameGUIImpl implements Game {
 	}
 
 	@Override
-	public List<Integer> calcRealPath(Unit unit, List<Integer> path) {
+	public ListInt calcRealPath(Unit unit, ListInt path) {
 		return game.calcRealPath(unit, path);
 	}
 
 	@Override
-	public void move(Unit unit, List<Integer> path) {
+	public void move(Unit unit, ListInt path) {
 		checkCorrectThread();
-		List<Integer> realPath = game.calcRealPath(unit, path);
-		List<Integer> animationPath = Utils.listOf(unit.getPos(), realPath);
+		ListInt realPath = game.calcRealPath(unit, path);
+		ListInt animationPath = new ListInt.Array(realPath.size() + 1);
+		animationPath.add(unit.getPos());
+		animationPath.addAll(realPath);
 		run(() -> gui.arenaPanel.animateUnitMove(unit, animationPath, () -> game.move(unit, realPath)));
 	}
 
 	@Override
-	public void moveAndAttack(Unit attacker, List<Integer> path, Unit target) {
+	public void moveAndAttack(Unit attacker, ListInt path, Unit target) {
 		checkCorrectThread();
-		List<Integer> realPath = game.calcRealPath(attacker, path);
-		List<Integer> animationPath = Utils.listOf(attacker.getPos(), realPath);
+		ListInt realPath = game.calcRealPath(attacker, path);
+		ListInt animationPath = new ListInt.Array(realPath.size() + 1);
+		animationPath.add(attacker.getPos());
+		animationPath.addAll(realPath);
 		if (path.size() == realPath.size())
 			run(() -> gui.arenaPanel.animateUnitMoveAndAttack(attacker, animationPath, target.getPos(),
 					() -> game.moveAndAttack(attacker, path, target)));

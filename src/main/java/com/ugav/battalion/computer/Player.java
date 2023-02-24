@@ -8,6 +8,7 @@ import java.util.Set;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.util.ListInt;
 
 public interface Player {
 
@@ -28,8 +29,8 @@ public interface Player {
 				if (units.isEmpty())
 					break;
 				Unit unit = units.get(rand.nextInt(units.size()));
-				List<Integer> reachable = unit.getReachableMap().cells().collectList();
-				reachable.remove(Integer.valueOf(unit.getPos()));
+				ListInt reachable = unit.getReachableMap().cells().collectList();
+				reachable.remove(unit.getPos());
 				if (reachable.isEmpty()) {
 					failedToMove.add(unit);
 				} else {

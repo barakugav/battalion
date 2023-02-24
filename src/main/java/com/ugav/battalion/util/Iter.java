@@ -226,8 +226,8 @@ public interface Iter<E> extends Iterator<E> {
 			return new Filter(this, filter);
 		}
 
-		default List<Integer> collectList() {
-			List<Integer> l = new ArrayList<>();
+		default ListInt collectList() {
+			ListInt l = new ListInt.Array();
 			while (hasNext())
 				l.add(next());
 			return l;

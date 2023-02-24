@@ -9,6 +9,7 @@ import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.util.DebugPrintsManager;
+import com.ugav.battalion.util.ListInt;
 import com.ugav.battalion.util.Iter;
 
 public class PlayerMiniMaxAlphaBeta implements Player {
@@ -203,8 +204,8 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		@Override
 		void apply(Game game) {
 			Unit unit = game.getUnit(attacker);
-			List<Integer> path = unit.calcPath(destination);
-			List<Integer> realPath = game.calcRealPath(unit, path);
+			ListInt path = unit.calcPath(destination);
+			ListInt realPath = game.calcRealPath(unit, path);
 			if (path.size() == realPath.size())
 				game.moveAndAttack(unit, realPath, game.getUnit(target));
 			else

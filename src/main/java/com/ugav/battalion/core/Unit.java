@@ -1,6 +1,5 @@
 package com.ugav.battalion.core;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -12,6 +11,7 @@ import java.util.function.Consumer;
 import com.ugav.battalion.core.Game.EntityChange;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.util.Iter;
+import com.ugav.battalion.util.ListInt;
 
 public class Unit extends Entity implements IUnit {
 
@@ -104,17 +104,18 @@ public class Unit extends Entity implements IUnit {
 		return type.transportUnits ? Objects.requireNonNull(transportedUnit) : null;
 	}
 
-	boolean isMoveValid(List<Integer> path) {
+	boolean isMoveValid(ListInt path) {
 		if (path.isEmpty() || path.size() > type.moveLimit)
 			return false;
 		MovementMap movementMap = calcMovementMap(false);
 		int prev = getPos();
-		for (int p : path) {
+		for (Iter.Int it = path.iterator(); it.hasNext();) {
+			int p = it.next();
 			if (!Cell.areNeighbors(prev, p) || !movementMap.isReachable(p))
 				return false;
 			prev = p;
 		}
-		return arena.unit(path.get(path.size() - 1)) == null;
+		return arena.unit(path.last()) == null;
 	}
 
 	boolean isAttackValid(Unit target) {
@@ -423,19 +424,19 @@ public class Unit extends Entity implements IUnit {
 		return movementMap;
 	}
 
-	public List<Integer> calcPath(int destination) {
+	public ListInt calcPath(int destination) {
 		MovementMap movementMap = calcMovementMap(true);
 		if (!movementMap.isReachable(destination))
 			throw new IllegalArgumentException("Can't reach " + destination);
 
-		List<Integer> path = new ArrayList<>(movementMap.getDistanceTo(destination));
+		ListInt path = new ListInt.Array(movementMap.getDistanceTo(destination));
 		for (int p = destination; p != getPos(); p = Cell.add(p, movementMap.getDirToSource(p)))
 			path.add(p);
-		Collections.reverse(path);
+		path.reverse();
 		return path;
 	}
 
-	public List<Integer> calcPathForAttack(int targetPos) {
+	public ListInt calcPathForAttack(int targetPos) {
 		MovementMap movementMap = calcMovementMap(true);
 		final int NoValue = Cell.valueOf(-1, -1);
 		int destination = NoValue;

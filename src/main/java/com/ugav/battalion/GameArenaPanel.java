@@ -9,8 +9,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.LongToIntFunction;
 
@@ -31,6 +29,7 @@ import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.util.DebugPrintsManager;
 import com.ugav.battalion.util.Iter;
+import com.ugav.battalion.util.ListInt;
 import com.ugav.battalion.util.Utils;
 
 public class GameArenaPanel extends
@@ -270,7 +269,7 @@ public class GameArenaPanel extends
 		runAnimationAsync(animation, future);
 	}
 
-	void animateUnitMove(Unit unit, List<Integer> path, Runnable future) {
+	void animateUnitMove(Unit unit, ListInt path, Runnable future) {
 		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
 		Animation animation = new Animation.UnitMove(comp, path);
 		animation = appearDisappearAnimationWrap(comp, animation);
@@ -278,7 +277,7 @@ public class GameArenaPanel extends
 		runAnimationAsync(animation, future);
 	}
 
-	void animateUnitMoveAndAttack(Unit unit, List<Integer> path, int target, Runnable future) {
+	void animateUnitMoveAndAttack(Unit unit, ListInt path, int target, Runnable future) {
 		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
 		Animation animation = Animation.of(new Animation.UnitMove(comp, path),
 				new Animation.Attack(this, comp, target));
@@ -303,19 +302,22 @@ public class GameArenaPanel extends
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Animation makeSureAnimationIsVisible(Animation animation, Object... cells0) {
-		List<Integer> cells = new ArrayList<>();
+		ListInt cells = new ListInt.Array();
 		for (Object cell0 : cells0) {
 			if (cell0 instanceof Integer)
-				cells.add((Integer) cell0);
-			else if (cell0 instanceof List<?>)
-				cells.addAll((List) cell0);
+				cells.add(((Integer) cell0).intValue());
+			else if (cell0 instanceof ListInt)
+				cells.addAll((ListInt) cell0);
+			else
+				throw new IllegalArgumentException("unsupported cell(s) type: " + cells0);
 		}
 		if (cells.isEmpty())
 			throw new IllegalArgumentException();
 		int p0 = cells.get(0);
 		int xmin = Cell.x(p0), xmax = Cell.x(p0);
 		int ymin = Cell.y(p0), ymax = Cell.y(p0);
-		for (int cell : cells) {
+		for (Iter.Int it = cells.iterator(); it.hasNext();) {
+			int cell = it.next();
 			xmin = Math.min(xmin, Cell.x(cell));
 			xmax = Math.max(xmax, Cell.x(cell));
 			ymin = Math.min(ymin, Cell.y(cell));
@@ -337,9 +339,11 @@ public class GameArenaPanel extends
 		int y = ymin + (ymax - ymin) / 2 - DISPLAYED_ARENA_HEIGHT / 2;
 		y = Math.max(0, Math.min(game.height() - DISPLAYED_ARENA_WIDTH, y));
 
-		for (int cell : cells)
+		for (Iter.Int it = cells.iterator(); it.hasNext();) {
+			int cell = it.next();
 			if (!Cell.isInRect(cell, x, y, x + DISPLAYED_ARENA_WIDTH - 1, y + DISPLAYED_ARENA_HEIGHT - 1))
 				throw new IllegalStateException();
+		}
 
 		return Animation.of(mapMoveAnimation.createAnimation(Position.of(x, y)), animation);
 	}
@@ -352,7 +356,7 @@ public class GameArenaPanel extends
 		private Cell.Bitmap passableMap = Cell.Bitmap.empty();
 		private Cell.Bitmap reachableMap = Cell.Bitmap.empty();
 		private Cell.Bitmap attackableMap = Cell.Bitmap.empty();
-		private final List<Integer> movePath;
+		private final ListInt movePath;
 
 		private final GestureTask gestureTask = new GestureTask();
 
@@ -361,7 +365,7 @@ public class GameArenaPanel extends
 		EntityLayer() {
 			super(GameArenaPanel.this);
 
-			movePath = new ArrayList<>();
+			movePath = new ListInt.Array();
 		}
 
 		void initUI() {
@@ -432,7 +436,7 @@ public class GameArenaPanel extends
 				break;
 
 			case CloseRange:
-				int last = movePath.isEmpty() ? attacker.getPos() : movePath.get(movePath.size() - 1);
+				int last = movePath.isEmpty() ? attacker.getPos() : movePath.last();
 				if (Cell.areNeighbors(targetPos, last)
 						&& (!game.arena().isUnitVisible(last, game.getTurn()) || game.getUnit(last) == attacker))
 					break;
@@ -453,14 +457,14 @@ public class GameArenaPanel extends
 			Unit unit = game.getUnit(selection);
 
 			/* Update move path from unit position to hovered position */
-			int last = movePath.isEmpty() ? unit.getPos() : movePath.get(movePath.size() - 1);
+			int last = movePath.isEmpty() ? unit.getPos() : movePath.last();
 
 			if (movePath.contains(targetPos)) {
 				/* Already contained in path, remove all unnecessary steps */
 				while (!movePath.isEmpty()) {
-					if (movePath.get(movePath.size() - 1) == targetPos)
+					if (movePath.last() == targetPos)
 						break;
-					movePath.remove(movePath.size() - 1);
+					movePath.removeIndex(movePath.size() - 1);
 				}
 
 			} else if (movePath.size() < unit.type.moveLimit && Cell.areNeighbors(last, targetPos)) {
@@ -533,7 +537,7 @@ public class GameArenaPanel extends
 						drawRelativeToMap(g, label, movePath.get(idx));
 					}
 
-					int dest = movePath.get(movePath.size() - 1);
+					int dest = movePath.last();
 					int destDir = (calcDir.applyAsInt(movePath.size() - 2) + 2) % 4;
 					String destLabel = "MovePathDest" + (reachableMap.contains(dest) ? "" : "Unstand");
 					drawRelativeToMap(g, destLabel + destDir, dest);
@@ -546,7 +550,7 @@ public class GameArenaPanel extends
 				movePath.clear();
 				movePath.addAll(unit.calcPath(destination));
 			}
-			List<Integer> path = new ArrayList<>(movePath);
+			ListInt path = new ListInt.Array(movePath);
 			debug.println("Move ", Cell.toString(unit.getPos()), " ", Cell.toString(destination));
 			window.gameAction(() -> game.move(unit, path));
 		}
@@ -555,7 +559,7 @@ public class GameArenaPanel extends
 			debug.println("Attack ", Cell.toString(attacker.getPos()), " ", Cell.toString(target.getPos()));
 			switch (attacker.type.weapon.type) {
 			case CloseRange:
-				int moveTarget = movePath.isEmpty() ? attacker.getPos() : movePath.get(movePath.size() - 1);
+				int moveTarget = movePath.isEmpty() ? attacker.getPos() : movePath.last();
 				int targetPos = target.getPos();
 
 				if (!Cell.areNeighbors(moveTarget, targetPos) || !reachableMap.contains(moveTarget)) {
@@ -564,7 +568,7 @@ public class GameArenaPanel extends
 						movePath.addAll(Objects.requireNonNull(attacker.calcPathForAttack(targetPos)));
 					}
 				}
-				List<Integer> path = new ArrayList<>(movePath);
+				ListInt path = new ListInt.Array(movePath);
 				window.gameAction(() -> game.moveAndAttack(attacker, path, target));
 				break;
 
