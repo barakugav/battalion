@@ -36,8 +36,8 @@ import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.core.Unit.Category;
 import com.ugav.battalion.core.Unit.Type;
-import com.ugav.battalion.util.DebugPrintsManager;
 import com.ugav.battalion.util.Iter;
+import com.ugav.battalion.util.Logger;
 import com.ugav.battalion.util.Utils;
 
 class LevelBuilderWindow extends JPanel implements Clearable {
@@ -48,11 +48,11 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 	private final Globals globals;
 	private final Menu menu;
 	private final ArenaPanel arenaPanel;
-	private final DebugPrintsManager debug;
+	private final Logger logger;
 
 	LevelBuilderWindow(Globals globals) {
 		this.globals = Objects.requireNonNull(globals);
-		debug = new DebugPrintsManager(true); // TODO
+		logger = new Logger(true); // TODO
 		builder = new LevelBuilder(Level.MINIMUM_WIDTH, Level.MINIMUM_HEIGHT);
 		menu = new Menu();
 		arenaPanel = new ArenaPanel();
@@ -288,7 +288,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 						Level level = globals.levelSerializer.levelRead(selectedFile);
 						builder.reset(level);
 					} catch (RuntimeException ex) {
-						debug.print("failed to load file from: ", selectedFile);
+						logger.dbgln("failed to load file from: ", selectedFile);
 						ex.printStackTrace();
 					}
 				}
@@ -307,7 +307,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					try {
 						globals.levelSerializer.levelWrite(builder.buildLevel(), selectedFile);
 					} catch (RuntimeException ex) {
-						debug.print("failed to save level to file: ", selectedFile);
+						logger.dbgln("failed to save level to file: ", selectedFile);
 						ex.printStackTrace();
 					}
 				}

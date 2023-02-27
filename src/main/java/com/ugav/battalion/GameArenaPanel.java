@@ -27,9 +27,9 @@ import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
-import com.ugav.battalion.util.DebugPrintsManager;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.ListInt;
+import com.ugav.battalion.util.Logger;
 import com.ugav.battalion.util.Utils;
 
 public class GameArenaPanel extends
@@ -44,7 +44,7 @@ public class GameArenaPanel extends
 
 	private static final int SelectionNone = Cell.valueOf(-1, -1);
 
-	private final DebugPrintsManager debug = new DebugPrintsManager(true); // TODO
+	private final Logger logger = new Logger(true); // TODO
 	private final DataChangeRegister register = new DataChangeRegister();
 	final DataChangeNotifier<EntityClick> onEntityClick = new DataChangeNotifier<>();
 	final DataChangeNotifier<SelectionChange> onSelectionChange = new DataChangeNotifier<>();
@@ -215,7 +215,7 @@ public class GameArenaPanel extends
 	}
 
 	private void setSelection(int newSelection) {
-		debug.println("setSelection ", Cell.toString(newSelection));
+		logger.dbgln("setSelection ", Cell.toString(newSelection));
 		selection = newSelection;
 		onSelectionChange.notify(new SelectionChange(this, newSelection, getSelectedEntity()));
 	}
@@ -544,12 +544,12 @@ public class GameArenaPanel extends
 				movePath.addAll(unit.calcPath(destination));
 			}
 			ListInt path = new ListInt.Array(movePath);
-			debug.println("Move ", Cell.toString(unit.getPos()), " ", Cell.toString(destination));
+			logger.dbgln("Move ", Cell.toString(unit.getPos()), " ", Cell.toString(destination));
 			window.gameAction(() -> game.move(unit, path));
 		}
 
 		private void unitAttack(Unit attacker, Unit target) {
-			debug.println("Attack ", Cell.toString(attacker.getPos()), " ", Cell.toString(target.getPos()));
+			logger.dbgln("Attack ", Cell.toString(attacker.getPos()), " ", Cell.toString(target.getPos()));
 			switch (attacker.type.weapon.type) {
 			case CloseRange:
 				int moveTarget = movePath.isEmpty() ? attacker.getPos() : movePath.last();

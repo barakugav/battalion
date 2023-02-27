@@ -14,7 +14,7 @@ import com.ugav.battalion.computer.Player;
 import com.ugav.battalion.computer.PlayerMiniMaxAlphaBeta;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level;
-import com.ugav.battalion.util.DebugPrintsManager;
+import com.ugav.battalion.util.Logger;
 
 class GameWindow extends JPanel implements Clearable {
 
@@ -25,7 +25,7 @@ class GameWindow extends JPanel implements Clearable {
 	final Game game;
 //	private final Player computer = new Player.Random();
 	private final Player computer = new PlayerMiniMaxAlphaBeta();
-	private final DebugPrintsManager debug = new DebugPrintsManager(true); // TODO
+	private final Logger logger = new Logger(true); // TODO
 	private final DataChangeRegister register = new DataChangeRegister();
 
 	private volatile boolean actionsSuspended;
@@ -59,7 +59,7 @@ class GameWindow extends JPanel implements Clearable {
 		arenaPanel.initGame();
 
 		register.register(game.onGameEnd(), e -> {
-			debug.println("Game finished");
+			logger.dbgln("Game finished");
 			JOptionPane.showMessageDialog(this, "Winner: " + e.winner);
 			suspendActions();
 			// TODO
@@ -113,7 +113,7 @@ class GameWindow extends JPanel implements Clearable {
 	}
 
 	void endTurn() {
-		debug.println("End turn");
+		logger.dbgln("End turn");
 		gameAction(() -> {
 			game.turnEnd();
 			assert !game.isFinished();
@@ -128,12 +128,12 @@ class GameWindow extends JPanel implements Clearable {
 	}
 
 	void suspendActions() {
-		debug.println("Actions suspended");
+		logger.dbgln("Actions suspended");
 		actionsSuspended = true;
 	}
 
 	void resumeActions() {
-		debug.println("Actions resumed");
+		logger.dbgln("Actions resumed");
 		actionsSuspended = false;
 	}
 

@@ -8,16 +8,16 @@ import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Unit;
-import com.ugav.battalion.util.DebugPrintsManager;
-import com.ugav.battalion.util.ListInt;
 import com.ugav.battalion.util.Iter;
+import com.ugav.battalion.util.ListInt;
+import com.ugav.battalion.util.Logger;
 
 public class PlayerMiniMaxAlphaBeta implements Player {
 
 	private final MiniMaxAlphaBeta<Move, Node, GameImpl> algo;
 
 	private final int DepthLimit = 2;
-	private final DebugPrintsManager debug = new DebugPrintsManager(true); // TODO
+	private final Logger logger = new Logger(true); // TODO
 
 	public PlayerMiniMaxAlphaBeta() {
 		algo = new MiniMaxAlphaBeta<>(new GameImpl(), DepthLimit);
@@ -30,7 +30,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			long t0 = System.currentTimeMillis();
 			Move move = algo.chooseMove(new Node(Game.copyOf(game)));
 			long t1 = System.currentTimeMillis();
-			debug.println("engine move time: " + (t1 - t0));
+			logger.dbgln("engine move time: " + (t1 - t0));
 			if (move == null)
 				return;
 			move.apply(game);
