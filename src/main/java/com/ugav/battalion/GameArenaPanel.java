@@ -41,7 +41,7 @@ public class GameArenaPanel extends
 	private int selection = SelectionNone;
 	private UnitMenu unitMenu;
 
-	private static final int SelectionNone = Cell.valueOf(-1, -1);
+	private static final int SelectionNone = Cell.of(-1, -1);
 
 	private final Logger logger = new Logger(true); // TODO
 	private final DataChangeRegister register = new DataChangeRegister();
@@ -81,7 +81,7 @@ public class GameArenaPanel extends
 
 		entityLayer().reset();
 
-		mapViewSet(Position.of(0, 0));
+		mapViewSet(Cell.of(0, 0));
 	}
 
 	@Override
@@ -315,12 +315,12 @@ public class GameArenaPanel extends
 			ymin = Math.min(ymin, Cell.y(cell));
 			ymax = Math.max(ymax, Cell.y(cell));
 		}
-		int topLeft = Cell.valueOf(xmin, ymin);
-		int bottomRight = Cell.valueOf(xmax, ymax);
-		boolean topLeftVisible = Cell.isInRect(topLeft, mapPos.xInt(), mapPos.yInt(),
-				mapPos.xInt() + DISPLAYED_ARENA_WIDTH, mapPos.yInt() + DISPLAYED_ARENA_HEIGHT);
-		boolean bottomRightVisible = Cell.isInRect(bottomRight, mapPos.xInt(), mapPos.yInt(),
-				mapPos.xInt() + DISPLAYED_ARENA_WIDTH, mapPos.yInt() + DISPLAYED_ARENA_HEIGHT);
+		int topLeft = Cell.of(xmin, ymin);
+		int bottomRight = Cell.of(xmax, ymax);
+		boolean topLeftVisible = Cell.isInRect(topLeft, mapPos.x, mapPos.y, mapPos.x + DISPLAYED_ARENA_WIDTH,
+				mapPos.y + DISPLAYED_ARENA_HEIGHT);
+		boolean bottomRightVisible = Cell.isInRect(bottomRight, mapPos.x, mapPos.y, mapPos.x + DISPLAYED_ARENA_WIDTH,
+				mapPos.y + DISPLAYED_ARENA_HEIGHT);
 		if (topLeftVisible && bottomRightVisible)
 			return animation; /* already visible */
 
@@ -634,7 +634,7 @@ public class GameArenaPanel extends
 			UnitComp(Unit unit) {
 				super(GameArenaPanel.this, unit.getPos(), unit);
 
-				register.register(unit.onChange(), e -> pos = Position.of(unit.getPos()));
+				register.register(unit.onChange(), e -> pos = Position.fromCell(unit.getPos()));
 			}
 
 			@Override

@@ -147,11 +147,19 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		return arenaHeight;
 	}
 
-	void mapViewSet(Position pos) {
-		if (!pos.isInRect(arenaWidth - DISPLAYED_ARENA_WIDTH, arenaHeight - DISPLAYED_ARENA_HEIGHT))
-			return;
+	void mapViewSet(int pos) {
+		if (!Cell.isInRect(pos, arenaWidth - DISPLAYED_ARENA_WIDTH, arenaHeight - DISPLAYED_ARENA_HEIGHT))
+			throw new IllegalArgumentException();
 		onMapMove.notify(new DataEvent(this));
-		mapPos = pos;
+		mapPos = Position.fromCell(pos);
+	}
+
+	void mapViewMove(int pos, Runnable future) {
+		if (!Cell.isInRect(pos, arenaWidth - DISPLAYED_ARENA_WIDTH, arenaHeight - DISPLAYED_ARENA_HEIGHT))
+			throw new IllegalArgumentException();
+		onMapMove.notify(new DataEvent(this));
+		Animation animation = mapMoveAnimation.createAnimation(Position.fromCell(pos));
+		runAnimationAsync(animation, future);
 	}
 
 	int displayedX(double x) {
@@ -197,7 +205,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		private final ArenaPanelAbstract<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> arena;
 		final Map<Object, ArenaComp> comps = new IdentityHashMap<>();
 
-		private int hovered = Cell.valueOf(-1, -1);
+		private int hovered = Cell.of(-1, -1);
 
 		final DataChangeNotifier<HoverChangeEvent> onHoverChange = new DataChangeNotifier<>();
 		final DataChangeNotifier<TileClickEvent> onTileClick = new DataChangeNotifier<>();
@@ -216,7 +224,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					requestFocusInWindow();
 					int clickx = EntityLayer.this.arena.displayedXInv(e.getX()) / TILE_SIZE_PIXEL;
 					int clicky = EntityLayer.this.arena.displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
-					onTileClick.notify(new TileClickEvent(EntityLayer.this.arena, Cell.valueOf(clickx, clicky)));
+					onTileClick.notify(new TileClickEvent(EntityLayer.this.arena, Cell.of(clickx, clicky)));
 				}
 			});
 			addMouseMotionListener(mouseMotionListener = new MouseAdapter() {
@@ -225,7 +233,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					int x = EntityLayer.this.arena.displayedXInv(e.getX()) / TILE_SIZE_PIXEL;
 					int y = EntityLayer.this.arena.displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
 					if (Cell.x(hovered) != x || Cell.y(hovered) != y) {
-						hovered = Cell.valueOf(x, y);
+						hovered = Cell.of(x, y);
 						onHoverChange.notify(new HoverChangeEvent(EntityLayer.this.arena, hovered));
 					}
 				}
@@ -485,7 +493,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		@Override
 		public Position pos() {
-			return Position.of(pos);
+			return Position.fromCell(pos);
 		}
 
 	}
@@ -518,7 +526,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		@Override
 		public Position pos() {
-			return Position.of(pos);
+			return Position.fromCell(pos);
 		}
 
 		int getGasture() {
@@ -550,7 +558,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		UnitComp(ArenaPanelAbstract<?, ?, ?> arena, int pos, IUnit unit) {
 			super(arena);
 			this.unit = Objects.requireNonNull(unit);
-			this.pos = Position.of(pos);
+			this.pos = Position.fromCell(pos);
 		}
 
 		IUnit unit() {

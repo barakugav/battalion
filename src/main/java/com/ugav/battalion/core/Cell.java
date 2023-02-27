@@ -13,7 +13,7 @@ public class Cell {
 	private Cell() {
 	}
 
-	public static int valueOf(int x, int y) {
+	public static int of(int x, int y) {
 		return (x << 16) + y;
 	}
 
@@ -30,7 +30,7 @@ public class Cell {
 	}
 
 	public static int add(int cell, Direction dir) {
-		return valueOf(x(cell) + dir.dx, y(cell) + dir.dy);
+		return of(x(cell) + dir.dx, y(cell) + dir.dy);
 	}
 
 	public static double dist(int cell1, int cell2) {
@@ -71,7 +71,7 @@ public class Cell {
 		for (int i = 0; i < Direction.values().length; i++) {
 			Direction dir = Direction.values()[i];
 			int nx = x + dir.dx, ny = y + dir.dy;
-			neighbors[i] = valueOf(nx, ny);
+			neighbors[i] = of(nx, ny);
 		}
 		return neighbors;
 	}
@@ -84,11 +84,11 @@ public class Cell {
 		return isInRect(cell, 0, 0, width, height);
 	}
 
-	public static boolean isInRect(int cell, int x1, int y1, int x2, int y2) {
+	public static boolean isInRect(int cell, double x1, double y1, double x2, double y2) {
 		return isInRect(x(cell), y(cell), x1, y1, x2, y2);
 	}
 
-	public static boolean isInRect(int x, int y, int x1, int y1, int x2, int y2) {
+	public static boolean isInRect(int x, double y, double x1, double y1, double x2, double y2) {
 		return x1 <= x && x <= x2 && y1 <= y && y <= y2;
 	}
 
@@ -118,7 +118,7 @@ public class Cell {
 		public int next() {
 			if (!hasNext())
 				throw new NoSuchElementException();
-			int cell = valueOf(x, y);
+			int cell = Cell.of(x, y);
 			if (++x >= width) {
 				x = 0;
 				y++;
@@ -239,7 +239,7 @@ public class Cell {
 			Array<T> arr = new Array<>(width, height);
 			for (int x = 0; x < width; x++)
 				for (int y = 0; y < height; y++)
-					arr.set(x, y, func.apply(valueOf(x, y)));
+					arr.set(x, y, func.apply(Cell.of(x, y)));
 			return arr;
 		}
 

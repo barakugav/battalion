@@ -6,14 +6,16 @@ import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import com.ugav.battalion.computer.Player;
 import com.ugav.battalion.computer.PlayerMiniMaxAlphaBeta;
-import com.ugav.battalion.core.Game;
+import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Level;
+import com.ugav.battalion.core.Team;
 import com.ugav.battalion.util.Logger;
 
 class GameWindow extends JPanel implements Clearable {
@@ -22,13 +24,15 @@ class GameWindow extends JPanel implements Clearable {
 	private final GameSideMenu menu;
 	final GameArenaPanel arenaPanel;
 
-	final Game game;
+	private int playerLastPos;
+
+	final GameGUIImpl game;
 //	private final Player computer = new Player.Random();
 	private final Player computer = new PlayerMiniMaxAlphaBeta();
 	private final Logger logger = new Logger(true); // TODO
 	private final DataChangeRegister register = new DataChangeRegister();
 
-	private volatile boolean actionsSuspended;
+	private final AtomicInteger actionsSuspended = new AtomicInteger();
 
 	private static final long serialVersionUID = 1L;
 
@@ -58,6 +62,13 @@ class GameWindow extends JPanel implements Clearable {
 		menu.initGame();
 		arenaPanel.initGame();
 
+
+		register.register(game.onTurnEnd(), e -> {
+			final Team player = Team.Red;
+			if (game.getTurn() == player) {
+				arenaPanel.mapViewMove(playerLastPos, null);
+			}
+		});
 		register.register(game.onGameEnd(), e -> {
 			logger.dbgln("Game finished");
 			JOptionPane.showMessageDialog(this, "Winner: " + e.winner);
@@ -118,23 +129,27 @@ class GameWindow extends JPanel implements Clearable {
 			game.turnEnd();
 			assert !game.isFinished();
 
+			Position oldPos0 = arenaPanel.mapPos;
+			playerLastPos = Cell.of((int) oldPos0.x, (int) oldPos0.y);
+			suspendActions();
 			computer.playTurn(game);
 			game.turnEnd();
+			resumeActions();
 		});
 	}
 
 	boolean isActionSuspended() {
-		return actionsSuspended;
+		return actionsSuspended.get() > 0;
 	}
 
 	void suspendActions() {
-		logger.dbgln("Actions suspended");
-		actionsSuspended = true;
+		if (actionsSuspended.getAndIncrement() == 0)
+			logger.dbgln("Actions suspended");
 	}
 
 	void resumeActions() {
-		logger.dbgln("Actions resumed");
-		actionsSuspended = false;
+		if (actionsSuspended.decrementAndGet() == 0)
+			logger.dbgln("Actions resumed");
 	}
 
 }

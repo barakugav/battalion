@@ -21,12 +21,12 @@ class Position implements Comparable<Position> {
 		return new Position(x, y);
 	}
 
-	public static Position of(int cell) {
+	public static Position fromCell(int cell) {
 		return new Position(Cell.x(cell), Cell.y(cell));
 	}
 
 	public int toCell() {
-		return Cell.valueOf(xInt(), yInt());
+		return Cell.of(xInt(), yInt());
 	}
 
 	public int xInt() {

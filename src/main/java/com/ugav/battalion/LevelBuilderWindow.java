@@ -403,7 +403,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		void reset() {
 			entityLayer().reset();
 			updateArenaSize(builder.width(), builder.height());
-			mapViewSet(Position.of(0, 0));
+			mapViewSet(Cell.of(0, 0));
 		}
 
 		@Override

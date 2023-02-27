@@ -153,6 +153,8 @@ class GameGUIImpl implements Game {
 	}
 
 	private void run(Runnable runnable) {
+		if (SwingUtilities.isEventDispatchThread())
+			throw new IllegalStateException();
 		try {
 			SwingUtilities.invokeAndWait(runnable);
 			while (gui.arenaPanel.isAnimationActive())

@@ -96,7 +96,7 @@ interface Animation {
 			basePos = comp.pos;
 
 			Direction orientation = null;
-			Position targetPos = Position.of(target);
+			Position targetPos = Position.fromCell(target);
 			for (Direction dir : Direction.values())
 				if (orientation == null
 						|| Position.dist(comp.pos, targetPos, orientation) < Position.dist(comp.pos, targetPos, dir))
@@ -144,7 +144,7 @@ interface Animation {
 
 		@Override
 		public Position pos() {
-			return Position.of(target);
+			return Position.fromCell(target);
 		}
 	}
 

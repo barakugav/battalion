@@ -224,7 +224,7 @@ class LevelSerializerXML implements LevelSerializer {
 					}
 				}
 
-				builder.setTile(Cell.valueOf(x, y), terrain, building, unit);
+				builder.setTile(Cell.of(x, y), terrain, building, unit);
 			}
 
 			return builder.buildLevel();

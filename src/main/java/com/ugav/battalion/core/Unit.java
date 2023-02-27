@@ -449,7 +449,7 @@ public class Unit extends Entity implements IUnit {
 
 	public ListInt calcPathForAttack(int targetPos) {
 		MovementMap movementMap = getMovementMap(true);
-		final int NoValue = Cell.valueOf(-1, -1);
+		final int NoValue = Cell.of(-1, -1);
 		int destination = NoValue;
 		int length = Integer.MAX_VALUE;
 		for (int dest : Cell.neighbors(targetPos)) {
