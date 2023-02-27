@@ -144,7 +144,7 @@ class GameImpl implements Game {
 	@Override
 	public void move(Unit unit, ListInt path) {
 		if (path.isEmpty() || !isMoveValid(unit, path))
-			throw new IllegalStateException();
+			throw new IllegalStateException(Cell.toString(path));
 		move0(unit, path);
 		unit.setActive(false);
 	}

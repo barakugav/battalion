@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.ugav.battalion.core.Arena;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
@@ -16,7 +17,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 
 	private final MiniMaxAlphaBeta<Move, Node, GameImpl> algo;
 
-	private final int DepthLimit = 2;
+	private final int DepthLimit = 1;
 	private final Logger logger = new Logger(true); // TODO
 
 	public PlayerMiniMaxAlphaBeta() {
@@ -57,12 +58,41 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			final Team us = turnIntToObj(us0);
 			double eval = 0;
 			for (Unit unit : position.game.arena().units().forEach())
-				eval += (unit.getTeam() == us ? 1 : -1) * evalUnit(unit);
+				eval += (unit.getTeam() == us ? 1 : -1) * evalUnit(position, unit);
 			return eval;
 		}
 
-		private static double evalUnit(Unit unit) {
-			return unit.getHealth();
+		private static double evalUnit(Node position, Unit unit) {
+			double eval = 0;
+
+			eval += unit.getHealth();
+
+			double attackingEval;
+			if (unit.isEnemyInRange()) {
+				attackingEval = 1;
+			} else {
+				final Team us = unit.getTeam();
+				Arena arena = position.game.arena();
+				int minDist = Integer.MAX_VALUE;
+				for (Unit enemy : arena.enemiesSeenBy(us).forEach()) {
+					if (!unit.canAttack(enemy))
+						continue;
+					for (int neighbor : Cell.neighbors(enemy.getPos())) {
+						if (!arena.isValidCell(neighbor))
+							continue;
+						int d = unit.getDistanceTo(neighbor);
+						if (d < 0)
+							continue; /* unreachable */
+						if (d < minDist)
+							minDist = d;
+					}
+				}
+
+				attackingEval = Math.min((double) unit.type.moveLimit / minDist, 0.9);
+			}
+			eval += attackingEval * 20;
+
+			return eval;
 		}
 
 		private static int turnObjToInt(Team team) {

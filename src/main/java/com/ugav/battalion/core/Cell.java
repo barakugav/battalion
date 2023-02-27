@@ -6,6 +6,7 @@ import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 
 import com.ugav.battalion.util.Iter;
+import com.ugav.battalion.util.ListInt;
 
 public class Cell {
 
@@ -127,7 +128,7 @@ public class Cell {
 
 	}
 
-	public static class Bitmap {
+	public static class Bitmap implements IntPredicate {
 
 		private final BitSet map;
 		private final int width, height;
@@ -185,10 +186,12 @@ public class Cell {
 			return fromPredicate(width, height, cell -> !contains(cell));
 		}
 
+		@Override
 		public Bitmap and(IntPredicate predicate) {
 			return fromPredicate(width, height, cell -> contains(cell) && predicate.test(cell));
 		}
 
+		@Override
 		public Bitmap or(IntPredicate predicate) {
 			return fromPredicate(width, height, cell -> contains(cell) || predicate.test(cell));
 		}
@@ -211,6 +214,11 @@ public class Cell {
 
 		private boolean isInRange(int x, int y) {
 			return 0 <= x && x < width && 0 <= y && y < height;
+		}
+
+		@Override
+		public boolean test(int cell) {
+			return contains(cell);
 		}
 
 	}
@@ -280,6 +288,23 @@ public class Cell {
 		if ((c = Short.compare(y1, y2)) != 0)
 			return c;
 		return 0;
+	}
+
+	public static String toString(ListInt cells) {
+		int iMax = cells.size() - 1;
+		if (iMax == -1)
+			return "[]";
+
+		StringBuilder b = new StringBuilder();
+		b.append('[');
+		int i = 0;
+		for (Iter.Int it = cells.iterator(); it.hasNext(); i++) {
+			b.append(toString(it.next()));
+			if (i == iMax)
+				return b.append(']').toString();
+			b.append(", ");
+		}
+		return b.toString();
 	}
 
 }

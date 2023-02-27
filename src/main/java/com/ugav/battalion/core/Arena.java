@@ -98,6 +98,10 @@ public class Arena {
 		return cells().map(this::unit).filter(Objects::nonNull);
 	}
 
+	public Iter<Unit> enemiesSeenBy(Team viewer) {
+		return units().filter(u -> u.getTeam() != viewer && isUnitVisible(u.getPos(), viewer));
+	}
+
 	private Building createBuilding(BuildingDesc desc, int cell) {
 		if (desc == null)
 			return null;

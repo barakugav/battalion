@@ -107,11 +107,11 @@ public class Unit extends Entity implements IUnit {
 	boolean isMoveValid(ListInt path) {
 		if (path.isEmpty() || path.size() > type.moveLimit)
 			return false;
-		MovementMap movementMap = calcMovementMap(false);
+		MovementMap movementMap = getMovementMap(false);
 		int prev = getPos();
 		for (Iter.Int it = path.iterator(); it.hasNext();) {
 			int p = it.next();
-			if (!Cell.areNeighbors(prev, p) || !movementMap.isReachable(p))
+			if (!Cell.areNeighbors(prev, p) || movementMap.getDistanceTo(p) > type.moveLimit)
 				return false;
 			prev = p;
 		}
@@ -323,8 +323,9 @@ public class Unit extends Entity implements IUnit {
 	}
 
 	private Cell.Bitmap getPassableMap0(boolean invisiableEnable) {
-		MovementMap movementMap = calcMovementMap(invisiableEnable);
-		return Cell.Bitmap.fromPredicate(arena.width(), arena.height(), cell -> movementMap.isReachable(cell));
+		MovementMap movementMap = getMovementMap(invisiableEnable);
+		return Cell.Bitmap.fromPredicate(arena.width(), arena.height(),
+				cell -> movementMap.getDistanceTo(cell) <= type.moveLimit);
 	}
 
 	private final Arena.Cached<MovementMap> movementMapInvisiableEnable;
@@ -334,29 +335,27 @@ public class Unit extends Entity implements IUnit {
 		movementMapInvisiableDisable = arena.newCached(() -> calcMovementMap0(false));
 	}
 
-	private MovementMap calcMovementMap(boolean invisiableEnable) {
+	private MovementMap getMovementMap(boolean invisiableEnable) {
 		return invisiableEnable ? movementMapInvisiableEnable.get() : movementMapInvisiableDisable.get();
 	}
 
 	private static class MovementMap {
 
 		/* Each cell is: */
-		/* 6 bits of distance map, 0b111111 for unreachable */
+		/* 14 bits of distance map, 0x3FFF for unreachable */
 		/* 2 bits for direction for source */
-		private final byte[][] map;
+		private final short[][] map;
 
-		private static final int DistanceMask = 0x3f;
+		private static final int DistanceMask = 0x3FFF;
 		private static final int DistanceShift = 0;
-		private static final int DirToSourceMask = 0xc0;
-		private static final int DirToSourceShift = 6;
+		private static final int DirToSourceMask = 0xc000;
+		private static final int DirToSourceShift = 14;
 
-		private static final int DistanceUnreachable = 0b111111;
-
-		static final int MaxMoveLength = 1 << Integer.bitCount(DistanceMask);
+		private static final int DistanceUnreachable = 0x3FFF;
 
 		MovementMap(int w, int h) {
-			map = new byte[w][h];
-			byte initVal = 0;
+			map = new short[w][h];
+			short initVal = 0;
 			initVal |= (DistanceUnreachable << DistanceShift) & DistanceMask;
 			initVal |= (Direction.XPos.ordinal() << DirToSourceShift) & DirToSourceMask;
 			for (int x = 0; x < w; x++)
@@ -379,20 +378,24 @@ public class Unit extends Entity implements IUnit {
 		}
 
 		void set(int cell, int dist, Direction dir) {
-			byte val = 0;
+			if (dist > DistanceUnreachable)
+				throw new IllegalArgumentException();
+			short val = 0;
 			val |= (dist << DistanceShift) & DistanceMask;
 			val |= (dir.ordinal() << DirToSourceShift) & DirToSourceMask;
 			map[Cell.x(cell)][Cell.y(cell)] = val;
+			assert getDistanceTo(cell) == dist;
+			assert getDirToSource(cell) == dir;
+			// String.format("val=0x%04x dir=%d getDir=%d", val, dir.ordinal(),
+			// getDirToSource(cell).ordinal())
 		}
 	}
 
 	private MovementMap calcMovementMap0(boolean invisiableEnable) {
-		if (type.moveLimit > MovementMap.MaxMoveLength)
-			throw new IllegalArgumentException();
 		int width = arena.width(), height = arena.height();
 		MovementMap movementMap = new MovementMap(width, height);
 
-		int[] fifo = new int[Math.min(4 * type.moveLimit * type.moveLimit, width * height)];
+		int[] fifo = new int[width * height];
 		int fifoBegin = 0, fifoEnd = 0;
 		movementMap.set(pos, 0, /* arbitrary */ Direction.XPos);
 		fifo[fifoEnd++] = pos;
@@ -400,16 +403,13 @@ public class Unit extends Entity implements IUnit {
 		while (fifoBegin != fifoEnd) {
 			int p = fifo[fifoBegin++];
 			int d = movementMap.getDistanceTo(p);
-			assert d >= 0;
+			assert d != MovementMap.DistanceUnreachable;
 
-			if (d >= type.moveLimit)
-				continue;
 			for (Direction dir : Direction.values()) {
 				int neighbor = Cell.add(p, dir);
 				if (!arena.isValidCell(neighbor) || movementMap.isReachable(neighbor))
 					continue;
-				Terrain terrain = arena.terrain(neighbor);
-				if (!type.canStandOn(terrain))
+				if (!type.canStandOn(arena.terrain(neighbor)))
 					continue;
 				Unit unit = arena.unit(neighbor);
 				if (unit != null && !(invisiableEnable && !arena.isUnitVisible(neighbor, getTeam()))
@@ -424,9 +424,20 @@ public class Unit extends Entity implements IUnit {
 		return movementMap;
 	}
 
+	public int getDistanceTo(int cell) {
+		int d = getMovementMap(true).getDistanceTo(cell);
+		return d != MovementMap.DistanceUnreachable ? d : -1;
+	}
+
+	public boolean isEnemyInRange() {
+		final Team us = getTeam();
+		Cell.Bitmap attackableMap = getAttackableMap();
+		return arena.enemiesSeenBy(us).mapBool(u -> attackableMap.contains(u.getPos())).any();
+	}
+
 	public ListInt calcPath(int destination) {
-		MovementMap movementMap = calcMovementMap(true);
-		if (!movementMap.isReachable(destination))
+		MovementMap movementMap = getMovementMap(true);
+		if (movementMap.getDistanceTo(destination) > type.moveLimit)
 			throw new IllegalArgumentException("Can't reach " + destination);
 
 		ListInt path = new ListInt.Array(movementMap.getDistanceTo(destination));
@@ -437,12 +448,12 @@ public class Unit extends Entity implements IUnit {
 	}
 
 	public ListInt calcPathForAttack(int targetPos) {
-		MovementMap movementMap = calcMovementMap(true);
+		MovementMap movementMap = getMovementMap(true);
 		final int NoValue = Cell.valueOf(-1, -1);
 		int destination = NoValue;
 		int length = Integer.MAX_VALUE;
 		for (int dest : Cell.neighbors(targetPos)) {
-			if (!arena.isValidCell(dest) || !movementMap.isReachable(dest))
+			if (!arena.isValidCell(dest) || movementMap.getDistanceTo(dest) > type.moveLimit)
 				continue;
 			int l = movementMap.getDistanceTo(dest);
 			if (destination == NoValue || length > l) {

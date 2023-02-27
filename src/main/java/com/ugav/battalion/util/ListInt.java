@@ -75,7 +75,52 @@ public interface ListInt {
 		return new ListInt.Array(this);
 	}
 
-	public static class Array implements ListInt {
+	abstract static class Abstract implements ListInt {
+
+		@Override
+		public boolean equals(Object other) {
+			if (other == this)
+				return true;
+			if (!(other instanceof ListInt))
+				return false;
+			ListInt o = (ListInt) other;
+			if (size() != o.size())
+				return false;
+			for (Iter.Int it1 = iterator(), it2 = o.iterator(); it1.hasNext();)
+				if (it1.next() != it2.next())
+					return false;
+			return true;
+		}
+
+		@Override
+		public int hashCode() {
+			int hash = 1;
+			for (Iter.Int it = iterator(); it.hasNext();)
+				hash = 31 * hash + it.next();
+			return hash;
+		}
+
+		@Override
+		public String toString() {
+			int iMax = size() - 1;
+			if (iMax == -1)
+				return "[]";
+
+			StringBuilder b = new StringBuilder();
+			b.append('[');
+			int i = 0;
+			for (Iter.Int it = iterator(); it.hasNext(); i++) {
+				b.append(it.next());
+				if (i == iMax)
+					return b.append(']').toString();
+				b.append(", ");
+			}
+			return b.toString();
+		}
+
+	}
+
+	public static class Array extends Abstract {
 
 		private int[] data;
 		private int size;
@@ -205,7 +250,7 @@ public interface ListInt {
 
 	}
 
-	public static class Unmodifiable implements ListInt {
+	public static class Unmodifiable extends Abstract {
 
 		private final ListInt l;
 
@@ -282,7 +327,7 @@ public interface ListInt {
 
 	}
 
-	static class Sub implements ListInt {
+	static class Sub extends Abstract {
 
 		private final ListInt l;
 		private final int from, to;
@@ -373,7 +418,7 @@ public interface ListInt {
 	}
 
 	public static ListInt of(int... data) {
-		return new ListInt() {
+		return new ListInt.Abstract() {
 
 			@Override
 			public int size() {
