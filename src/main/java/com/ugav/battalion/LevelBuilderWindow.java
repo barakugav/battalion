@@ -501,8 +501,10 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				}
 			}
 
+			private final Map<Integer, Object> terrainKeys = new HashMap<>();
+
 			private Object terrainKey(int cell) {
-				return "Terrain " + cell;
+				return terrainKeys.computeIfAbsent(Integer.valueOf(cell), k -> new Object());
 			}
 
 			private class TerrainComp extends ArenaPanelAbstract.TerrainComp {
