@@ -2,6 +2,7 @@ package com.ugav.battalion;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.KeyAdapter;
@@ -33,6 +34,7 @@ import com.ugav.battalion.core.IBuilding;
 import com.ugav.battalion.core.IUnit;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Terrain;
+import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Utils;
 
 abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.TerrainComp, BuildingCompImpl extends ArenaPanelAbstract.BuildingComp, UnitCompImpl extends ArenaPanelAbstract.UnitComp>
@@ -53,27 +55,17 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	final Animation.Task animationTask = new Animation.Task();
 	private final AtomicInteger animationsActive = new AtomicInteger();
 
+	final Globals globals;
+
 	static final int TILE_SIZE_PIXEL = 56;
 	static final int DISPLAYED_ARENA_WIDTH = Level.MINIMUM_WIDTH;
 	static final int DISPLAYED_ARENA_HEIGHT = Level.MINIMUM_WIDTH;
 
 	private static final long serialVersionUID = 1L;
 
-	synchronized void runAnimationAsync(Animation animation, Runnable future) {
-		animationsActive.incrementAndGet();
+	ArenaPanelAbstract(Globals globals) {
+		this.globals = Objects.requireNonNull(globals);
 
-		animationTask.animate(animation, () -> {
-			if (future != null)
-				future.run();
-			animationsActive.decrementAndGet();
-		});
-	}
-
-	boolean isAnimationActive() {
-		return animationsActive.get() > 0;
-	}
-
-	ArenaPanelAbstract() {
 		mapPos = Position.of(0, 0);
 
 		entityLayer = createEntityLayer();
@@ -124,6 +116,20 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	@Override
 	public Dimension getPreferredSize() {
 		return entityLayer.getPreferredSize();
+	}
+
+	synchronized void runAnimationAsync(Animation animation, Runnable future) {
+		animationsActive.incrementAndGet();
+
+		animationTask.animate(animation, () -> {
+			if (future != null)
+				future.run();
+			animationsActive.decrementAndGet();
+		});
+	}
+
+	boolean isAnimationActive() {
+		return animationsActive.get() > 0;
 	}
 
 	void updateArenaSize(int width, int height) {
@@ -250,6 +256,21 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			});
 			for (ArenaComp comp : comps)
 				comp.paintComponent(g);
+
+			if (arena.globals.debug.showGrid) {
+				g.setColor(Color.YELLOW);
+				final int fontSize = 9;
+				Font font = g.getFont();
+				font = new Font(font.getName(), font.getStyle(), fontSize);
+				g.setFont(font);
+				for (Iter.Int it = Cell.Iter2D.of(arena.arenaWidth, arena.arenaHeight); it.hasNext();) {
+					int cell = it.next(), x = Cell.x(cell), y = Cell.y(cell);
+					int x0 = arena.displayedXCell(x);
+					int y0 = arena.displayedYCell(y);
+					g.drawRect(x0, y0, TILE_SIZE_PIXEL - 1, TILE_SIZE_PIXEL - 1);
+					g.drawString(Cell.toString(cell), x0 + 2, y0 + 2 + fontSize);
+				}
+			}
 		}
 
 		@Override
@@ -556,6 +577,18 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				g.setColor(Color.BLACK);
 				g.drawRect(x, y, w, h);
 				g.drawImage(img, x, y, w, h, arena);
+			}
+
+			if (arena.globals.debug.showUnitID) {
+				Font font = g.getFont();
+				int fontSize = 9;
+				font = new Font(font.getName(), font.getStyle(), fontSize);
+				g.setColor(Color.BLACK);
+				g.setFont(font);
+				int id = arena.globals.debug.getUnitID(unit);
+				int x = arena.displayedXCell(pos.x) + 2;
+				int y = arena.displayedYCell(pos.y) + TILE_SIZE_PIXEL - 2;
+				g.drawString("U" + id, x, y);
 			}
 		}
 

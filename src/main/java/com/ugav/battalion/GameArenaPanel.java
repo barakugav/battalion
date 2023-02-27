@@ -36,7 +36,6 @@ public class GameArenaPanel extends
 		ArenaPanelAbstract<ArenaPanelAbstract.TerrainComp, GameArenaPanel.EntityLayer.BuildingComp, GameArenaPanel.EntityLayer.UnitComp>
 		implements Clearable {
 
-	private final Globals globals;
 	private final GameWindow window;
 	private final Game game;
 	private int selection = SelectionNone;
@@ -52,8 +51,8 @@ public class GameArenaPanel extends
 	private static final long serialVersionUID = 1L;
 
 	GameArenaPanel(GameWindow window) {
+		super(window.globals);
 		this.window = window;
-		this.globals = window.globals;
 		this.game = window.game;
 
 		entityLayer().initUI();

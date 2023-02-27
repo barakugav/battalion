@@ -6,6 +6,7 @@ class Globals {
 
 	final GameFrame frame;
 	final LevelSerializer levelSerializer;
+	final Debug debug = new Debug();
 
 	Globals(GameFrame frame) {
 		this.frame = Objects.requireNonNull(frame);

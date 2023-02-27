@@ -55,7 +55,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		logger = new Logger(true); // TODO
 		builder = new LevelBuilder(Level.MINIMUM_WIDTH, Level.MINIMUM_HEIGHT);
 		menu = new Menu();
-		arenaPanel = new ArenaPanel();
+		arenaPanel = new ArenaPanel(globals);
 
 		setLayout(new FlowLayout());
 		add(menu);
@@ -388,7 +388,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			return new EntityLayer(this);
 		}
 
-		ArenaPanel() {
+		ArenaPanel(Globals globals) {
+			super(globals);
 			register.register(builder.onResetChange, e -> reset());
 			register.register(entityLayer.onTileClick, e -> cellClicked(e.cell));
 
