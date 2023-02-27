@@ -58,7 +58,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			final Team us = turnIntToObj(us0);
 			double eval = 0;
 			for (Unit unit : position.game.arena().units().forEach())
-				eval += (unit.getTeam() == us ? 1 : -1) * evalUnit(position, unit);
+				eval += (unit.getTeam() == us ? 2 : -1) * evalUnit(position, unit);
 			return eval;
 		}
 
