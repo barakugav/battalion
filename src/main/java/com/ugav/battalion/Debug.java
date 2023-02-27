@@ -1,9 +1,9 @@
 package com.ugav.battalion;
 
 import java.util.Map;
-import java.util.WeakHashMap;
 
 import com.ugav.battalion.core.IUnit;
+import com.ugav.battalion.util.IdentityWeakHashMap;
 
 class Debug {
 
@@ -11,7 +11,7 @@ class Debug {
 	boolean showUnitID = true;
 
 	private int idCounter;
-	private final Map<IUnit, Integer> unitsIDs = new WeakHashMap<>();
+	private final Map<IUnit, Integer> unitsIDs = new IdentityWeakHashMap<>();
 
 	int getUnitID(IUnit unit) {
 		synchronized (unitsIDs) {

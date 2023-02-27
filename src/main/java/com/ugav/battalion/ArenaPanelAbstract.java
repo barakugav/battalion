@@ -583,7 +583,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				Font font = g.getFont();
 				int fontSize = 9;
 				font = new Font(font.getName(), font.getStyle(), fontSize);
-				g.setColor(Color.BLACK);
+				g.setColor(Color.MAGENTA);
 				g.setFont(font);
 				int id = arena.globals.debug.getUnitID(unit);
 				int x = arena.displayedXCell(pos.x) + 2;
