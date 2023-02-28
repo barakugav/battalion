@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,6 +25,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
+
+import javax.swing.SwingUtilities;
 
 public class Utils {
 
@@ -281,6 +284,22 @@ public class Utils {
 		for (Integer x : c)
 			arr[idx++] = x.intValue();
 		return arr;
+	}
+
+	public static void swingRun(Runnable runnable) {
+		if (SwingUtilities.isEventDispatchThread()) {
+			runnable.run();
+		} else {
+			try {
+				SwingUtilities.invokeAndWait(runnable);
+			} catch (InvocationTargetException | InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
+	public static <E extends Event, L extends Event.Listener<? super E>> Event.Listener<E> swingListener(L listener) {
+		return e -> swingRun(() -> listener.onEvent(e));
 	}
 
 }

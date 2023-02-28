@@ -14,10 +14,12 @@ import javax.swing.JPanel;
 import com.ugav.battalion.computer.Player;
 import com.ugav.battalion.computer.PlayerMiniMaxAlphaBeta;
 import com.ugav.battalion.core.Cell;
+import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Logger;
+import com.ugav.battalion.util.Utils;
 
 class GameWindow extends JPanel implements Clearable {
 
@@ -27,7 +29,7 @@ class GameWindow extends JPanel implements Clearable {
 
 	private int playerLastPos;
 
-	final GameGUIImpl game;
+	final Game game;
 //	private final Player computer = new Player.Random();
 	private final Player computer = new PlayerMiniMaxAlphaBeta();
 	private final Logger logger = new Logger(true); // TODO
@@ -43,7 +45,7 @@ class GameWindow extends JPanel implements Clearable {
 		if (level.width() < GameArenaPanel.DISPLAYED_ARENA_WIDTH
 				|| level.height() < GameArenaPanel.DISPLAYED_ARENA_HEIGHT)
 			throw new IllegalArgumentException("level size is too small");
-		this.game = new GameGUIImpl(this, level);
+		game = Game.fromLevel(level);
 		arenaPanel = new GameArenaPanel(this);
 		menu = new GameSideMenu(this);
 
@@ -63,19 +65,18 @@ class GameWindow extends JPanel implements Clearable {
 		menu.initGame();
 		arenaPanel.initGame();
 
-
-		register.register(game.onTurnEnd(), e -> {
+		// TODO move to arenaPanel
+		register.register(game.onTurnEnd, Utils.swingListener(e -> {
 			final Team player = Team.Red;
-			if (game.getTurn() == player) {
+			if (game.getTurn() == player)
 				arenaPanel.mapViewMove(playerLastPos, null);
-			}
-		});
-		register.register(game.onGameEnd(), e -> {
+		}));
+		register.register(game.onGameEnd, Utils.swingListener(e -> {
 			logger.dbgln("Game finished");
 			JOptionPane.showMessageDialog(this, "Winner: " + e.winner);
 			suspendActions();
 			// TODO
-		});
+		}));
 
 		(gameActionsThread = new GameActionsThread()).start();
 

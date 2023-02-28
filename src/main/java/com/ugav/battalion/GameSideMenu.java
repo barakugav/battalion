@@ -183,7 +183,7 @@ public class GameSideMenu extends JPanel implements Clearable {
 	}
 
 	void initGame() {
-		register.register(window.game.onMoneyChange(), e -> updateMoneyLabel(e.team, e.newAmount));
+		register.register(window.game.onMoneyChange, Utils.swingListener(e -> updateMoneyLabel(e.team, e.newAmount)));
 	}
 
 	@Override

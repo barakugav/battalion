@@ -35,7 +35,7 @@ public interface Player {
 					failedToMove.add(unit);
 				} else {
 					int destination = reachable.get(rand.nextInt(reachable.size()));
-					game.move(unit, game.calcRealPath(unit, unit.calcPath(destination)));
+					game.move(unit, unit.calcPath(destination));
 				}
 			}
 

@@ -49,6 +49,14 @@ public class GameArenaPanel extends
 
 		register.register(onMapMove, e -> closeMenus());
 
+		register.register(game.beforeUnitMove, e -> {
+			ListInt animationPath = new ListInt.Array(e.path.size() + 1);
+			animationPath.add(e.unit.getPos());
+			animationPath.addAll(e.path);
+			animateUnitMove(e.unit, animationPath);
+		});
+		register.register(game.beforeUnitAttack, e -> animateUnitAttack(e.attacker, e.target.getPos()));
+
 		register.register(animationTask.onAnimationBegin, e -> window.suspendActions());
 		register.register(animationTask.onAnimationEnd, e -> window.resumeActions());
 
@@ -266,7 +274,7 @@ public class GameArenaPanel extends
 
 	}
 
-	void animateUnitAdd(Unit unit, Runnable future) {
+	private void animateUnitAdd(Unit unit) {
 		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
 		Animation animation;
 		if (!unit.type.invisible)
@@ -274,35 +282,23 @@ public class GameArenaPanel extends
 		else
 			animation = new Animation.UnitAppearDisappear(comp);
 		animation = makeSureAnimationIsVisible(animation, ListInt.of(unit.getPos()));
-		runAnimationAsync(animation, future);
+		runAnimationAndWait(animation);
 	}
 
-	void animateUnitMove(Unit unit, ListInt path, Runnable future) {
+	private void animateUnitMove(Unit unit, ListInt path) {
 		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
 		Animation animation = new Animation.UnitMove(comp, path);
 		animation = appearDisappearAnimationWrap(comp, animation);
 		animation = makeSureAnimationIsVisible(animation, path);
-		runAnimationAsync(animation, future);
+		runAnimationAndWait(animation);
 	}
 
-	void animateUnitMoveAndAttack(Unit unit, ListInt path, int target, Runnable future) {
-		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
-		Animation animation = Animation.of(new Animation.UnitMove(comp, path),
-				new Animation.Attack(this, comp, target));
-		animation = appearDisappearAnimationWrap(comp, animation);
-		ListInt animatedCells = new ListInt.Array(path.size() + 1);
-		animatedCells.addAll(path);
-		animatedCells.add(target);
-		animation = makeSureAnimationIsVisible(animation, animatedCells);
-		runAnimationAsync(animation, future);
-	}
-
-	void animateUnitAttackRange(Unit unit, int target, Runnable future) {
+	private void animateUnitAttack(Unit unit, int target) {
 		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
 		Animation animation = new Animation.Attack(this, comp, target);
 		animation = appearDisappearAnimationWrap(comp, animation);
 		animation = makeSureAnimationIsVisible(animation, ListInt.of(unit.getPos(), target));
-		runAnimationAsync(animation, future);
+		runAnimationAndWait(animation);
 	}
 
 	private static Animation appearDisappearAnimationWrap(EntityLayer.UnitComp unitComp, Animation animation) {
@@ -370,26 +366,24 @@ public class GameArenaPanel extends
 		}
 
 		void initUI() {
-			register.register(game.onUnitAdd(), e -> {
-				addUnitComp(e.unit);
-				animateUnitAdd(e.unit, null);
+			register.register(game.onUnitAdd, e -> {
+				Utils.swingRun(() -> addUnitComp(e.unit));
+				animateUnitAdd(e.unit);
 			});
-			register.register(game.onUnitRemove(), e -> {
-				if (e.unit.getPos() == selection)
-					clearSelection();
+			register.register(game.onUnitRemove, e -> {
 				if (e.unit.isDead()) {
 					UnitComp unitComp = (UnitComp) comps.get(e.unit);
 					Animation animation = new Animation.UnitDeath(GameArenaPanel.this, unitComp);
 					animation = makeSureAnimationIsVisible(animation, ListInt.of(e.unit.getPos()));
-					runAnimationAsync(animation, () -> {
-						comps.remove(e.unit);
-						unitComp.clear();
-					});
-				} else {
+					runAnimationAndWait(animation);
+				}
+				Utils.swingRun(() -> {
+					if (e.unit.getPos() == selection)
+						clearSelection();
 					UnitComp unitComp = (UnitComp) comps.remove(e.unit);
 					if (unitComp != null)
 						unitComp.clear();
-				}
+				});
 			});
 			register.register(onSelectionChange, e -> {
 				passableMap = Cell.Bitmap.empty();
@@ -403,7 +397,7 @@ public class GameArenaPanel extends
 					attackableMap = unit.getAttackableMap();
 				}
 			});
-			register.register(game.onTurnEnd(), e -> clearSelection());
+			register.register(game.onTurnEnd, Utils.swingListener(e -> clearSelection()));
 
 			register.register(onHoverChange, e -> hoveredUpdated(e.cell));
 

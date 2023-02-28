@@ -14,6 +14,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -129,6 +130,11 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		});
 	}
 
+	synchronized void runAnimationAndWait(Animation animation) {
+		animationsActive.incrementAndGet();
+		animationTask.animateAndWait(animation, () -> animationsActive.decrementAndGet());
+	}
+
 	boolean isAnimationActive() {
 		return animationsActive.get() > 0;
 	}
@@ -204,7 +210,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			extends JPanel implements Clearable {
 
 		private final ArenaPanelAbstract<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> arena;
-		final Map<Object, ArenaComp> comps = new IdentityHashMap<>();
+		final Map<Object, ArenaComp> comps = Collections.synchronizedMap(new IdentityHashMap<>());
 
 		private int hovered = Cell.of(-1, -1);
 

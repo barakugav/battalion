@@ -152,7 +152,8 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 
 			for (Iter.Int it = reachable.cells(); it.hasNext();) {
 				int destination = it.next();
-				moves.add(new UnitMove(unitPos, destination));
+				if (destination != unitPos)
+					moves.add(new UnitMove(unitPos, destination));
 			}
 		}
 
@@ -210,7 +211,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		@Override
 		void apply(Game game) {
 			Unit unit = game.getUnit(source);
-			game.move(unit, game.calcRealPath(unit, unit.calcPath(destination)));
+			game.move(unit, unit.calcPath(destination));
 		}
 
 		@Override
@@ -235,11 +236,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		void apply(Game game) {
 			Unit unit = game.getUnit(attacker);
 			ListInt path = unit.calcPath(destination);
-			ListInt realPath = game.calcRealPath(unit, path);
-			if (path.size() == realPath.size())
-				game.moveAndAttack(unit, realPath, game.getUnit(target));
-			else
-				game.move(unit, realPath);
+			game.moveAndAttack(unit, path, game.getUnit(target));
 		}
 
 		@Override

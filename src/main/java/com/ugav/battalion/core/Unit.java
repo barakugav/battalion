@@ -303,8 +303,8 @@ public class Unit extends Entity implements IUnit {
 	}
 
 	private Cell.Bitmap getReachableMap0(boolean invisiableEnable) {
-		return getPassableMap(invisiableEnable)
-				.and(p -> arena.unit(p) == null || (invisiableEnable && !arena.isUnitVisible(p, getTeam())));
+		return getPassableMap(invisiableEnable).and(p -> p == getPos() || arena.unit(p) == null
+				|| (invisiableEnable && !arena.isUnitVisible(p, getTeam())));
 	}
 
 	public Cell.Bitmap getPassableMap() {
@@ -453,9 +453,13 @@ public class Unit extends Entity implements IUnit {
 		int destination = NoValue;
 		int length = Integer.MAX_VALUE;
 		for (int dest : Cell.neighbors(targetPos)) {
+			if (dest == getPos()) {
+				destination = dest;
+				break;
+			}
 			if (!arena.isValidCell(dest) || movementMap.getDistanceTo(dest) > type.moveLimit)
 				continue;
-			if (arena.isUnitVisible(dest, getTeam()) && arena.unit(dest) != this)
+			if (arena.isUnitVisible(dest, getTeam()))
 				continue;
 			int l = movementMap.getDistanceTo(dest);
 			if (destination == NoValue || length > l) {
