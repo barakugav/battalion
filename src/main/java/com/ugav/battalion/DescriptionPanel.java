@@ -18,6 +18,7 @@ import javax.swing.SwingConstants;
 
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Direction;
+import com.ugav.battalion.core.IUnit;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
 
@@ -213,7 +214,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 
 	}
 
-	private static class UnitPanel extends JPanel {
+	static class UnitPanel extends JPanel {
 
 		private final JLabel title;
 		private final JLabel image;
@@ -306,13 +307,15 @@ class DescriptionPanel extends JPanel implements Clearable {
 			add(techs, c);
 		}
 
-		private void showUnit(Unit unit) {
-			title.setText(unit.type.toString());
+		void showUnit(IUnit unit) {
+			int health0 = unit instanceof Unit u ? u.getHealth() : unit.getType().health;
+
+			title.setText(unit.getType().toString());
 			image.setIcon(new ImageIcon(Images.getUnitImgStand(unit, Direction.XPos, 0)));
-			health.setText("" + unit.getHealth() + "/" + unit.type.health);
-			damage.setText("" + unit.type.damage);
-			move.setText("" + unit.type.moveLimit);
-			text.setText("description about " + unit.type.toString());
+			health.setText("" + health0 + "/" + unit.getType().health);
+			damage.setText("" + unit.getType().damage);
+			move.setText("" + unit.getType().moveLimit);
+			text.setText("description about " + unit.getType().toString());
 		}
 	}
 }

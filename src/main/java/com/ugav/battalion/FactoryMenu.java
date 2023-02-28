@@ -7,6 +7,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ import javax.swing.SwingConstants;
 
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Level.UnitDesc;
+import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Utils;
@@ -28,6 +30,7 @@ import com.ugav.battalion.util.Utils;
 class FactoryMenu extends JPanel implements Clearable {
 
 	private final GameWindow window;
+	private final DescriptionPanel.UnitPanel unitDesc = new DescriptionPanel.UnitPanel();
 	final Building factory;
 	final DataChangeNotifier<DataEvent> onActionChosen = new DataChangeNotifier<>();
 	private final List<Pair<JButton, ActionListener>> listeners = new ArrayList<>();
@@ -63,8 +66,15 @@ class FactoryMenu extends JPanel implements Clearable {
 		});
 	}
 
-	private static JPanel createDisplayPanel() {
+	private JPanel createDisplayPanel() {
 		JPanel panel = new JPanel();
+
+		unitDesc.showUnit(UnitDesc.of(Unit.Type.Soldier, Team.Red));
+		panel.add(unitDesc);
+
+		JLabel img = new JLabel(new ImageIcon(Images.getImg(Images.Label.FactoryMenuImg)));
+		panel.add(img);
+
 		return panel;
 	}
 
@@ -166,6 +176,14 @@ class FactoryMenu extends JPanel implements Clearable {
 		saleComp.add(button, Utils.gbConstraints(0, 0, 1, 3));
 		saleComp.add(price, Utils.gbConstraints(0, 3, 1, 1));
 		saleComp.setPreferredSize(new Dimension(64, 80));
+
+		saleComp.addMouseMotionListener(new MouseAdapter() {
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				unitDesc.showUnit(UnitDesc.of(unit, Team.Red));
+			}
+		});
+
 		return saleComp;
 	}
 

@@ -32,6 +32,8 @@ class Images {
 		Selection, Passable, Attackable, UnitLocked, Delete,
 
 		UnitMenuTransportAir, UnitMenuTransportWater, UnitMenuTransportFinish, UnitMenuRepair, UnitMenuCancel,
+
+		FactoryMenuImg,
 	}
 
 	private static class ImgDesc {
@@ -207,6 +209,7 @@ class Images {
 		images0.put(Label.Attackable, loadImg("img/gui/attackabe.png"));
 		images0.put(Label.UnitLocked, loadImg("img/gui/unit_locked.png"));
 		images0.put(Label.Delete, loadImg("img/gui/delete.png"));
+		images0.put(Label.FactoryMenuImg, loadImg("img/gui/factory_menu_img.png"));
 
 		BiConsumer<Label, String> addUnitMenuIcon = (label, path) -> {
 			BufferedImage img = loadImg("img/gui/unit_menu_box.png");
