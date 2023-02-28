@@ -16,6 +16,7 @@ import com.ugav.battalion.util.Logger;
 public class PlayerMiniMaxAlphaBeta implements Player {
 
 	private final MiniMaxAlphaBeta<Move, Node, GameImpl> algo;
+	private static final double Aggression = 0.95;
 
 	private final int DepthLimit = 1;
 	private final Logger logger = new Logger(true); // TODO
@@ -53,12 +54,16 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			return child;
 		}
 
+		@SuppressWarnings("unused")
 		@Override
 		public double evaluate(Node position, int us0) {
+			if (!(0 <= Aggression && Aggression <= 1))
+				throw new IllegalArgumentException();
+
 			final Team us = turnIntToObj(us0);
 			double eval = 0;
 			for (Unit unit : position.game.arena().units().forEach())
-				eval += (unit.getTeam() == us ? 2 : -1) * evalUnit(position, unit);
+				eval += (unit.getTeam() == us ? Aggression : -(1 - Aggression)) * evalUnit(position, unit);
 			return eval;
 		}
 
