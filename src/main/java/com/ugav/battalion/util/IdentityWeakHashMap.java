@@ -14,33 +14,34 @@ import com.ugav.battalion.util.Utils.Holder;
 
 public class IdentityWeakHashMap<K, V> extends AbstractMap<K, V> {
 
-	private final HashMap<Integer, Node<K, V>> map = new HashMap<>();
+	private final Map<Integer, Node<K, V>> map = new HashMap<>();
 	private final ReferenceQueue<Object> queue = new ReferenceQueue<>();
+
+	private Map<Integer, Node<K, V>> map() {
+		expungeStaleEntries();
+		return map;
+	}
 
 	@Override
 	public int size() {
-		expungeStaleEntries();
-		return map.size();
+		return map().size();
 	}
 
 	@Override
 	public boolean containsKey(Object key) {
-		expungeStaleEntries();
-		return map.containsKey(keyOf(key));
+		return map().containsKey(keyOf(key));
 	}
 
 	@Override
 	public V get(Object key) {
-		expungeStaleEntries();
-		Node<K, V> n = map.get(keyOf(key));
+		Node<K, V> n = map().get(keyOf(key));
 		return n != null ? n.val : null;
 	}
 
 	@Override
 	public V put(K key, V value) {
-		expungeStaleEntries();
 		Holder<V> oldVal = new Holder<>();
-		map.compute(keyOf(key), (k, n) -> {
+		map().compute(keyOf(key), (k, n) -> {
 			if (n == null) {
 				n = new Node<>(key, value, queue);
 			} else {
@@ -54,8 +55,7 @@ public class IdentityWeakHashMap<K, V> extends AbstractMap<K, V> {
 
 	@Override
 	public V remove(Object key) {
-		expungeStaleEntries();
-		Node<K, V> n = map.remove(keyOf(key));
+		Node<K, V> n = map().remove(keyOf(key));
 		return n != null ? n.val : null;
 	}
 
@@ -112,7 +112,6 @@ public class IdentityWeakHashMap<K, V> extends AbstractMap<K, V> {
 
 	@Override
 	public Set<Entry<K, V>> entrySet() {
-		expungeStaleEntries();
 		if (entrySet == null)
 			entrySet = new EntrySet();
 		return entrySet;
@@ -122,29 +121,31 @@ public class IdentityWeakHashMap<K, V> extends AbstractMap<K, V> {
 
 		private final Set<Entry<Integer, Node<K, V>>> set = map.entrySet();
 
+		private Set<Entry<Integer, Node<K, V>>> set() {
+			expungeStaleEntries();
+			return set;
+		}
+
 		@Override
 		public int size() {
-			expungeStaleEntries();
-			return set.size();
+			return set().size();
 		}
 
 		@Override
 		public boolean contains(Object o) {
-			expungeStaleEntries();
 			if (!(o instanceof Map.Entry<?, ?>))
 				return false;
 			Map.Entry<?, ?> e = (Map.Entry<?, ?>) o;
 
-			Node<K, V> n = map.get(keyOf(e.getClass()));
+			Node<K, V> n = map().get(keyOf(e.getKey()));
 			return n != null && Objects.equals(e.getValue(), n.val);
 		}
 
 		@Override
 		public Iter<Entry<K, V>> iterator() {
-			expungeStaleEntries();
 			return new Iter<>() {
 
-				final Iterator<Entry<Integer, Node<K, V>>> it = set.iterator();
+				final Iterator<Entry<Integer, Node<K, V>>> it = set().iterator();
 
 				@Override
 				public boolean hasNext() {
