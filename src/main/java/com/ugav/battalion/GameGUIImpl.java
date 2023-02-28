@@ -13,6 +13,7 @@ import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.core.Unit.Type;
+import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.ListInt;
 import com.ugav.battalion.util.Utils;
 
@@ -43,13 +44,11 @@ class GameGUIImpl implements Game {
 
 	@Override
 	public void start() {
-		checkCorrectThread();
 		run(() -> game.start());
 	}
 
 	@Override
 	public void turnEnd() {
-		checkCorrectThread();
 		run(() -> game.turnEnd());
 	}
 
@@ -70,7 +69,6 @@ class GameGUIImpl implements Game {
 
 	@Override
 	public void move(Unit unit, ListInt path) {
-		checkCorrectThread();
 		ListInt realPath = game.calcRealPath(unit, path);
 		ListInt animationPath = new ListInt.Array(realPath.size() + 1);
 		animationPath.add(unit.getPos());
@@ -80,21 +78,20 @@ class GameGUIImpl implements Game {
 
 	@Override
 	public void moveAndAttack(Unit attacker, ListInt path, Unit target) {
-		checkCorrectThread();
 		ListInt realPath = game.calcRealPath(attacker, path);
 		ListInt animationPath = new ListInt.Array(realPath.size() + 1);
 		animationPath.add(attacker.getPos());
 		animationPath.addAll(realPath);
-		if (path.size() == realPath.size())
+		if (path.size() == realPath.size()) {
 			run(() -> gui.arenaPanel.animateUnitMoveAndAttack(attacker, animationPath, target.getPos(),
 					() -> game.moveAndAttack(attacker, path, target)));
-		else
+		} else {
 			run(() -> gui.arenaPanel.animateUnitMove(attacker, animationPath, () -> game.move(attacker, realPath)));
+		}
 	}
 
 	@Override
 	public void attackRange(Unit attacker, Unit target) {
-		checkCorrectThread();
 		run(() -> gui.arenaPanel.animateUnitAttackRange(attacker, target.getPos(),
 				() -> game.attackRange(attacker, target)));
 	}
@@ -106,50 +103,42 @@ class GameGUIImpl implements Game {
 
 	@Override
 	public Unit buildUnit(Building factory, Type unitType) {
-		checkCorrectThread();
 		return run(() -> game.buildUnit(factory, unitType));
 	}
 
 	@Override
 	public Unit unitTransport(Unit transportedUnit, Unit.Type transportType) {
-		checkCorrectThread();
 		return run(() -> game.unitTransport(transportedUnit, transportType));
 	}
 
 	@Override
 	public Unit transportFinish(Unit trasportedUnit) {
-		checkCorrectThread();
 		return run(() -> game.transportFinish(trasportedUnit));
 	}
 
 	@Override
-	public DataChangeNotifier<UnitAdd> onUnitAdd() {
+	public Event.Notifier<UnitAdd> onUnitAdd() {
 		return game.onUnitAdd();
 	}
 
 	@Override
-	public DataChangeNotifier<UnitRemove> onUnitRemove() {
+	public Event.Notifier<UnitRemove> onUnitRemove() {
 		return game.onUnitRemove();
 	}
 
 	@Override
-	public DataChangeNotifier<MoneyChange> onMoneyChange() {
+	public Event.Notifier<MoneyChange> onMoneyChange() {
 		return game.onMoneyChange();
 	}
 
 	@Override
-	public DataChangeNotifier<DataEvent> onTurnEnd() {
+	public Event.Notifier<Event> onTurnEnd() {
 		return game.onTurnEnd();
 	}
 
 	@Override
-	public DataChangeNotifier<GameEnd> onGameEnd() {
+	public Event.Notifier<GameEnd> onGameEnd() {
 		return game.onGameEnd();
-	}
-
-	private static void checkCorrectThread() {
-		if (SwingUtilities.isEventDispatchThread())
-			throw new IllegalStateException("Can't change the data from GUI thread");
 	}
 
 	private void run(Runnable runnable) {

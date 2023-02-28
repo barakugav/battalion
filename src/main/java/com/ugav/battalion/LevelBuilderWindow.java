@@ -36,6 +36,7 @@ import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.core.Unit.Category;
 import com.ugav.battalion.core.Unit.Type;
+import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Logger;
 import com.ugav.battalion.util.Utils;
@@ -379,7 +380,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			ArenaPanelAbstract<ArenaPanel.EntityLayer.TerrainComp, BuildingComp, ArenaPanel.EntityLayer.UnitComp>
 			implements Clearable {
 
-		private final DataChangeRegister register = new DataChangeRegister();
+		private final Event.Register register = new Event.Register();
 
 		private static final long serialVersionUID = 1L;
 
@@ -478,7 +479,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			private static final long serialVersionUID = 1L;
 
-			private final DataChangeRegister register = new DataChangeRegister();
+			private final Event.Register register = new Event.Register();
 
 			EntityLayer(ArenaPanel arena) {
 				super(arena);

@@ -3,10 +3,10 @@ package com.ugav.battalion.core;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import com.ugav.battalion.DataChangeNotifier;
 import com.ugav.battalion.core.Game.EntityChange;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
+import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
 
 @SuppressWarnings("unchecked")
@@ -16,7 +16,7 @@ public class Arena {
 	private final Cell.Array<Unit> units;
 	private final Cell.Array<Building> buildings;
 
-	public final DataChangeNotifier<EntityChange> onEntityChange = new DataChangeNotifier<>();
+	public final Event.Notifier<EntityChange> onEntityChange = new Event.Notifier<>();
 
 	private Arena(Level level) {
 		int w = level.width(), h = level.height();

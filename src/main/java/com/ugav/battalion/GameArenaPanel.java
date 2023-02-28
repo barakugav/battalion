@@ -18,6 +18,7 @@ import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.ListInt;
 import com.ugav.battalion.util.Logger;
@@ -31,9 +32,9 @@ public class GameArenaPanel extends
 	private final Game game;
 
 	private final Logger logger = new Logger(true); // TODO
-	private final DataChangeRegister register = new DataChangeRegister();
-	final DataChangeNotifier<EntityClick> onEntityClick = new DataChangeNotifier<>();
-	final DataChangeNotifier<SelectionChange> onSelectionChange = new DataChangeNotifier<>();
+	private final Event.Register register = new Event.Register();
+	final Event.Notifier<EntityClick> onEntityClick = new Event.Notifier<>();
+	final Event.Notifier<SelectionChange> onSelectionChange = new Event.Notifier<>();
 
 	private static final long serialVersionUID = 1L;
 
@@ -239,7 +240,7 @@ public class GameArenaPanel extends
 		throw new IllegalStateException();
 	}
 
-	static class SelectionChange extends DataEvent {
+	static class SelectionChange extends Event {
 
 		final int cell;
 		final Entity obj;
@@ -252,7 +253,7 @@ public class GameArenaPanel extends
 
 	}
 
-	static class EntityClick extends DataEvent {
+	static class EntityClick extends Event {
 
 		final int cell;
 		final Object obj;
@@ -360,7 +361,7 @@ public class GameArenaPanel extends
 
 		private final GestureTask gestureTask = new GestureTask();
 
-		private final DataChangeRegister register = new DataChangeRegister();
+		private final Event.Register register = new Event.Register();
 
 		EntityLayer() {
 			super(GameArenaPanel.this);
@@ -633,7 +634,7 @@ public class GameArenaPanel extends
 			volatile boolean isAnimated;
 			float alpha = 0.0f;
 			float baseAlphaMax = 1.0f;
-			private final DataChangeRegister register = new DataChangeRegister();
+			private final Event.Register register = new Event.Register();
 
 			private static final Color HealthColorHigh = new Color(0, 206, 0);
 			private static final Color HealthColorMed = new Color(255, 130, 4);

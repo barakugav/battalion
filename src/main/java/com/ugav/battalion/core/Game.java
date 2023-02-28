@@ -2,8 +2,7 @@ package com.ugav.battalion.core;
 
 import java.util.Objects;
 
-import com.ugav.battalion.DataChangeNotifier;
-import com.ugav.battalion.DataEvent;
+import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.ListInt;
 
 public interface Game {
@@ -58,15 +57,15 @@ public interface Game {
 
 	public Unit transportFinish(Unit trasportedUnit);
 
-	public DataChangeNotifier<UnitAdd> onUnitAdd();
+	public Event.Notifier<UnitAdd> onUnitAdd();
 
-	public DataChangeNotifier<UnitRemove> onUnitRemove();
+	public Event.Notifier<UnitRemove> onUnitRemove();
 
-	public DataChangeNotifier<MoneyChange> onMoneyChange();
+	public Event.Notifier<MoneyChange> onMoneyChange();
 
-	public DataChangeNotifier<DataEvent> onTurnEnd();
+	public Event.Notifier<Event> onTurnEnd();
 
-	public DataChangeNotifier<GameEnd> onGameEnd();
+	public Event.Notifier<GameEnd> onGameEnd();
 
 	public static Game newInstance(Level level) {
 		return GameImpl.fromLevel(level);
@@ -76,7 +75,7 @@ public interface Game {
 		return GameImpl.copyOf(game);
 	}
 
-	public static class EntityChange extends DataEvent {
+	public static class EntityChange extends Event {
 
 		public EntityChange(Entity source) {
 			super(Objects.requireNonNull(source));
@@ -88,7 +87,7 @@ public interface Game {
 
 	}
 
-	public static class UnitAdd extends DataEvent {
+	public static class UnitAdd extends Event {
 
 		public final Unit unit;
 
@@ -99,7 +98,7 @@ public interface Game {
 
 	}
 
-	public static class UnitRemove extends DataEvent {
+	public static class UnitRemove extends Event {
 
 		public final Unit unit;
 
@@ -110,7 +109,7 @@ public interface Game {
 
 	}
 
-	public static class MoneyChange extends DataEvent {
+	public static class MoneyChange extends Event {
 
 		public final Team team;
 		public final int newAmount;
@@ -123,7 +122,7 @@ public interface Game {
 
 	}
 
-	public static class GameEnd extends DataEvent {
+	public static class GameEnd extends Event {
 
 		public final Team winner;
 

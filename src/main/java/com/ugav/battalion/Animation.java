@@ -14,6 +14,7 @@ import com.ugav.battalion.ArenaPanelAbstract.ArenaComp;
 import com.ugav.battalion.GameArenaPanel.EntityLayer.UnitComp;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
+import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.ListInt;
 
 @FunctionalInterface
@@ -412,8 +413,8 @@ interface Animation {
 
 		private boolean isAnimationRunning = false;
 
-		final DataChangeNotifier<DataEvent> onAnimationBegin = new DataChangeNotifier<>();
-		final DataChangeNotifier<DataEvent> onAnimationEnd = new DataChangeNotifier<>();
+		final Event.Notifier<Event> onAnimationBegin = new Event.Notifier<>();
+		final Event.Notifier<Event> onAnimationEnd = new Event.Notifier<>();
 
 		Task() {
 		}
@@ -440,11 +441,11 @@ interface Animation {
 
 			if (animated && !isAnimationRunning) {
 				isAnimationRunning = true;
-				onAnimationBegin.notify(new DataEvent(Task.this));
+				onAnimationBegin.notify(new Event(Task.this));
 			}
 			if (!animated && isAnimationRunning) {
 				isAnimationRunning = false;
-				onAnimationEnd.notify(new DataEvent(Task.this));
+				onAnimationEnd.notify(new Event(Task.this));
 			}
 		}
 

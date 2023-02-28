@@ -16,6 +16,7 @@ import com.ugav.battalion.computer.PlayerMiniMaxAlphaBeta;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Team;
+import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Logger;
 
 class GameWindow extends JPanel implements Clearable {
@@ -30,7 +31,7 @@ class GameWindow extends JPanel implements Clearable {
 //	private final Player computer = new Player.Random();
 	private final Player computer = new PlayerMiniMaxAlphaBeta();
 	private final Logger logger = new Logger(true); // TODO
-	private final DataChangeRegister register = new DataChangeRegister();
+	private final Event.Register register = new Event.Register();
 
 	private final AtomicInteger actionsSuspended = new AtomicInteger();
 

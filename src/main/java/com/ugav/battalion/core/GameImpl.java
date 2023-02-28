@@ -7,10 +7,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import com.ugav.battalion.DataChangeNotifier;
-import com.ugav.battalion.DataEvent;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Unit.Weapon;
+import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.ListInt;
 import com.ugav.battalion.util.Utils;
@@ -23,11 +22,11 @@ class GameImpl implements Game {
 	private Team turn;
 	private Team winner;
 
-	final DataChangeNotifier<UnitAdd> onUnitAdd = new DataChangeNotifier<>();
-	final DataChangeNotifier<UnitRemove> onUnitRemove = new DataChangeNotifier<>();
-	final DataChangeNotifier<MoneyChange> onMoneyChange = new DataChangeNotifier<>();
-	final DataChangeNotifier<DataEvent> onTurnEnd = new DataChangeNotifier<>();
-	final DataChangeNotifier<GameEnd> onGameEnd = new DataChangeNotifier<>();
+	final Event.Notifier<UnitAdd> onUnitAdd = new Event.Notifier<>();
+	final Event.Notifier<UnitRemove> onUnitRemove = new Event.Notifier<>();
+	final Event.Notifier<MoneyChange> onMoneyChange = new Event.Notifier<>();
+	final Event.Notifier<Event> onTurnEnd = new Event.Notifier<>();
+	final Event.Notifier<GameEnd> onGameEnd = new Event.Notifier<>();
 
 	private GameImpl(Level level) {
 		arena = Arena.fromLevel(level);
@@ -118,7 +117,7 @@ class GameImpl implements Game {
 
 		turnBegin();
 
-		onTurnEnd.notify(new DataEvent(this));
+		onTurnEnd.notify(new Event(this));
 	}
 
 	private Set<Team> getAliveTeams() {
@@ -296,27 +295,27 @@ class GameImpl implements Game {
 	}
 
 	@Override
-	public DataChangeNotifier<UnitAdd> onUnitAdd() {
+	public Event.Notifier<UnitAdd> onUnitAdd() {
 		return onUnitAdd;
 	}
 
 	@Override
-	public DataChangeNotifier<UnitRemove> onUnitRemove() {
+	public Event.Notifier<UnitRemove> onUnitRemove() {
 		return onUnitRemove;
 	}
 
 	@Override
-	public DataChangeNotifier<MoneyChange> onMoneyChange() {
+	public Event.Notifier<MoneyChange> onMoneyChange() {
 		return onMoneyChange;
 	}
 
 	@Override
-	public DataChangeNotifier<DataEvent> onTurnEnd() {
+	public Event.Notifier<Event> onTurnEnd() {
 		return onTurnEnd;
 	}
 
 	@Override
-	public DataChangeNotifier<GameEnd> onGameEnd() {
+	public Event.Notifier<GameEnd> onGameEnd() {
 		return onGameEnd;
 	}
 

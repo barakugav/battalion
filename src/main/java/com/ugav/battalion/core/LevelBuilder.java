@@ -6,11 +6,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.IntFunction;
 
-import com.ugav.battalion.DataChangeNotifier;
-import com.ugav.battalion.DataEvent;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.TileDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
+import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.ListInt;
 
@@ -18,8 +17,8 @@ public class LevelBuilder {
 
 	private Cell.Array<TileDesc> tiles;
 	private final Map<Team, Integer> startingMoney;
-	public final DataChangeNotifier<TileChange> onTileChange = new DataChangeNotifier<>();
-	public final DataChangeNotifier<LevelReset> onResetChange = new DataChangeNotifier<>();
+	public final Event.Notifier<TileChange> onTileChange = new Event.Notifier<>();
+	public final Event.Notifier<LevelReset> onResetChange = new Event.Notifier<>();
 
 	public LevelBuilder(int width, int height) {
 		startingMoney = new HashMap<>();
@@ -117,7 +116,7 @@ public class LevelBuilder {
 		return null;
 	}
 
-	public static class TileChange extends DataEvent {
+	public static class TileChange extends Event {
 
 		public final int cell;
 
@@ -128,7 +127,7 @@ public class LevelBuilder {
 
 	}
 
-	public static class LevelReset extends DataEvent {
+	public static class LevelReset extends Event {
 
 		public LevelReset(LevelBuilder source) {
 			super(source);

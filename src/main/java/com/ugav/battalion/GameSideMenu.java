@@ -29,6 +29,7 @@ import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Utils;
 
@@ -37,7 +38,7 @@ public class GameSideMenu extends JPanel implements Clearable {
 	private final GameWindow window;
 	private final DescriptionPanel descriptionPanel;
 	private final Map<Team, JLabel> labelMoney;
-	private final DataChangeRegister register = new DataChangeRegister();
+	private final Event.Register register = new Event.Register();
 
 	private static final long serialVersionUID = 1L;
 

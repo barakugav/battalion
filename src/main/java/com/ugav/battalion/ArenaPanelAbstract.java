@@ -34,6 +34,7 @@ import com.ugav.battalion.core.IBuilding;
 import com.ugav.battalion.core.IUnit;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Terrain;
+import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Utils;
 
@@ -50,7 +51,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	final TickTask.Manager tickTaskManager = new TickTask.Manager();
 
 	private final KeyListener keyListener;
-	final DataChangeNotifier<DataEvent> onMapMove = new DataChangeNotifier<>();
+	final Event.Notifier<Event> onMapMove = new Event.Notifier<>();
 
 	final Animation.Task animationTask = new Animation.Task();
 	private final AtomicInteger animationsActive = new AtomicInteger();
@@ -79,7 +80,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				Direction dir = keyToDir(e.getKeyCode());
 				if (dir != null) {
 					mapMoveAnimation.userMapMove(dir);
-					onMapMove.notify(new DataEvent(this));
+					onMapMove.notify(new Event(this));
 				}
 			}
 
@@ -150,14 +151,14 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	void mapViewSet(int pos) {
 		if (!Cell.isInRect(pos, arenaWidth - DISPLAYED_ARENA_WIDTH, arenaHeight - DISPLAYED_ARENA_HEIGHT))
 			throw new IllegalArgumentException();
-		onMapMove.notify(new DataEvent(this));
+		onMapMove.notify(new Event(this));
 		mapPos = Position.fromCell(pos);
 	}
 
 	void mapViewMove(int pos, Runnable future) {
 		if (!Cell.isInRect(pos, arenaWidth - DISPLAYED_ARENA_WIDTH, arenaHeight - DISPLAYED_ARENA_HEIGHT))
 			throw new IllegalArgumentException();
-		onMapMove.notify(new DataEvent(this));
+		onMapMove.notify(new Event(this));
 		Animation animation = mapMoveAnimation.createAnimation(Position.fromCell(pos));
 		runAnimationAsync(animation, future);
 	}
@@ -207,8 +208,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		private int hovered = Cell.of(-1, -1);
 
-		final DataChangeNotifier<HoverChangeEvent> onHoverChange = new DataChangeNotifier<>();
-		final DataChangeNotifier<TileClickEvent> onTileClick = new DataChangeNotifier<>();
+		final Event.Notifier<HoverChangeEvent> onHoverChange = new Event.Notifier<>();
+		final Event.Notifier<TileClickEvent> onTileClick = new Event.Notifier<>();
 
 		private final MouseListener mouseListener;
 		private final MouseMotionListener mouseMotionListener;
@@ -631,7 +632,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	}
 
-	static class HoverChangeEvent extends DataEvent {
+	static class HoverChangeEvent extends Event {
 
 		final int cell;
 
@@ -642,7 +643,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	}
 
-	static class TileClickEvent extends DataEvent {
+	static class TileClickEvent extends Event {
 
 		final int cell;
 

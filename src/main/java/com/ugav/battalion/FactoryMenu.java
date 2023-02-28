@@ -24,6 +24,7 @@ import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Utils;
 
@@ -32,7 +33,7 @@ class FactoryMenu extends JPanel implements Clearable {
 	private final GameWindow window;
 	private final DescriptionPanel.UnitPanel unitDesc = new DescriptionPanel.UnitPanel();
 	final Building factory;
-	final DataChangeNotifier<DataEvent> onActionChosen = new DataChangeNotifier<>();
+	final Event.Notifier<Event> onActionChosen = new Event.Notifier<>();
 	private final List<Pair<JButton, ActionListener>> listeners = new ArrayList<>();
 	private MouseListener mouseListener;
 
@@ -90,7 +91,7 @@ class FactoryMenu extends JPanel implements Clearable {
 		List<Unit.Type> airUnits = List.of(Unit.Type.Airplane, Unit.Type.Zeppelin);
 
 		JButton close = new JButton("Close");
-		ActionListener closeListener = e -> onActionChosen.notify(new DataEvent(factory));
+		ActionListener closeListener = e -> onActionChosen.notify(new Event(factory));
 		close.addActionListener(closeListener);
 		listeners.add(Pair.of(close, closeListener));
 
@@ -157,7 +158,7 @@ class FactoryMenu extends JPanel implements Clearable {
 			ActionListener listener = e -> {
 				if (sale.price <= window.game.getMoney(factory.getTeam())) {
 					window.gameAction(() -> window.game.buildUnit(factory, sale.type));
-					onActionChosen.notify(new DataEvent(factory));
+					onActionChosen.notify(new Event(factory));
 				}
 			};
 			button.addActionListener(listener);

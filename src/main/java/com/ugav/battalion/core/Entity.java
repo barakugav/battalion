@@ -2,8 +2,8 @@ package com.ugav.battalion.core;
 
 import java.util.Objects;
 
-import com.ugav.battalion.DataChangeNotifier;
 import com.ugav.battalion.core.Game.EntityChange;
+import com.ugav.battalion.util.Event;
 
 public abstract class Entity {
 
@@ -39,7 +39,7 @@ public abstract class Entity {
 		onChange().notify(new EntityChange(this));
 	}
 
-	public DataChangeNotifier<EntityChange> onChange() {
+	public Event.Notifier<EntityChange> onChange() {
 		return arena.onEntityChange;
 	}
 

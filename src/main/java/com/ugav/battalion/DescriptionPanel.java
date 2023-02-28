@@ -21,6 +21,7 @@ import com.ugav.battalion.core.Direction;
 import com.ugav.battalion.core.IUnit;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.util.Event;
 
 class DescriptionPanel extends JPanel implements Clearable {
 
@@ -31,7 +32,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 	private final BuildingPanel buildingPanel;
 	private final UnitPanel unitPanel;
 	private final Map<JPanel, String> panelsNames = new IdentityHashMap<>();
-	private final DataChangeRegister register = new DataChangeRegister();
+	private final Event.Register register = new Event.Register();
 
 	private static final long serialVersionUID = 1L;
 

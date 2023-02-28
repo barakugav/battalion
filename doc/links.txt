@@ -1,3 +1,3 @@
 units: https://kongregate.fandom.com/wiki/Units_of_Battalion_Versions
 images: https://www.spriters-resource.com/pc_computer/battalionnemesis/
-game: https://www.bubblebox.com/play/1167/battalion-nemesis.htm
+game: https://www.bubblebox.com/play/1167/battalion-nemesis.html

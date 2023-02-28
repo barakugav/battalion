@@ -15,6 +15,7 @@ import javax.swing.JPanel;
 
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Utils;
 
 class UnitMenu extends JPanel implements Clearable {
@@ -25,7 +26,7 @@ class UnitMenu extends JPanel implements Clearable {
 	final Unit unit;
 	private final List<Pair<JButton, ActionListener>> listeners = new ArrayList<>();
 
-	final DataChangeNotifier<DataEvent> onActionChosen = new DataChangeNotifier<>();
+	final Event.Notifier<Event> onActionChosen = new Event.Notifier<>();
 
 	UnitMenu(GameWindow window, Unit unit) {
 		this.window = Objects.requireNonNull(window);
@@ -76,7 +77,7 @@ class UnitMenu extends JPanel implements Clearable {
 		button.setPreferredSize(new Dimension(img.getWidth(), img.getHeight()));
 		if (enable) {
 			ActionListener listener = e -> {
-				onActionChosen.notify(new DataEvent(unit));
+				onActionChosen.notify(new Event(unit));
 				l.actionPerformed(e);
 			};
 			button.addActionListener(listener);
