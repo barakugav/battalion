@@ -82,6 +82,10 @@ public interface Game {
 			super(Objects.requireNonNull(source));
 		}
 
+		public Entity source() {
+			return (Entity) source;
+		}
+
 	}
 
 	public static class UnitAdd extends DataEvent {

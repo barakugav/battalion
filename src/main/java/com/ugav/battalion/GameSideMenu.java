@@ -1,6 +1,6 @@
 package com.ugav.battalion;
 
-import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -12,6 +12,7 @@ import java.awt.Image;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -61,7 +62,7 @@ public class GameSideMenu extends JPanel implements Clearable {
 		add(createTeamsPanel(), c);
 		c.gridy = 4;
 		c.weighty = 2;
-		add(createDescriptionPanel(), c);
+		add(new DescriptionPanel(), c);
 		c.gridy = 6;
 		c.weighty = 1;
 		add(createButtonsPannel(), c);
@@ -168,257 +169,295 @@ public class GameSideMenu extends JPanel implements Clearable {
 		}
 	}
 
-	private JPanel createDescriptionPanel() {
-		JPanel panel = new JPanel(new BorderLayout());
-		panel.setPreferredSize(new Dimension(100, 100));
-		panel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+	private class DescriptionPanel extends JPanel {
 
-		createDescriptionPanelTerrain(panel);
-		createDescriptionPanelBuilding(panel);
-		createDescriptionPanelUnit(panel);
+		private Object shownObj;
+		private final CardLayout layout;
+		private final JPanel emptyPanel;
+		private final DescriptionTerrainPanel terrainPanel;
+		private final DescriptionBuildingPanel buildingPanel;
+		private final DescriptionUnitPanel unitPanel;
+		private final Map<JPanel, String> panelsNames = new IdentityHashMap<>();
 
-		return panel;
+		private static final long serialVersionUID = 1L;
+
+		DescriptionPanel() {
+			setLayout(layout = new CardLayout());
+			setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+
+			panelsNames.put(emptyPanel = new JPanel(), "empty");
+			panelsNames.put(terrainPanel = new DescriptionTerrainPanel(), "terrain");
+			panelsNames.put(buildingPanel = new DescriptionBuildingPanel(), "building");
+			panelsNames.put(unitPanel = new DescriptionUnitPanel(), "unit");
+			for (JPanel panel : panelsNames.keySet())
+				add(panel, panelsNames.get(panel));
+			showPanel(emptyPanel);
+
+			register.register(window.arenaPanel.onEntityClick, e -> showObject(e.obj));
+			register.register(window.game.arena().onEntityChange, e -> {
+				if (e.source() == shownObj)
+					showObject(e.source());
+			});
+		}
+
+		private void showObject(Object obj) {
+			if (obj instanceof Terrain terrain) {
+				showPanel(terrainPanel);
+				terrainPanel.showTerrain(terrain);
+				shownObj = terrain;
+
+			} else if (obj instanceof Building building) {
+				showPanel(buildingPanel);
+				buildingPanel.showBuilding(building);
+				shownObj = building;
+
+			} else if (obj instanceof Unit unit) {
+				showPanel(unitPanel);
+				unitPanel.showUnit(unit);
+				shownObj = unit;
+
+			} else {
+				showPanel(emptyPanel);
+				shownObj = null;
+			}
+		}
+
+		private void showPanel(JPanel panel) {
+			layout.show(this, Objects.requireNonNull(panelsNames.get(panel)));
+		}
 	}
 
-	private void createDescriptionPanelTerrain(JPanel parent) {
-		JPanel panel = new JPanel(new GridBagLayout());
+	private class DescriptionTerrainPanel extends JPanel {
 
-		JLabel title = new JLabel("", SwingConstants.CENTER);
-		Font titleFont = title.getFont();
-		Font titleFontNew = new Font(titleFont.getName(), Font.BOLD, titleFont.getSize());
-		title.setFont(titleFontNew);
+		private final JLabel title;
+		private final JTextArea text;
+		private final JLabel image;
 
-		JTextArea text = new JTextArea();
-		text.setWrapStyleWord(true);
-		text.setLineWrap(true);
-		text.setOpaque(false);
-		JLabel image = new JLabel();
-		JLabel techs = new JLabel();
+		private static final long serialVersionUID = 1L;
 
-		GridBagConstraints c = new GridBagConstraints();
+		DescriptionTerrainPanel() {
+			super(new GridBagLayout());
 
-		c.gridx = 0;
-		c.gridy = 0;
-		c.gridwidth = 2;
-		c.gridheight = 1;
-		c.weighty = 0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(title, c);
-		c.gridx = 0;
-		c.gridy = 1;
-		c.gridwidth = 2;
-		c.gridheight = 1;
-		c.weighty = 1;
-		c.weightx = 1;
-		c.fill = GridBagConstraints.BOTH;
-		panel.add(text, c);
-		c.gridx = 0;
-		c.gridy = 2;
-		c.gridwidth = 1;
-		c.gridheight = 1;
-		c.weighty = 0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(image, c);
-		c.gridx = 1;
-		c.gridy = 2;
-		c.gridwidth = 1;
-		c.gridheight = 1;
-		c.weighty = 0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(techs, c);
+			title = new JLabel("", SwingConstants.CENTER);
+			Font titleFont = title.getFont();
+			Font titleFontNew = new Font(titleFont.getName(), Font.BOLD, titleFont.getSize());
+			title.setFont(titleFontNew);
 
-		register.register(window.arenaPanel.onEntityClick, e -> {
-			if (e.obj == null)
-				return;
-			if (!(e.obj instanceof Terrain)) {
-				parent.remove(panel);
-				parent.revalidate();
-				parent.repaint();
-				return;
-			}
-			Terrain terrain = (Terrain) e.obj;
+			text = new JTextArea();
+			text.setWrapStyleWord(true);
+			text.setLineWrap(true);
+			text.setOpaque(false);
+			image = new JLabel();
+			JLabel techs = new JLabel();
 
+			GridBagConstraints c = new GridBagConstraints();
+
+			c.gridx = 0;
+			c.gridy = 0;
+			c.gridwidth = 2;
+			c.gridheight = 1;
+			c.weighty = 0;
+			c.fill = GridBagConstraints.HORIZONTAL;
+			add(title, c);
+			c.gridx = 0;
+			c.gridy = 1;
+			c.gridwidth = 2;
+			c.gridheight = 1;
+			c.weighty = 1;
+			c.weightx = 1;
+			c.fill = GridBagConstraints.BOTH;
+			add(text, c);
+			c.gridx = 0;
+			c.gridy = 2;
+			c.gridwidth = 1;
+			c.gridheight = 1;
+			c.weighty = 0;
+			c.fill = GridBagConstraints.HORIZONTAL;
+			add(image, c);
+			c.gridx = 1;
+			c.gridy = 2;
+			c.gridwidth = 1;
+			c.gridheight = 1;
+			c.weighty = 0;
+			c.fill = GridBagConstraints.HORIZONTAL;
+			add(techs, c);
+
+		}
+
+		private void showTerrain(Terrain terrain) {
 			title.setText(terrain.category.toString());
 			text.setText("description about " + terrain.category.toString());
 			image.setIcon(new ImageIcon(Images.getImg(terrain)));
+		}
 
-			parent.add(panel);
-			panel.revalidate();
-			panel.repaint();
-		});
 	}
 
-	private void createDescriptionPanelBuilding(JPanel parent) {
-		JPanel panel = new JPanel(new GridBagLayout());
+	private class DescriptionBuildingPanel extends JPanel {
 
-		JLabel title = new JLabel("", SwingConstants.CENTER);
-		Font titleFont = title.getFont();
-		Font titleFontNew = new Font(titleFont.getName(), Font.BOLD, titleFont.getSize());
-		title.setFont(titleFontNew);
+		private final JLabel title;
+		private final JTextArea text;
+		private final JLabel image;
 
-		JTextArea text = new JTextArea();
-		text.setWrapStyleWord(true);
-		text.setLineWrap(true);
-		text.setOpaque(false);
-		JLabel image = new JLabel();
-		JLabel techs = new JLabel();
+		private static final long serialVersionUID = 1L;
 
-		GridBagConstraints c = new GridBagConstraints();
+		DescriptionBuildingPanel() {
+			super(new GridBagLayout());
 
-		c.gridx = 0;
-		c.gridy = 0;
-		c.gridwidth = 2;
-		c.gridheight = 1;
-		c.weighty = 0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(title, c);
-		c.gridx = 0;
-		c.gridy = 1;
-		c.gridwidth = 2;
-		c.gridheight = 1;
-		c.weighty = 1;
-		c.weightx = 1;
-		c.fill = GridBagConstraints.BOTH;
-		panel.add(text, c);
-		c.gridx = 0;
-		c.gridy = 2;
-		c.gridwidth = 1;
-		c.gridheight = 1;
-		c.weighty = 0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(image, c);
-		c.gridx = 1;
-		c.gridy = 2;
-		c.gridwidth = 1;
-		c.gridheight = 1;
-		c.weighty = 0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(techs, c);
+			title = new JLabel("", SwingConstants.CENTER);
+			Font titleFont = title.getFont();
+			Font titleFontNew = new Font(titleFont.getName(), Font.BOLD, titleFont.getSize());
+			title.setFont(titleFontNew);
 
-		register.register(window.arenaPanel.onEntityClick, e -> {
-			if (e.obj == null)
-				return;
-			if (!(e.obj instanceof Building)) {
-				parent.remove(panel);
-				parent.revalidate();
-				parent.repaint();
-				return;
-			}
-			Building building = (Building) e.obj;
+			text = new JTextArea();
+			text.setWrapStyleWord(true);
+			text.setLineWrap(true);
+			text.setOpaque(false);
+			image = new JLabel();
+			JLabel techs = new JLabel();
 
+			GridBagConstraints c = new GridBagConstraints();
+
+			c.gridx = 0;
+			c.gridy = 0;
+			c.gridwidth = 2;
+			c.gridheight = 1;
+			c.weighty = 0;
+			c.fill = GridBagConstraints.HORIZONTAL;
+			add(title, c);
+			c.gridx = 0;
+			c.gridy = 1;
+			c.gridwidth = 2;
+			c.gridheight = 1;
+			c.weighty = 1;
+			c.weightx = 1;
+			c.fill = GridBagConstraints.BOTH;
+			add(text, c);
+			c.gridx = 0;
+			c.gridy = 2;
+			c.gridwidth = 1;
+			c.gridheight = 1;
+			c.weighty = 0;
+			c.fill = GridBagConstraints.HORIZONTAL;
+			add(image, c);
+			c.gridx = 1;
+			c.gridy = 2;
+			c.gridwidth = 1;
+			c.gridheight = 1;
+			c.weighty = 0;
+			c.fill = GridBagConstraints.HORIZONTAL;
+			add(techs, c);
+		}
+
+		private void showBuilding(Building building) {
 			title.setText(building.type.toString());
 			text.setText("description about " + building.type.toString());
 			image.setIcon(new ImageIcon(Images.getBuildingImg(building, 0)));
+		}
 
-			parent.add(panel);
-			panel.revalidate();
-			panel.repaint();
-		});
 	}
 
-	private void createDescriptionPanelUnit(JPanel parent) {
-		JPanel panel = new JPanel(new GridBagLayout());
+	private class DescriptionUnitPanel extends JPanel {
 
-		JLabel title = new JLabel("", SwingConstants.CENTER);
-		Font titleFont = title.getFont();
-		Font boldFont = new Font(titleFont.getName(), Font.BOLD, titleFont.getSize());
-		title.setFont(boldFont);
+		private final JLabel title;
+		private final JLabel image;
+		private final JLabel health;
+		private final JLabel damage;
+		private final JLabel move;
+		private final JTextArea text;
 
-		JLabel image = new JLabel();
+		private static final long serialVersionUID = 1L;
 
-		JPanel stats = new JPanel(new GridBagLayout());
-		GridBagConstraints c = new GridBagConstraints();
-		c.gridx = 0;
-		c.weighty = c.gridheight = 1;
-		c.weightx = c.gridwidth = 1;
-		c.fill = GridBagConstraints.BOTH;
-		JLabel healthLabel = new JLabel("Health:");
-		healthLabel.setFont(boldFont);
-		c.gridy = 0;
-		stats.add(healthLabel, c);
-		JLabel health = new JLabel();
-		c.gridy = 1;
-		stats.add(health, c);
-		JLabel damageLabel = new JLabel("Damage:");
-		damageLabel.setFont(boldFont);
-		c.gridy = 2;
-		stats.add(damageLabel, c);
-		JLabel damage = new JLabel();
-		c.gridy = 3;
-		stats.add(damage, c);
-		JLabel moveLabel = new JLabel("Move:");
-		moveLabel.setFont(boldFont);
-		c.gridy = 4;
-		stats.add(moveLabel, c);
-		JLabel move = new JLabel();
-		c.gridy = 5;
-		stats.add(move, c);
+		DescriptionUnitPanel() {
+			super(new GridBagLayout());
 
-		JTextArea text = new JTextArea();
-		text.setWrapStyleWord(true);
-		text.setLineWrap(true);
-		text.setOpaque(false);
-		JLabel techs = new JLabel();
+			title = new JLabel("", SwingConstants.CENTER);
+			Font titleFont = title.getFont();
+			Font boldFont = new Font(titleFont.getName(), Font.BOLD, titleFont.getSize());
+			title.setFont(boldFont);
 
-		c.gridx = 0;
-		c.gridy = 0;
-		c.gridwidth = 2;
-		c.gridheight = 1;
-		c.weighty = 0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(title, c);
-		c.gridx = 0;
-		c.gridy = 1;
-		c.gridwidth = 1;
-		c.gridheight = 1;
-		c.weighty = 0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(image, c);
-		c.gridx = 1;
-		c.gridy = 1;
-		c.gridwidth = 1;
-		c.gridheight = 1;
-		c.weighty = 0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(stats, c);
-		c.gridx = 0;
-		c.gridy = 2;
-		c.gridwidth = 2;
-		c.gridheight = 1;
-		c.weighty = 1;
-		c.weightx = 1;
-		c.fill = GridBagConstraints.BOTH;
-		panel.add(text, c);
-		c.gridx = 0;
-		c.gridy = 3;
-		c.gridwidth = 2;
-		c.gridheight = 1;
-		c.weighty = 0;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(techs, c);
+			image = new JLabel();
 
-		register.register(window.arenaPanel.onEntityClick, e -> {
-			if (e.obj == null)
-				return;
-			if (!(e.obj instanceof Unit)) {
-				parent.remove(panel);
-				parent.revalidate();
-				parent.repaint();
-				return;
-			}
-			Unit unit = (Unit) e.obj;
+			JPanel stats = new JPanel(new GridBagLayout());
+			GridBagConstraints c = new GridBagConstraints();
+			c.gridx = 0;
+			c.weighty = c.gridheight = 1;
+			c.weightx = c.gridwidth = 1;
+			c.fill = GridBagConstraints.BOTH;
+			JLabel healthLabel = new JLabel("Health:");
+			healthLabel.setFont(boldFont);
+			c.gridy = 0;
+			stats.add(healthLabel, c);
+			health = new JLabel();
+			c.gridy = 1;
+			stats.add(health, c);
+			JLabel damageLabel = new JLabel("Damage:");
+			damageLabel.setFont(boldFont);
+			c.gridy = 2;
+			stats.add(damageLabel, c);
+			damage = new JLabel();
+			c.gridy = 3;
+			stats.add(damage, c);
+			JLabel moveLabel = new JLabel("Move:");
+			moveLabel.setFont(boldFont);
+			c.gridy = 4;
+			stats.add(moveLabel, c);
+			move = new JLabel();
+			c.gridy = 5;
+			stats.add(move, c);
 
+			text = new JTextArea();
+			text.setWrapStyleWord(true);
+			text.setLineWrap(true);
+			text.setOpaque(false);
+			JLabel techs = new JLabel();
+
+			c.gridx = 0;
+			c.gridy = 0;
+			c.gridwidth = 2;
+			c.gridheight = 1;
+			c.weighty = 0;
+			c.fill = GridBagConstraints.HORIZONTAL;
+			add(title, c);
+			c.gridx = 0;
+			c.gridy = 1;
+			c.gridwidth = 1;
+			c.gridheight = 1;
+			c.weighty = 0;
+			c.fill = GridBagConstraints.HORIZONTAL;
+			add(image, c);
+			c.gridx = 1;
+			c.gridy = 1;
+			c.gridwidth = 1;
+			c.gridheight = 1;
+			c.weighty = 0;
+			c.fill = GridBagConstraints.HORIZONTAL;
+			add(stats, c);
+			c.gridx = 0;
+			c.gridy = 2;
+			c.gridwidth = 2;
+			c.gridheight = 1;
+			c.weighty = 1;
+			c.weightx = 1;
+			c.fill = GridBagConstraints.BOTH;
+			add(text, c);
+			c.gridx = 0;
+			c.gridy = 3;
+			c.gridwidth = 2;
+			c.gridheight = 1;
+			c.weighty = 0;
+			c.fill = GridBagConstraints.HORIZONTAL;
+			add(techs, c);
+		}
+
+		private void showUnit(Unit unit) {
 			title.setText(unit.type.toString());
 			image.setIcon(new ImageIcon(Images.getUnitImgStand(unit, Direction.XPos, 0)));
 			health.setText("" + unit.getHealth() + "/" + unit.type.health);
 			damage.setText("" + unit.type.damage);
 			move.setText("" + unit.type.moveLimit);
 			text.setText("description about " + unit.type.toString());
+		}
 
-			parent.add(panel);
-			panel.revalidate();
-			panel.repaint();
-		});
 	}
 
 	private JPanel createButtonsPannel() {
