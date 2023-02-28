@@ -266,17 +266,33 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				comp.paintComponent(g);
 
 			if (arena.globals.debug.showGrid) {
-				g.setColor(Color.YELLOW);
 				final int fontSize = 9;
 				Font font = g.getFont();
 				font = new Font(font.getName(), font.getStyle(), fontSize);
 				g.setFont(font);
+				g.setColor(Color.YELLOW);
 				for (Iter.Int it = Cell.Iter2D.of(arena.arenaWidth, arena.arenaHeight); it.hasNext();) {
 					int cell = it.next(), x = Cell.x(cell), y = Cell.y(cell);
 					int x0 = arena.displayedXCell(x);
 					int y0 = arena.displayedYCell(y);
 					g.drawRect(x0, y0, TILE_SIZE_PIXEL - 1, TILE_SIZE_PIXEL - 1);
 					g.drawString(Cell.toString(cell), x0 + 2, y0 + 2 + fontSize);
+				}
+			}
+			if (arena.globals.debug.showUnitID) {
+				Font font = g.getFont();
+				int fontSize = 9;
+				font = new Font(font.getName(), font.getStyle(), fontSize);
+				g.setFont(font);
+				g.setColor(Color.MAGENTA);
+				for (ArenaComp comp0 : comps) {
+					if (!(comp0 instanceof UnitComp))
+						continue;
+					UnitComp comp = (UnitComp) comp0;
+					int id = arena.globals.debug.getUnitID(comp.unit);
+					int x = arena.displayedXCell(comp.pos.x) + 2;
+					int y = arena.displayedYCell(comp.pos.y) + TILE_SIZE_PIXEL - 2;
+					g.drawString("U" + id, x, y);
 				}
 			}
 		}
@@ -585,18 +601,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				g.setColor(Color.BLACK);
 				g.drawRect(x, y, w, h);
 				g.drawImage(img, x, y, w, h, arena);
-			}
-
-			if (arena.globals.debug.showUnitID) {
-				Font font = g.getFont();
-				int fontSize = 9;
-				font = new Font(font.getName(), font.getStyle(), fontSize);
-				g.setColor(Color.MAGENTA);
-				g.setFont(font);
-				int id = arena.globals.debug.getUnitID(unit);
-				int x = arena.displayedXCell(pos.x) + 2;
-				int y = arena.displayedYCell(pos.y) + TILE_SIZE_PIXEL - 2;
-				g.drawString("U" + id, x, y);
 			}
 		}
 

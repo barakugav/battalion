@@ -131,7 +131,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			final Team us = game.getTurn();
 			for (Unit unit : game.arena().units().filter(u -> us == u.getTeam() && u.isActive()).forEach())
 				unitAvailableMoves(unit, moves);
-			return Iter.of(moves.iterator());
+			return Iter.of(moves);
 		}
 
 		private void unitAvailableMoves(Unit unit, List<Move> moves) {

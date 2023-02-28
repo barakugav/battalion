@@ -4,21 +4,12 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GridLayout;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.util.Objects;
 import java.util.function.LongToIntFunction;
 
-import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JLayeredPane;
-import javax.swing.JPanel;
 
-import com.ugav.battalion.FactoryMenu.UnitBuy;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
@@ -38,10 +29,6 @@ public class GameArenaPanel extends
 
 	private final GameWindow window;
 	private final Game game;
-	private int selection = SelectionNone;
-	private UnitMenu unitMenu;
-
-	private static final int SelectionNone = Cell.of(-1, -1);
 
 	private final Logger logger = new Logger(true); // TODO
 	private final DataChangeRegister register = new DataChangeRegister();
@@ -59,7 +46,7 @@ public class GameArenaPanel extends
 
 		register.register(entityLayer.onTileClick, e -> cellClicked(e.cell));
 
-		register.register(onMapMove, e -> closeUnitMenu());
+		register.register(onMapMove, e -> closeMenus());
 
 		register.register(animationTask.onAnimationBegin, e -> window.suspendActions());
 		register.register(animationTask.onAnimationEnd, e -> window.resumeActions());
@@ -96,7 +83,7 @@ public class GameArenaPanel extends
 	}
 
 	private void cellClicked(int cell) {
-		closeUnitMenu();
+		closeMenus();
 
 		if (window.isActionSuspended())
 			return;
@@ -122,32 +109,8 @@ public class GameArenaPanel extends
 				return;
 			setSelection(cell);
 
-			if (building.type.canBuildUnits) {
-				FactoryMenu factoryMenu = new FactoryMenu(globals.frame, game, building);
-				DataListener<UnitBuy> unitButListener = e -> {
-					window.gameAction(() -> game.buildUnit((Building) e.source, e.sale.type));
-					clearSelection();
-				};
-				register.register(factoryMenu.onUnitBuy, unitButListener);
-				factoryMenu.addWindowListener(new WindowAdapter() {
-
-					private void closed() {
-						register.unregister(factoryMenu.onUnitBuy, unitButListener);
-						clearSelection();
-					}
-
-					@Override
-					public void windowClosed(WindowEvent e) {
-						closed();
-					}
-
-					@Override
-					public void windowClosing(WindowEvent e) {
-						closed();
-					}
-				});
-				factoryMenu.setVisible(true);
-			}
+			if (building.type.canBuildUnits)
+				openFactoryMenu(building);
 
 		} else {
 			onEntityClick.notify(new EntityClick(this, cell, game.getTerrain(cell)));
@@ -176,20 +139,13 @@ public class GameArenaPanel extends
 		}
 	}
 
-	void closeUnitMenu() {
-		if (unitMenu == null)
-			return;
-		unitMenu.setVisible(false);
-		remove(unitMenu);
-		unitMenu = null;
-	}
+	private UnitMenu unitMenu;
 
 	private void openUnitMenu(Unit unit) {
-		closeUnitMenu();
+		closeMenus();
 		clearSelection();
 
-		unitMenu = new UnitMenu(unit);
-		add(unitMenu, JLayeredPane.POPUP_LAYER);
+		unitMenu = new UnitMenu(window, unit);
 		Dimension unitMenuSize = unitMenu.getPreferredSize();
 
 		int unitX = displayedXCell(Cell.x(unit.getPos()));
@@ -205,9 +161,61 @@ public class GameArenaPanel extends
 		if (y + unitMenuSize.height > unitY + yOverlap)
 			y = unitY + TILE_SIZE_PIXEL - yOverlap;
 
+		add(unitMenu, JLayeredPane.POPUP_LAYER);
 		unitMenu.setBounds(x, y, unitMenuSize.width, unitMenuSize.height);
 		revalidate();
+
+		register.register(unitMenu.onActionChosen, e -> closeUnitMenu());
 	}
+
+	private void closeUnitMenu() {
+		if (unitMenu == null)
+			return;
+		if (selection == unitMenu.unit.getPos())
+			clearSelection();
+		register.unregisterAll(unitMenu.onActionChosen);
+		unitMenu.clear();
+		remove(unitMenu);
+		unitMenu = null;
+	}
+
+	private FactoryMenu factoryMenu;
+
+	private void openFactoryMenu(Building factory) {
+		closeMenus();
+		clearSelection();
+
+		factoryMenu = new FactoryMenu(window, factory);
+		factoryMenu.setPreferredSize(getSize());
+		Dimension factoryMenuSize = factoryMenu.getPreferredSize();
+
+		register.register(factoryMenu.onActionChosen, e -> closeFactoryMenu());
+
+		add(factoryMenu, JLayeredPane.POPUP_LAYER);
+		int x = (getWidth() - factoryMenuSize.width) / 2;
+		int y = (getHeight() - factoryMenuSize.height) / 2;
+		factoryMenu.setBounds(x, y, factoryMenuSize.width, factoryMenuSize.height);
+		revalidate();
+	}
+
+	private void closeFactoryMenu() {
+		if (factoryMenu == null)
+			return;
+		if (selection == factoryMenu.factory.getPos())
+			clearSelection();
+		register.unregisterAll(factoryMenu.onActionChosen);
+		factoryMenu.clear();
+		remove(factoryMenu);
+		factoryMenu = null;
+	}
+
+	void closeMenus() {
+		closeUnitMenu();
+		closeFactoryMenu();
+	}
+
+	private int selection = SelectionNone;
+	private static final int SelectionNone = Cell.of(-1, -1);
 
 	private void clearSelection() {
 		setSelection(SelectionNone);
@@ -727,59 +735,6 @@ public class GameArenaPanel extends
 				super.clear();
 			}
 
-		}
-
-	}
-
-	private class UnitMenu extends JPanel {
-
-		private static final long serialVersionUID = 1L;
-
-		UnitMenu(Unit unit) {
-			super(new GridLayout(1, 0));
-
-			/* Transparent background, draw only buttons */
-			setOpaque(false);
-
-			if (!unit.type.transportUnits) {
-				boolean transportAirEn = unit.type.category == Unit.Category.Land
-						&& Unit.Type.AirTransporter.canStandOn(getTerrain(unit.getPos()));
-				createUnitMenuButton(Images.Label.UnitMenuTransportAir, transportAirEn,
-						e -> window.gameAction(() -> game.unitTransport(unit, Unit.Type.AirTransporter)));
-
-				boolean transportWaterEn = unit.type.category == Unit.Category.Land
-						&& Unit.Type.ShipTransporter.canStandOn(getTerrain(unit.getPos()));
-				createUnitMenuButton(Images.Label.UnitMenuTransportWater, transportWaterEn,
-						e -> window.gameAction(() -> game.unitTransport(unit, Unit.Type.ShipTransporter)));
-			} else {
-				Unit transportedUnit = unit.getTransportedUnit();
-
-				boolean transportFinishEn = transportedUnit.type.canStandOn(getTerrain(unit.getPos()));
-				createUnitMenuButton(Images.Label.UnitMenuTransportFinish, transportFinishEn,
-						e -> window.gameAction(() -> game.transportFinish(unit)));
-			}
-
-			boolean repairEn = unit.getHealth() < unit.type.health;
-			createUnitMenuButton(Images.Label.UnitMenuRepair, repairEn, e -> System.out.println("UnitMenuRepair"));
-
-			createUnitMenuButton(Images.Label.UnitMenuCancel, true, e -> {
-			});
-		}
-
-		private void createUnitMenuButton(Images.Label label, boolean enable, ActionListener l) {
-			BufferedImage img = Images.getImg(label);
-			if (!enable)
-				img = Utils.imgTransparent(img, .5f);
-			JButton button = new JButton(new ImageIcon(img));
-			button.setBorder(BorderFactory.createEmptyBorder());
-			button.setContentAreaFilled(false);
-			button.setPreferredSize(new Dimension(img.getWidth(), img.getHeight()));
-			if (enable)
-				button.addActionListener(e -> {
-					closeUnitMenu();
-					l.actionPerformed(e);
-				});
-			add(button);
 		}
 
 	}

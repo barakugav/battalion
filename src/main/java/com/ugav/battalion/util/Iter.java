@@ -126,6 +126,41 @@ public interface Iter<E> extends Iterator<E> {
 		return l;
 	}
 
+	static class Enumerate<E> implements Iter<Indexed<E>> {
+
+		private final Iter<E> it;
+		private int idx;
+
+		Enumerate(Iter<E> it) {
+			this.it = Objects.requireNonNull(it);
+		}
+
+		@Override
+		public boolean hasNext() {
+			return it.hasNext();
+		}
+
+		@Override
+		public Indexed<E> next() {
+			return new Indexed<>(idx++, it.next());
+		}
+
+	}
+
+	public static class Indexed<E> {
+		public final int idx;
+		public final E elm;
+
+		Indexed(int idx, E elm) {
+			this.idx = idx;
+			this.elm = elm;
+		}
+	}
+
+	default Iter<Indexed<E>> enumerate() {
+		return new Enumerate<>(this);
+	}
+
 	default Iterable<E> forEach() {
 		return iterable(this);
 	}
@@ -177,6 +212,10 @@ public interface Iter<E> extends Iterator<E> {
 
 	static <E> Iter<E> of(Iterator<E> it) {
 		return (it instanceof Iter<E>) ? (Iter<E>) it : new IterWrapper<>(it);
+	}
+
+	static <E> Iter<E> of(Iterable<E> it) {
+		return of(it.iterator());
 	}
 
 	public interface Int {

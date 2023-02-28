@@ -198,7 +198,7 @@ public class Building extends Entity implements IBuilding {
 		}
 		if (canBuildAirUnits) {
 			addSale.accept(UnitSale.of(Unit.Type.Airplane, 340));
-			addSale.accept(UnitSale.of(Unit.Type.Airplane, 650));
+			addSale.accept(UnitSale.of(Unit.Type.Zeppelin, 650));
 		}
 
 		return sales;
