@@ -96,7 +96,8 @@ public class Unit extends Entity implements IUnit {
 	}
 
 	public int getDamge(Unit target) {
-		return type.damage;
+		double h = (double) getHealth() / type.health;
+		return Math.max(1, (int) (type.damage * h));
 	}
 
 	@Override
