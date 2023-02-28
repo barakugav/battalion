@@ -26,7 +26,7 @@ class MainMenuPanel extends JPanel implements Clearable {
 		for (int levelIdx = 0; levelIdx < levelCount; levelIdx++) {
 			JButton lvlButton = new JButton(String.format("Level %2d", Integer.valueOf(levelIdx)));
 			final int lvlIdx = levelIdx;
-			lvlButton.addActionListener(e -> this.globals.frame.loadLevel(levels.getLevels().get(lvlIdx).e2));
+			lvlButton.addActionListener(e -> this.globals.frame.openLevelGame(levels.getLevels().get(lvlIdx).e2));
 			add(lvlButton);
 		}
 
@@ -42,7 +42,7 @@ class MainMenuPanel extends JPanel implements Clearable {
 				String selectedFile = fileChooser.getSelectedFile().getAbsolutePath();
 				try {
 					Level level = globals.levelSerializer.levelRead(selectedFile);
-					this.globals.frame.loadLevel(level);
+					this.globals.frame.openLevelGame(level);
 				} catch (RuntimeException ex) {
 //					debug.print("failed to load file from: ", selectedFile);
 					ex.printStackTrace();
@@ -52,8 +52,12 @@ class MainMenuPanel extends JPanel implements Clearable {
 		add(customLvlButton);
 
 		JButton lvlBuilderButton = new JButton("Level Builder");
-		lvlBuilderButton.addActionListener(e -> this.globals.frame.loadLevelBuilder());
+		lvlBuilderButton.addActionListener(e -> this.globals.frame.openLevelBuilder());
 		add(lvlBuilderButton);
+
+		JButton optionsButton = new JButton("Options");
+		optionsButton.addActionListener(e -> this.globals.frame.openOptionsMenu());
+		add(optionsButton);
 	}
 
 	@Override

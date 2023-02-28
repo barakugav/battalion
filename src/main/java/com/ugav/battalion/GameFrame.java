@@ -27,19 +27,23 @@ class GameFrame extends JFrame {
 		setSize(FRAME_WIDTH, FRAME_HEIGHT);
 
 		/* By default display main menu */
-		displayMainMenu();
+		openMainMenu();
 	}
 
-	void displayMainMenu() {
+	void openMainMenu() {
 		displayWindow(new MainMenuPanel(globals));
 	}
 
-	void loadLevel(Level level) {
+	void openLevelGame(Level level) {
 		displayWindow(new GameWindow(globals, level));
 	}
 
-	void loadLevelBuilder() {
+	void openLevelBuilder() {
 		displayWindow(new LevelBuilderWindow(globals));
+	}
+
+	void openOptionsMenu() {
+		displayWindow(new OptionsMenu(globals));
 	}
 
 	private void displayWindow(JComponent window) {

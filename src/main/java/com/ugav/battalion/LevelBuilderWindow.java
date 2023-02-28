@@ -317,7 +317,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			JButton buttonMainMenu = new JButton("Main Menu");
 			buttonMainMenu.addActionListener(e -> {
 				// TODO ask the user if he sure, does he want to save?
-				globals.frame.displayMainMenu();
+				globals.frame.openMainMenu();
 			});
 			panel.add(buttonMainMenu);
 

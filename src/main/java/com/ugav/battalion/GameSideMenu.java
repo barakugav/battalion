@@ -427,7 +427,7 @@ public class GameSideMenu extends JPanel implements Clearable {
 		JButton buttonEndTurn = new JButton("End Turn");
 		buttonEndTurn.addActionListener(onlyIfActionsEnabled(e -> window.endTurn()));
 		JButton buttonMainMenu = new JButton("Main Menu");
-		buttonMainMenu.addActionListener(onlyIfActionsEnabled(e -> window.globals.frame.displayMainMenu()));
+		buttonMainMenu.addActionListener(onlyIfActionsEnabled(e -> window.globals.frame.openMainMenu()));
 
 		panel.add(buttonEndTurn);
 		panel.add(buttonMainMenu);

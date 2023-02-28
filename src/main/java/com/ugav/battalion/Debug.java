@@ -7,15 +7,15 @@ import com.ugav.battalion.util.IdentityWeakHashMap;
 
 class Debug {
 
-	boolean showGrid = true;
-	boolean showUnitID = true;
+	boolean showGrid;
+	boolean showUnitID;
 
-	private int idCounter;
+	private int unitIDCounter;
 	private final Map<IUnit, Integer> unitsIDs = new IdentityWeakHashMap<>();
 
 	int getUnitID(IUnit unit) {
 		synchronized (unitsIDs) {
-			return unitsIDs.computeIfAbsent(unit, u -> Integer.valueOf(idCounter++)).intValue();
+			return unitsIDs.computeIfAbsent(unit, u -> Integer.valueOf(unitIDCounter++)).intValue();
 		}
 	}
 
