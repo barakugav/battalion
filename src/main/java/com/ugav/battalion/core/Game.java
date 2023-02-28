@@ -203,7 +203,7 @@ public class Game {
 		if (!realPath.isEmpty())
 			move0(attacker, realPath);
 		if (realPath.size() == path.size())
-			doDamage(attacker, target);
+			attack(attacker, target);
 		attacker.setActive(false);
 	}
 
@@ -214,8 +214,30 @@ public class Game {
 		if (!isAttackValid(attacker, target))
 			throw new IllegalStateException();
 
-		doDamage(attacker, target);
+		attack(attacker, target);
 		attacker.setActive(false);
+	}
+
+	private void attack(Unit attacker, Unit target) {
+		doDamage(attacker, target);
+
+		if (target.isDead() || !target.canAttack(attacker))
+			return;
+		boolean attackBack = false;
+		switch (target.type.weapon.type) {
+		case CloseRange:
+			attackBack = ListInt.of(Cell.neighbors(target.getPos())).contains(attacker.getPos());
+			break;
+		case LongRange:
+			attackBack = target.getAttackableMap().contains(attacker.getPos());
+			break;
+		case None:
+			break;
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + target.type.weapon.type);
+		}
+		if (attackBack)
+			doDamage(target, attacker);
 	}
 
 	public boolean isAttackValid(Unit attacker, Unit target) {
