@@ -10,6 +10,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
+import java.util.function.ToIntFunction;
 
 public interface Iter<E> extends Iterator<E> {
 
@@ -75,6 +76,31 @@ public interface Iter<E> extends Iterator<E> {
 
 	default Iter.Bool mapBool(Predicate<? super E> map) {
 		return new MapBool<>(this, map);
+	}
+
+	public static class MapInt<T> implements Iter.Int {
+		private final Iterator<T> it;
+		private final ToIntFunction<? super T> map;
+
+		MapInt(Iterator<T> it, ToIntFunction<? super T> map) {
+			this.it = Objects.requireNonNull(it);
+			this.map = Objects.requireNonNull(map);
+		}
+
+		@Override
+		public boolean hasNext() {
+			return it.hasNext();
+		}
+
+		@Override
+		public int next() {
+			return map.applyAsInt(it.next());
+		}
+
+	}
+
+	default Iter.Int mapInt(ToIntFunction<? super E> map) {
+		return new MapInt<>(this, map);
 	}
 
 	public static class Filter<E> implements Iter<E> {
@@ -308,6 +334,13 @@ public interface Iter<E> extends Iterator<E> {
 			if (size != arr.length)
 				arr = Arrays.copyOf(arr, size);
 			return arr;
+		}
+
+		default int sum() {
+			int s = 0;
+			while (hasNext())
+				s += next();
+			return s;
 		}
 
 		static class Empty implements Iter.Int {

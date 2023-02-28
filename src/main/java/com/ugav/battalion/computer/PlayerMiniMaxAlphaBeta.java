@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Objects;
 
 import com.ugav.battalion.core.Arena;
+import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.Building.UnitSale;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
@@ -16,7 +18,6 @@ import com.ugav.battalion.util.Logger;
 public class PlayerMiniMaxAlphaBeta implements Player {
 
 	private final MiniMaxAlphaBeta<Move, Node, GameImpl> algo;
-	private static final double Aggression = 0.95;
 
 	private final int DepthLimit = 1;
 	private final Logger logger = new Logger(true); // TODO
@@ -57,13 +58,24 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		@SuppressWarnings("unused")
 		@Override
 		public double evaluate(Node position, int us0) {
-			if (!(0 <= Aggression && Aggression <= 1))
-				throw new IllegalArgumentException();
-
 			final Team us = turnIntToObj(us0);
 			double eval = 0;
+
+			final double Aggression = 0.95;
+			if (!(0 <= Aggression && Aggression <= 1))
+				throw new IllegalArgumentException();
 			for (Unit unit : position.game.arena().units().forEach())
 				eval += (unit.getTeam() == us ? Aggression : -(1 - Aggression)) * evalUnit(position, unit);
+
+			final double MoneyWeight = 0.1;
+			int money = position.game.getMoney(us);
+			eval += MoneyWeight * money;
+
+			final double IncomeWeight = 1;
+			int income = position.game.arena().buildings().filter(b -> us == b.getTeam()).mapInt(Building::getMoneyGain)
+					.sum();
+			eval += IncomeWeight * income;
+
 			return eval;
 		}
 
@@ -134,8 +146,15 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 				return Iter.empty();
 			List<Move> moves = new ArrayList<>();
 			final Team us = game.getTurn();
+
 			for (Unit unit : game.arena().units().filter(u -> us == u.getTeam() && u.isActive()).forEach())
 				unitAvailableMoves(unit, moves);
+
+			final int money = game.getMoney(us);
+			for (Building factory : game.arena().buildings()
+					.filter(b -> us == b.getTeam() && b.isActive() && b.type.canBuildUnits).forEach())
+				factoryAvailableMoves(factory, moves, money);
+
 			return Iter.of(moves);
 		}
 
@@ -150,6 +169,15 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			unitAvailableMovesChangePosition(unit, reachable, moves);
 
 			// TODO transport unit moves
+		}
+
+		private void factoryAvailableMoves(Building factory, List<Move> moves, final int money) {
+			if (factory.getTeam() != game.getTurn() || !factory.isActive())
+				return;
+
+			for (UnitSale sale : factory.getAvailableUnits().values())
+				if (sale != null && sale.price <= money)
+					moves.add(new UnitBuild(factory, sale.type));
 		}
 
 		private static void unitAvailableMovesChangePosition(Unit unit, Cell.Bitmap reachable, List<Move> moves) {
@@ -269,6 +297,28 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		@Override
 		public String toString() {
 			return "UnitAttackLongRange(" + Cell.toString(attacker) + ", " + Cell.toString(target) + ")";
+		}
+
+	}
+
+	private static class UnitBuild extends Move {
+
+		private final int factory;
+		private final Unit.Type unit;
+
+		UnitBuild(Building factory, Unit.Type unit) {
+			this.factory = factory.getPos();
+			this.unit = Objects.requireNonNull(unit);
+		}
+
+		@Override
+		void apply(Game game) {
+			game.buildUnit(game.arena().building(factory), unit);
+		}
+
+		@Override
+		public String toString() {
+			return "UnitBuild(" + Cell.toString(factory) + ", " + unit + ")";
 		}
 
 	}
