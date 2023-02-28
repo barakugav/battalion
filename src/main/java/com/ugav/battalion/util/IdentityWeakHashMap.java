@@ -67,7 +67,6 @@ public class IdentityWeakHashMap<K, V> extends AbstractMap<K, V> {
 	private void expungeStaleEntries() {
 		for (Object x; (x = queue.poll()) != null;) {
 			synchronized (queue) {
-				System.out.println("removing");
 				@SuppressWarnings("unchecked")
 				Node<K, V> e = (Node<K, V>) x;
 				map.remove(e.key);

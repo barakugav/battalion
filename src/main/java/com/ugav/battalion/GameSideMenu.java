@@ -139,7 +139,7 @@ public class GameSideMenu extends JPanel implements Clearable {
 			c.fill = GridBagConstraints.BOTH;
 			teamPanel.add(money, c);
 
-			c = Utils.gbConstraints(0, teamIdx, 1, 1, GridBagConstraints.HORIZONTAL);
+			c = Utils.gbConstraints(0, teamIdx, 1, 1, GridBagConstraints.HORIZONTAL, 0, 0);
 			c = new GridBagConstraints();
 			c.gridx = 0;
 			c.gridy = teamIdx;
@@ -151,7 +151,7 @@ public class GameSideMenu extends JPanel implements Clearable {
 		}
 
 		/* Dummy panel to take extra vertical space */
-		GridBagConstraints c = Utils.gbConstraints(0, Team.realTeams.size(), 1, 1, GridBagConstraints.BOTH);
+		GridBagConstraints c = Utils.gbConstraints(0, Team.realTeams.size(), 1, 1, GridBagConstraints.BOTH, 0, 0);
 		c.weighty = 100;
 		panel.add(new JPanel(), c);
 

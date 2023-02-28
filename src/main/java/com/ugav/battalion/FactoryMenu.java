@@ -1,5 +1,6 @@
 package com.ugav.battalion;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -16,6 +17,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Level.UnitDesc;
@@ -77,32 +79,57 @@ class FactoryMenu extends JPanel implements Clearable {
 				Unit.Type.ShipArtillery, Unit.Type.Submarine);
 		List<Unit.Type> airUnits = List.of(Unit.Type.Airplane, Unit.Type.Zeppelin);
 
-		for (List<Unit.Type> units : List.of(landUnits, airUnits, waterUnits)) {
-			JPanel panel = new JPanel(new GridBagLayout());
-			GridBagConstraints c = new GridBagConstraints();
-			c.gridy = 0;
-			c.gridheight = 1;
-			c.weighty = 1;
-			c.gridwidth = 1;
-			c.fill = GridBagConstraints.VERTICAL;
+		JButton close = new JButton("Close");
+		ActionListener closeListener = e -> onActionChosen.notify(new DataEvent(factory));
+		close.addActionListener(closeListener);
+		listeners.add(Pair.of(close, closeListener));
 
-			for (Iter.Indexed<Unit.Type> unit : Iter.of(units).enumerate().forEach()) {
-				JPanel unitComp = createUnitPanel(unit.elm, sales);
-				c.gridx = unit.idx;
-				panel.add(unitComp, c);
-			}
-
-			JPanel dummyFillUnit = new JPanel();
-			c.gridx = units.size();
-			c.weightx = 1;
-			c.fill = GridBagConstraints.BOTH;
-			panel.add(dummyFillUnit, c);
-
-			mainPanel.add(panel);
-		}
+		mainPanel.add(createUnitsPanelSingleCategory("Ground Units", landUnits, sales, null));
+		mainPanel.add(createUnitsPanelSingleCategory("Air Units", airUnits, sales, null));
+		mainPanel.add(createUnitsPanelSingleCategory("Sea Units", waterUnits, sales, close));
 
 		return mainPanel;
 	}
+
+	private JPanel createUnitsPanelSingleCategory(String title, List<Unit.Type> units,
+			Map<Unit.Type, Building.UnitSale> sales, JButton additionalButton) {
+		JPanel panel = new JPanel(new GridBagLayout());
+		JLabel titleLabel = new JLabel(title);
+		panel.add(titleLabel, Utils.gbConstraints(0, 0, 1, 1, GridBagConstraints.HORIZONTAL, 1, 1));
+
+		JPanel salesPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints c = new GridBagConstraints();
+		c.gridy = 0;
+		c.gridheight = 1;
+		c.weighty = 1;
+		c.gridwidth = 1;
+		c.fill = GridBagConstraints.VERTICAL;
+
+		for (Iter.Indexed<Unit.Type> unit : Iter.of(units).enumerate().forEach()) {
+			JPanel unitComp = createUnitPanel(unit.elm, sales);
+			c.gridx = unit.idx;
+			salesPanel.add(unitComp, c);
+		}
+
+		JPanel dummyFillUnit = new JPanel();
+		c.gridx = units.size();
+		c.weightx = 1;
+		c.fill = GridBagConstraints.BOTH;
+		salesPanel.add(dummyFillUnit, c);
+
+		if (additionalButton != null) {
+			c.gridx = units.size() + 1;
+			c.weightx = 0;
+			c.fill = GridBagConstraints.NONE;
+			salesPanel.add(additionalButton, c);
+
+		}
+		panel.add(salesPanel, Utils.gbConstraints(0, 1, 1, 1, GridBagConstraints.BOTH, 1, 1));
+		return panel;
+	}
+
+	private static final Color UnitBackground = new Color(84, 86, 58);
+	private static final Color UnitPriceBackground = new Color(150, 150, 150);
 
 	private JPanel createUnitPanel(Unit.Type unit, Map<Unit.Type, Building.UnitSale> sales) {
 		JPanel saleComp = new JPanel(new GridBagLayout());
@@ -112,7 +139,9 @@ class FactoryMenu extends JPanel implements Clearable {
 		Building.UnitSale unitSale = sales.get(unit);
 		if (unitSale != null) {
 			button = new JButton(new ImageIcon(Images.getImg(UnitDesc.of(unit, factory.getTeam()))));
-			price = new JLabel(Integer.toString(unitSale.price));
+			price = new JLabel(Integer.toString(unitSale.price), SwingConstants.CENTER);
+			boolean canBuy = unitSale.price <= window.game.getMoney(factory.getTeam());
+			price.setForeground(canBuy ? Color.BLACK : Color.RED);
 
 			Building.UnitSale sale = unitSale;
 			ActionListener listener = e -> {
@@ -125,13 +154,18 @@ class FactoryMenu extends JPanel implements Clearable {
 			listeners.add(Pair.of(button, listener));
 		} else {
 			button = new JButton(new ImageIcon(Images.getImg(Images.Label.UnitLocked)));
-			price = new JLabel("none");
+			price = new JLabel("", SwingConstants.CENTER);
 		}
 
 		button.setPreferredSize(new Dimension(56, 56));
+		button.setBackground(UnitBackground);
+		price.setPreferredSize(new Dimension(56, 28));
+		price.setOpaque(true);
+		price.setBackground(UnitPriceBackground);
 
 		saleComp.add(button, Utils.gbConstraints(0, 0, 1, 3));
 		saleComp.add(price, Utils.gbConstraints(0, 3, 1, 1));
+		saleComp.setPreferredSize(new Dimension(64, 80));
 		return saleComp;
 	}
 
