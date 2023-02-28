@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Event {
@@ -29,7 +30,7 @@ public class Event {
 		}
 
 		public void addListener(Listener<? super E> listener) {
-			listeners.add(listener);
+			listeners.add(Objects.requireNonNull(listener));
 		}
 
 		public void removeListener(Listener<? super E> listener) {
@@ -55,12 +56,12 @@ public class Event {
 			listeners = new HashMap<>();
 		}
 
-		public <E extends Event> void register(Notifier<E> notifier, Listener<? super E> listener) {
+		public synchronized <E extends Event> void register(Notifier<E> notifier, Listener<? super E> listener) {
 			notifier.addListener(listener);
 			listeners.computeIfAbsent(notifier, k -> new ArrayList<>()).add(listener);
 		}
 
-		public <E extends Event> void unregister(Notifier<E> notifier, Listener<? super E> listener) {
+		public synchronized <E extends Event> void unregister(Notifier<E> notifier, Listener<? super E> listener) {
 			notifier.removeListener(listener);
 
 			List<Listener<?>> l = listeners.get(notifier);
@@ -70,7 +71,7 @@ public class Event {
 				listeners.remove(notifier);
 		}
 
-		public <E extends Event> void unregisterAll(Notifier<E> notifier) {
+		public synchronized <E extends Event> void unregisterAll(Notifier<E> notifier) {
 			@SuppressWarnings({ "unchecked", "rawtypes" })
 			List<Listener<? super E>> l = (List) listeners.get(notifier);
 			for (Listener<? super E> listener : l)
@@ -80,7 +81,7 @@ public class Event {
 		}
 
 		@SuppressWarnings({ "rawtypes", "unchecked" })
-		public void unregisterAll() {
+		public synchronized void unregisterAll() {
 			for (Map.Entry<Notifier<?>, List<Listener<?>>> entry : listeners.entrySet()) {
 				for (Listener listener : entry.getValue())
 					entry.getKey().removeListener(listener);
