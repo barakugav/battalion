@@ -50,8 +50,13 @@ class DescriptionPanel extends JPanel implements Clearable {
 
 		register.register(window.arenaPanel.onEntityClick, e -> showObject(e.obj));
 		register.register(window.game.arena().onEntityChange, e -> {
-			if (e.source() == shownObj)
-				showObject(e.source());
+			if (e.source() == shownObj) {
+				if (e.source() instanceof Unit u && u.isDead()) {
+					showObject(null);
+				} else {
+					showObject(e.source());
+				}
+			}
 		});
 	}
 
