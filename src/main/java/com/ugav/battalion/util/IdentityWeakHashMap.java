@@ -10,14 +10,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import com.ugav.battalion.util.Utils.Holder;
-
 public class IdentityWeakHashMap<K, V> extends AbstractMap<K, V> {
 
-	private final Map<Integer, Node<K, V>> map = new HashMap<>();
+	private final Map<Key<K>, Node<K, V>> map = new HashMap<>();
 	private final ReferenceQueue<Object> queue = new ReferenceQueue<>();
 
-	private Map<Integer, Node<K, V>> map() {
+	private Map<Key<K>, Node<K, V>> map() {
 		expungeStaleEntries();
 		return map;
 	}
@@ -29,33 +27,30 @@ public class IdentityWeakHashMap<K, V> extends AbstractMap<K, V> {
 
 	@Override
 	public boolean containsKey(Object key) {
-		return map().containsKey(keyOf(key));
+		return map().containsKey(queryKey(key));
 	}
 
 	@Override
 	public V get(Object key) {
-		Node<K, V> n = map().get(keyOf(key));
+		Node<K, V> n = map().get(queryKey(key));
 		return n != null ? n.val : null;
 	}
 
 	@Override
 	public V put(K key, V value) {
-		Holder<V> oldVal = new Holder<>();
-		map().compute(keyOf(key), (k, n) -> {
-			if (n == null) {
-				n = new Node<>(key, value, queue);
-			} else {
-				oldVal.val = n.val;
-				n.val = value;
-			}
-			return n;
-		});
-		return oldVal.val;
+		Node<K, V> n = map().get(queryKey(key));
+		if (n != null) {
+			return n.setValue(value);
+		} else {
+			n = new Node<>(key, value, queue);
+			map().put(new NodeKey<>(n), n);
+			return null;
+		}
 	}
 
 	@Override
 	public V remove(Object key) {
-		Node<K, V> n = map().remove(keyOf(key));
+		Node<K, V> n = map().remove(queryKey(key));
 		return n != null ? n.val : null;
 	}
 
@@ -64,28 +59,30 @@ public class IdentityWeakHashMap<K, V> extends AbstractMap<K, V> {
 		map.clear();
 	}
 
-	private static Integer keyOf(Object key) {
-		return Integer.valueOf(System.identityHashCode(key));
+	@SuppressWarnings("unchecked")
+	private static <K> Key<K> queryKey(Object key) {
+		return new Query<>((K) key);
 	}
 
 	private void expungeStaleEntries() {
 		for (Object x; (x = queue.poll()) != null;) {
 			synchronized (queue) {
+				System.out.println("removing");
 				@SuppressWarnings("unchecked")
 				Node<K, V> e = (Node<K, V>) x;
-				map.remove(e.identityKey);
+				map.remove(e.key);
 			}
 		}
 	}
 
 	private static class Node<K, V> extends WeakReference<K> implements Map.Entry<K, V> {
 
-		final Integer identityKey;
+		final NodeKey<K, V> key;
 		V val;
 
 		public Node(K key, V value, ReferenceQueue<Object> queue) {
 			super(key, queue);
-			identityKey = keyOf(key);
+			this.key = new NodeKey<>(this);
 			val = value;
 		}
 
@@ -108,6 +105,62 @@ public class IdentityWeakHashMap<K, V> extends AbstractMap<K, V> {
 
 	}
 
+	private static interface Key<K> {
+		K get();
+	}
+
+	private static class Query<K> implements Key<K> {
+
+		private final K key;
+
+		Query(K key) {
+			this.key = Objects.requireNonNull(key);
+		}
+
+		@Override
+		public K get() {
+			return key;
+		}
+
+		@Override
+		public int hashCode() {
+			return System.identityHashCode(key);
+		}
+
+		@Override
+		public boolean equals(Object other) {
+			return other == this || (other instanceof Key<?> k && get() == k.get());
+		}
+
+	}
+
+	private static class NodeKey<K, V> implements Key<K> {
+
+		private final Node<K, V> node;
+		private final int hash;
+
+		NodeKey(Node<K, V> node) {
+			this.node = node;
+			hash = System.identityHashCode(node.getKey());
+		}
+
+		@Override
+		public K get() {
+			return node.getKey();
+		}
+
+		@Override
+		public int hashCode() {
+			return hash;
+		}
+
+		@Override
+		public boolean equals(Object other) {
+			return other == this || (other instanceof Key<?> k && get() == k.get());
+		}
+
+	}
+
 	private EntrySet entrySet;
 
 	@Override
@@ -119,9 +172,9 @@ public class IdentityWeakHashMap<K, V> extends AbstractMap<K, V> {
 
 	private class EntrySet extends AbstractSet<Entry<K, V>> {
 
-		private final Set<Entry<Integer, Node<K, V>>> set = map.entrySet();
+		private final Set<Entry<Key<K>, Node<K, V>>> set = map.entrySet();
 
-		private Set<Entry<Integer, Node<K, V>>> set() {
+		private Set<Entry<Key<K>, Node<K, V>>> set() {
 			expungeStaleEntries();
 			return set;
 		}
@@ -137,7 +190,7 @@ public class IdentityWeakHashMap<K, V> extends AbstractMap<K, V> {
 				return false;
 			Map.Entry<?, ?> e = (Map.Entry<?, ?>) o;
 
-			Node<K, V> n = map().get(keyOf(e.getKey()));
+			Node<K, V> n = map().get(queryKey(e.getKey()));
 			return n != null && Objects.equals(e.getValue(), n.val);
 		}
 
@@ -145,7 +198,7 @@ public class IdentityWeakHashMap<K, V> extends AbstractMap<K, V> {
 		public Iter<Entry<K, V>> iterator() {
 			return new Iter<>() {
 
-				final Iterator<Entry<Integer, Node<K, V>>> it = set().iterator();
+				final Iterator<Entry<Key<K>, Node<K, V>>> it = set().iterator();
 
 				@Override
 				public boolean hasNext() {
