@@ -455,6 +455,8 @@ public class Unit extends Entity implements IUnit {
 		for (int dest : Cell.neighbors(targetPos)) {
 			if (!arena.isValidCell(dest) || movementMap.getDistanceTo(dest) > type.moveLimit)
 				continue;
+			if (arena.isUnitVisible(dest, getTeam()) && arena.unit(dest) != this)
+				continue;
 			int l = movementMap.getDistanceTo(dest);
 			if (destination == NoValue || length > l) {
 				destination = dest;
