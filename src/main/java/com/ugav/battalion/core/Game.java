@@ -39,7 +39,7 @@ public class Game {
 	public final Event.Notifier<UnitAttack> beforeUnitAttack = new Event.Notifier<>();
 	public final Event.Notifier<ConquerEvent> onConquer = new Event.Notifier<>();
 	public final Event.Notifier<MoneyChange> onMoneyChange = new Event.Notifier<>();
-	public final Event.Notifier<Event> onTurnEnd = new Event.Notifier<>();
+	public final Event.Notifier<TurnEnd> onTurnEnd = new Event.Notifier<>();
 	public final Event.Notifier<GameEnd> onGameEnd = new Event.Notifier<>();
 
 	private Game(Level level) {
@@ -165,9 +165,9 @@ public class Game {
 						if (!unit.type.invisible || unit.getTeam() == viewer)
 							return true;
 						for (int n : Cell.neighbors(pos)) {
-							Unit neighbor = unit(n);
 							if (!isValidCell(n))
 								continue;
+							Unit neighbor = unit(n);
 							if (neighbor != null && neighbor.getTeam() == viewer)
 								return true;
 						}
@@ -221,6 +221,7 @@ public class Game {
 		for (Team team : moneyChanged)
 			onMoneyChange.notify(new MoneyChange(this, team, teamData.get(team).money));
 
+		Team prevTurn = turn;
 		turn = turnIterator.next();
 
 		/* Conquer buildings */
@@ -236,7 +237,7 @@ public class Game {
 
 		turnBegin();
 
-		onTurnEnd.notify(new Event(this));
+		onTurnEnd.notify(new TurnEnd(this, prevTurn, turn));
 	}
 
 	private Set<Team> getAliveTeams() {
@@ -515,6 +516,19 @@ public class Game {
 			super(Objects.requireNonNull(source));
 			this.team = Objects.requireNonNull(team);
 			this.newAmount = newAmount;
+		}
+
+	}
+
+	public static class TurnEnd extends Event {
+
+		public final Team prevTurn;
+		public final Team nextTurn;
+
+		public TurnEnd(Game source, Team prevTurn, Team nextTurn) {
+			super(source);
+			this.prevTurn = Objects.requireNonNull(prevTurn);
+			this.nextTurn = Objects.requireNonNull(nextTurn);
 		}
 
 	}

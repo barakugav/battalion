@@ -13,10 +13,8 @@ import javax.swing.JPanel;
 
 import com.ugav.battalion.computer.Player;
 import com.ugav.battalion.computer.PlayerMiniMaxAlphaBeta;
-import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level;
-import com.ugav.battalion.core.Team;
 import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Logger;
 import com.ugav.battalion.util.Utils;
@@ -26,8 +24,6 @@ class GameWindow extends JPanel implements Clearable {
 	final Globals globals;
 	private final GameSideMenu menu;
 	final GameArenaPanel arenaPanel;
-
-	private int playerLastPos;
 
 	final Game game;
 //	private final Player computer = new Player.Random();
@@ -65,12 +61,6 @@ class GameWindow extends JPanel implements Clearable {
 		menu.initGame();
 		arenaPanel.initGame();
 
-		// TODO move to arenaPanel
-		register.register(game.onTurnEnd, Utils.swingListener(e -> {
-			final Team player = Team.Red;
-			if (game.getTurn() == player)
-				arenaPanel.mapViewMove(playerLastPos, null);
-		}));
 		register.register(game.onGameEnd, Utils.swingListener(e -> {
 			logger.dbgln("Game finished");
 			JOptionPane.showMessageDialog(this, "Winner: " + e.winner);
@@ -131,8 +121,6 @@ class GameWindow extends JPanel implements Clearable {
 			game.turnEnd();
 			assert !game.isFinished();
 
-			Position oldPos0 = arenaPanel.mapPos;
-			playerLastPos = Cell.of((int) oldPos0.x, (int) oldPos0.y);
 			suspendActions();
 			computer.playTurn(game);
 			game.turnEnd();

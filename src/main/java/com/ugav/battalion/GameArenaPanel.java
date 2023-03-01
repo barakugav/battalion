@@ -15,6 +15,7 @@ import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
 import com.ugav.battalion.core.Entity;
 import com.ugav.battalion.core.Game;
+import com.ugav.battalion.core.Game.TurnEnd;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
@@ -56,6 +57,19 @@ public class GameArenaPanel extends
 			animateUnitMove(e.unit, animationPath);
 		});
 		register.register(game.beforeUnitAttack, e -> animateUnitAttack(e.attacker, e.target.getPos()));
+		register.register(game.onTurnEnd, Utils.swingListener(new Event.Listener<>() {
+
+			int playerLastPos;
+
+			@Override
+			public void onEvent(TurnEnd e) {
+				final Team player = Team.Red;
+				if (e.prevTurn == player)
+					playerLastPos = Cell.of((int) mapPos.x, (int) mapPos.y);
+				if (e.nextTurn == player)
+					mapViewMove(playerLastPos, null);
+			}
+		}));
 
 		register.register(animationTask.onAnimationBegin, e -> window.suspendActions());
 		register.register(animationTask.onAnimationEnd, e -> window.resumeActions());
