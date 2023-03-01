@@ -160,13 +160,12 @@ public interface ListInt {
 			if (l.isEmpty())
 				return false;
 			reserve(l.size());
-			if (l instanceof Array) {
-				Array la = (Array) l;
+			if (l instanceof Array la) {
 				System.arraycopy(la.data, 0, data, size, la.size);
 				size += la.size;
 			} else {
 				for (Iter.Int it = l.iterator(); it.hasNext();)
-					add(it.next());
+					data[size++] = it.next();
 			}
 			return true;
 		}

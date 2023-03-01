@@ -209,7 +209,7 @@ public class Cell {
 		}
 
 		private int indexOf(int x, int y) {
-			return x * width + y;
+			return x * height + y;
 		}
 
 		private boolean isInRange(int x, int y) {
