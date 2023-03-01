@@ -612,6 +612,25 @@ public class GameArenaPanel extends
 			}
 
 			@Override
+			Building building() {
+				return (Building) super.building();
+			}
+
+			@Override
+			public void paintComponent(Graphics g) {
+				super.paintComponent(g);
+
+				/* Draw flag glow */
+				Team conquerTeam = building().getConquerTeam();
+				if (conquerTeam != null) {
+					BufferedImage flagImg = Images.getFlagGlowImg(conquerTeam, getFlagGesture());
+					int x = arena.displayedXCell(pos().xInt()) + 39;
+					int y = arena.displayedYCell(pos().yInt()) - 6;
+					g.drawImage(flagImg, x, y, arena);
+				}
+			}
+
+			@Override
 			int getGasture() {
 				return gestureTask.getGesture() % Images.getGestureNum(building().getType());
 			}

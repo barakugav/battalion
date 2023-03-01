@@ -156,6 +156,7 @@ class Images {
 		addBuilding.accept(Building.Type.OilRefineryBig, "img/building/oil_refinery_big.png");
 		addBuilding.accept(Building.Type.OilRig, "img/building/oil_rig.png");
 		images0.putAll(loadFlagImages("img/building/flag.png"));
+		images0.putAll(loadFlagGlowImages("img/building/flag_glow.png"));
 		images0.putAll(loadAttackImages("img/gui/attack_animation.png"));
 		images0.putAll(loadExplosionImages("img/gui/explosion_animation.png"));
 
@@ -340,6 +341,26 @@ class Images {
 		return "Flag" + team + gesture;
 	}
 
+	private static Map<Object, BufferedImage> loadFlagGlowImages(String path) {
+		int gestureNum = getGestureNum("Flag");
+		BufferedImage img = loadImg(path);
+		int width = img.getWidth() / gestureNum;
+		Map<Object, BufferedImage> flags = new HashMap<>();
+		for (int gesture = 0; gesture < gestureNum; gesture++) {
+			BufferedImage redImg = Utils.imgSub(img, gesture * width, 0, width, img.getHeight());
+			BufferedImage blueImg = toBlue(redImg);
+			BufferedImage whiteImg = toWhite(redImg);
+			flags.put(flagGlowKey(Team.Red, gesture), redImg);
+			flags.put(flagGlowKey(Team.Blue, gesture), blueImg);
+			flags.put(flagGlowKey(Team.None, gesture), whiteImg);
+		}
+		return flags;
+	}
+
+	private static String flagGlowKey(Team team, int gesture) {
+		return "FlagGlow" + team + gesture;
+	}
+
 	private static Map<Object, BufferedImage> loadAttackImages(String path) {
 		int gestureNum = getGestureNum("Attack");
 		BufferedImage fullImg = loadImg(path);
@@ -430,6 +451,10 @@ class Images {
 
 	static BufferedImage getFlagImg(Team team, int gesture) {
 		return getImg(flagKey(team, gesture));
+	}
+
+	static BufferedImage getFlagGlowImg(Team team, int gesture) {
+		return getImg(flagGlowKey(team, gesture));
 	}
 
 	static BufferedImage getAttackImg(int gesture) {
