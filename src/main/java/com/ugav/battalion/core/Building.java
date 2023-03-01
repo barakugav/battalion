@@ -102,8 +102,8 @@ public class Building extends Entity implements IBuilding {
 	private Team conquerTeam;
 	private int conquerProgress;
 
-	private static final int CONQUER_DURATION_FROM_NONE = 2;
-	private static final int CONQUER_DURATION_FROM_OTHER = 3;
+	private static final int CONQUER_DURATION_FROM_NONE = 3;
+	private static final int CONQUER_DURATION_FROM_OTHER = 2;
 
 	Building(Arena arena, Type type, Team team) {
 		super(arena, team);

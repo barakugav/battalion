@@ -171,6 +171,13 @@ public class Game {
 		arena.removeUnit(source);
 		arena.setUnit(destination, unit);
 		unit.setPos(destination);
+
+		Building oldBuilding = arena.building(source);
+		if (oldBuilding != null)
+			oldBuilding.tryConquer(null);
+		Building newBuilding = arena.building(destination);
+		if (newBuilding != null && unit.type.canConquer)
+			newBuilding.tryConquer(unit.getTeam());
 	}
 
 	private boolean isMoveValid(Unit unit, ListInt path) {
