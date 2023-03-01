@@ -11,7 +11,6 @@ import java.util.Set;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Unit.Weapon;
 import com.ugav.battalion.util.Event;
-import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.ListInt;
 import com.ugav.battalion.util.Utils;
 
@@ -92,7 +91,8 @@ public class Game {
 	}
 
 	public int getMoney(Team team) {
-		return teamData.get(team).money;
+		TeamData data = teamData.get(team);
+		return data != null ? data.money : 0;
 	}
 
 	public void start() {
@@ -123,14 +123,14 @@ public class Game {
 		turn = turnIterator.next();
 
 		/* Conquer buildings */
-		for (Iter.Int it = Cell.Iter2D.of(arena.width(), arena.height()); it.hasNext();) {
-			int cell = it.next();
-			Building building = arena.building(cell);
-			Unit unit = arena.unit(cell);
-			if (building == null || unit == null)
-				continue;
-			if (unit.type.canConquer && unit.getTeam() == turn)
-				building.tryConquer(unit.getTeam());
+		for (Building building : arena.buildings().forEach()) {
+			Unit unit = arena.unit(building.getPos());
+			if (unit != null && unit.type.canConquer) {
+				if (unit.getTeam() == turn)
+					building.tryConquer(unit.getTeam());
+			} else {
+				building.tryConquer(null);
+			}
 		}
 
 		turnBegin();

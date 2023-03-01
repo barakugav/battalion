@@ -144,10 +144,24 @@ public class Building extends Entity implements IBuilding {
 		}
 		if (conquerer != null && conquerer != getTeam()) {
 			conquerTeam = conquerer;
-			int conquer_duration = getTeam() == Team.None ? CONQUER_DURATION_FROM_NONE : CONQUER_DURATION_FROM_OTHER;
-			if (++conquerProgress == conquer_duration)
+			if (++conquerProgress >= getConquerDuration()) {
 				setTeam(conquerer);
+				conquerTeam = null;
+				conquerProgress = 0;
+			}
 		}
+	}
+
+	private int getConquerDuration() {
+		return getTeam() == Team.None ? CONQUER_DURATION_FROM_NONE : CONQUER_DURATION_FROM_OTHER;
+	}
+
+	public Team getConquerTeam() {
+		return conquerTeam;
+	}
+
+	public double getConquerProgress() {
+		return (double) conquerProgress / getConquerDuration();
 	}
 
 	public int getMoneyGain() {

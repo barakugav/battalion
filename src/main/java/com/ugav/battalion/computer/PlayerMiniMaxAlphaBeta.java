@@ -58,23 +58,36 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		@SuppressWarnings("unused")
 		@Override
 		public double evaluate(Node position, int us0) {
-			final Team us = turnIntToObj(us0);
-			double eval = 0;
 
+			double[] evals = new double[Team.values().length];
+
+			for (Unit unit : position.game.arena().units().forEach()) {
+				evals[unit.getTeam().ordinal()] = evalUnit(position, unit);
+			}
+
+			for (Building building : position.game.arena().buildings().forEach()) {
+				double buildingEval = evalBuilding(building);
+				evals[building.getTeam().ordinal()] = buildingEval;
+				Team conquerTeam = building.getConquerTeam();
+				if (conquerTeam != null)
+					evals[conquerTeam.ordinal()] += buildingEval * building.getConquerProgress();
+			}
+
+			for (Team team : Team.realTeams) {
+				final double MoneyWeight = 0.1;
+				int money = position.game.getMoney(team);
+				evals[team.ordinal()] += MoneyWeight * money;
+			}
+
+			final Team us = turnIntToObj(us0);
+			double maxEnemyEval = 0;
+			for (Team team : Team.realTeams)
+				if (team != us)
+					maxEnemyEval = Math.max(maxEnemyEval, evals[team.ordinal()]);
 			final double Aggression = 0.95;
 			if (!(0 <= Aggression && Aggression <= 1))
 				throw new IllegalArgumentException();
-			for (Unit unit : position.game.arena().units().forEach())
-				eval += (unit.getTeam() == us ? Aggression : -(1 - Aggression)) * evalUnit(position, unit);
-
-			final double MoneyWeight = 0.1;
-			int money = position.game.getMoney(us);
-			eval += MoneyWeight * money;
-
-			final double IncomeWeight = 1;
-			int income = position.game.arena().buildings().filter(b -> us == b.getTeam()).mapInt(Building::getMoneyGain)
-					.sum();
-			eval += IncomeWeight * income;
+			double eval = Aggression * evals[us.ordinal()] - (1 - Aggression) * maxEnemyEval;
 
 			return eval;
 		}
@@ -110,6 +123,10 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			eval += attackingEval * 20;
 
 			return eval;
+		}
+
+		private static double evalBuilding(Building building) {
+			return building.getMoneyGain();
 		}
 
 		private static int turnObjToInt(Team team) {
