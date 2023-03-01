@@ -212,7 +212,7 @@ public class GameSideMenu extends JPanel implements Clearable {
 		private static final Color CurrentMapColor = Color.YELLOW;
 
 		MiniMap() {
-			arena = window.game.arena();
+			arena = window.game.arena;
 			setPreferredSize(new Dimension(arena.width() * TileSize, arena.height() * TileSize));
 
 			window.arenaPanel.tickTaskManager.addTask(1000, this::repaint);

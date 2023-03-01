@@ -11,6 +11,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.ugav.battalion.core.Level.BuildingDesc;
+import com.ugav.battalion.util.Event;
 
 public class Building extends Entity implements IBuilding {
 
@@ -137,15 +138,31 @@ public class Building extends Entity implements IBuilding {
 		return arena;
 	}
 
-	void tryConquer(Team conquerer) {
-		if (conquerer != conquerTeam) {
+	public static class ConquerEvent extends Event {
+
+		public final Building building;
+		public final Unit conquerer;
+
+		public ConquerEvent(Arena source, Building building, Unit conquerer) {
+			super(source);
+			this.building = building;
+			this.conquerer = conquerer;
+		}
+
+	}
+
+	void tryConquer(Unit conquerer) {
+		Team conquererTeam = conquerer != null ? conquerer.getTeam() : null;
+		if (conquererTeam != conquerTeam) {
 			conquerTeam = null;
 			conquerProgress = 0;
 		}
-		if (conquerer != null && conquerer != getTeam()) {
-			conquerTeam = conquerer;
-			if (++conquerProgress >= getConquerDuration()) {
-				setTeam(conquerer);
+		if (conquerer != null && conquererTeam != getTeam()) {
+			conquerTeam = conquererTeam;
+			conquerProgress++;
+			arena.onConquer.notify(new ConquerEvent(arena, this, conquerer));
+			if (conquerProgress >= getConquerDuration()) {
+				setTeam(conquererTeam);
 				conquerTeam = null;
 				conquerProgress = 0;
 			}

@@ -3,6 +3,7 @@ package com.ugav.battalion.core;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import com.ugav.battalion.core.Building.ConquerEvent;
 import com.ugav.battalion.core.Game.EntityChange;
 import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
@@ -17,6 +18,7 @@ public class Arena {
 	private final Cell.Array<Building> buildings;
 
 	public final Event.Notifier<EntityChange> onEntityChange = new Event.Notifier<>();
+	public final Event.Notifier<ConquerEvent> onConquer = new Event.Notifier<>();
 
 	private Arena(Level level) {
 		int w = level.width(), h = level.height();

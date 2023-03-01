@@ -95,10 +95,10 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 				return game.getWinner() == us ? Double.MAX_VALUE : -Double.MAX_VALUE;
 			double[] evals = new double[Team.values().length];
 
-			for (Unit unit : game.arena().units().forEach())
+			for (Unit unit : game.arena.units().forEach())
 				evals[unit.getTeam().ordinal()] += evalUnit(unit);
 
-			for (Building building : game.arena().buildings().forEach()) {
+			for (Building building : game.arena.buildings().forEach()) {
 				double buildingEval = evalBuilding(building);
 				evals[building.getTeam().ordinal()] += buildingEval;
 				Team conquerTeam = building.getConquerTeam();
@@ -131,7 +131,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 				attackingEval = 1;
 			} else {
 				final Team us = unit.getTeam();
-				Arena arena = game.arena();
+				Arena arena = game.arena;
 				int minDist = Integer.MAX_VALUE;
 				for (Unit enemy : arena.enemiesSeenBy(us).forEach()) {
 					if (!unit.canAttack(enemy))
@@ -159,7 +159,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			eval += building.getMoneyGain();
 			if (building.type.canBuildUnits) {
 				eval += 50;
-				if (game.arena().unit(building.getPos()) != null)
+				if (game.arena.unit(building.getPos()) != null)
 					eval -= 25; /* Factory is blocked */
 			}
 			if (building.type.allowUnitBuildLand)
@@ -197,10 +197,10 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			List<Move> moves = new ArrayList<>();
 			final Team us = game.getTurn();
 
-			for (Unit unit : game.arena().units().filter(u -> us == u.getTeam() && u.isActive()).forEach())
+			for (Unit unit : game.arena.units().filter(u -> us == u.getTeam() && u.isActive()).forEach())
 				unitAvailableMoves(unit, moves);
 
-			for (Building factory : game.arena().buildings()
+			for (Building factory : game.arena.buildings()
 					.filter(b -> us == b.getTeam() && b.isActive() && b.type.canBuildUnits).forEach())
 				factoryAvailableMoves(factory, moves);
 
@@ -221,8 +221,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		}
 
 		private void factoryAvailableMoves(Building factory, List<Move> moves) {
-			if (factory.getTeam() != game.getTurn() || !factory.isActive()
-					|| game.arena().unit(factory.getPos()) != null)
+			if (factory.getTeam() != game.getTurn() || !factory.isActive() || game.arena.unit(factory.getPos()) != null)
 				return;
 			final int money = game.getMoney(factory.getTeam());
 
@@ -364,7 +363,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 
 		@Override
 		void apply(Game game) {
-			game.buildUnit(game.arena().building(factory), unit);
+			game.buildUnit(game.arena.building(factory), unit);
 		}
 
 		@Override

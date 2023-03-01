@@ -16,7 +16,7 @@ import com.ugav.battalion.util.Utils;
 
 public class Game {
 
-	final Arena arena;
+	public final Arena arena;
 	private final Map<Team, TeamData> teamData;
 	private final Iterator<Team> turnIterator;
 	private Team turn;
@@ -42,7 +42,7 @@ public class Game {
 	}
 
 	private Game(Game game) {
-		arena = Arena.copyOf(game.arena());
+		arena = Arena.copyOf(game.arena);
 		teamData = new HashMap<>();
 		turnIterator = Utils.iteratorRepeatInfty(Team.realTeams);
 		for (;;)
@@ -62,28 +62,24 @@ public class Game {
 		return new Game(game);
 	}
 
-	public Arena arena() {
-		return arena;
-	}
-
 	public int width() {
-		return arena().width();
+		return arena.width();
 	}
 
 	public int height() {
-		return arena().height();
+		return arena.height();
 	}
 
 	public Terrain getTerrain(int cell) {
-		return arena().terrain(cell);
+		return arena.terrain(cell);
 	}
 
 	public Unit getUnit(int cell) {
-		return arena().unit(cell);
+		return arena.unit(cell);
 	}
 
 	public Building getBuilding(int cell) {
-		return arena().building(cell);
+		return arena.building(cell);
 	}
 
 	public Team getTurn() {
@@ -127,7 +123,7 @@ public class Game {
 			Unit unit = arena.unit(building.getPos());
 			if (unit != null && unit.type.canConquer) {
 				if (unit.getTeam() == turn)
-					building.tryConquer(unit.getTeam());
+					building.tryConquer(unit);
 			} else {
 				building.tryConquer(null);
 			}
@@ -177,7 +173,7 @@ public class Game {
 			oldBuilding.tryConquer(null);
 		Building newBuilding = arena.building(destination);
 		if (newBuilding != null && unit.type.canConquer)
-			newBuilding.tryConquer(unit.getTeam());
+			newBuilding.tryConquer(unit);
 	}
 
 	private boolean isMoveValid(Unit unit, ListInt path) {

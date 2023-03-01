@@ -134,7 +134,7 @@ public class GameArenaPanel extends
 			/* double click */
 			openUnitMenu(selectedUnit);
 
-		} else if (!game.arena().isUnitVisible(target, selectedUnit.getTeam())) {
+		} else if (!game.arena.isUnitVisible(target, selectedUnit.getTeam())) {
 			if (entityLayer().reachableMap.contains(target))
 				entityLayer().unitMove(selectedUnit, target);
 			clearSelection();
@@ -385,6 +385,12 @@ public class GameArenaPanel extends
 						unitComp.clear();
 				});
 			});
+			register.register(game.arena.onConquer, e -> {
+				UnitComp unitComp = (UnitComp) comps.get(e.conquerer);
+				Animation animation = new Animation.Conquer(unitComp);
+				animation = makeSureAnimationIsVisible(animation, ListInt.of(e.conquerer.getPos()));
+				runAnimationAndWait(animation);
+			});
 			register.register(onSelectionChange, e -> {
 				passableMap = Cell.Bitmap.empty();
 				reachableMap = Cell.Bitmap.empty();
@@ -433,7 +439,7 @@ public class GameArenaPanel extends
 			case CloseRange:
 				int last = movePath.isEmpty() ? attacker.getPos() : movePath.last();
 				if (Cell.areNeighbors(targetPos, last)
-						&& (!game.arena().isUnitVisible(last, game.getTurn()) || game.getUnit(last) == attacker))
+						&& (!game.arena.isUnitVisible(last, game.getTurn()) || game.getUnit(last) == attacker))
 					break;
 				movePath.clear();
 				movePath.addAll(Objects.requireNonNull(attacker.calcPathForAttack(targetPos)));
@@ -583,7 +589,7 @@ public class GameArenaPanel extends
 		void reset() {
 			removeAllArenaComps();
 
-			for (Iter.Int it = game.arena().cells(); it.hasNext();) {
+			for (Iter.Int it = game.arena.cells(); it.hasNext();) {
 				int cell = it.next();
 				TerrainComp terrainComp = new TerrainComp(GameArenaPanel.this, cell);
 				comps.put("Terrain " + cell, terrainComp);
@@ -676,7 +682,7 @@ public class GameArenaPanel extends
 			@Override
 			public void paintComponent(Graphics g) {
 				final Team playerTeam = Team.Red;
-				if (!isAnimated && !game.arena().isUnitVisible(unit().getPos(), playerTeam))
+				if (!isAnimated && !game.arena.isUnitVisible(unit().getPos(), playerTeam))
 					return;
 
 				/* Draw unit */
@@ -731,7 +737,7 @@ public class GameArenaPanel extends
 					baseAlpha = 0f;
 				else if (!unit().type.invisible)
 					baseAlpha = 1f;
-				else if (unit().getTeam() == playerTeam || game.arena().isUnitVisible(unit().getPos(), playerTeam))
+				else if (unit().getTeam() == playerTeam || game.arena.isUnitVisible(unit().getPos(), playerTeam))
 					baseAlpha = .5f;
 				else
 					baseAlpha = 0f;

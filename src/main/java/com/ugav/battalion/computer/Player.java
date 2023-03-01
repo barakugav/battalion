@@ -24,7 +24,7 @@ public interface Player {
 			Set<Unit> failedToMove = Collections.newSetFromMap(new IdentityHashMap<>());
 
 			for (;;) {
-				List<Unit> units = game.arena().units(me).filter(u -> u.isActive() && !failedToMove.contains(u))
+				List<Unit> units = game.arena.units(me).filter(u -> u.isActive() && !failedToMove.contains(u))
 						.collectList();
 				if (units.isEmpty())
 					break;

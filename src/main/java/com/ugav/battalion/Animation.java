@@ -149,6 +149,38 @@ interface Animation {
 		}
 	}
 
+	static class Conquer implements Animation {
+		private final UnitComp comp;
+		private Position basePos;
+		private int cursor = 0;
+		private static final int Duration = 20;
+
+		Conquer(UnitComp comp) {
+			this.comp = comp;
+		}
+
+		@Override
+		public void beforeFirst() {
+			comp.isAnimated = true;
+			basePos = comp.pos;
+		}
+
+		@Override
+		public boolean advanceAnimationStep() {
+			if (cursor >= Duration)
+				throw new NoSuchElementException();
+			double yOffset = (Math.abs(Duration / 2 - cursor) - Duration / 2) / 30.0;
+			comp.pos = Position.of(basePos.x, basePos.y + yOffset);
+			return ++cursor < Duration;
+		}
+
+		@Override
+		public void afterLast() {
+			comp.isAnimated = false;
+			comp.pos = basePos;
+		}
+	}
+
 	static class UnitAppear implements Animation {
 		private final UnitComp comp;
 		private int cursor = 0;
