@@ -35,9 +35,10 @@ public enum Terrain {
 	public static Set<Direction> getBridgeConnection(int cell, IntFunction<Terrain> terrain, int width, int high) {
 		Set<Terrain.Category> connectCategoties = EnumSet.of(Terrain.Category.Road, Terrain.Category.BridgeLow,
 				Terrain.Category.BridgeHigh);
+		Set<Terrain.Category> unconnectCategoties = EnumSet.of(Terrain.Category.Water);
 		IntPredicate isInRange = p -> Cell.isInRect(p, width - 1, high - 1);
 
-		if (!EnumSet.of(Terrain.BridgeLow, Terrain.BridgeHigh).contains(terrain.apply(cell)))
+		if (!EnumSet.of(Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh).contains(terrain.apply(cell).category))
 			throw new IllegalArgumentException("terrain is not a bridge at: " + cell);
 
 		Set<Direction> connections = EnumSet.noneOf(Direction.class);
@@ -46,8 +47,10 @@ public enum Terrain {
 			if (!isInRange.test(p))
 				continue;
 			Terrain.Category c = terrain.apply(p).category;
-			if (isInRange.test(p) && connectCategoties.contains(c))
+			if (connectCategoties.contains(c))
 				connections.add(dir);
+			else if (unconnectCategoties.contains(c))
+				connections.addAll(dir.orthogonal());
 		}
 
 		return connections;
