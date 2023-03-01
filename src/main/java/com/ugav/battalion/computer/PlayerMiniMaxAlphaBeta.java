@@ -55,17 +55,48 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			return child;
 		}
 
-		@SuppressWarnings("unused")
 		@Override
-		public double evaluate(Node position, int us0) {
+		public double evaluate(Node position, int us) {
+			return new Evaluator(position, us).evaluate();
+		}
 
+		private static int turnObjToInt(Team team) {
+			return team.ordinal();
+		}
+
+		private static Team turnIntToObj(int team) {
+			return Team.values()[team];
+		}
+
+	}
+
+	private static class Evaluator {
+
+		private final Game game;
+		private final Team us;
+
+		private static final double Aggression = 0.95;
+
+		Evaluator(Node position, int us) {
+			this.game = position.game;
+			this.us = GameImpl.turnIntToObj(us);
+
+			checkParams();
+		}
+
+		@SuppressWarnings("unused")
+		private static void checkParams() {
+			if (!(0 <= Aggression && Aggression <= 1))
+				throw new IllegalArgumentException();
+		}
+
+		double evaluate() {
 			double[] evals = new double[Team.values().length];
 
-			for (Unit unit : position.game.arena().units().forEach()) {
-				evals[unit.getTeam().ordinal()] = evalUnit(position, unit);
-			}
+			for (Unit unit : game.arena().units().forEach())
+				evals[unit.getTeam().ordinal()] = evalUnit(unit);
 
-			for (Building building : position.game.arena().buildings().forEach()) {
+			for (Building building : game.arena().buildings().forEach()) {
 				double buildingEval = evalBuilding(building);
 				evals[building.getTeam().ordinal()] = buildingEval;
 				Team conquerTeam = building.getConquerTeam();
@@ -75,24 +106,20 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 
 			for (Team team : Team.realTeams) {
 				final double MoneyWeight = 0.1;
-				int money = position.game.getMoney(team);
+				int money = game.getMoney(team);
 				evals[team.ordinal()] += MoneyWeight * money;
 			}
 
-			final Team us = turnIntToObj(us0);
 			double maxEnemyEval = 0;
 			for (Team team : Team.realTeams)
 				if (team != us)
 					maxEnemyEval = Math.max(maxEnemyEval, evals[team.ordinal()]);
-			final double Aggression = 0.95;
-			if (!(0 <= Aggression && Aggression <= 1))
-				throw new IllegalArgumentException();
 			double eval = Aggression * evals[us.ordinal()] - (1 - Aggression) * maxEnemyEval;
 
 			return eval;
 		}
 
-		private static double evalUnit(Node position, Unit unit) {
+		private double evalUnit(Unit unit) {
 			double eval = 0;
 
 			eval += unit.getHealth();
@@ -102,7 +129,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 				attackingEval = 1;
 			} else {
 				final Team us = unit.getTeam();
-				Arena arena = position.game.arena();
+				Arena arena = game.arena();
 				int minDist = Integer.MAX_VALUE;
 				for (Unit enemy : arena.enemiesSeenBy(us).forEach()) {
 					if (!unit.canAttack(enemy))
@@ -128,15 +155,6 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		private static double evalBuilding(Building building) {
 			return building.getMoneyGain();
 		}
-
-		private static int turnObjToInt(Team team) {
-			return team.ordinal();
-		}
-
-		private static Team turnIntToObj(int team) {
-			return Team.values()[team];
-		}
-
 	}
 
 	private static class Node implements MiniMaxAlphaBeta.IPosition<Move> {
