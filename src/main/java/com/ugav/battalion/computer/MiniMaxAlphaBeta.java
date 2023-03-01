@@ -22,9 +22,8 @@ class MiniMaxAlphaBeta<Move extends IMove, Position extends IPosition<Move>, Gam
 		double alpha = Double.MAX_VALUE, beta = Double.MAX_VALUE;
 
 		Move bestMove = null;
-		double bestEval = -Double.MAX_VALUE;
-//		double bestEval = game.evaluate(position, us);
-//		alpha = Math.max(alpha, bestEval);
+		double bestEval = game.evaluate(position, us);
+		alpha = Math.max(alpha, bestEval);
 
 		for (Move move : position.availableMoves().forEach()) {
 			Position child = game.getMovedPosition(position, move);

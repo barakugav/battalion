@@ -33,7 +33,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			long t0 = System.currentTimeMillis();
 			Move move = algo.chooseMove(new Node(Game.copyOf(game)));
 			long t1 = System.currentTimeMillis();
-			logger.dbgln("engine move time: " + (t1 - t0));
+			logger.dbgln("Engine move (" + (t1 - t0) + "ms): " + move);
 			if (move == null)
 				return;
 			move.apply(game);
@@ -91,23 +91,25 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		}
 
 		double evaluate() {
+			if (game.isFinished())
+				return game.getWinner() == us ? Double.MAX_VALUE : -Double.MAX_VALUE;
 			double[] evals = new double[Team.values().length];
 
 			for (Unit unit : game.arena().units().forEach())
-				evals[unit.getTeam().ordinal()] = evalUnit(unit);
+				evals[unit.getTeam().ordinal()] += evalUnit(unit);
 
 			for (Building building : game.arena().buildings().forEach()) {
 				double buildingEval = evalBuilding(building);
-				evals[building.getTeam().ordinal()] = buildingEval;
+				evals[building.getTeam().ordinal()] += buildingEval;
 				Team conquerTeam = building.getConquerTeam();
 				if (conquerTeam != null)
 					evals[conquerTeam.ordinal()] += buildingEval * building.getConquerProgress();
 			}
 
 			for (Team team : Team.realTeams) {
-				final double MoneyWeight = 0.1;
+				final double MoneyWeight = 0.2;
 				int money = game.getMoney(team);
-				evals[team.ordinal()] += MoneyWeight * money;
+				evals[team.ordinal()] += MoneyWeight * Math.pow(money, 4.0 / 5.0);
 			}
 
 			double maxEnemyEval = 0;
@@ -152,8 +154,21 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			return eval;
 		}
 
-		private static double evalBuilding(Building building) {
-			return building.getMoneyGain();
+		private double evalBuilding(Building building) {
+			double eval = 0;
+			eval += building.getMoneyGain();
+			if (building.type.canBuildUnits) {
+				eval += 50;
+				if (game.arena().unit(building.getPos()) != null)
+					eval -= 25; /* Factory is blocked */
+			}
+			if (building.type.allowUnitBuildLand)
+				eval += 20;
+			if (building.type.allowUnitBuildWater)
+				eval += 20;
+			if (building.type.allowUnitBuildAir)
+				eval += 20;
+			return eval;
 		}
 	}
 
