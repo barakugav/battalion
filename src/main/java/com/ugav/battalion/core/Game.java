@@ -7,31 +7,53 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
+import com.ugav.battalion.core.Building.ConquerEvent;
+import com.ugav.battalion.core.Level.BuildingDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Unit.Weapon;
 import com.ugav.battalion.util.Event;
+import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.ListInt;
 import com.ugav.battalion.util.Utils;
+import com.ugav.battalion.util.ValuesCache;
 
 public class Game {
 
-	public final Arena arena;
+	private final Cell.Array<Terrain> terrains;
+	private final Cell.Array<Unit> units;
+	private final Cell.Array<Building> buildings;
+
+	final ValuesCache valuesCache = new ValuesCache();
+
 	private final Map<Team, TeamData> teamData;
 	private final Iterator<Team> turnIterator;
 	private Team turn;
 	private Team winner;
 
+	public final Event.Notifier<EntityChange> onEntityChange = new Event.Notifier<>();
 	public final Event.Notifier<UnitAdd> onUnitAdd = new Event.Notifier<>();
 	public final Event.Notifier<UnitRemove> onUnitRemove = new Event.Notifier<>();
 	public final Event.Notifier<UnitMove> beforeUnitMove = new Event.Notifier<>();
 	public final Event.Notifier<UnitAttack> beforeUnitAttack = new Event.Notifier<>();
+	public final Event.Notifier<ConquerEvent> onConquer = new Event.Notifier<>();
 	public final Event.Notifier<MoneyChange> onMoneyChange = new Event.Notifier<>();
 	public final Event.Notifier<Event> onTurnEnd = new Event.Notifier<>();
 	public final Event.Notifier<GameEnd> onGameEnd = new Event.Notifier<>();
 
 	private Game(Level level) {
-		arena = Arena.fromLevel(level);
+		int w = level.width(), h = level.height();
+		terrains = Cell.Array.fromFunc(w, h, cell -> level.at(cell).terrain);
+		units = Cell.Array.fromFunc(w, h, pos -> {
+			UnitDesc desc = level.at(pos).unit;
+			return desc != null ? Unit.valueOf(this, desc, pos) : null;
+		});
+		buildings = Cell.Array.fromFunc(w, h, pos -> {
+			BuildingDesc desc = level.at(pos).building;
+			return desc != null ? Building.valueOf(this, desc, pos) : null;
+		});
+
 		teamData = new HashMap<>();
 		turnIterator = Utils.iteratorRepeatInfty(Team.realTeams);
 		turn = turnIterator.next();
@@ -42,7 +64,17 @@ public class Game {
 	}
 
 	private Game(Game game) {
-		arena = Arena.copyOf(game.arena);
+		int w = game.width(), h = game.height();
+		terrains = Cell.Array.fromFunc(w, h, pos -> game.terrain(pos));
+		units = Cell.Array.fromFunc(w, h, pos -> {
+			Unit unit = game.unit(pos);
+			return unit != null ? Unit.copyOf(this, unit) : null;
+		});
+		buildings = Cell.Array.fromFunc(w, h, pos -> {
+			Building building = game.building(pos);
+			return building != null ? Building.copyOf(this, building) : null;
+		});
+
 		teamData = new HashMap<>();
 		turnIterator = Utils.iteratorRepeatInfty(Team.realTeams);
 		for (;;)
@@ -63,23 +95,96 @@ public class Game {
 	}
 
 	public int width() {
-		return arena.width();
+		return terrains.width();
 	}
 
 	public int height() {
-		return arena.height();
+		return terrains.height();
 	}
 
-	public Terrain getTerrain(int cell) {
-		return arena.terrain(cell);
+	public Terrain terrain(int cell) {
+		return terrains.at(cell);
 	}
 
-	public Unit getUnit(int cell) {
-		return arena.unit(cell);
+	public Unit unit(int cell) {
+		return units.at(cell);
 	}
 
-	public Building getBuilding(int cell) {
-		return arena.building(cell);
+	public Building building(int cell) {
+		return buildings.at(cell);
+	}
+
+	void setUnit(int cell, Unit unit) {
+		assert units.at(cell) == null;
+		units.set(cell, Objects.requireNonNull(unit));
+		valuesCache.invalidate();
+	}
+
+	void removeUnit(int cell) {
+		assert units.at(cell) != null;
+		units.set(cell, null);
+		valuesCache.invalidate();
+	}
+
+	public boolean isValidCell(int cell) {
+		return Cell.isInRect(cell, width() - 1, height() - 1);
+	}
+
+	public Iter.Int cells() {
+		return new Cell.Iter2D(width(), height());
+	}
+
+	public Iter<Building> buildings() {
+		return cells().map(this::building).filter(Objects::nonNull);
+	}
+
+	public Iter<Unit> units(Team team) {
+		return units().filter(u -> team == u.getTeam());
+	}
+
+	public Iter<Unit> units() {
+		return cells().map(this::unit).filter(Objects::nonNull);
+	}
+
+	public Iter<Unit> enemiesSeenBy(Team viewer) {
+		return units().filter(u -> u.getTeam() != viewer && isUnitVisible(u.getPos(), viewer));
+	}
+
+	private final Supplier<Cell.Bitmap>[] visibleUnitBitmap;
+	{
+		@SuppressWarnings("unchecked")
+		Supplier<Cell.Bitmap>[] visibleUnitBitmap0 = new Supplier[Team.values().length];
+		visibleUnitBitmap = visibleUnitBitmap0;
+		for (Team viewer : Team.values()) {
+			visibleUnitBitmap[viewer.ordinal()] = valuesCache
+					.newVal(() -> Cell.Bitmap.fromPredicate(width(), height(), pos -> {
+						Unit unit = unit(pos);
+						if (unit == null)
+							return false;
+
+						if (!unit.type.invisible || unit.getTeam() == viewer)
+							return true;
+						for (int n : Cell.neighbors(pos)) {
+							Unit neighbor = unit(n);
+							if (!isValidCell(n))
+								continue;
+							if (neighbor != null && neighbor.getTeam() == viewer)
+								return true;
+						}
+						return false;
+					}));
+		}
+
+	}
+
+	private Cell.Bitmap getVisibleUnitBitmap(Team viewer) {
+		return visibleUnitBitmap[viewer.ordinal()].get();
+	}
+
+	public boolean isUnitVisible(int cell, Team viewer) {
+		if (!isValidCell(cell))
+			throw new IllegalArgumentException();
+		return getVisibleUnitBitmap(viewer).contains(cell);
 	}
 
 	public Team getTurn() {
@@ -96,16 +201,16 @@ public class Game {
 	}
 
 	private void turnBegin() {
-		for (Building building : arena.buildings().forEach())
+		for (Building building : buildings().forEach())
 			building.setActive(building.canBeActive() && building.getTeam() == turn);
 
-		for (Unit unit : arena.units().forEach())
+		for (Unit unit : units().forEach())
 			unit.setActive(unit.getTeam() == turn);
 	}
 
 	public void turnEnd() {
 		Set<Team> moneyChanged = new HashSet<>();
-		for (Building building : arena.buildings().forEach()) {
+		for (Building building : buildings().forEach()) {
 			int gain = building.getMoneyGain();
 			if (gain != 0 && teamData.containsKey(building.getTeam())) {
 				teamData.get(building.getTeam()).money += gain;
@@ -119,8 +224,8 @@ public class Game {
 		turn = turnIterator.next();
 
 		/* Conquer buildings */
-		for (Building building : arena.buildings().forEach()) {
-			Unit unit = arena.unit(building.getPos());
+		for (Building building : buildings().forEach()) {
+			Unit unit = unit(building.getPos());
 			if (unit != null && unit.type.canConquer) {
 				if (unit.getTeam() == turn)
 					building.tryConquer(unit);
@@ -137,7 +242,7 @@ public class Game {
 	private Set<Team> getAliveTeams() {
 		Set<Team> alive = EnumSet.noneOf(Team.class);
 		for (Team team : Team.realTeams)
-			if (arena.units(team).hasNext())
+			if (units(team).hasNext())
 				alive.add(team);
 		return alive;
 	}
@@ -164,14 +269,14 @@ public class Game {
 		beforeUnitMove.notify(new UnitMove(this, unit, path));
 		int source = unit.getPos();
 		int destination = path.last();
-		arena.removeUnit(source);
-		arena.setUnit(destination, unit);
+		removeUnit(source);
+		setUnit(destination, unit);
 		unit.setPos(destination);
 
-		Building oldBuilding = arena.building(source);
+		Building oldBuilding = building(source);
 		if (oldBuilding != null)
 			oldBuilding.tryConquer(null);
-		Building newBuilding = arena.building(destination);
+		Building newBuilding = building(destination);
 		if (newBuilding != null && unit.type.canConquer)
 			newBuilding.tryConquer(unit);
 	}
@@ -255,7 +360,7 @@ public class Game {
 		target.setHealth(newHealth);
 
 		if (target.isDead()) {
-			arena.removeUnit(target.getPos());
+			removeUnit(target.getPos());
 			onUnitRemove.notify(new UnitRemove(this, target));
 
 			if (isFinished())
@@ -265,7 +370,7 @@ public class Game {
 
 	public Unit buildUnit(Building factory, Unit.Type unitType) {
 		int pos = factory.getPos();
-		if (!factory.type.canBuildUnits || !factory.isActive() || arena.unit(pos) != null)
+		if (!factory.type.canBuildUnits || !factory.isActive() || unit(pos) != null)
 			throw new IllegalStateException();
 
 		Map<Unit.Type, Building.UnitSale> sales = factory.getAvailableUnits();
@@ -276,8 +381,8 @@ public class Game {
 			throw new IllegalStateException();
 
 		data.money -= sale.price;
-		Unit unit = Unit.valueOf(arena, UnitDesc.of(unitType, team), pos);
-		arena.setUnit(pos, unit);
+		Unit unit = Unit.valueOf(this, UnitDesc.of(unitType, team), pos);
+		setUnit(pos, unit);
 
 		onMoneyChange.notify(new MoneyChange(this, team, data.money));
 		onUnitAdd.notify(new UnitAdd(this, unit));
@@ -290,15 +395,15 @@ public class Game {
 
 		if (!transportedUnit.isActive() || transportedUnit.type.category != Unit.Category.Land)
 			throw new IllegalArgumentException();
-		if (!transportType.transportUnits || !transportType.canStandOn(arena.terrain(pos)))
+		if (!transportType.transportUnits || !transportType.canStandOn(terrain(pos)))
 			throw new IllegalArgumentException();
 
 		transportedUnit.setActive(false);
-		arena.removeUnit(pos);
+		removeUnit(pos);
 		onUnitRemove.notify(new UnitRemove(this, transportedUnit));
 
-		Unit newUnit = Unit.newTrasportUnit(arena, transportType, transportedUnit);
-		arena.setUnit(pos, newUnit);
+		Unit newUnit = Unit.newTrasportUnit(this, transportType, transportedUnit);
+		setUnit(pos, newUnit);
 		newUnit.setPos(pos);
 		newUnit.setActive(false);
 
@@ -315,14 +420,14 @@ public class Game {
 		if (!trasportedUnit.isActive() || !trasportedUnit.type.transportUnits)
 			throw new IllegalArgumentException();
 		Unit transportedUnit = trasportedUnit.getTransportedUnit();
-		if (!transportedUnit.type.canStandOn(arena.terrain(pos)))
+		if (!transportedUnit.type.canStandOn(terrain(pos)))
 			throw new IllegalArgumentException();
 
 		trasportedUnit.setActive(false);
-		arena.removeUnit(pos);
+		removeUnit(pos);
 		onUnitRemove.notify(new UnitRemove(this, trasportedUnit));
 
-		arena.setUnit(pos, transportedUnit);
+		setUnit(pos, transportedUnit);
 		transportedUnit.setPos(pos);
 		transportedUnit.setActive(true);
 

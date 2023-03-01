@@ -21,10 +21,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-import com.ugav.battalion.core.Arena;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
+import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
@@ -207,13 +207,13 @@ public class GameSideMenu extends JPanel implements Clearable {
 
 		private static final long serialVersionUID = 1L;
 
-		private final Arena arena;
+		private final Game game;
 		private static final int TileSize = 6;
 		private static final Color CurrentMapColor = Color.YELLOW;
 
 		MiniMap() {
-			arena = window.game.arena;
-			setPreferredSize(new Dimension(arena.width() * TileSize, arena.height() * TileSize));
+			game = window.game;
+			setPreferredSize(new Dimension(game.width() * TileSize, game.height() * TileSize));
 
 			window.arenaPanel.tickTaskManager.addTask(1000, this::repaint);
 		}
@@ -224,16 +224,16 @@ public class GameSideMenu extends JPanel implements Clearable {
 
 		@Override
 		public void paintComponent(Graphics g) {
-			for (Iter.Int it = arena.cells(); it.hasNext();) {
+			for (Iter.Int it = game.cells(); it.hasNext();) {
 				int cell = it.next();
-				Terrain terrain = arena.terrain(cell);
+				Terrain terrain = game.terrain(cell);
 				drawImg(g, cell, Images.getMinimapTerrain(terrain.category));
 
-				Building building = arena.building(cell);
+				Building building = game.building(cell);
 				if (building != null)
 					drawImg(g, cell, Images.getMinimapBuilding(building.getTeam()));
 
-				Unit unit = arena.unit(cell);
+				Unit unit = game.unit(cell);
 				if (unit != null)
 					drawImg(g, cell, Images.getMinimapUnit(unit.getTeam()));
 			}

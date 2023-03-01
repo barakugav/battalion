@@ -7,12 +7,12 @@ import com.ugav.battalion.util.Event;
 
 public abstract class Entity {
 
-	final Arena arena;
+	final Game game;
 	private Team team;
 	private boolean active;
 
-	Entity(Arena arena, Team team) {
-		this.arena = Objects.requireNonNull(arena);
+	Entity(Game game, Team team) {
+		this.game = Objects.requireNonNull(game);
 		this.team = Objects.requireNonNull(team);
 		active = false;
 	}
@@ -40,7 +40,7 @@ public abstract class Entity {
 	}
 
 	public Event.Notifier<EntityChange> onChange() {
-		return arena.onEntityChange;
+		return game.onEntityChange;
 	}
 
 }

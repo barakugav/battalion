@@ -88,7 +88,7 @@ public class GameArenaPanel extends
 	}
 
 	private boolean isUnitSelected() {
-		return selection != SelectionNone && game.getUnit(selection) != null;
+		return selection != SelectionNone && game.unit(selection) != null;
 	}
 
 	private void cellClicked(int cell) {
@@ -105,8 +105,8 @@ public class GameArenaPanel extends
 	}
 
 	private void trySelect(int cell) {
-		Unit unit = game.getUnit(cell);
-		Building building = game.getBuilding(cell);
+		Unit unit = game.unit(cell);
+		Building building = game.building(cell);
 		if (unit != null) {
 			onEntityClick.notify(new EntityClick(this, cell, unit));
 			if (!unit.isActive())
@@ -122,19 +122,19 @@ public class GameArenaPanel extends
 				openFactoryMenu(building);
 
 		} else {
-			onEntityClick.notify(new EntityClick(this, cell, game.getTerrain(cell)));
+			onEntityClick.notify(new EntityClick(this, cell, game.terrain(cell)));
 		}
 	}
 
 	private void unitSecondSelection(int target) {
-		Unit targetUnit = game.getUnit(target);
-		Unit selectedUnit = game.getUnit(selection);
+		Unit targetUnit = game.unit(target);
+		Unit selectedUnit = game.unit(selection);
 
 		if (selection == target) {
 			/* double click */
 			openUnitMenu(selectedUnit);
 
-		} else if (!game.arena.isUnitVisible(target, selectedUnit.getTeam())) {
+		} else if (!game.isUnitVisible(target, selectedUnit.getTeam())) {
 			if (entityLayer().reachableMap.contains(target))
 				entityLayer().unitMove(selectedUnit, target);
 			clearSelection();
@@ -239,10 +239,10 @@ public class GameArenaPanel extends
 	Entity getSelectedEntity() {
 		if (selection == SelectionNone)
 			return null;
-		Unit unit = game.getUnit(selection);
+		Unit unit = game.unit(selection);
 		if (unit != null)
 			return unit;
-		Building building = game.getBuilding(selection);
+		Building building = game.building(selection);
 		if (building != null)
 			return building;
 		throw new IllegalStateException();
@@ -385,7 +385,7 @@ public class GameArenaPanel extends
 						unitComp.clear();
 				});
 			});
-			register.register(game.arena.onConquer, e -> {
+			register.register(game.onConquer, e -> {
 				UnitComp unitComp = (UnitComp) comps.get(e.conquerer);
 				Animation animation = new Animation.Conquer(unitComp);
 				animation = makeSureAnimationIsVisible(animation, ListInt.of(e.conquerer.getPos()));
@@ -430,7 +430,7 @@ public class GameArenaPanel extends
 		}
 
 		private void updateAttackMovePath(int targetPos) {
-			Unit attacker = game.getUnit(selection);
+			Unit attacker = game.unit(selection);
 			switch (attacker.type.weapon.type) {
 			case LongRange:
 				movePath.clear();
@@ -439,7 +439,7 @@ public class GameArenaPanel extends
 			case CloseRange:
 				int last = movePath.isEmpty() ? attacker.getPos() : movePath.last();
 				if (Cell.areNeighbors(targetPos, last)
-						&& (!game.arena.isUnitVisible(last, game.getTurn()) || game.getUnit(last) == attacker))
+						&& (!game.isUnitVisible(last, game.getTurn()) || game.unit(last) == attacker))
 					break;
 				movePath.clear();
 				movePath.addAll(Objects.requireNonNull(attacker.calcPathForAttack(targetPos)));
@@ -455,7 +455,7 @@ public class GameArenaPanel extends
 		}
 
 		private void updateMovePath(int targetPos) {
-			Unit unit = game.getUnit(selection);
+			Unit unit = game.unit(selection);
 
 			/* Update move path from unit position to hovered position */
 			int last = movePath.isEmpty() ? unit.getPos() : movePath.last();
@@ -589,16 +589,16 @@ public class GameArenaPanel extends
 		void reset() {
 			removeAllArenaComps();
 
-			for (Iter.Int it = game.arena.cells(); it.hasNext();) {
+			for (Iter.Int it = game.cells(); it.hasNext();) {
 				int cell = it.next();
 				TerrainComp terrainComp = new TerrainComp(GameArenaPanel.this, cell);
 				comps.put("Terrain " + cell, terrainComp);
 
-				Unit unit = game.getUnit(cell);
+				Unit unit = game.unit(cell);
 				if (unit != null)
 					addUnitComp(unit);
 
-				Building building = game.getBuilding(cell);
+				Building building = game.building(cell);
 				if (building != null)
 					comps.put(building, new BuildingComp(cell, building));
 
@@ -682,7 +682,7 @@ public class GameArenaPanel extends
 			@Override
 			public void paintComponent(Graphics g) {
 				final Team playerTeam = Team.Red;
-				if (!isAnimated && !game.arena.isUnitVisible(unit().getPos(), playerTeam))
+				if (!isAnimated && !game.isUnitVisible(unit().getPos(), playerTeam))
 					return;
 
 				/* Draw unit */
@@ -737,7 +737,7 @@ public class GameArenaPanel extends
 					baseAlpha = 0f;
 				else if (!unit().type.invisible)
 					baseAlpha = 1f;
-				else if (unit().getTeam() == playerTeam || game.arena.isUnitVisible(unit().getPos(), playerTeam))
+				else if (unit().getTeam() == playerTeam || game.isUnitVisible(unit().getPos(), playerTeam))
 					baseAlpha = .5f;
 				else
 					baseAlpha = 0f;
@@ -761,7 +761,7 @@ public class GameArenaPanel extends
 
 	@Override
 	Terrain getTerrain(int cell) {
-		return game.getTerrain(cell);
+		return game.terrain(cell);
 	}
 
 }

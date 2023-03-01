@@ -35,13 +35,11 @@ public class Utils {
 	}
 
 	public static <E> Iterator<E> iteratorRepeat(Iterable<E> iterable, int repeat) {
-		if (repeat < 0)
-			throw new IllegalArgumentException();
-		return new IteratorRepeat<>(iterable, repeat);
+		return IteratorRepeat.create(iterable, repeat);
 	}
 
 	public static <E> Iterator<E> iteratorRepeatInfty(Iterable<E> iterable) {
-		return new IteratorRepeat<>(iterable, -1);
+		return IteratorRepeat.infty(iterable);
 	}
 
 	private static class IteratorRepeat<E> implements Iterator<E> {
@@ -50,10 +48,22 @@ public class Utils {
 		private Iterator<E> it;
 		private int repeat;
 
-		IteratorRepeat(Iterable<E> iterable, int repeat) {
+		private static final int RepeatInfty = -1;
+
+		private IteratorRepeat(Iterable<E> iterable, int repeat) {
 			this.iterable = iterable;
 			this.repeat = repeat;
 			it = iterable.iterator();
+		}
+
+		static <E> IteratorRepeat<E> create(Iterable<E> iterable, int repeat) {
+			if (repeat < 0)
+				throw new IllegalArgumentException();
+			return new IteratorRepeat<>(iterable, RepeatInfty);
+		}
+
+		static <E> IteratorRepeat<E> infty(Iterable<E> iterable) {
+			return new IteratorRepeat<>(iterable, RepeatInfty);
 		}
 
 		@Override

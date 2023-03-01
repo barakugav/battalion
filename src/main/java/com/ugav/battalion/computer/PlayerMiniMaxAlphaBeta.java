@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.ugav.battalion.core.Arena;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Building.UnitSale;
 import com.ugav.battalion.core.Cell;
@@ -95,10 +94,10 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 				return game.getWinner() == us ? Double.MAX_VALUE : -Double.MAX_VALUE;
 			double[] evals = new double[Team.values().length];
 
-			for (Unit unit : game.arena.units().forEach())
+			for (Unit unit : game.units().forEach())
 				evals[unit.getTeam().ordinal()] += evalUnit(unit);
 
-			for (Building building : game.arena.buildings().forEach()) {
+			for (Building building : game.buildings().forEach()) {
 				double buildingEval = evalBuilding(building);
 				evals[building.getTeam().ordinal()] += buildingEval;
 				Team conquerTeam = building.getConquerTeam();
@@ -131,13 +130,12 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 				attackingEval = 1;
 			} else {
 				final Team us = unit.getTeam();
-				Arena arena = game.arena;
 				int minDist = Integer.MAX_VALUE;
-				for (Unit enemy : arena.enemiesSeenBy(us).forEach()) {
+				for (Unit enemy : game.enemiesSeenBy(us).forEach()) {
 					if (!unit.canAttack(enemy))
 						continue;
 					for (int neighbor : Cell.neighbors(enemy.getPos())) {
-						if (!arena.isValidCell(neighbor))
+						if (!game.isValidCell(neighbor))
 							continue;
 						int d = unit.getDistanceTo(neighbor);
 						if (d < 0)
@@ -159,7 +157,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			eval += building.getMoneyGain();
 			if (building.type.canBuildUnits) {
 				eval += 50;
-				if (game.arena.unit(building.getPos()) != null)
+				if (game.unit(building.getPos()) != null)
 					eval -= 25; /* Factory is blocked */
 			}
 			if (building.type.allowUnitBuildLand)
@@ -197,10 +195,10 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			List<Move> moves = new ArrayList<>();
 			final Team us = game.getTurn();
 
-			for (Unit unit : game.arena.units().filter(u -> us == u.getTeam() && u.isActive()).forEach())
+			for (Unit unit : game.units().filter(u -> us == u.getTeam() && u.isActive()).forEach())
 				unitAvailableMoves(unit, moves);
 
-			for (Building factory : game.arena.buildings()
+			for (Building factory : game.buildings()
 					.filter(b -> us == b.getTeam() && b.isActive() && b.type.canBuildUnits).forEach())
 				factoryAvailableMoves(factory, moves);
 
@@ -221,7 +219,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		}
 
 		private void factoryAvailableMoves(Building factory, List<Move> moves) {
-			if (factory.getTeam() != game.getTurn() || !factory.isActive() || game.arena.unit(factory.getPos()) != null)
+			if (factory.getTeam() != game.getTurn() || !factory.isActive() || game.unit(factory.getPos()) != null)
 				return;
 			final int money = game.getMoney(factory.getTeam());
 
@@ -293,7 +291,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 
 		@Override
 		void apply(Game game) {
-			Unit unit = game.getUnit(source);
+			Unit unit = game.unit(source);
 			game.move(unit, unit.calcPath(destination));
 		}
 
@@ -317,9 +315,9 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 
 		@Override
 		void apply(Game game) {
-			Unit unit = game.getUnit(attacker);
+			Unit unit = game.unit(attacker);
 			ListInt path = unit.calcPath(destination);
-			game.moveAndAttack(unit, path, game.getUnit(target));
+			game.moveAndAttack(unit, path, game.unit(target));
 		}
 
 		@Override
@@ -341,7 +339,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 
 		@Override
 		void apply(Game game) {
-			game.attackRange(game.getUnit(attacker), game.getUnit(target));
+			game.attackRange(game.unit(attacker), game.unit(target));
 		}
 
 		@Override
@@ -363,7 +361,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 
 		@Override
 		void apply(Game game) {
-			game.buildUnit(game.arena.building(factory), unit);
+			game.buildUnit(game.building(factory), unit);
 		}
 
 		@Override

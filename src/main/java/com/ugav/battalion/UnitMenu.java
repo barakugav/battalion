@@ -41,7 +41,7 @@ class UnitMenu extends JPanel implements Clearable {
 		/* Transparent background, draw only buttons */
 		setOpaque(false);
 
-		Terrain terrain = window.game.getTerrain(unit.getPos());
+		Terrain terrain = window.game.terrain(unit.getPos());
 		if (!unit.type.transportUnits) {
 			boolean transportAirEn = unit.type.category == Unit.Category.Land
 					&& Unit.Type.AirTransporter.canStandOn(terrain);

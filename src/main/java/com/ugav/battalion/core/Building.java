@@ -106,20 +106,20 @@ public class Building extends Entity implements IBuilding {
 	private static final int CONQUER_DURATION_FROM_NONE = 3;
 	private static final int CONQUER_DURATION_FROM_OTHER = 4;
 
-	Building(Arena arena, Type type, Team team, int pos) {
-		super(arena, team);
+	Building(Game game, Type type, Team team, int pos) {
+		super(game, team);
 		this.type = Objects.requireNonNull(type);
 		this.pos = pos;
 
 		setActive(canBeActive());
 	}
 
-	public static Building valueOf(Arena arena, BuildingDesc desc, int pos) {
-		return new Building(arena, desc.type, desc.team, pos);
+	public static Building valueOf(Game game, BuildingDesc desc, int pos) {
+		return new Building(game, desc.type, desc.team, pos);
 	}
 
-	public static Building copyOf(Arena arena, Building building) {
-		Building copy = new Building(arena, building.type, building.getTeam(), building.pos);
+	public static Building copyOf(Game game, Building building) {
+		Building copy = new Building(game, building.type, building.getTeam(), building.pos);
 		copy.setActive(building.isActive());
 		copy.conquerTeam = building.conquerTeam;
 		copy.conquerProgress = building.conquerProgress;
@@ -130,16 +130,12 @@ public class Building extends Entity implements IBuilding {
 		return pos;
 	}
 
-	Arena getArena() {
-		return arena;
-	}
-
 	public static class ConquerEvent extends Event {
 
 		public final Building building;
 		public final Unit conquerer;
 
-		public ConquerEvent(Arena source, Building building, Unit conquerer) {
+		public ConquerEvent(Game source, Building building, Unit conquerer) {
 			super(source);
 			this.building = building;
 			this.conquerer = conquerer;
@@ -156,7 +152,7 @@ public class Building extends Entity implements IBuilding {
 		if (conquerer != null && conquererTeam != getTeam()) {
 			conquerTeam = conquererTeam;
 			conquerProgress++;
-			arena.onConquer.notify(new ConquerEvent(arena, this, conquerer));
+			game.onConquer.notify(new ConquerEvent(game, this, conquerer));
 			if (conquerProgress >= getConquerDuration()) {
 				setTeam(conquererTeam);
 				conquerTeam = null;
@@ -199,12 +195,12 @@ public class Building extends Entity implements IBuilding {
 		Consumer<UnitSale> addSale = sale -> sales.put(sale.type, sale);
 
 		Team team = getTeam();
-		boolean canBuildLandUnits = arena.buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildLand)
+		boolean canBuildLandUnits = game.buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildLand)
 				.hasNext();
-		boolean canBuildWaterUnits = arena.buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildWater)
+		boolean canBuildWaterUnits = game.buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildWater)
 				.hasNext()
-				&& EnumSet.of(Terrain.Category.Water, Terrain.Category.Shore).contains(arena.terrain(pos).category);
-		boolean canBuildAirUnits = arena.buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildAir)
+				&& EnumSet.of(Terrain.Category.Water, Terrain.Category.Shore).contains(game.terrain(pos).category);
+		boolean canBuildAirUnits = game.buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildAir)
 				.hasNext();
 
 		if (canBuildLandUnits) {
