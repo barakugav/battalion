@@ -99,28 +99,28 @@ public class Building extends Entity implements IBuilding {
 	}
 
 	public final Type type;
-	private int pos;
+	private final int pos;
 	private Team conquerTeam;
 	private int conquerProgress;
 
 	private static final int CONQUER_DURATION_FROM_NONE = 3;
 	private static final int CONQUER_DURATION_FROM_OTHER = 4;
 
-	Building(Arena arena, Type type, Team team) {
+	Building(Arena arena, Type type, Team team, int pos) {
 		super(arena, team);
 		this.type = Objects.requireNonNull(type);
+		this.pos = pos;
 
 		setActive(canBeActive());
 	}
 
-	public static Building valueOf(Arena arena, BuildingDesc desc) {
-		return new Building(arena, desc.type, desc.team);
+	public static Building valueOf(Arena arena, BuildingDesc desc, int pos) {
+		return new Building(arena, desc.type, desc.team, pos);
 	}
 
 	public static Building copyOf(Arena arena, Building building) {
-		Building copy = new Building(arena, building.type, building.getTeam());
+		Building copy = new Building(arena, building.type, building.getTeam(), building.pos);
 		copy.setActive(building.isActive());
-		copy.pos = building.pos;
 		copy.conquerTeam = building.conquerTeam;
 		copy.conquerProgress = building.conquerProgress;
 		return copy;
@@ -128,10 +128,6 @@ public class Building extends Entity implements IBuilding {
 
 	public int getPos() {
 		return pos;
-	}
-
-	void setPos(int pos) {
-		this.pos = pos;
 	}
 
 	Arena getArena() {

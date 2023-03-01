@@ -276,8 +276,7 @@ public class Game {
 			throw new IllegalStateException();
 
 		data.money -= sale.price;
-		Unit unit = Unit.valueOf(arena, UnitDesc.of(unitType, team));
-		unit.setPos(pos);
+		Unit unit = Unit.valueOf(arena, UnitDesc.of(unitType, team), pos);
 		arena.setUnit(pos, unit);
 
 		onMoneyChange.notify(new MoneyChange(this, team, data.money));

@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import com.ugav.battalion.core.Game.EntityChange;
 import com.ugav.battalion.core.Level.UnitDesc;
@@ -30,16 +31,19 @@ public class Unit extends Entity implements IUnit {
 		this.transportedUnit = transportedUnit;
 	}
 
-	static Unit valueOf(Arena arena, UnitDesc desc) {
+	static Unit valueOf(Arena arena, UnitDesc desc, int initPos) {
+		Unit unit;
 		if (!desc.type.transportUnits) {
-			return new Unit(arena, desc.type, desc.team, null);
+			unit = new Unit(arena, desc.type, desc.team, null);
 
 		} else {
 			UnitDesc transportedUnit = desc.getTransportedUnit();
 			if (transportedUnit.type.transportUnits || desc.team != transportedUnit.team)
 				throw new IllegalArgumentException();
-			return newTrasportUnit(arena, desc.type, new Unit(arena, transportedUnit.type, transportedUnit.team, null));
+			unit = newTrasportUnit(arena, desc.type, new Unit(arena, transportedUnit.type, transportedUnit.team, null));
 		}
+		unit.setPos(initPos);
+		return unit;
 	}
 
 	static Unit copyOf(Arena arena, Unit unit) {
@@ -292,11 +296,11 @@ public class Unit extends Entity implements IUnit {
 		return getReachableMap(true);
 	}
 
-	private final Arena.Cached<Cell.Bitmap> reachableMapInvisiableEnable;
-	private final Arena.Cached<Cell.Bitmap> reachableMapInvisiableDisable;
+	private final Supplier<Cell.Bitmap> reachableMapInvisiableEnable;
+	private final Supplier<Cell.Bitmap> reachableMapInvisiableDisable;
 	{
-		reachableMapInvisiableEnable = arena.newCached(() -> getReachableMap0(true));
-		reachableMapInvisiableDisable = arena.newCached(() -> getReachableMap0(false));
+		reachableMapInvisiableEnable = arena.valuesCache.newVal(() -> getReachableMap0(true));
+		reachableMapInvisiableDisable = arena.valuesCache.newVal(() -> getReachableMap0(false));
 	}
 
 	Cell.Bitmap getReachableMap(boolean invisiableEnable) {
@@ -312,11 +316,11 @@ public class Unit extends Entity implements IUnit {
 		return getPassableMap(true);
 	}
 
-	private final Arena.Cached<Cell.Bitmap> passableMapInvisiableEnable;
-	private final Arena.Cached<Cell.Bitmap> passableMapInvisiableDisable;
+	private final Supplier<Cell.Bitmap> passableMapInvisiableEnable;
+	private final Supplier<Cell.Bitmap> passableMapInvisiableDisable;
 	{
-		passableMapInvisiableEnable = arena.newCached(() -> getPassableMap0(true));
-		passableMapInvisiableDisable = arena.newCached(() -> getPassableMap0(false));
+		passableMapInvisiableEnable = arena.valuesCache.newVal(() -> getPassableMap0(true));
+		passableMapInvisiableDisable = arena.valuesCache.newVal(() -> getPassableMap0(false));
 	}
 
 	Cell.Bitmap getPassableMap(boolean invisiableEnable) {
@@ -329,11 +333,11 @@ public class Unit extends Entity implements IUnit {
 				cell -> movementMap.getDistanceTo(cell) <= type.moveLimit);
 	}
 
-	private final Arena.Cached<MovementMap> movementMapInvisiableEnable;
-	private final Arena.Cached<MovementMap> movementMapInvisiableDisable;
+	private final Supplier<MovementMap> movementMapInvisiableEnable;
+	private final Supplier<MovementMap> movementMapInvisiableDisable;
 	{
-		movementMapInvisiableEnable = arena.newCached(() -> calcMovementMap0(true));
-		movementMapInvisiableDisable = arena.newCached(() -> calcMovementMap0(false));
+		movementMapInvisiableEnable = arena.valuesCache.newVal(() -> calcMovementMap0(true));
+		movementMapInvisiableDisable = arena.valuesCache.newVal(() -> calcMovementMap0(false));
 	}
 
 	private MovementMap getMovementMap(boolean invisiableEnable) {
@@ -478,11 +482,11 @@ public class Unit extends Entity implements IUnit {
 		return getAttackableMap(true);
 	}
 
-	private final Arena.Cached<Cell.Bitmap> attackableMapInvisiableEnable;
-	private final Arena.Cached<Cell.Bitmap> attackableMapInvisiableDisable;
+	private final Supplier<Cell.Bitmap> attackableMapInvisiableEnable;
+	private final Supplier<Cell.Bitmap> attackableMapInvisiableDisable;
 	{
-		attackableMapInvisiableEnable = arena.newCached(() -> getAttackableMap0(true));
-		attackableMapInvisiableDisable = arena.newCached(() -> getAttackableMap0(false));
+		attackableMapInvisiableEnable = arena.valuesCache.newVal(() -> getAttackableMap0(true));
+		attackableMapInvisiableDisable = arena.valuesCache.newVal(() -> getAttackableMap0(false));
 	}
 
 	private Cell.Bitmap getAttackableMap(boolean invisiableEnable) {
