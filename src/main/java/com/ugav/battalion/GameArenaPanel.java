@@ -336,10 +336,10 @@ public class GameArenaPanel extends
 		}
 		int topLeft = Cell.of(xmin, ymin);
 		int bottomRight = Cell.of(xmax, ymax);
-		boolean topLeftVisible = Cell.isInRect(topLeft, mapPos.x, mapPos.y, mapPos.x + DISPLAYED_ARENA_WIDTH,
-				mapPos.y + DISPLAYED_ARENA_HEIGHT);
-		boolean bottomRightVisible = Cell.isInRect(bottomRight, mapPos.x, mapPos.y, mapPos.x + DISPLAYED_ARENA_WIDTH,
-				mapPos.y + DISPLAYED_ARENA_HEIGHT);
+		boolean topLeftVisible = Cell.isInRect(topLeft, mapPos.x, mapPos.y, mapPos.x + DISPLAYED_ARENA_WIDTH - 1,
+				mapPos.y + DISPLAYED_ARENA_HEIGHT - 1);
+		boolean bottomRightVisible = Cell.isInRect(bottomRight, mapPos.x, mapPos.y,
+				mapPos.x + DISPLAYED_ARENA_WIDTH - 1, mapPos.y + DISPLAYED_ARENA_HEIGHT - 1);
 		if (topLeftVisible && bottomRightVisible)
 			return animation; /* already visible */
 
