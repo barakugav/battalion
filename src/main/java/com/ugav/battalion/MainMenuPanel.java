@@ -20,13 +20,11 @@ class MainMenuPanel extends JPanel implements Clearable {
 		this.globals = Objects.requireNonNull(globals);
 		levels = new Levels(globals.levelSerializer);
 
-		int levelCount = levels.getLevels().size();
 		setLayout(new GridLayout(0, 1));
 
-		for (int levelIdx = 0; levelIdx < levelCount; levelIdx++) {
-			JButton lvlButton = new JButton(String.format("Level %2d", Integer.valueOf(levelIdx)));
-			final int lvlIdx = levelIdx;
-			lvlButton.addActionListener(e -> this.globals.frame.openLevelGame(levels.getLevels().get(lvlIdx).e2));
+		for (Pair<String, Level> lvl : levels.getLevels()) {
+			JButton lvlButton = new JButton(lvl.e1);
+			lvlButton.addActionListener(e -> this.globals.frame.openLevelGame(lvl.e2));
 			add(lvlButton);
 		}
 
