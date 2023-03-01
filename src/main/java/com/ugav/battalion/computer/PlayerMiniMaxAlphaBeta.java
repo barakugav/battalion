@@ -200,10 +200,9 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			for (Unit unit : game.arena().units().filter(u -> us == u.getTeam() && u.isActive()).forEach())
 				unitAvailableMoves(unit, moves);
 
-			final int money = game.getMoney(us);
 			for (Building factory : game.arena().buildings()
 					.filter(b -> us == b.getTeam() && b.isActive() && b.type.canBuildUnits).forEach())
-				factoryAvailableMoves(factory, moves, money);
+				factoryAvailableMoves(factory, moves);
 
 			return Iter.of(moves);
 		}
@@ -221,9 +220,11 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			// TODO transport unit moves
 		}
 
-		private void factoryAvailableMoves(Building factory, List<Move> moves, final int money) {
-			if (factory.getTeam() != game.getTurn() || !factory.isActive())
+		private void factoryAvailableMoves(Building factory, List<Move> moves) {
+			if (factory.getTeam() != game.getTurn() || !factory.isActive()
+					|| game.arena().unit(factory.getPos()) != null)
 				return;
+			final int money = game.getMoney(factory.getTeam());
 
 			for (UnitSale sale : factory.getAvailableUnits().values())
 				if (sale != null && sale.price <= money)

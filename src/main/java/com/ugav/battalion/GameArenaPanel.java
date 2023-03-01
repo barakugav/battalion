@@ -231,7 +231,7 @@ public class GameArenaPanel extends
 	}
 
 	private void setSelection(int newSelection) {
-		logger.dbgln("setSelection ", Cell.toString(newSelection));
+//		logger.dbgln("setSelection ", Cell.toString(newSelection));
 		selection = newSelection;
 		onSelectionChange.notify(new SelectionChange(this, newSelection, getSelectedEntity()));
 	}

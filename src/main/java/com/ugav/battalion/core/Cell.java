@@ -14,7 +14,7 @@ public class Cell {
 	}
 
 	public static int of(int x, int y) {
-		return (x << 16) + y;
+		return ((x & 0xffff) << 16) + (y & 0xffff);
 	}
 
 	public static short x(int cell) {

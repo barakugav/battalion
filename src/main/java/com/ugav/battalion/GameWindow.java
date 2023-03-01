@@ -146,12 +146,12 @@ class GameWindow extends JPanel implements Clearable {
 
 	void suspendActions() {
 		if (actionsSuspended.getAndIncrement() == 0)
-			logger.dbgln("Actions suspended");
+			; // logger.dbgln("Actions suspended");
 	}
 
 	void resumeActions() {
 		if (actionsSuspended.decrementAndGet() == 0)
-			logger.dbgln("Actions resumed");
+			; // logger.dbgln("Actions resumed");
 	}
 
 }
