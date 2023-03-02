@@ -115,7 +115,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			for (Team team : Team.realTeams)
 				if (team != us)
 					maxEnemyEval = Math.max(maxEnemyEval, evals[team.ordinal()]);
-			double eval = Aggression * evals[us.ordinal()] - (1 - Aggression) * maxEnemyEval;
+			double eval = (1 - Aggression) * evals[us.ordinal()] - Aggression * maxEnemyEval;
 
 			return eval;
 		}
