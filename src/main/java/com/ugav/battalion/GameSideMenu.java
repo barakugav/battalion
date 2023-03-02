@@ -32,7 +32,7 @@ import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Utils;
 
-public class GameSideMenu extends JPanel implements Clearable {
+class GameSideMenu extends JPanel implements Clearable {
 
 	private final GameWindow window;
 	private final DescriptionPanel descriptionPanel;

@@ -37,6 +37,7 @@ import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
+import com.ugav.battalion.util.Pair;
 import com.ugav.battalion.util.Utils;
 
 abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.TerrainComp, BuildingCompImpl extends ArenaPanelAbstract.BuildingComp, UnitCompImpl extends ArenaPanelAbstract.UnitComp>

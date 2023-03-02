@@ -6,6 +6,8 @@ import java.util.Objects;
 
 import javax.swing.Timer;
 
+import com.ugav.battalion.util.Pair;
+
 @FunctionalInterface
 interface TickTask {
 

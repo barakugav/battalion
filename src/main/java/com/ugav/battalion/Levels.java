@@ -11,6 +11,7 @@ import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.ugav.battalion.core.Level;
+import com.ugav.battalion.util.Pair;
 
 class Levels {
 

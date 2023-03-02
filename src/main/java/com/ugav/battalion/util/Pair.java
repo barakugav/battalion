@@ -1,4 +1,4 @@
-package com.ugav.battalion;
+package com.ugav.battalion.util;
 
 import java.util.Objects;
 

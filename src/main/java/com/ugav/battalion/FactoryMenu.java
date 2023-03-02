@@ -26,6 +26,7 @@ import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
+import com.ugav.battalion.util.Pair;
 import com.ugav.battalion.util.Utils;
 
 class FactoryMenu extends JPanel implements Clearable {

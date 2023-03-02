@@ -11,6 +11,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 
 import com.ugav.battalion.core.Level;
+import com.ugav.battalion.util.Pair;
 import com.ugav.battalion.util.Utils;
 
 class MainMenuWindow extends JPanel implements Clearable {

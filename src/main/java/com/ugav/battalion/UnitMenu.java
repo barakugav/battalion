@@ -16,6 +16,7 @@ import javax.swing.JPanel;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.util.Event;
+import com.ugav.battalion.util.Pair;
 import com.ugav.battalion.util.Utils;
 
 class UnitMenu extends JPanel implements Clearable {
