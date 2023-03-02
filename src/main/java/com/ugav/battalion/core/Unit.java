@@ -482,26 +482,52 @@ public class Unit extends Entity implements IUnit {
 	}
 
 	public Cell.Bitmap getAttackableMap() {
-		return getAttackableMap(true);
+//		return getAttackableMap(true);
+		return attackableMapInvisiableEnable.get();
 	}
 
 	private final Supplier<Cell.Bitmap> attackableMapInvisiableEnable;
-	private final Supplier<Cell.Bitmap> attackableMapInvisiableDisable;
+//	private final Supplier<Cell.Bitmap> attackableMapInvisiableDisable;
 	{
 		attackableMapInvisiableEnable = game.valuesCache.newVal(() -> getAttackableMap0(true));
-		attackableMapInvisiableDisable = game.valuesCache.newVal(() -> getAttackableMap0(false));
+//		attackableMapInvisiableDisable = game.valuesCache.newVal(() -> getAttackableMap0(false));
 	}
 
-	private Cell.Bitmap getAttackableMap(boolean invisiableEnable) {
-		return invisiableEnable ? attackableMapInvisiableEnable.get() : attackableMapInvisiableDisable.get();
-	}
+//	private Cell.Bitmap getAttackableMap(boolean invisiableEnable) {
+//		return invisiableEnable ? attackableMapInvisiableEnable.get() : attackableMapInvisiableDisable.get();
+//	}
 
 	private Cell.Bitmap getAttackableMap0(boolean invisiableEnable) {
+		return getPotentiallyAttackableMap(invisiableEnable).and(p -> {
+			Unit target = game.unit(p);
+			if (target == null || (invisiableEnable && !game.isUnitVisible(p, getTeam())))
+				return false;
+			return target.getTeam() != getTeam() && canAttack(target);
+		});
+	}
+
+	public Cell.Bitmap getPotentiallyAttackableMap() {
+		return getPotentiallyAttackableMap(true);
+	}
+
+	private final Supplier<Cell.Bitmap> potentiallyAttackableMapInvisiableEnable;
+	private final Supplier<Cell.Bitmap> potentiallyAttackableMapInvisiableDisable;
+	{
+		potentiallyAttackableMapInvisiableEnable = game.valuesCache.newVal(() -> getPotentiallyAttackableMap0(true));
+		potentiallyAttackableMapInvisiableDisable = game.valuesCache.newVal(() -> getPotentiallyAttackableMap0(false));
+	}
+
+	private Cell.Bitmap getPotentiallyAttackableMap(boolean invisiableEnable) {
+		return invisiableEnable ? potentiallyAttackableMapInvisiableEnable.get()
+				: potentiallyAttackableMapInvisiableDisable.get();
+	}
+
+	private Cell.Bitmap getPotentiallyAttackableMap0(boolean invisiableEnable) {
 		switch (type.weapon.type) {
 		case CloseRange:
-			return getAttackableMapCloseRange(invisiableEnable);
+			return getPotentiallyAttackableMapCloseRange(invisiableEnable);
 		case LongRange:
-			return getAttackableMapLongRange(invisiableEnable);
+			return getPotentiallyAttackableMapLongRange();
 		case None:
 			return Cell.Bitmap.empty();
 		default:
@@ -509,35 +535,20 @@ public class Unit extends Entity implements IUnit {
 		}
 	}
 
-	private Cell.Bitmap getAttackableMapCloseRange(boolean invisiableEnable) {
+	private Cell.Bitmap getPotentiallyAttackableMapCloseRange(boolean invisiableEnable) {
 		Cell.Bitmap reachableMap = getReachableMap(invisiableEnable);
 		Cell.Bitmap attackableMap = Cell.Bitmap.ofFalse(game.width(), game.height());
-
-		for (Iter.Int it = reachableMap.cells(); it.hasNext();) {
-			int cell = it.next();
-			for (int n : Cell.neighbors(cell)) {
-				if (!game.isValidCell(n))
-					continue;
-				Unit neighbor = game.unit(n);
-				if (neighbor == null || (invisiableEnable && !game.isUnitVisible(n, getTeam())))
-					continue;
-				attackableMap.set(n, neighbor.getTeam() != getTeam() && canAttack(neighbor));
-			}
-		}
-
+		for (Iter.Int it = reachableMap.cells(); it.hasNext();)
+			for (int n : Cell.neighbors(it.next()))
+				if (game.isValidCell(n))
+					attackableMap.set(n, true);
 		return attackableMap;
 	}
 
-	private Cell.Bitmap getAttackableMapLongRange(boolean invisiableEnable) {
+	private Cell.Bitmap getPotentiallyAttackableMapLongRange() {
 		return Cell.Bitmap.fromPredicate(game.width(), game.height(), p -> {
 			int distance = Cell.distNorm1(getPos(), p);
-			Unit target = game.unit(p);
-			if (target == null || (invisiableEnable && !game.isUnitVisible(p, getTeam())))
-				return false;
-			if (!(type.weapon.minRange <= distance && distance <= type.weapon.maxRange)
-					|| target.getTeam() == getTeam())
-				return false;
-			return canAttack(target);
+			return type.weapon.minRange <= distance && distance <= type.weapon.maxRange;
 		});
 	}
 

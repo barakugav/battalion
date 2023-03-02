@@ -29,7 +29,7 @@ class Images {
 
 	enum Label {
 		/* GUI */
-		Selection, Passable, Attackable, UnitLocked, Delete,
+		Selection, Passable, Attackable, PotentiallyAttackable, UnitLocked, Delete,
 
 		UnitMenuTransportAir, UnitMenuTransportWater, UnitMenuTransportFinish, UnitMenuRepair, UnitMenuCancel,
 
@@ -208,6 +208,7 @@ class Images {
 		images0.put(Label.Selection, loadImg("img/gui/selection.png"));
 		images0.put(Label.Passable, loadImg("img/gui/passable.png"));
 		images0.put(Label.Attackable, loadImg("img/gui/attackabe.png"));
+		images0.put(Label.PotentiallyAttackable, loadImg("img/gui/potentially_attackable.png"));
 		images0.put(Label.UnitLocked, loadImg("img/gui/unit_locked.png"));
 		images0.put(Label.Delete, loadImg("img/gui/delete.png"));
 		images0.put(Label.FactoryMenuImg, loadImg("img/gui/factory_menu_img.png"));

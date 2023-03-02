@@ -149,7 +149,7 @@ public class GameArenaPanel extends
 			openUnitMenu(selectedUnit);
 
 		} else if (!game.isUnitVisible(target, selectedUnit.getTeam())) {
-			if (entityLayer().reachableMap.contains(target))
+			if (selectedUnit.getReachableMap().contains(target))
 				entityLayer().unitMove(selectedUnit, target);
 			clearSelection();
 
@@ -364,9 +364,6 @@ public class GameArenaPanel extends
 
 		private static final long serialVersionUID = 1L;
 
-		private Cell.Bitmap passableMap = Cell.Bitmap.empty();
-		private Cell.Bitmap reachableMap = Cell.Bitmap.empty();
-		private Cell.Bitmap attackableMap = Cell.Bitmap.empty();
 		private final ListInt movePath;
 
 		private final GestureTask gestureTask = new GestureTask();
@@ -406,16 +403,7 @@ public class GameArenaPanel extends
 				runAnimationAndWait(animation);
 			});
 			register.register(onSelectionChange, e -> {
-				passableMap = Cell.Bitmap.empty();
-				reachableMap = Cell.Bitmap.empty();
-				attackableMap = Cell.Bitmap.empty();
 				movePath.clear();
-				if (e.obj instanceof Unit) {
-					Unit unit = (Unit) e.obj;
-					passableMap = unit.getPassableMap();
-					reachableMap = unit.getReachableMap();
-					attackableMap = unit.getAttackableMap();
-				}
 			});
 			register.register(game.onTurnEnd, Utils.swingListener(e -> clearSelection()));
 
@@ -434,11 +422,12 @@ public class GameArenaPanel extends
 		void hoveredUpdated(int hovered) {
 			if (!isUnitSelected() || window.isActionSuspended())
 				return;
+			Unit unit = (Unit) getSelectedEntity();
 
-			if (attackableMap.contains(hovered)) {
+			if (unit.getAttackableMap().contains(hovered)) {
 				updateAttackMovePath(hovered);
 
-			} else if (passableMap.contains(hovered)) {
+			} else if (unit.getPassableMap().contains(hovered)) {
 				updateMovePath(hovered);
 			}
 		}
@@ -509,12 +498,23 @@ public class GameArenaPanel extends
 			if (selection != SelectionNone) {
 				drawRelativeToMap(g, Images.Label.Selection, selection);
 
-				for (Iter.Int it = passableMap.cells(); it.hasNext();)
-					drawRelativeToMap(g, Images.Label.Passable, it.next());
-				for (Iter.Int it = attackableMap.cells(); it.hasNext();)
-					drawRelativeToMap(g, Images.Label.Attackable, it.next());
+				if (getSelectedEntity() instanceof Unit unit) {
+					Cell.Bitmap passableMap = unit.getPassableMap();
+					Cell.Bitmap attackableMap = unit.getAttackableMap();
+					Cell.Bitmap potentiallyAttackableMap = unit.getPotentiallyAttackableMap();
+
+					for (Iter.Int it = game.cells(); it.hasNext();) {
+						int cell = it.next();
+						if (passableMap.contains(cell))
+							drawRelativeToMap(g, Images.Label.Passable, cell);
+						else if (attackableMap.contains(cell))
+							drawRelativeToMap(g, Images.Label.Attackable, cell);
+						else if (potentiallyAttackableMap.contains(cell))
+							drawRelativeToMap(g, Images.Label.PotentiallyAttackable, cell);
+					}
+				}
 			}
-			if (isUnitSelected()) {
+			if (getSelectedEntity() instanceof Unit unit) {
 				if (movePath.isEmpty()) {
 					drawRelativeToMap(g, "MovePathSourceNone", selection);
 				} else {
@@ -554,7 +554,7 @@ public class GameArenaPanel extends
 
 					int dest = movePath.last();
 					int destDir = (calcDir.applyAsInt(movePath.size() - 2) + 2) % 4;
-					String destLabel = "MovePathDest" + (reachableMap.contains(dest) ? "" : "Unstand");
+					String destLabel = "MovePathDest" + (unit.getReachableMap().contains(dest) ? "" : "Unstand");
 					drawRelativeToMap(g, destLabel + destDir, dest);
 				}
 			}
@@ -577,7 +577,7 @@ public class GameArenaPanel extends
 				int moveTarget = movePath.isEmpty() ? attacker.getPos() : movePath.last();
 				int targetPos = target.getPos();
 
-				if (!Cell.areNeighbors(moveTarget, targetPos) || !reachableMap.contains(moveTarget)) {
+				if (!Cell.areNeighbors(moveTarget, targetPos) || !attacker.getReachableMap().contains(moveTarget)) {
 					movePath.clear();
 					if (!Cell.areNeighbors(attacker.getPos(), targetPos)) {
 						movePath.addAll(Objects.requireNonNull(attacker.calcPathForAttack(targetPos)));
