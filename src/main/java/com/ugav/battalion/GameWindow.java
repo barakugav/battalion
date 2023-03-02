@@ -23,7 +23,7 @@ class GameWindow extends JPanel implements Clearable {
 
 	final Globals globals;
 	private final GameSideMenu menu;
-	final GameArenaPanel arenaPanel;
+	final ArenaPanelGame arenaPanel;
 
 	final Game game;
 //	private final Player computer = new Player.Random();
@@ -38,11 +38,11 @@ class GameWindow extends JPanel implements Clearable {
 	GameWindow(Globals globals, Level level) {
 		this.globals = Objects.requireNonNull(globals);
 
-		if (level.width() < GameArenaPanel.DISPLAYED_ARENA_WIDTH
-				|| level.height() < GameArenaPanel.DISPLAYED_ARENA_HEIGHT)
+		if (level.width() < ArenaPanelGame.DISPLAYED_ARENA_WIDTH
+				|| level.height() < ArenaPanelGame.DISPLAYED_ARENA_HEIGHT)
 			throw new IllegalArgumentException("level size is too small");
 		game = Game.fromLevel(level);
-		arenaPanel = new GameArenaPanel(this);
+		arenaPanel = new ArenaPanelGame(this);
 		menu = new GameSideMenu(this);
 
 		setLayout(new GridBagLayout());

@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.swing.SwingUtilities;
 
 import com.ugav.battalion.ArenaPanelAbstract.ArenaComp;
-import com.ugav.battalion.GameArenaPanel.EntityLayer.UnitComp;
+import com.ugav.battalion.ArenaPanelGameAbstract.EntityLayer.UnitComp;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
 import com.ugav.battalion.util.Event;
