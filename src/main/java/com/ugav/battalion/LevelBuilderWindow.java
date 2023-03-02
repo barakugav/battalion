@@ -301,12 +301,9 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		private JPanel createGeneralButtons() {
 			JPanel panel = new JPanel(new GridLayout(0, 1));
 
-			JButton buttonReset = new JButton("Reset");
-			buttonReset.addActionListener(e -> new ResetDialog().setVisible(true));
-			panel.add(buttonReset);
+			panel.add(Utils.newButton("Reset", e -> new ResetDialog().setVisible(true)));
 
-			JButton buttonLoad = new JButton("Load");
-			buttonLoad.addActionListener(e -> {
+			panel.add(Utils.newButton("Load", e -> {
 				JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType(),
 						Cookies.getCookieValue(Cookies.LEVEL_DISK_LAST_DIR));
 				int result = fileChooser.showOpenDialog(globals.frame);
@@ -322,11 +319,9 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 						ex.printStackTrace();
 					}
 				}
-			});
-			panel.add(buttonLoad);
+			}));
 
-			JButton buttonSave = new JButton("Save");
-			buttonSave.addActionListener(e -> {
+			panel.add(Utils.newButton("Save", e -> {
 				JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType(),
 						Cookies.getCookieValue(Cookies.LEVEL_DISK_LAST_DIR));
 				int result = fileChooser.showSaveDialog(globals.frame);
@@ -341,15 +336,12 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 						ex.printStackTrace();
 					}
 				}
-			});
-			panel.add(buttonSave);
+			}));
 
-			JButton buttonMainMenu = new JButton("Main Menu");
-			buttonMainMenu.addActionListener(e -> {
+			panel.add(Utils.newButton("Main Menu", e -> {
 				// TODO ask the user if he sure, does he want to save?
 				globals.frame.openMainMenu();
-			});
-			panel.add(buttonMainMenu);
+			}));
 
 			return panel;
 		}

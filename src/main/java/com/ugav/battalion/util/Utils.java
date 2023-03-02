@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.Image;
+import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
+import javax.swing.JButton;
 import javax.swing.SwingUtilities;
 
 public class Utils {
@@ -310,6 +312,12 @@ public class Utils {
 
 	public static <E extends Event, L extends Event.Listener<? super E>> Event.Listener<E> swingListener(L listener) {
 		return e -> swingRun(() -> listener.onEvent(e));
+	}
+
+	public static JButton newButton(String label, ActionListener action) {
+		JButton button = new JButton(label);
+		button.addActionListener(action);
+		return button;
 	}
 
 }

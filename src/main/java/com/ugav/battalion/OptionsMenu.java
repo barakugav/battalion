@@ -3,10 +3,11 @@ package com.ugav.battalion;
 import java.awt.GridLayout;
 import java.util.Objects;
 
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+
+import com.ugav.battalion.util.Utils;
 
 class OptionsMenu extends JPanel implements Clearable {
 
@@ -20,9 +21,7 @@ class OptionsMenu extends JPanel implements Clearable {
 		setLayout(new GridLayout(-1, 1));
 		createDebugButtons();
 
-		JButton mainMenuButton = new JButton("Main Menu");
-		mainMenuButton.addActionListener(e -> globals.frame.openMainMenu());
-		add(mainMenuButton);
+		add(Utils.newButton("Main Menu", e -> globals.frame.openMainMenu()));
 	}
 
 	private void createDebugButtons() {

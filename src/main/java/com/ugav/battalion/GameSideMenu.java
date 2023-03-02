@@ -16,7 +16,6 @@ import java.util.Objects;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
@@ -171,15 +170,8 @@ public class GameSideMenu extends JPanel implements Clearable {
 
 	private JPanel createButtonsPannel() {
 		JPanel panel = new JPanel(new GridLayout(0, 1));
-
-		JButton buttonEndTurn = new JButton("End Turn");
-		buttonEndTurn.addActionListener(onlyIfActionsEnabled(e -> window.endTurn()));
-		JButton buttonMainMenu = new JButton("Main Menu");
-		buttonMainMenu.addActionListener(onlyIfActionsEnabled(e -> window.globals.frame.openMainMenu()));
-
-		panel.add(buttonEndTurn);
-		panel.add(buttonMainMenu);
-
+		panel.add(Utils.newButton("End Turn", onlyIfActionsEnabled(e -> window.endTurn())));
+		panel.add(Utils.newButton("Main Menu", onlyIfActionsEnabled(e -> window.globals.frame.openMainMenu())));
 		return panel;
 	}
 

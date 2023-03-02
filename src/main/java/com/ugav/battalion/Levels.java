@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -41,7 +42,10 @@ class Levels {
 		campaign.add("Level 08");
 		campaign.add("Level 09");
 		campaign.add("Level 10");
-		campaign.add("Bonus Level");
+	}
+
+	Level getLevel(String name) {
+		return Objects.requireNonNull(levels.get(name));
 	}
 
 	List<Pair<String, Level>> getLevels() {
