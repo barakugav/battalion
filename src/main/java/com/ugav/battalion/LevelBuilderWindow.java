@@ -1,8 +1,11 @@
 package com.ugav.battalion;
 
+import java.awt.CardLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
+import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
@@ -21,6 +24,7 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
 import com.ugav.battalion.ArenaPanelAbstract.BuildingComp;
@@ -75,6 +79,9 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		private static final long serialVersionUID = 1L;
 
+		private final CardLayout entitiesTabsLayout = new CardLayout();
+		private final JPanel entitiesTabsPanel = new JPanel(entitiesTabsLayout);
+
 		private final EntityTab terrainTab;
 		private final Map<Team, EntityTab> buildlingsTabs;
 		private final Map<Team, EntityTab> unitsTabs;
@@ -87,7 +94,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		Menu() {
 			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
-			terrainTab = new EntityTab();
+			terrainTab = new EntityTab("terrains");
 			for (Terrain.Category terrain : Terrain.Category.values()) {
 				Terrain terrainIcon = terrain.getTerrains().get(0);
 				terrainTab.addEntityButton(new EntityButton(terrain, terrainIcon));
@@ -95,7 +102,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			buildlingsTabs = new HashMap<>(Team.values().length);
 			for (Team team : Team.values()) {
-				EntityTab tab = new EntityTab();
+				EntityTab tab = new EntityTab("Buildings" + team);
 				for (Building.Type type : Building.Type.values())
 					tab.addEntityButton(BuildingDesc.of(type, team));
 				tab.addEntityButton(new EntityButton(removeBuildingObj, Images.Label.Delete));
@@ -104,7 +111,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			unitsTabs = new HashMap<>(Team.realTeams.size());
 			for (Team team : Team.realTeams) {
-				EntityTab tab = new EntityTab();
+				EntityTab tab = new EntityTab("Units" + team);
 				for (Unit.Type type : Unit.Type.values()) {
 					if (!type.transportUnits) {
 						tab.addEntityButton(UnitDesc.of(type, team));
@@ -132,14 +139,14 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		}
 
 		private JPanel createEntitiesTabsPanel() {
-			JPanel panel = new JPanel();
-			Dimension panelSize = panel.getPreferredSize();
-			for (JPanel tab : getEntitiesTabs()) {
-				panel.add(tab);
-				panelSize = Utils.max(panelSize, tab.getPreferredSize());
+			int width = 100;
+			for (EntityTab tab : getEntitiesTabs()) {
+				entitiesTabsPanel.add(tab, tab.name);
+				width = Math.max(width, tab.getPreferredSize().width + 2);
+				tab.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 			}
-			panel.setPreferredSize(panelSize);
-			return panel;
+			entitiesTabsPanel.setPreferredSize(new Dimension(width, 400));
+			return entitiesTabsPanel;
 		}
 
 		private JButton createEntityTabButton(Object drawable) {
@@ -158,6 +165,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			if (selectedTab != null)
 				selectedTab.setSelect(false);
 			(selectedTab = tab).setSelect(true);
+			entitiesTabsLayout.show(entitiesTabsPanel, selectedTab.name);
 			repaint();
 		};
 
@@ -189,7 +197,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			final Object entity;
 			private static final int IconWidth = 56;
-			private static final int IconHeight = 75;
+			private static final int IconHeight = 56;
 
 			EntityButton(Object entity) {
 				this(entity, entity);
@@ -212,53 +220,61 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			void setIcons(Object iconTag) {
 				BufferedImage img = Images.getImg(iconTag);
 				BufferedImage selectImg = Images.getImg(Images.Label.Selection);
-				for (BufferedImage i : List.of(img, selectImg))
-					if (i.getWidth() != IconWidth || i.getHeight() > IconHeight)
-						throw new IllegalArgumentException("icon too big for entity: " + iconTag);
 				Graphics g;
 
 				/* Regular icon */
 				BufferedImage icon = new BufferedImage(IconWidth, IconHeight, BufferedImage.TYPE_INT_ARGB);
 				g = icon.getGraphics();
-				g.drawImage(img, 0, IconHeight - img.getHeight(), null);
+				g.drawImage(img, 0, (IconHeight - img.getHeight()) / 2, null);
 				setIcon(new ImageIcon(icon));
 
 				/* Selected icon */
 				BufferedImage selectedIcon = new BufferedImage(IconWidth, IconHeight, BufferedImage.TYPE_INT_ARGB);
 				g = selectedIcon.getGraphics();
-				g.drawImage(img, 0, IconHeight - img.getHeight(), null);
-				g.drawImage(selectImg, 0, IconHeight - selectImg.getHeight(), IconWidth, IconWidth, null);
+				g.drawImage(img, 0, (IconHeight - img.getHeight()) / 2, null);
+				g.drawImage(selectImg, 0, 0, null);
 				setSelectedIcon(new ImageIcon(selectedIcon));
 			}
 
 		}
 
-		private class EntityTab extends JPanel {
+		private class EntityTab extends JScrollPane {
 
 			private static final long serialVersionUID = 1L;
 
-			final List<EntityButton> buttons;
+			private final String name;
+			private final JPanel panel;
+			private final List<EntityButton> buttons;
 
-			EntityTab() {
-				super(new GridLayout(0, 2));
+			EntityTab(String name) {
+				this.name = Objects.requireNonNull(name);
+				panel = new JPanel(new GridBagLayout());
 				buttons = new ArrayList<>();
-				setVisible(false);
+
+				setViewportView(panel);
+				setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+
+				/* dummy panel to fill extra space */
+				JPanel filler = new JPanel();
+				filler.setPreferredSize(new Dimension(0, 0));
+				panel.add(filler, Utils.gbConstraints(0, 100, 2, 1, GridBagConstraints.BOTH, 1, 1));
 			}
 
 			void addEntityButton(Object entity) {
 				addEntityButton(new EntityButton(entity));
-
 			}
 
 			void addEntityButton(EntityButton button) {
-				add(button);
+				int x = buttons.size() % 2, y = buttons.size() / 2;
+				GridBagConstraints c = Utils.gbConstraints(x, y, 1, 1);
+				c.anchor = GridBagConstraints.NORTH;
+				panel.add(button, c);
 				buttons.add(button);
 			}
 
 			void setSelect(boolean select) {
 				if (select)
 					selectButton(buttons.isEmpty() ? null : buttons.get(0));
-				setVisible(select);
 			}
 
 		}
@@ -441,11 +457,13 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				builder.setTile(cell, terrain, building, unit);
 
 			} else if (selectedObj instanceof BuildingDesc building) {
+				building = BuildingDesc.copyOf(building);
 				if (building.type.canBuildOn(tile.terrain))
 					builder.setTile(cell, tile.terrain, building, tile.unit);
 				// TODO else user message
 
 			} else if (selectedObj instanceof UnitDesc unit) {
+				unit = UnitDesc.copyOf(unit);
 				UnitDesc oldUnit;
 				if (tile.hasUnit() && (oldUnit = tile.getUnit()).team == unit.team && oldUnit.type.transportUnits
 						&& !unit.type.transportUnits && unit.type.category == Category.Land)
