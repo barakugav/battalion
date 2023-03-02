@@ -3,7 +3,6 @@ package com.ugav.battalion;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -62,9 +61,20 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		menu = new Menu();
 		arenaPanel = new ArenaPanel(globals);
 
-		setLayout(new FlowLayout());
-		add(menu);
-		add(arenaPanel);
+		setLayout(new GridBagLayout());
+		GridBagConstraints c = new GridBagConstraints();
+		c.gridy = 0;
+
+		c.gridx = 0;
+		c.gridwidth = 1;
+		c.weightx = 1;
+		c.fill = GridBagConstraints.BOTH;
+		add(menu, c);
+		c.gridx = 5;
+		c.gridwidth = 1;
+		c.weightx = 0;
+		c.fill = GridBagConstraints.NONE;
+		add(arenaPanel, c);
 
 		arenaPanel.reset();
 	}
@@ -268,6 +278,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				int x = buttons.size() % 2, y = buttons.size() / 2;
 				GridBagConstraints c = Utils.gbConstraints(x, y, 1, 1);
 				c.anchor = GridBagConstraints.NORTH;
+				c.weightx = 1;
 				panel.add(button, c);
 				buttons.add(button);
 			}

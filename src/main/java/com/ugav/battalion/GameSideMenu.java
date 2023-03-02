@@ -51,6 +51,7 @@ public class GameSideMenu extends JPanel implements Clearable {
 		GridBagConstraints c = new GridBagConstraints();
 		c.gridx = 0;
 		c.gridwidth = 1;
+		c.weightx = 1;
 		c.fill = GridBagConstraints.BOTH;
 
 		c.gridy = 0;

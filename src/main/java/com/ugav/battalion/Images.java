@@ -231,6 +231,7 @@ class Images {
 		Map<Object, BufferedImage> miniMapImages0 = new HashMap<>();
 		miniMapImages0.put(Terrain.Category.FlatLand, loadImg("img/gui/minimap_land.png"));
 		miniMapImages0.put(Terrain.Category.Forest, loadImg("img/gui/minimap_land.png"));
+		miniMapImages0.put(Terrain.Category.Hiils, loadImg("img/gui/minimap_land.png"));
 		miniMapImages0.put(Terrain.Category.Mountain, loadImg("img/gui/minimap_extreme_land.png"));
 		miniMapImages0.put(Terrain.Category.Water, loadImg("img/gui/minimap_water.png"));
 		miniMapImages0.put(Terrain.Category.Shore, loadImg("img/gui/minimap_shore.png"));

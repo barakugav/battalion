@@ -50,11 +50,13 @@ class GameWindow extends JPanel implements Clearable {
 		c.gridy = 0;
 
 		c.gridx = 0;
-		c.weightx = c.gridwidth = 5;
+		c.gridwidth = 1;
+		c.weightx = 1;
 		c.fill = GridBagConstraints.BOTH;
 		add(menu, c);
 		c.gridx = 5;
-		c.weightx = c.gridwidth = 20;
+		c.gridwidth = 1;
+		c.weightx = 0;
 		c.fill = GridBagConstraints.NONE;
 		add(arenaPanel, c);
 

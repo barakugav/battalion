@@ -1,5 +1,8 @@
 package com.ugav.battalion;
 
+import java.awt.Dimension;
+import java.awt.GridLayout;
+
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 
@@ -11,20 +14,21 @@ class GameFrame extends JFrame {
 	private final Globals globals;
 
 	private static final String TITLE = "Battalion";
-	private static final int FRAME_WIDTH = 2500;
-	private static final int FRAME_HEIGHT = 2500;
+	private static final int FRAME_WIDTH = 750;
+	private static final int FRAME_HEIGHT = 600;
 
 	private static final long serialVersionUID = 1L;
 
 	GameFrame() {
 		super(TITLE);
+		setLayout(new GridLayout(1, 1));
 
 		this.globals = new Globals(this);
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationByPlatform(true);
 		setResizable(false);
-		setSize(FRAME_WIDTH, FRAME_HEIGHT);
+		setPreferredSize(new Dimension(FRAME_WIDTH, FRAME_HEIGHT));
 
 		/* By default display main menu */
 		openMainMenu();
@@ -53,8 +57,7 @@ class GameFrame extends JFrame {
 		}
 		assert window instanceof Clearable;
 		add(activeWindow = window);
-		pack();
-		invalidate();
+		revalidate();
 		repaint();
 	}
 
