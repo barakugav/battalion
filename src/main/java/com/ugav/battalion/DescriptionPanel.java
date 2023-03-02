@@ -5,8 +5,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.util.IdentityHashMap;
-import java.util.Map;
 import java.util.Objects;
 
 import javax.swing.BorderFactory;
@@ -27,26 +25,23 @@ class DescriptionPanel extends JPanel implements Clearable {
 
 	private Object shownObj;
 	private final CardLayout layout;
-	private final JPanel emptyPanel;
 	private final TerrainPanel terrainPanel;
 	private final BuildingPanel buildingPanel;
 	private final UnitPanel unitPanel;
-	private final Map<JPanel, String> panelsNames = new IdentityHashMap<>();
 	private final Event.Register register = new Event.Register();
 
+	private static final String EmptyPanel = "empty";
 	private static final long serialVersionUID = 1L;
 
 	DescriptionPanel(GameWindow window) {
 		setLayout(layout = new CardLayout());
 		setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
 
-		panelsNames.put(emptyPanel = new JPanel(), "empty");
-		panelsNames.put(terrainPanel = new TerrainPanel(), "terrain");
-		panelsNames.put(buildingPanel = new BuildingPanel(), "building");
-		panelsNames.put(unitPanel = new UnitPanel(), "unit");
-		for (JPanel panel : panelsNames.keySet())
-			add(panel, panelsNames.get(panel));
-		showPanel(emptyPanel);
+		add(new JPanel(), EmptyPanel);
+		add(terrainPanel = new TerrainPanel(), terrainPanel.name);
+		add(buildingPanel = new BuildingPanel(), buildingPanel.name);
+		add(unitPanel = new UnitPanel(), unitPanel.name);
+		showPanel(null);
 
 		register.register(window.arenaPanel.onEntityClick, e -> showObject(e.obj));
 		register.register(window.game.onEntityChange, e -> {
@@ -77,13 +72,13 @@ class DescriptionPanel extends JPanel implements Clearable {
 			shownObj = unit;
 
 		} else {
-			showPanel(emptyPanel);
+			showPanel(null);
 			shownObj = null;
 		}
 	}
 
-	private void showPanel(JPanel panel) {
-		layout.show(this, Objects.requireNonNull(panelsNames.get(panel)));
+	private void showPanel(AbstractDescriptionSubPanel panel) {
+		layout.show(this, panel != null ? panel.name : EmptyPanel);
 	}
 
 	@Override
@@ -91,7 +86,19 @@ class DescriptionPanel extends JPanel implements Clearable {
 		register.unregisterAll();
 	}
 
-	private static class TerrainPanel extends JPanel {
+	private static class AbstractDescriptionSubPanel extends JPanel {
+
+		final String name;
+
+		private static final long serialVersionUID = 1L;
+
+		AbstractDescriptionSubPanel(String name) {
+			this.name = Objects.requireNonNull(name);
+		}
+
+	}
+
+	private static class TerrainPanel extends AbstractDescriptionSubPanel {
 
 		private final JLabel title;
 		private final JTextArea text;
@@ -100,7 +107,8 @@ class DescriptionPanel extends JPanel implements Clearable {
 		private static final long serialVersionUID = 1L;
 
 		TerrainPanel() {
-			super(new GridBagLayout());
+			super("TerrainDescription");
+			setLayout(new GridBagLayout());
 
 			title = new JLabel("", SwingConstants.CENTER);
 			Font titleFont = title.getFont();
@@ -156,7 +164,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 
 	}
 
-	private static class BuildingPanel extends JPanel {
+	private static class BuildingPanel extends AbstractDescriptionSubPanel {
 
 		private final JLabel title;
 		private final JTextArea text;
@@ -165,7 +173,8 @@ class DescriptionPanel extends JPanel implements Clearable {
 		private static final long serialVersionUID = 1L;
 
 		BuildingPanel() {
-			super(new GridBagLayout());
+			super("BuildingDescription");
+			setLayout(new GridBagLayout());
 
 			title = new JLabel("", SwingConstants.CENTER);
 			Font titleFont = title.getFont();
@@ -220,7 +229,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 
 	}
 
-	static class UnitPanel extends JPanel {
+	static class UnitPanel extends AbstractDescriptionSubPanel {
 
 		private final JLabel title;
 		private final JLabel image;
@@ -232,7 +241,8 @@ class DescriptionPanel extends JPanel implements Clearable {
 		private static final long serialVersionUID = 1L;
 
 		UnitPanel() {
-			super(new GridBagLayout());
+			super("UnitDescription");
+			setLayout(new GridBagLayout());
 
 			title = new JLabel("", SwingConstants.CENTER);
 			Font titleFont = title.getFont();
