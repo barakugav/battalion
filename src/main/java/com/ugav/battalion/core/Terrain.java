@@ -1,6 +1,8 @@
 package com.ugav.battalion.core;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
@@ -10,9 +12,9 @@ public enum Terrain {
 	FlatLand1(Category.FlatLand), FlatLand2(Category.FlatLand), FlatLand3(Category.FlatLand),
 	FlatLand4(Category.FlatLand), FlatLand5(Category.FlatLand),
 
-	Trees(Category.RoughLand), Hills(Category.RoughLand),
+	Trees(Category.Forest), Hills(Category.Hiils),
 
-	Mountain(Category.ExtremeLand), MountainBig(Category.ExtremeLand),
+	Mountain(Category.Mountain), MountainBig(Category.Mountain),
 
 	Road(Category.Road),
 
@@ -29,7 +31,15 @@ public enum Terrain {
 	}
 
 	public enum Category {
-		FlatLand, RoughLand, ExtremeLand, Road, BridgeLow, BridgeHigh, Shore, Water;
+		FlatLand, Forest, Hiils, Mountain, Road, BridgeLow, BridgeHigh, Shore, Water;
+
+		public List<Terrain> getTerrains() {
+			List<Terrain> terrains = new ArrayList<>();
+			for (Terrain terrain : Terrain.values())
+				if (terrain.category == this)
+					terrains.add(terrain);
+			return terrains;
+		}
 	}
 
 	public static Set<Direction> getBridgeConnection(int cell, IntFunction<Terrain> terrain, int width, int high) {

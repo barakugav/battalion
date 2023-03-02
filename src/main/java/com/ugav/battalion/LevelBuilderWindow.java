@@ -88,8 +88,10 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
 			terrainTab = new EntityTab();
-			for (Terrain terrain : Terrain.values())
-				terrainTab.addEntityButton(terrain);
+			for (Terrain.Category terrain : Terrain.Category.values()) {
+				Terrain terrainIcon = terrain.getTerrains().get(0);
+				terrainTab.addEntityButton(new EntityButton(terrain, terrainIcon));
+			}
 
 			buildlingsTabs = new HashMap<>(Team.values().length);
 			for (Team team : Team.values()) {
@@ -416,56 +418,53 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		private void cellClicked(int cell) {
 			Object selectedObj = menu.selectedButton.entity;
 
-			if (selectedObj != null) {
-				TileDesc tile = builder.at(cell);
-				if (selectedObj instanceof Terrain) {
-					Terrain terrain = (Terrain) selectedObj;
+			TileDesc tile = builder.at(cell);
+			if (selectedObj instanceof Terrain.Category terrainc) {
+				List<Terrain> terrains = terrainc.getTerrains();
+				int oldTerrainIdx = terrains.indexOf(tile.terrain); /* might be -1 */
+				Terrain terrain = terrains.get((oldTerrainIdx + 1) % terrains.size());
 
-					BuildingDesc building = null;
-					if (tile.hasBuilding()) {
-						BuildingDesc oldBuilding = tile.building;
-						if (oldBuilding.type.canBuildOn(terrain))
-							building = oldBuilding;
-					}
-
-					UnitDesc unit = null;
-					if (tile.hasUnit()) {
-						UnitDesc oldUnit = tile.unit;
-						if (oldUnit.type.canStandOn(terrain))
-							unit = oldUnit;
-					}
-
-					builder.setTile(cell, terrain, building, unit);
-
-				} else if (selectedObj instanceof BuildingDesc) {
-					BuildingDesc building = BuildingDesc.copyOf((BuildingDesc) selectedObj);
-					if (building.type.canBuildOn(tile.terrain))
-						builder.setTile(cell, tile.terrain, building, tile.unit);
-					// TODO else user message
-
-				} else if (selectedObj instanceof UnitDesc) {
-					UnitDesc unit = UnitDesc.copyOf((UnitDesc) selectedObj);
-
-					UnitDesc oldUnit;
-					if (tile.hasUnit() && (oldUnit = tile.getUnit()).team == unit.team && oldUnit.type.transportUnits
-							&& !unit.type.transportUnits && unit.type.category == Category.Land)
-						builder.setTile(cell, tile.terrain, tile.building, UnitDesc.transporter(oldUnit.type, unit));
-
-					else if (unit.type.canStandOn(tile.terrain))
-						builder.setTile(cell, tile.terrain, tile.building, unit);
-					// TODO else user message
-
-				} else if (selectedObj == Menu.removeBuildingObj) {
-					if (tile.hasBuilding())
-						builder.setTile(cell, tile.terrain, null, tile.unit);
-
-				} else if (selectedObj == Menu.removeUnitObj) {
-					if (tile.hasUnit())
-						builder.setTile(cell, tile.terrain, tile.building, null);
-
-				} else {
-					throw new IllegalArgumentException("Unknown menu selected object: " + selectedObj);
+				BuildingDesc building = null;
+				if (tile.hasBuilding()) {
+					BuildingDesc oldBuilding = tile.building;
+					if (oldBuilding.type.canBuildOn(terrain))
+						building = oldBuilding;
 				}
+
+				UnitDesc unit = null;
+				if (tile.hasUnit()) {
+					UnitDesc oldUnit = tile.unit;
+					if (oldUnit.type.canStandOn(terrain))
+						unit = oldUnit;
+				}
+
+				builder.setTile(cell, terrain, building, unit);
+
+			} else if (selectedObj instanceof BuildingDesc building) {
+				if (building.type.canBuildOn(tile.terrain))
+					builder.setTile(cell, tile.terrain, building, tile.unit);
+				// TODO else user message
+
+			} else if (selectedObj instanceof UnitDesc unit) {
+				UnitDesc oldUnit;
+				if (tile.hasUnit() && (oldUnit = tile.getUnit()).team == unit.team && oldUnit.type.transportUnits
+						&& !unit.type.transportUnits && unit.type.category == Category.Land)
+					builder.setTile(cell, tile.terrain, tile.building, UnitDesc.transporter(oldUnit.type, unit));
+
+				else if (unit.type.canStandOn(tile.terrain))
+					builder.setTile(cell, tile.terrain, tile.building, unit);
+				// TODO else user message
+
+			} else if (selectedObj == Menu.removeBuildingObj) {
+				if (tile.hasBuilding())
+					builder.setTile(cell, tile.terrain, null, tile.unit);
+
+			} else if (selectedObj == Menu.removeUnitObj) {
+				if (tile.hasUnit())
+					builder.setTile(cell, tile.terrain, tile.building, null);
+
+			} else {
+				throw new IllegalArgumentException("Unknown menu selected object: " + selectedObj);
 			}
 		}
 

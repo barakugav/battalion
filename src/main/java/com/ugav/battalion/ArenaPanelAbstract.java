@@ -440,7 +440,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				for (Direction dir : EnumSet.of(Direction.XPos, Direction.YNeg, Direction.XNeg, Direction.YPos)) {
 					int p = Cell.add(pos, dir);
 					Set<Terrain.Category> endCategoties = EnumSet.of(Terrain.Category.Road, Terrain.Category.FlatLand,
-							Terrain.Category.RoughLand, Terrain.Category.ExtremeLand, Terrain.Category.Shore);
+							Terrain.Category.Forest, Terrain.Category.Hiils, Terrain.Category.Mountain,
+							Terrain.Category.Shore);
 					if (inArena(p) && endCategoties.contains(arena.getTerrain(p).category))
 						ends.add(dir);
 				}

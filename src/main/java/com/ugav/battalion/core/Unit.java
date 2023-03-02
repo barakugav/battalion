@@ -185,15 +185,16 @@ public class Unit extends Entity implements IUnit {
 	}
 
 	private enum Tech {
-		StandOnLandFlat(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.Road,
-				Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh),
+		StandOnLandFlat(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.Forest,
+				Terrain.Category.Road, Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh),
 
-		StandOnLandRough(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.RoughLand,
-				Terrain.Category.Shore, Terrain.Category.Road, Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh),
-
-		StandOnLandExtreme(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.RoughLand,
-				Terrain.Category.Shore, Terrain.Category.ExtremeLand, Terrain.Category.Road, Terrain.Category.BridgeLow,
+		StandOnLandRough(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.Forest,
+				Terrain.Category.Hiils, Terrain.Category.Shore, Terrain.Category.Road, Terrain.Category.BridgeLow,
 				Terrain.Category.BridgeHigh),
+
+		StandOnLandExtreme(TypeBuilder::canStand, Terrain.Category.FlatLand, Terrain.Category.Forest,
+				Terrain.Category.Hiils, Terrain.Category.Mountain, Terrain.Category.Shore, Terrain.Category.Road,
+				Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh),
 
 		StandOnWater(TypeBuilder::canStand, Terrain.Category.Water, Terrain.Category.BridgeHigh,
 				Terrain.Category.Shore),
@@ -259,7 +260,7 @@ public class Unit extends Entity implements IUnit {
 
 		public final Category category;
 		public final Weapon weapon;
-		private final Set<Terrain.Category> canStand;
+		private final Set<Terrain.Category> canStandOn;
 		private final Set<Category> canAttack;
 		public final int health;
 		public final int damage;
@@ -273,7 +274,7 @@ public class Unit extends Entity implements IUnit {
 
 			this.category = Objects.requireNonNull(category);
 			this.weapon = Objects.requireNonNull(weapon);
-			this.canStand = Collections.unmodifiableSet(EnumSet.copyOf(builder.canStand));
+			this.canStandOn = Collections.unmodifiableSet(EnumSet.copyOf(builder.canStand));
 			this.canAttack = Collections.unmodifiableSet(EnumSet.copyOf(builder.canAttack));
 			this.health = health;
 			this.damage = damage;
@@ -284,7 +285,7 @@ public class Unit extends Entity implements IUnit {
 		}
 
 		public boolean canStandOn(Terrain terrain) {
-			return canStand.contains(terrain.category);
+			return canStandOn.contains(terrain.category);
 		}
 	}
 
@@ -308,8 +309,10 @@ public class Unit extends Entity implements IUnit {
 	}
 
 	private Cell.Bitmap getReachableMap0(boolean invisiableEnable) {
-		return getPassableMap(invisiableEnable).and(p -> p == getPos() || game.unit(p) == null
-				|| (invisiableEnable && !game.isUnitVisible(p, getTeam())));
+		int unitPos = getPos();
+		Team us = getTeam();
+		return getPassableMap(invisiableEnable)
+				.and(p -> p == unitPos || game.unit(p) == null || (invisiableEnable && !game.isUnitVisible(p, us)));
 	}
 
 	public Cell.Bitmap getPassableMap() {
