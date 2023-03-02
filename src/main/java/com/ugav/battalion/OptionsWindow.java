@@ -9,13 +9,13 @@ import javax.swing.JPanel;
 
 import com.ugav.battalion.util.Utils;
 
-class OptionsMenu extends JPanel implements Clearable {
+class OptionsWindow extends JPanel implements Clearable {
 
 	private static final long serialVersionUID = 1L;
 
 	private final Globals globals;
 
-	OptionsMenu(Globals globals) {
+	OptionsWindow(Globals globals) {
 		this.globals = Objects.requireNonNull(globals);
 
 		setLayout(new GridLayout(-1, 1));

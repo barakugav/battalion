@@ -8,6 +8,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -159,13 +160,14 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			return entitiesTabsPanel;
 		}
 
-		private JButton createEntityTabButton(Object drawable) {
+		private JButton createEntityTabButton(Object drawable, ActionListener listener) {
 			final int ImgButtonSize = 20;
 			Image img = Images.getImg(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize, Image.SCALE_SMOOTH);
 			JButton button = new JButton(new ImageIcon(img));
 //			button.setBorder(BorderFactory.createEmptyBorder());
 			button.setContentAreaFilled(false);
 			button.setPreferredSize(new Dimension(ImgButtonSize, ImgButtonSize));
+			button.addActionListener(listener);
 			return button;
 		}
 
@@ -182,20 +184,16 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		private JPanel createEntitiesTabsButtons() {
 			JPanel panel = new JPanel(new GridLayout(1, 0));
 
-			JButton terrainButton = createEntityTabButton(Terrain.Mountain);
-			terrainButton.addActionListener(e -> selectEntitiesTab(terrainTab));
-			panel.add(terrainButton);
+			panel.add(createEntityTabButton(Terrain.Mountain, e -> selectEntitiesTab(terrainTab)));
 
 			for (Team team : Team.values()) {
-				JButton buildingsButton = createEntityTabButton(BuildingDesc.of(Building.Type.Factory, team));
-				buildingsButton.addActionListener(e -> selectEntitiesTab(buildlingsTabs.get(team)));
-				panel.add(buildingsButton);
+				BuildingDesc desc = BuildingDesc.of(Building.Type.Factory, team);
+				panel.add(createEntityTabButton(desc, e -> selectEntitiesTab(buildlingsTabs.get(team))));
 			}
 
 			for (Team team : Team.realTeams) {
-				JButton unitsButton = createEntityTabButton(UnitDesc.of(Unit.Type.Soldier, team));
-				unitsButton.addActionListener(e -> selectEntitiesTab(unitsTabs.get(team)));
-				panel.add(unitsButton);
+				UnitDesc desc = UnitDesc.of(Unit.Type.Soldier, team);
+				panel.add(createEntityTabButton(desc, e -> selectEntitiesTab(unitsTabs.get(team))));
 			}
 
 			return panel;

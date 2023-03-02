@@ -39,6 +39,7 @@ public class Game {
 	public final Event.Notifier<UnitAttack> beforeUnitAttack = new Event.Notifier<>();
 	public final Event.Notifier<ConquerEvent> onConquer = new Event.Notifier<>();
 	public final Event.Notifier<MoneyChange> onMoneyChange = new Event.Notifier<>();
+	public final Event.Notifier<Event> beforeTurnEnd = new Event.Notifier<>();
 	public final Event.Notifier<TurnEnd> onTurnEnd = new Event.Notifier<>();
 	public final Event.Notifier<GameEnd> onGameEnd = new Event.Notifier<>();
 
@@ -209,6 +210,8 @@ public class Game {
 	}
 
 	public void turnEnd() {
+		beforeTurnEnd.notify(new Event(this));
+
 		Set<Team> moneyChanged = new HashSet<>();
 		for (Building building : buildings().forEach()) {
 			int gain = building.getMoneyGain();

@@ -35,7 +35,7 @@ class GameFrame extends JFrame {
 	}
 
 	void openMainMenu() {
-		displayWindow(new MainMenuPanel(globals));
+		displayWindow(new MainMenuWindow(globals));
 	}
 
 	void openLevelGame(Level level) {
@@ -47,7 +47,7 @@ class GameFrame extends JFrame {
 	}
 
 	void openOptionsMenu() {
-		displayWindow(new OptionsMenu(globals));
+		displayWindow(new OptionsWindow(globals));
 	}
 
 	private void displayWindow(JComponent window) {

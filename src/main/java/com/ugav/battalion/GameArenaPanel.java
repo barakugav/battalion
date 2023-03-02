@@ -15,7 +15,6 @@ import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
 import com.ugav.battalion.core.Entity;
 import com.ugav.battalion.core.Game;
-import com.ugav.battalion.core.Game.TurnEnd;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
@@ -24,6 +23,7 @@ import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.ListInt;
 import com.ugav.battalion.util.Logger;
 import com.ugav.battalion.util.Utils;
+import com.ugav.battalion.util.Utils.Holder;
 
 public class GameArenaPanel extends
 		ArenaPanelAbstract<ArenaPanelAbstract.TerrainComp, GameArenaPanel.EntityLayer.BuildingComp, GameArenaPanel.EntityLayer.UnitComp>
@@ -57,18 +57,16 @@ public class GameArenaPanel extends
 			animateUnitMove(e.unit, animationPath);
 		});
 		register.register(game.beforeUnitAttack, e -> animateUnitAttack(e.attacker, e.target.getPos()));
-		register.register(game.onTurnEnd, Utils.swingListener(new Event.Listener<>() {
-
-			int playerLastPos;
-
-			@Override
-			public void onEvent(TurnEnd e) {
-				final Team player = Team.Red;
-				if (e.prevTurn == player)
-					playerLastPos = Cell.of((int) mapPos.x, (int) mapPos.y);
-				if (e.nextTurn == player)
-					mapViewMove(playerLastPos, null);
-			}
+		Holder<Integer> playerLastPos = new Holder<>();
+		register.register(game.beforeTurnEnd, Utils.swingListener(e -> {
+			final Team player = Team.Red;
+			if (game.getTurn() == player)
+				playerLastPos.val = Integer.valueOf(Cell.of((int) mapPos.x, (int) mapPos.y));
+		}));
+		register.register(game.onTurnEnd, Utils.swingListener(e -> {
+			final Team player = Team.Red;
+			if (e.nextTurn == player)
+				mapViewMove(playerLastPos.val.intValue(), null);
 		}));
 
 		register.register(animationTask.onAnimationBegin, e -> window.suspendActions());
