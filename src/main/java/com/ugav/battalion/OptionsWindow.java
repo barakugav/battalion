@@ -2,6 +2,7 @@ package com.ugav.battalion;
 
 import java.awt.GridLayout;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -27,13 +28,18 @@ class OptionsWindow extends JPanel implements Clearable {
 	private void createDebugButtons() {
 		add(new JLabel("Debug Options:"));
 
-		JCheckBox optionShowGrid = new JCheckBox("showGrid", globals.debug.showGrid);
-		optionShowGrid.addActionListener(e -> globals.debug.showGrid = optionShowGrid.isSelected());
-		add(optionShowGrid);
+		add(createOption("showGrid", globals.debug.showGrid,
+				selected -> globals.debug.showGrid = selected.booleanValue()));
+		add(createOption("showUnitID", globals.debug.showUnitID,
+				selected -> globals.debug.showUnitID = selected.booleanValue()));
+		add(createOption("playAllTeams", globals.debug.playAllTeams,
+				selected -> globals.debug.playAllTeams = selected.booleanValue()));
+	}
 
-		JCheckBox optionShowUnitID = new JCheckBox("showUnitID", globals.debug.showUnitID);
-		optionShowUnitID.addActionListener(e -> globals.debug.showUnitID = optionShowUnitID.isSelected());
-		add(optionShowUnitID);
+	private static JCheckBox createOption(String text, boolean selected, Consumer<Boolean> onSelectedChange) {
+		JCheckBox option = new JCheckBox(text, selected);
+		option.addActionListener(e -> onSelectedChange.accept(Boolean.valueOf(option.isSelected())));
+		return option;
 	}
 
 	@Override

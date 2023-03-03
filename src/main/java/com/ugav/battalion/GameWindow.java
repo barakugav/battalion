@@ -66,11 +66,15 @@ class GameWindow extends JPanel implements Clearable {
 		arenaPanel.initGame();
 
 		register.register(game.beforeTurnEnd, Utils.swingListener(e -> {
+			if (globals.debug.playAllTeams)
+				return;
 			final Team player = Team.Red;
 			if (game.getTurn() == player)
 				suspendActions();
 		}));
 		register.register(game.onTurnEnd, Utils.swingListener(e -> {
+			if (globals.debug.playAllTeams)
+				return;
 			final Team player = Team.Red;
 			if (e.nextTurn == player)
 				resumeActions();
@@ -150,7 +154,8 @@ class GameWindow extends JPanel implements Clearable {
 
 	void endTurn() {
 		gameAction(new Action.TurnEnd());
-		gameActionsThread.playComputerTurn();
+		if (!globals.debug.playAllTeams)
+			gameActionsThread.playComputerTurn();
 	}
 
 	boolean isActionSuspended() {
