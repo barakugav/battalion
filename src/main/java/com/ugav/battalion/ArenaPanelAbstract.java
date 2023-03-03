@@ -52,6 +52,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	final Animation.MapMove.Manager mapMoveAnimation = new Animation.MapMove.Manager(this);
 	final TickTask.Manager tickTaskManager = new TickTask.Manager();
 
+	private boolean isMapMoveByKeyEnable = true;
 	private final KeyListener keyListener;
 	final Event.Notifier<Event> onMapMove = new Event.Notifier<>();
 
@@ -79,6 +80,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		entityLayer.addKeyListener(keyListener = new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
+				if (!isMapMoveByKeyEnable)
+					return;
 				Direction dir = keyToDir(e.getKeyCode());
 				if (dir != null) {
 					mapMoveAnimation.userMapMove(dir);
@@ -168,6 +171,10 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		onMapMove.notify(new Event(this));
 		Animation animation = mapMoveAnimation.createAnimation(Position.fromCell(pos));
 		runAnimationAsync(animation, future);
+	}
+
+	void setMapMoveByKeyEnable(boolean enable) {
+		isMapMoveByKeyEnable = enable;
 	}
 
 	int displayedX(double x) {
