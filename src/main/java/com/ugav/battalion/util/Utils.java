@@ -36,15 +36,15 @@ public class Utils {
 		throw new RuntimeException();
 	}
 
-	public static <E> Iterator<E> iteratorRepeat(Iterable<E> iterable, int repeat) {
+	public static <E> Iter<E> iteratorRepeat(Iterable<E> iterable, int repeat) {
 		return IteratorRepeat.create(iterable, repeat);
 	}
 
-	public static <E> Iterator<E> iteratorRepeatInfty(Iterable<E> iterable) {
+	public static <E> Iter<E> iteratorRepeatInfty(Iterable<E> iterable) {
 		return IteratorRepeat.infty(iterable);
 	}
 
-	private static class IteratorRepeat<E> implements Iterator<E> {
+	private static class IteratorRepeat<E> implements Iter<E> {
 
 		private final Iterable<E> iterable;
 		private Iterator<E> it;
