@@ -3,11 +3,10 @@ package com.ugav.battalion.computer;
 import java.util.Objects;
 
 import com.ugav.battalion.computer.MiniMaxAlphaBeta.IGame;
-import com.ugav.battalion.computer.MiniMaxAlphaBeta.IMove;
 import com.ugav.battalion.computer.MiniMaxAlphaBeta.IPosition;
 import com.ugav.battalion.util.Iter;
 
-class MiniMaxAlphaBeta<Move extends IMove, Position extends IPosition<Move>, Game extends IGame<Move, Position>> {
+class MiniMaxAlphaBeta<Action, Position extends IPosition<Action>, Game extends IGame<Action, Position>> {
 
 	private final Game game;
 	private final int maxDepth;
@@ -17,24 +16,24 @@ class MiniMaxAlphaBeta<Move extends IMove, Position extends IPosition<Move>, Gam
 		this.maxDepth = maxDepth;
 	}
 
-	Move chooseMove(Position position) {
+	Action chooseAction(Position position) {
 		final int us = position.getTurn();
 		double alpha = Double.MAX_VALUE, beta = Double.MAX_VALUE;
 
-		Move bestMove = null;
+		Action bestAction = null;
 		double bestEval = game.evaluate(position, us);
 		alpha = Math.max(alpha, bestEval);
 
-		for (Move move : position.availableMoves().forEach()) {
-			Position child = game.getMovedPosition(position, move);
+		for (Action action : position.availableActions().forEach()) {
+			Position child = game.getModifiedPosition(position, action);
 			double val = evaluate(child, 1, alpha, beta, us);
 			if (val > bestEval) {
 				bestEval = val;
-				bestMove = move;
+				bestAction = action;
 			}
 			alpha = Math.max(alpha, val);
 		}
-		return bestMove;
+		return bestAction;
 	}
 
 	private double evaluate(Position position, int depth, double alpha, double beta, final int us) {
@@ -42,8 +41,8 @@ class MiniMaxAlphaBeta<Move extends IMove, Position extends IPosition<Move>, Gam
 			return game.evaluate(position, us);
 		if (position.getTurn() == us) {
 			double val = -Double.MAX_VALUE;
-			for (Move move : position.availableMoves().forEach()) {
-				Position child = game.getMovedPosition(position, move);
+			for (Action action : position.availableActions().forEach()) {
+				Position child = game.getModifiedPosition(position, action);
 				val = Math.max(val, evaluate(child, depth + 1, alpha, beta, us));
 				if (val > beta)
 					break;
@@ -52,8 +51,8 @@ class MiniMaxAlphaBeta<Move extends IMove, Position extends IPosition<Move>, Gam
 			return val;
 		} else {
 			double val = Double.MAX_VALUE;
-			for (Move move : position.availableMoves().forEach()) {
-				Position child = game.getMovedPosition(position, move);
+			for (Action action : position.availableActions().forEach()) {
+				Position child = game.getModifiedPosition(position, action);
 				val = Math.min(val, evaluate(child, depth + 1, alpha, beta, us));
 				if (val < alpha)
 					break;
@@ -63,27 +62,23 @@ class MiniMaxAlphaBeta<Move extends IMove, Position extends IPosition<Move>, Gam
 		}
 	}
 
-	static interface IGame<Move extends IMove, Position extends IPosition<Move>> {
+	static interface IGame<Action, Position extends IPosition<Action>> {
 
 		int getNumberOfPlayers();
 
-		Position getMovedPosition(Position position, Move move);
+		Position getModifiedPosition(Position position, Action action);
 
 		double evaluate(Position position, int us);
 
 	}
 
-	static interface IPosition<Move extends IMove> {
+	static interface IPosition<Action> {
 
 		boolean isTerminated();
 
 		int getTurn();
 
-		Iter<Move> availableMoves();
-
-	}
-
-	static interface IMove {
+		Iter<Action> availableActions();
 
 	}
 

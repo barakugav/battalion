@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Building.UnitSale;
 import com.ugav.battalion.core.Cell;
@@ -11,12 +12,11 @@ import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.util.Iter;
-import com.ugav.battalion.util.ListInt;
 import com.ugav.battalion.util.Logger;
 
 public class PlayerMiniMaxAlphaBeta implements Player {
 
-	private final MiniMaxAlphaBeta<Move, Node, GameImpl> algo;
+	private final MiniMaxAlphaBeta<Action, Node, GameImpl> algo;
 
 	private final int DepthLimit = 1;
 	private final Logger logger = new Logger(true); // TODO
@@ -30,17 +30,17 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		final Team us = game.getTurn();
 		for (;;) {
 			long t0 = System.currentTimeMillis();
-			Move move = algo.chooseMove(new Node(Game.copyOf(game)));
+			Action action = algo.chooseAction(new Node(Game.copyOf(game)));
 			long t1 = System.currentTimeMillis();
-			logger.dbgln("Engine move (" + (t1 - t0) + "ms): " + move);
-			if (move == null)
+			logger.dbgln("Engine action (" + (t1 - t0) + "ms): " + action);
+			if (action == null)
 				return;
-			move.apply(game);
+			action.apply(game);
 			assert game.getTurn() == us;
 		}
 	}
 
-	private static class GameImpl implements MiniMaxAlphaBeta.IGame<Move, Node> {
+	private static class GameImpl implements MiniMaxAlphaBeta.IGame<Action, Node> {
 
 		@Override
 		public int getNumberOfPlayers() {
@@ -48,9 +48,9 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		}
 
 		@Override
-		public Node getMovedPosition(Node position, Move move) {
+		public Node getModifiedPosition(Node position, Action action) {
 			Node child = new Node(Game.copyOf(position.game));
-			move.apply(child.game);
+			action.apply(child.game);
 			return child;
 		}
 
@@ -170,7 +170,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		}
 	}
 
-	private static class Node implements MiniMaxAlphaBeta.IPosition<Move> {
+	private static class Node implements MiniMaxAlphaBeta.IPosition<Action> {
 
 		private final Game game;
 
@@ -189,63 +189,63 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		}
 
 		@Override
-		public Iter<Move> availableMoves() {
+		public Iter<Action> availableActions() {
 			if (isTerminated())
 				return Iter.empty();
-			List<Move> moves = new ArrayList<>();
+			List<Action> actions = new ArrayList<>();
 			final Team us = game.getTurn();
 
 			for (Unit unit : game.units().filter(u -> us == u.getTeam() && u.isActive()).forEach())
-				unitAvailableMoves(unit, moves);
+				unitAvailableActions(unit, actions);
 
 			for (Building factory : game.buildings()
 					.filter(b -> us == b.getTeam() && b.isActive() && b.type.canBuildUnits).forEach())
-				factoryAvailableMoves(factory, moves);
+				factoryAvailableActions(factory, actions);
 
-			return Iter.of(moves);
+			return Iter.of(actions);
 		}
 
-		private void unitAvailableMoves(Unit unit, List<Move> moves) {
+		private void unitAvailableActions(Unit unit, List<Action> actions) {
 			if (unit.getTeam() != game.getTurn() || !unit.isActive())
 				return;
 
 			Cell.Bitmap attackable = unit.getAttackableMap();
 			Cell.Bitmap reachable = unit.getReachableMap();
 
-			unitAvailableMovesAttack(unit, reachable, attackable, moves);
-			unitAvailableMovesChangePosition(unit, reachable, moves);
+			unitAvailableActionsAttack(unit, reachable, attackable, actions);
+			unitAvailableActionsChangePosition(unit, reachable, actions);
 
-			// TODO transport unit moves
+			// TODO transport unit actions
 		}
 
-		private void factoryAvailableMoves(Building factory, List<Move> moves) {
+		private void factoryAvailableActions(Building factory, List<Action> actions) {
 			if (factory.getTeam() != game.getTurn() || !factory.isActive() || game.unit(factory.getPos()) != null)
 				return;
 			final int money = game.getMoney(factory.getTeam());
 
 			for (UnitSale sale : factory.getAvailableUnits().values())
 				if (sale != null && sale.price <= money)
-					moves.add(new UnitBuild(factory, sale.type));
+					actions.add(new Action.UnitBuild(factory.getPos(), sale.type));
 		}
 
-		private static void unitAvailableMovesChangePosition(Unit unit, Cell.Bitmap reachable, List<Move> moves) {
+		private static void unitAvailableActionsChangePosition(Unit unit, Cell.Bitmap reachable, List<Action> actions) {
 			int unitPos = unit.getPos();
 
 			for (Iter.Int it = reachable.cells(); it.hasNext();) {
 				int destination = it.next();
 				if (destination != unitPos)
-					moves.add(new UnitMove(unitPos, destination));
+					actions.add(new Action.UnitMove(unitPos, destination));
 			}
 		}
 
-		private static void unitAvailableMovesAttack(Unit unit, Cell.Bitmap reachable, Cell.Bitmap attackable,
-				List<Move> moves) {
+		private static void unitAvailableActionsAttack(Unit unit, Cell.Bitmap reachable, Cell.Bitmap attackable,
+				List<Action> actions) {
 			switch (unit.type.weapon.type) {
 			case CloseRange:
-				unitAvailableMovesAttackAndMove(unit, reachable, attackable, moves);
+				unitAvailableActionsAttackAndMove(unit, reachable, attackable, actions);
 				break;
 			case LongRange:
-				unitAvailableMovesAttackRange(unit, attackable, moves);
+				unitAvailableActionsAttackRange(unit, attackable, actions);
 				break;
 			case None:
 				break;
@@ -254,121 +254,24 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			}
 		}
 
-		private static void unitAvailableMovesAttackAndMove(Unit unit, Cell.Bitmap reachable, Cell.Bitmap attackable,
-				List<Move> moves) {
+		private static void unitAvailableActionsAttackAndMove(Unit unit, Cell.Bitmap reachable, Cell.Bitmap attackable,
+				List<Action> actions) {
 			int attackerPos = unit.getPos();
 			for (Iter.Int it = attackable.cells(); it.hasNext();) {
 				int target = it.next();
 				for (int destination : Cell.neighbors(target))
 					if (reachable.contains(destination))
-						moves.add(new UnitMoveAndAttack(attackerPos, destination, target));
+						actions.add(new Action.UnitMoveAndAttack(attackerPos, destination, target));
 			}
 		}
 
-		private static void unitAvailableMovesAttackRange(Unit unit, Cell.Bitmap attackable, List<Move> moves) {
+		private static void unitAvailableActionsAttackRange(Unit unit, Cell.Bitmap attackable, List<Action> actions) {
 			int attackerPos = unit.getPos();
 			for (Iter.Int it = attackable.cells(); it.hasNext();) {
 				int target = it.next();
-				moves.add(new UnitAttackLongRange(attackerPos, target));
+				actions.add(new Action.UnitAttackLongRange(attackerPos, target));
 			}
 		}
-	}
-
-	private abstract static class Move implements MiniMaxAlphaBeta.IMove {
-
-		abstract void apply(Game game);
-
-	}
-
-	private static class UnitMove extends Move {
-		private final int source;
-		private final int destination;
-
-		UnitMove(int source, int destination) {
-			this.source = source;
-			this.destination = destination;
-		}
-
-		@Override
-		void apply(Game game) {
-			Unit unit = game.unit(source);
-			game.move(unit, unit.calcPath(destination));
-		}
-
-		@Override
-		public String toString() {
-			return "UnitMove(" + Cell.toString(source) + ", " + Cell.toString(destination) + ")";
-		}
-
-	}
-
-	private static class UnitMoveAndAttack extends Move {
-		private final int attacker;
-		private final int destination;
-		private final int target;
-
-		UnitMoveAndAttack(int attacker, int destination, int target) {
-			this.attacker = attacker;
-			this.destination = destination;
-			this.target = target;
-		}
-
-		@Override
-		void apply(Game game) {
-			Unit unit = game.unit(attacker);
-			ListInt path = unit.calcPath(destination);
-			game.moveAndAttack(unit, path, game.unit(target));
-		}
-
-		@Override
-		public String toString() {
-			return "UnitMoveAndAttack(" + Cell.toString(attacker) + ", " + Cell.toString(destination) + ", "
-					+ Cell.toString(target) + ")";
-		}
-
-	}
-
-	private static class UnitAttackLongRange extends Move {
-		private final int attacker;
-		private final int target;
-
-		UnitAttackLongRange(int attacker, int target) {
-			this.attacker = attacker;
-			this.target = target;
-		}
-
-		@Override
-		void apply(Game game) {
-			game.attackRange(game.unit(attacker), game.unit(target));
-		}
-
-		@Override
-		public String toString() {
-			return "UnitAttackLongRange(" + Cell.toString(attacker) + ", " + Cell.toString(target) + ")";
-		}
-
-	}
-
-	private static class UnitBuild extends Move {
-
-		private final int factory;
-		private final Unit.Type unit;
-
-		UnitBuild(Building factory, Unit.Type unit) {
-			this.factory = factory.getPos();
-			this.unit = Objects.requireNonNull(unit);
-		}
-
-		@Override
-		void apply(Game game) {
-			game.buildUnit(game.building(factory), unit);
-		}
-
-		@Override
-		public String toString() {
-			return "UnitBuild(" + Cell.toString(factory) + ", " + unit + ")";
-		}
-
 	}
 
 }
