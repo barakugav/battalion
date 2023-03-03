@@ -418,18 +418,18 @@ public class Game {
 		return newUnit;
 	}
 
-	public Unit transportFinish(Unit trasportedUnit) {
-		int pos = trasportedUnit.getPos();
+	public Unit transportFinish(Unit trasportUnit) {
+		int pos = trasportUnit.getPos();
 
-		if (!trasportedUnit.isActive() || !trasportedUnit.type.transportUnits)
+		if (!trasportUnit.isActive() || !trasportUnit.type.transportUnits)
 			throw new IllegalArgumentException();
-		Unit transportedUnit = trasportedUnit.getTransportedUnit();
+		Unit transportedUnit = trasportUnit.getTransportedUnit();
 		if (!transportedUnit.type.canStandOn(terrain(pos)))
 			throw new IllegalArgumentException();
 
-		trasportedUnit.setActive(false);
+		trasportUnit.setActive(false);
 		removeUnit(pos);
-		onUnitRemove.notify(new UnitRemove(this, trasportedUnit));
+		onUnitRemove.notify(new UnitRemove(this, trasportUnit));
 
 		setUnit(pos, transportedUnit);
 		transportedUnit.setPos(pos);

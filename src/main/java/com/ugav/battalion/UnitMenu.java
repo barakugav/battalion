@@ -13,6 +13,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
+import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.util.Event;
@@ -47,18 +48,19 @@ class UnitMenu extends JPanel implements Clearable {
 			boolean transportAirEn = unit.type.category == Unit.Category.Land
 					&& Unit.Type.AirTransporter.canStandOn(terrain);
 			createUnitMenuButton(Images.Label.UnitMenuTransportAir, transportAirEn,
-					e -> window.gameAction(() -> window.game.unitTransport(unit, Unit.Type.AirTransporter)));
+					e -> window.gameAction(new Action.UnitTransport(unit.getPos(), Unit.Type.AirTransporter)));
 
 			boolean transportWaterEn = unit.type.category == Unit.Category.Land
 					&& Unit.Type.ShipTransporter.canStandOn(terrain);
 			createUnitMenuButton(Images.Label.UnitMenuTransportWater, transportWaterEn,
-					e -> window.gameAction(() -> window.game.unitTransport(unit, Unit.Type.ShipTransporter)));
+					e -> window.gameAction(new Action.UnitTransport(unit.getPos(), Unit.Type.ShipTransporter)));
+
 		} else {
 			Unit transportedUnit = unit.getTransportedUnit();
 
 			boolean transportFinishEn = transportedUnit.type.canStandOn(terrain);
 			createUnitMenuButton(Images.Label.UnitMenuTransportFinish, transportFinishEn,
-					e -> window.gameAction(() -> window.game.transportFinish(unit)));
+					e -> window.gameAction(new Action.UnitTransportFinish(unit.getPos())));
 		}
 
 		boolean repairEn = unit.getHealth() < unit.type.health;

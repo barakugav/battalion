@@ -8,49 +8,74 @@ public abstract class Action {
 
 	public abstract void apply(Game game);
 
-	public static class UnitMove extends Action {
-		private final int source;
-		private final int destination;
-
-		public UnitMove(int source, int destination) {
-			this.source = source;
-			this.destination = destination;
-		}
+	public static class Start extends Action {
 
 		@Override
 		public void apply(Game game) {
-			Unit unit = game.unit(source);
-			game.move(unit, unit.calcPath(destination));
+			game.start();
 		}
 
 		@Override
 		public String toString() {
-			return "UnitMove(" + Cell.toString(source) + ", " + Cell.toString(destination) + ")";
+			return "Start";
+		}
+
+	}
+
+	public static class TurnEnd extends Action {
+
+		@Override
+		public void apply(Game game) {
+			game.turnEnd();
+		}
+
+		@Override
+		public String toString() {
+			return "TurnEnd";
+		}
+
+	}
+
+	public static class UnitMove extends Action {
+		private final int source;
+		private final ListInt path;
+
+		public UnitMove(int source, ListInt path) {
+			this.source = source;
+			this.path = path.copy().unmodifiableView();
+		}
+
+		@Override
+		public void apply(Game game) {
+			game.move(game.unit(source), path);
+		}
+
+		@Override
+		public String toString() {
+			return "UnitMove(" + Cell.toString(source) + ", " + Cell.toString(path) + ")";
 		}
 
 	}
 
 	public static class UnitMoveAndAttack extends Action {
 		private final int attacker;
-		private final int destination;
+		private final ListInt path;
 		private final int target;
 
-		public UnitMoveAndAttack(int attacker, int destination, int target) {
+		public UnitMoveAndAttack(int attacker, ListInt path, int target) {
 			this.attacker = attacker;
-			this.destination = destination;
+			this.path = path.copy().unmodifiableView();
 			this.target = target;
 		}
 
 		@Override
 		public void apply(Game game) {
-			Unit unit = game.unit(attacker);
-			ListInt path = unit.calcPath(destination);
-			game.moveAndAttack(unit, path, game.unit(target));
+			game.moveAndAttack(game.unit(attacker), path, game.unit(target));
 		}
 
 		@Override
 		public String toString() {
-			return "UnitMoveAndAttack(" + Cell.toString(attacker) + ", " + Cell.toString(destination) + ", "
+			return "UnitMoveAndAttack(" + Cell.toString(attacker) + ", " + Cell.toString(path) + ", "
 					+ Cell.toString(target) + ")";
 		}
 
@@ -95,6 +120,48 @@ public abstract class Action {
 		@Override
 		public String toString() {
 			return "UnitBuild(" + Cell.toString(factory) + ", " + unit + ")";
+		}
+
+	}
+
+	public static class UnitTransport extends Action {
+
+		private final int unit;
+		private final Unit.Type transport;
+
+		public UnitTransport(int unit, Unit.Type transport) {
+			this.unit = unit;
+			this.transport = Objects.requireNonNull(transport);
+		}
+
+		@Override
+		public void apply(Game game) {
+			game.unitTransport(game.unit(unit), transport);
+		}
+
+		@Override
+		public String toString() {
+			return "UnitTransport(" + Cell.toString(unit) + ", " + transport + ")";
+		}
+
+	}
+
+	public static class UnitTransportFinish extends Action {
+
+		private final int unit;
+
+		public UnitTransportFinish(int unit) {
+			this.unit = unit;
+		}
+
+		@Override
+		public void apply(Game game) {
+			game.transportFinish(game.unit(unit));
+		}
+
+		@Override
+		public String toString() {
+			return "UnitTransportFinish(" + Cell.toString(unit) + ")";
 		}
 
 	}

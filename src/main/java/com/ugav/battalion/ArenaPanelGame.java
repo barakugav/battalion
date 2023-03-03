@@ -7,6 +7,7 @@ import java.util.function.LongToIntFunction;
 
 import javax.swing.JLayeredPane;
 
+import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
@@ -16,7 +17,6 @@ import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.ListInt;
-import com.ugav.battalion.util.Logger;
 import com.ugav.battalion.util.Utils;
 import com.ugav.battalion.util.Utils.Holder;
 
@@ -24,7 +24,6 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 	private final GameWindow window;
 
-	private final Logger logger = new Logger(true); // TODO
 	private final Event.Register register = new Event.Register();
 	final Event.Notifier<EntityClick> onEntityClick = new Event.Notifier<>();
 	final Event.Notifier<SelectionChange> onSelectionChange = new Event.Notifier<>();
@@ -433,12 +432,10 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 				movePath.addAll(unit.calcPath(destination));
 			}
 			ListInt path = new ListInt.Array(movePath);
-			logger.dbgln("Move ", Cell.toString(unit.getPos()), " ", Cell.toString(destination));
-			window.gameAction(() -> game.move(unit, path));
+			window.gameAction(new Action.UnitMove(unit.getPos(), path));
 		}
 
 		private void unitAttack(Unit attacker, Unit target) {
-			logger.dbgln("Attack ", Cell.toString(attacker.getPos()), " ", Cell.toString(target.getPos()));
 			switch (attacker.type.weapon.type) {
 			case CloseRange:
 				int moveTarget = movePath.isEmpty() ? attacker.getPos() : movePath.last();
@@ -451,11 +448,11 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 					}
 				}
 				ListInt path = new ListInt.Array(movePath);
-				window.gameAction(() -> game.moveAndAttack(attacker, path, target));
+				window.gameAction(new Action.UnitMoveAndAttack(attacker.getPos(), path, target.getPos()));
 				break;
 
 			case LongRange:
-				window.gameAction(() -> game.attackRange(attacker, target));
+				window.gameAction(new Action.UnitAttackLongRange(attacker.getPos(), target.getPos()));
 				break;
 
 			case None:

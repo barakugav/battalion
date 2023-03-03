@@ -20,6 +20,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
+import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Team;
@@ -158,7 +159,7 @@ class FactoryMenu extends JPanel implements Clearable {
 			Building.UnitSale sale = unitSale;
 			ActionListener listener = e -> {
 				if (sale.price <= window.game.getMoney(factory.getTeam())) {
-					window.gameAction(() -> window.game.buildUnit(factory, sale.type));
+					window.gameAction(new Action.UnitBuild(factory.getPos(), sale.type));
 					onActionChosen.notify(new Event(factory));
 				}
 			};

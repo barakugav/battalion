@@ -13,8 +13,10 @@ import javax.swing.JPanel;
 
 import com.ugav.battalion.computer.Player;
 import com.ugav.battalion.computer.PlayerMiniMaxAlphaBeta;
+import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Level;
+import com.ugav.battalion.core.Team;
 import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Logger;
 import com.ugav.battalion.util.Utils;
@@ -63,6 +65,16 @@ class GameWindow extends JPanel implements Clearable {
 		menu.initGame();
 		arenaPanel.initGame();
 
+		register.register(game.beforeTurnEnd, Utils.swingListener(e -> {
+			final Team player = Team.Red;
+			if (game.getTurn() == player)
+				suspendActions();
+		}));
+		register.register(game.onTurnEnd, Utils.swingListener(e -> {
+			final Team player = Team.Red;
+			if (e.nextTurn == player)
+				resumeActions();
+		}));
 		register.register(game.onGameEnd, Utils.swingListener(e -> {
 			logger.dbgln("Game finished");
 			JOptionPane.showMessageDialog(this, "Winner: " + e.winner);
@@ -72,62 +84,73 @@ class GameWindow extends JPanel implements Clearable {
 
 		(gameActionsThread = new GameActionsThread()).start();
 
-		gameAction(() -> game.start());
+		gameAction(new Action.Start());
 	}
 
 	private final GameActionsThread gameActionsThread;
 
 	private class GameActionsThread extends Thread {
 
-		final BlockingQueue<Runnable> actions = new LinkedBlockingQueue<>();
-		volatile boolean running = true;
+		private final BlockingQueue<Action> actions = new LinkedBlockingQueue<>();
+		private volatile boolean running = true;
+		private volatile boolean playComputerTurn;
 
 		@Override
 		public void run() {
 			while (running) {
-				Runnable action = null;
+				Action action = null;
 				try {
 					action = actions.poll(100, TimeUnit.MILLISECONDS);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				if (action == null)
+				if (action != null) {
+					performAction(action);
 					continue;
+				}
 
-				action.run();
+				if (playComputerTurn) {
+					playComputerTurn = false;
+					computer.playTurn(game, this::performAction);
+				}
 			}
+		}
+
+		void setRunning(boolean running) {
+			this.running = running;
+		}
+
+		void playComputerTurn() {
+			playComputerTurn = true;
+		}
+
+		private void performAction(Action action) {
+			logger.dbgln(action);
+			action.apply(game);
 		}
 
 	}
 
-	void gameAction(Runnable action) {
+	void gameAction(Action action) {
 		gameActionsThread.actions.add(action);
 	}
 
 	@Override
 	public void clear() {
-		register.unregisterAll();
-		menu.clear();
-		arenaPanel.clear();
-		gameActionsThread.running = false;
+		gameActionsThread.setRunning(false);
 		try {
 			gameActionsThread.join();
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
+		register.unregisterAll();
+		menu.clear();
+		arenaPanel.clear();
 	}
 
 	void endTurn() {
-		logger.dbgln("End turn");
-		gameAction(() -> {
-			game.turnEnd();
-			assert !game.isFinished();
-
-			suspendActions();
-			computer.playTurn(game);
-			game.turnEnd();
-			resumeActions();
-		});
+		gameAction(new Action.TurnEnd());
+		gameActionsThread.playComputerTurn();
 	}
 
 	boolean isActionSuspended() {

@@ -3,6 +3,7 @@ package com.ugav.battalion.computer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Building;
@@ -26,16 +27,18 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 	}
 
 	@Override
-	public void playTurn(Game game) {
+	public void playTurn(Game game, Consumer<Action> actionsHandler) {
 		final Team us = game.getTurn();
 		for (;;) {
 			long t0 = System.currentTimeMillis();
 			Action action = algo.chooseAction(new Node(Game.copyOf(game)));
 			long t1 = System.currentTimeMillis();
-			logger.dbgln("Engine action (" + (t1 - t0) + "ms): " + action);
-			if (action == null)
+			logger.dbgln("Engine action computed in " + (t1 - t0) + "ms");
+			if (action == null) {
+				actionsHandler.accept(new Action.TurnEnd());
 				return;
-			action.apply(game);
+			}
+			actionsHandler.accept(action);
 			assert game.getTurn() == us;
 		}
 	}
@@ -213,7 +216,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			Cell.Bitmap reachable = unit.getReachableMap();
 
 			unitAvailableActionsAttack(unit, reachable, attackable, actions);
-			unitAvailableActionsChangePosition(unit, reachable, actions);
+			unitAvailableActionsMove(unit, reachable, actions);
 
 			// TODO transport unit actions
 		}
@@ -228,13 +231,13 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 					actions.add(new Action.UnitBuild(factory.getPos(), sale.type));
 		}
 
-		private static void unitAvailableActionsChangePosition(Unit unit, Cell.Bitmap reachable, List<Action> actions) {
+		private static void unitAvailableActionsMove(Unit unit, Cell.Bitmap reachable, List<Action> actions) {
 			int unitPos = unit.getPos();
 
 			for (Iter.Int it = reachable.cells(); it.hasNext();) {
 				int destination = it.next();
 				if (destination != unitPos)
-					actions.add(new Action.UnitMove(unitPos, destination));
+					actions.add(new Action.UnitMove(unitPos, unit.calcPath(destination)));
 			}
 		}
 
@@ -261,7 +264,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 				int target = it.next();
 				for (int destination : Cell.neighbors(target))
 					if (reachable.contains(destination))
-						actions.add(new Action.UnitMoveAndAttack(attackerPos, destination, target));
+						actions.add(new Action.UnitMoveAndAttack(attackerPos, unit.calcPath(destination), target));
 			}
 		}
 
