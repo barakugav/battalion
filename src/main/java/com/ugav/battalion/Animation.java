@@ -2,6 +2,7 @@ package com.ugav.battalion;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -72,6 +73,11 @@ interface Animation {
 		@Override
 		public void afterLast() {
 			comp.isAnimated = comp.isMoving = false;
+		}
+
+		@Override
+		public String toString() {
+			return "UnitMove(" + Cell.toString(path) + ")";
 		}
 
 	}
@@ -147,6 +153,11 @@ interface Animation {
 		public Position pos() {
 			return Position.fromCell(target);
 		}
+
+		@Override
+		public String toString() {
+			return "Attack(" + Cell.toString(comp.unit().getPos()) + ", " + Cell.toString(target) + ")";
+		}
 	}
 
 	static class Conquer implements Animation {
@@ -179,6 +190,11 @@ interface Animation {
 			comp.isAnimated = false;
 			comp.pos = basePos;
 		}
+
+		@Override
+		public String toString() {
+			return "Conquer(" + Cell.toString(comp.unit().getPos()) + ")";
+		}
 	}
 
 	static class UnitAppear implements Animation {
@@ -209,6 +225,11 @@ interface Animation {
 			comp.baseAlphaMax = 1;
 			comp.alpha = 1;
 			comp.isAnimated = false;
+		}
+
+		@Override
+		public String toString() {
+			return "UnitAppear(" + Cell.toString(comp.unit().getPos()) + ")";
 		}
 	}
 
@@ -241,6 +262,11 @@ interface Animation {
 		public void afterLast() {
 			comp.alpha = 0;
 			comp.isAnimated = false;
+		}
+
+		@Override
+		public String toString() {
+			return "UnitAppearDisappear(" + Cell.toString(comp.unit().getPos()) + ")";
 		}
 	}
 
@@ -301,6 +327,11 @@ interface Animation {
 		public Position pos() {
 			return comp.pos;
 		}
+
+		@Override
+		public String toString() {
+			return "UnitDeath(" + Cell.toString(comp.unit().getPos()) + ")";
+		}
 	}
 
 	static class MapMove implements Animation {
@@ -343,10 +374,17 @@ interface Animation {
 			arena.mapPos = target;
 		}
 
+		@Override
+		public String toString() {
+			return "MapMove(" + target + ")";
+		}
+
 		static class Manager implements TickTask {
 			private final ArenaPanelAbstract<?, ?, ?> arena;
 			private Animation.MapMove animation;
 			private Position userChoosenPos;
+
+			final Event.Notifier<Event> onMapMove = new Event.Notifier<>();
 
 			Manager(ArenaPanelAbstract<?, ?, ?> arena) {
 				this.arena = Objects.requireNonNull(arena);
@@ -377,6 +415,7 @@ interface Animation {
 							userChoosenPos = null;
 							animation = this;
 						}
+						onMapMove.notify(new Event(this));
 						super.beforeFirst();
 					}
 
@@ -435,6 +474,11 @@ interface Animation {
 					currentAnimationStepCount = 0;
 				}
 				return index < animations.length;
+			}
+
+			@Override
+			public String toString() {
+				return Arrays.toString(animations);
 			}
 		};
 	}

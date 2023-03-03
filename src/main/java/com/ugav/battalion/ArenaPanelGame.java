@@ -38,7 +38,7 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 		register.register(entityLayer.onTileClick, e -> cellClicked(e.cell));
 
-		register.register(onMapMove, e -> closeMenus());
+		register.register(mapMoveAnimation.onMapMove, e -> closeMenus());
 
 		Holder<Integer> playerLastPos = new Holder<>();
 		register.register(game.beforeTurnEnd, Utils.swingListener(e -> {
@@ -46,11 +46,13 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 			if (game.getTurn() == player)
 				playerLastPos.val = Integer.valueOf(Cell.of((int) mapPos.x, (int) mapPos.y));
 		}));
-		register.register(game.onTurnEnd, Utils.swingListener(e -> {
+		register.register(game.onTurnEnd, e -> {
 			final Team player = Team.Red;
-			if (e.nextTurn == player)
-				mapViewMove(playerLastPos.val.intValue(), null);
-		}));
+			if (e.nextTurn == player) {
+				Position p = Position.fromCell(playerLastPos.val.intValue());
+				runAnimationAndWait(mapMoveAnimation.createAnimation(p));
+			}
+		});
 
 		register.register(animationTask.onAnimationBegin, e -> window.suspendActions());
 		register.register(animationTask.onAnimationEnd, e -> window.resumeActions());

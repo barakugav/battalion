@@ -54,7 +54,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	private boolean isMapMoveByKeyEnable = true;
 	private final KeyListener keyListener;
-	final Event.Notifier<Event> onMapMove = new Event.Notifier<>();
 
 	final Animation.Task animationTask = new Animation.Task();
 	private final AtomicInteger animationsActive = new AtomicInteger();
@@ -83,10 +82,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				if (!isMapMoveByKeyEnable)
 					return;
 				Direction dir = keyToDir(e.getKeyCode());
-				if (dir != null) {
+				if (dir != null)
 					mapMoveAnimation.userMapMove(dir);
-					onMapMove.notify(new Event(this));
-				}
 			}
 
 			private static Direction keyToDir(int keyCode) {
@@ -124,16 +121,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		return entityLayer.getPreferredSize();
 	}
 
-	synchronized void runAnimationAsync(Animation animation, Runnable future) {
-		animationsActive.incrementAndGet();
-
-		animationTask.animate(animation, () -> {
-			if (future != null)
-				future.run();
-			animationsActive.decrementAndGet();
-		});
-	}
-
 	synchronized void runAnimationAndWait(Animation animation) {
 		animationsActive.incrementAndGet();
 		animationTask.animateAndWait(animation, () -> animationsActive.decrementAndGet());
@@ -161,16 +148,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	void mapViewSet(int pos) {
 		if (!Cell.isInRect(pos, arenaWidth - DISPLAYED_ARENA_WIDTH, arenaHeight - DISPLAYED_ARENA_HEIGHT))
 			throw new IllegalArgumentException();
-		onMapMove.notify(new Event(this));
+		mapMoveAnimation.onMapMove.notify(new Event(this)); // TODO ugly
 		mapPos = Position.fromCell(pos);
-	}
-
-	void mapViewMove(int pos, Runnable future) {
-		if (!Cell.isInRect(pos, arenaWidth - DISPLAYED_ARENA_WIDTH, arenaHeight - DISPLAYED_ARENA_HEIGHT))
-			throw new IllegalArgumentException();
-		onMapMove.notify(new Event(this));
-		Animation animation = mapMoveAnimation.createAnimation(Position.fromCell(pos));
-		runAnimationAsync(animation, future);
 	}
 
 	void setMapMoveByKeyEnable(boolean enable) {
