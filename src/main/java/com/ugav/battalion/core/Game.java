@@ -121,9 +121,10 @@ public class Game {
 		valuesCache.invalidate();
 	}
 
-	void removeUnit(int cell) {
-		assert units.at(cell) != null;
-		units.set(cell, null);
+	void removeUnit(Unit unit) {
+		int pos = unit.getPos();
+		assert unit == this.unit(pos);
+		units.set(pos, null);
 		valuesCache.invalidate();
 	}
 
@@ -273,7 +274,7 @@ public class Game {
 		beforeUnitMove.notify(new UnitMove(this, unit, path));
 		int source = unit.getPos();
 		int destination = path.last();
-		removeUnit(source);
+		removeUnit(unit);
 		setUnit(destination, unit);
 		unit.setPos(destination);
 
@@ -308,7 +309,7 @@ public class Game {
 		ListInt realPath = calcRealPath(attacker, path);
 
 		if (!realPath.isEmpty() && !attacker.isMoveValid(realPath))
-			throw new IllegalStateException();
+			throw new IllegalStateException("Invalid path: " + Cell.toString(realPath));
 		if (!isAttackValid(attacker, target))
 			throw new IllegalStateException();
 
@@ -364,7 +365,7 @@ public class Game {
 		target.setHealth(newHealth);
 
 		if (target.isDead()) {
-			removeUnit(target.getPos());
+			removeUnit(target);
 			onUnitRemove.notify(new UnitRemove(this, target));
 
 			if (isFinished())
@@ -402,16 +403,21 @@ public class Game {
 		if (!transportType.transportUnits || !transportType.canStandOn(terrain(pos)))
 			throw new IllegalArgumentException();
 
+		final int cost = 0; // TODO
+		TeamData data = teamData.get(transportedUnit.getTeam());
+		if (data.money < cost)
+			throw new IllegalArgumentException();
+		data.money -= cost;
+		onMoneyChange.notify(new MoneyChange(this, transportedUnit.getTeam(), data.money));
+
 		transportedUnit.setActive(false);
-		removeUnit(pos);
+		removeUnit(transportedUnit);
 		onUnitRemove.notify(new UnitRemove(this, transportedUnit));
 
 		Unit newUnit = Unit.newTrasportUnit(this, transportType, transportedUnit);
 		setUnit(pos, newUnit);
 		newUnit.setPos(pos);
 		newUnit.setActive(false);
-
-		// TODO money
 
 		onUnitAdd.notify(new UnitAdd(this, newUnit));
 
@@ -428,7 +434,7 @@ public class Game {
 			throw new IllegalArgumentException();
 
 		trasportUnit.setActive(false);
-		removeUnit(pos);
+		removeUnit(trasportUnit);
 		onUnitRemove.notify(new UnitRemove(this, trasportUnit));
 
 		setUnit(pos, transportedUnit);
@@ -438,6 +444,21 @@ public class Game {
 		onUnitAdd.notify(new UnitAdd(this, transportedUnit));
 
 		return transportedUnit;
+	}
+
+	public void unitRepair(Unit unit) {
+		if (!unit.isActive() || unit.getHealth() == unit.type.health)
+			throw new IllegalArgumentException();
+
+		final int cost = 0; // TODO
+		TeamData data = teamData.get(unit.getTeam());
+		if (data.money < cost)
+			throw new IllegalArgumentException();
+		data.money -= cost;
+		onMoneyChange.notify(new MoneyChange(this, unit.getTeam(), data.money));
+
+		unit.setHealth(unit.type.health);
+		unit.setActive(false);
 	}
 
 	private static class TeamData {

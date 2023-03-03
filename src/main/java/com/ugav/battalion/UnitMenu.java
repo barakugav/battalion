@@ -63,8 +63,9 @@ class UnitMenu extends JPanel implements Clearable {
 					e -> window.gameAction(new Action.UnitTransportFinish(unit.getPos())));
 		}
 
-		boolean repairEn = unit.getHealth() < unit.type.health;
-		createUnitMenuButton(Images.Label.UnitMenuRepair, repairEn, e -> System.out.println("UnitMenuRepair"));
+		boolean repairEn = unit.getHealth() < unit.type.health; // TODO and has enough money
+		createUnitMenuButton(Images.Label.UnitMenuRepair, repairEn,
+				e -> window.gameAction(new Action.UnitRepair(unit.getPos())));
 
 		createUnitMenuButton(Images.Label.UnitMenuCancel, true, e -> {
 		});

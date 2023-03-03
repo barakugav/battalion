@@ -47,7 +47,8 @@ public abstract class Action {
 
 		@Override
 		public void apply(Game game) {
-			game.move(game.unit(source), path);
+			Unit unit = Objects.requireNonNull(game.unit(source), toString());
+			game.move(unit, path);
 		}
 
 		@Override
@@ -162,6 +163,26 @@ public abstract class Action {
 		@Override
 		public String toString() {
 			return "UnitTransportFinish(" + Cell.toString(unit) + ")";
+		}
+
+	}
+
+	public static class UnitRepair extends Action {
+
+		private final int unit;
+
+		public UnitRepair(int unit) {
+			this.unit = unit;
+		}
+
+		@Override
+		public void apply(Game game) {
+			game.unitRepair(game.unit(unit));
+		}
+
+		@Override
+		public String toString() {
+			return "UnitRepair(" + Cell.toString(unit) + ")";
 		}
 
 	}
