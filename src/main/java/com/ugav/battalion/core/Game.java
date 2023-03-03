@@ -2,7 +2,6 @@ package com.ugav.battalion.core;
 
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -115,13 +114,13 @@ public class Game {
 		return buildings.at(cell);
 	}
 
-	void setUnit(int cell, Unit unit) {
+	private void setUnit(int cell, Unit unit) {
 		assert units.at(cell) == null;
 		units.set(cell, Objects.requireNonNull(unit));
 		valuesCache.invalidate();
 	}
 
-	void removeUnit(Unit unit) {
+	private void removeUnit(Unit unit) {
 		int pos = unit.getPos();
 		assert unit == this.unit(pos);
 		units.set(pos, null);
@@ -198,6 +197,15 @@ public class Game {
 		return data != null ? data.money : 0;
 	}
 
+	private void moneyChange(Team team, int delta) {
+		TeamData data = teamData.get(team);
+		if (data.money + delta < 0)
+			throw new IllegalStateException();
+		data.money += delta;
+		assert data.money >= 0;
+		onMoneyChange.notify(new MoneyChange(this, team, data.money));
+	}
+
 	public void start() {
 		turnBegin();
 	}
@@ -213,17 +221,11 @@ public class Game {
 	public void turnEnd() {
 		beforeTurnEnd.notify(new Event(this));
 
-		Set<Team> moneyChanged = new HashSet<>();
 		for (Building building : buildings().forEach()) {
 			int gain = building.getMoneyGain();
-			if (gain != 0 && teamData.containsKey(building.getTeam())) {
-				teamData.get(building.getTeam()).money += gain;
-				moneyChanged.add(building.getTeam());
-			}
+			if (gain != 0 && teamData.containsKey(building.getTeam()))
+				moneyChange(building.getTeam(), gain);
 		}
-
-		for (Team team : moneyChanged)
-			onMoneyChange.notify(new MoneyChange(this, team, teamData.get(team).money));
 
 		Team prevTurn = turn;
 		turn = turnIterator.next();
@@ -381,15 +383,10 @@ public class Game {
 		Map<Unit.Type, Building.UnitSale> sales = factory.getAvailableUnits();
 		Building.UnitSale sale = sales.get(unitType);
 		Team team = factory.getTeam();
-		TeamData data = teamData.get(team);
-		if (data.money < sale.price)
-			throw new IllegalStateException();
+		moneyChange(team, -sale.price);
 
-		data.money -= sale.price;
 		Unit unit = Unit.valueOf(this, UnitDesc.of(unitType, team), pos);
 		setUnit(pos, unit);
-
-		onMoneyChange.notify(new MoneyChange(this, team, data.money));
 		onUnitAdd.notify(new UnitAdd(this, unit));
 
 		return unit;
@@ -402,13 +399,10 @@ public class Game {
 			throw new IllegalArgumentException();
 		if (!transportType.transportUnits || !transportType.canStandOn(terrain(pos)))
 			throw new IllegalArgumentException();
+		Team team = transportedUnit.getTeam();
 
 		final int cost = 0; // TODO
-		TeamData data = teamData.get(transportedUnit.getTeam());
-		if (data.money < cost)
-			throw new IllegalArgumentException();
-		data.money -= cost;
-		onMoneyChange.notify(new MoneyChange(this, transportedUnit.getTeam(), data.money));
+		moneyChange(team, -cost);
 
 		transportedUnit.setActive(false);
 		removeUnit(transportedUnit);
@@ -451,11 +445,7 @@ public class Game {
 			throw new IllegalArgumentException();
 
 		final int cost = 0; // TODO
-		TeamData data = teamData.get(unit.getTeam());
-		if (data.money < cost)
-			throw new IllegalArgumentException();
-		data.money -= cost;
-		onMoneyChange.notify(new MoneyChange(this, unit.getTeam(), data.money));
+		moneyChange(unit.getTeam(), -cost);
 
 		unit.setHealth(unit.type.health);
 		unit.setActive(false);
