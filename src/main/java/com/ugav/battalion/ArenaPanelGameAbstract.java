@@ -166,6 +166,13 @@ class ArenaPanelGameAbstract extends
 						unitComp.clear();
 				});
 			});
+			register.register(game.onEntityChange, e -> {
+				if (e.source instanceof Unit unit) {
+					UnitComp comp = (UnitComp) comps.get(unit);
+					if (comp != null)
+						comp.pos = Position.fromCell(unit.getPos());
+				}
+			});
 			register.register(game.onConquer, e -> {
 				UnitComp unitComp = (UnitComp) comps.get(e.conquerer);
 				Animation animation = new Animation.Conquer(unitComp);
@@ -250,7 +257,6 @@ class ArenaPanelGameAbstract extends
 			volatile boolean isAnimated;
 			float alpha = 0.0f;
 			float baseAlphaMax = 1.0f;
-			private final Event.Register register = new Event.Register();
 
 			private static final Color HealthColorHigh = new Color(0, 206, 0);
 			private static final Color HealthColorMed = new Color(255, 130, 4);
@@ -258,8 +264,6 @@ class ArenaPanelGameAbstract extends
 
 			UnitComp(Unit unit) {
 				super(ArenaPanelGameAbstract.this, unit.getPos(), unit);
-
-				register.register(unit.onChange(), e -> pos = Position.fromCell(unit.getPos()));
 			}
 
 			@Override
@@ -344,12 +348,6 @@ class ArenaPanelGameAbstract extends
 			@Override
 			public int getZOrder() {
 				return isAnimated ? 100 : 0;
-			}
-
-			@Override
-			public void clear() {
-				register.unregisterAll();
-				super.clear();
 			}
 
 		}

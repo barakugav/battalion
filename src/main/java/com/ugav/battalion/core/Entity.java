@@ -39,7 +39,7 @@ public abstract class Entity {
 		onChange().notify(new EntityChange(this));
 	}
 
-	public Event.Notifier<EntityChange> onChange() {
+	Event.Notifier<EntityChange> onChange() {
 		return game.onEntityChange;
 	}
 
