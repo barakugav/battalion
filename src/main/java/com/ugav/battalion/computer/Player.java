@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Game;
@@ -14,14 +13,14 @@ import com.ugav.battalion.util.ListInt;
 
 public interface Player {
 
-	void playTurn(Game game, Consumer<Action> actionsHandler);
+	void playTurn(Game game);
 
 	static class Random implements Player {
 
 		private final java.util.Random rand = new java.util.Random();
 
 		@Override
-		public void playTurn(Game game, Consumer<Action> actionsHandler) {
+		public void playTurn(Game game) {
 			Team me = game.getTurn();
 			Set<Unit> failedToMove = Collections.newSetFromMap(new IdentityHashMap<>());
 
@@ -36,7 +35,7 @@ public interface Player {
 					failedToMove.add(unit);
 				} else {
 					int destination = reachable.get(rand.nextInt(reachable.size()));
-					actionsHandler.accept(new Action.UnitMove(unit.getPos(), unit.calcPath(destination)));
+					game.performAction(new Action.UnitMove(unit.getPos(), unit.calcPath(destination)));
 				}
 			}
 

@@ -6,14 +6,7 @@ import com.ugav.battalion.util.ListInt;
 
 public abstract class Action {
 
-	public abstract void apply(Game game);
-
 	public static class Start extends Action {
-
-		@Override
-		public void apply(Game game) {
-			game.start();
-		}
 
 		@Override
 		public String toString() {
@@ -25,11 +18,6 @@ public abstract class Action {
 	public static class TurnEnd extends Action {
 
 		@Override
-		public void apply(Game game) {
-			game.turnEnd();
-		}
-
-		@Override
 		public String toString() {
 			return "TurnEnd";
 		}
@@ -37,18 +25,12 @@ public abstract class Action {
 	}
 
 	public static class UnitMove extends Action {
-		private final int source;
-		private final ListInt path;
+		final int source;
+		final ListInt path;
 
 		public UnitMove(int source, ListInt path) {
 			this.source = source;
 			this.path = path.copy().unmodifiableView();
-		}
-
-		@Override
-		public void apply(Game game) {
-			Unit unit = Objects.requireNonNull(game.unit(source), toString());
-			game.move(unit, path);
 		}
 
 		@Override
@@ -59,19 +41,14 @@ public abstract class Action {
 	}
 
 	public static class UnitMoveAndAttack extends Action {
-		private final int attacker;
-		private final ListInt path;
-		private final int target;
+		final int attacker;
+		final ListInt path;
+		final int target;
 
 		public UnitMoveAndAttack(int attacker, ListInt path, int target) {
 			this.attacker = attacker;
 			this.path = path.copy().unmodifiableView();
 			this.target = target;
-		}
-
-		@Override
-		public void apply(Game game) {
-			game.moveAndAttack(game.unit(attacker), path, game.unit(target));
 		}
 
 		@Override
@@ -83,17 +60,13 @@ public abstract class Action {
 	}
 
 	public static class UnitAttackLongRange extends Action {
-		private final int attacker;
-		private final int target;
+
+		final int attacker;
+		final int target;
 
 		public UnitAttackLongRange(int attacker, int target) {
 			this.attacker = attacker;
 			this.target = target;
-		}
-
-		@Override
-		public void apply(Game game) {
-			game.attackRange(game.unit(attacker), game.unit(target));
 		}
 
 		@Override
@@ -105,17 +78,12 @@ public abstract class Action {
 
 	public static class UnitBuild extends Action {
 
-		private final int factory;
-		private final Unit.Type unit;
+		final int factory;
+		final Unit.Type unit;
 
 		public UnitBuild(int factory, Unit.Type unit) {
 			this.factory = factory;
 			this.unit = Objects.requireNonNull(unit);
-		}
-
-		@Override
-		public void apply(Game game) {
-			game.buildUnit(game.building(factory), unit);
 		}
 
 		@Override
@@ -127,17 +95,12 @@ public abstract class Action {
 
 	public static class UnitTransport extends Action {
 
-		private final int unit;
-		private final Unit.Type transport;
+		final int unit;
+		final Unit.Type transport;
 
 		public UnitTransport(int unit, Unit.Type transport) {
 			this.unit = unit;
 			this.transport = Objects.requireNonNull(transport);
-		}
-
-		@Override
-		public void apply(Game game) {
-			game.unitTransport(game.unit(unit), transport);
 		}
 
 		@Override
@@ -149,15 +112,10 @@ public abstract class Action {
 
 	public static class UnitTransportFinish extends Action {
 
-		private final int unit;
+		final int unit;
 
 		public UnitTransportFinish(int unit) {
 			this.unit = unit;
-		}
-
-		@Override
-		public void apply(Game game) {
-			game.transportFinish(game.unit(unit));
 		}
 
 		@Override
@@ -169,15 +127,10 @@ public abstract class Action {
 
 	public static class UnitRepair extends Action {
 
-		private final int unit;
+		final int unit;
 
 		public UnitRepair(int unit) {
 			this.unit = unit;
-		}
-
-		@Override
-		public void apply(Game game) {
-			game.unitRepair(game.unit(unit));
 		}
 
 		@Override

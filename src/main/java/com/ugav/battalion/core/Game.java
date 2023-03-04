@@ -41,6 +41,7 @@ public class Game {
 	public final Event.Notifier<Event> beforeTurnEnd = new Event.Notifier<>();
 	public final Event.Notifier<TurnEnd> onTurnEnd = new Event.Notifier<>();
 	public final Event.Notifier<GameEnd> onGameEnd = new Event.Notifier<>();
+	public final Event.Notifier<ActionEvent> onAction = new Event.Notifier<>();
 
 	private Game(Level level) {
 		int w = level.width(), h = level.height();
@@ -206,7 +207,33 @@ public class Game {
 		onMoneyChange.notify(new MoneyChange(this, team, data.money));
 	}
 
-	public void start() {
+	public void performAction(Action action0) {
+		onAction.notify(new ActionEvent(this, action0));
+
+		if (action0 instanceof Action.Start action) {
+			start();
+		} else if (action0 instanceof Action.TurnEnd action) {
+			turnEnd();
+		} else if (action0 instanceof Action.UnitMove action) {
+			move(unit(action.source), action.path);
+		} else if (action0 instanceof Action.UnitMoveAndAttack action) {
+			moveAndAttack(unit(action.attacker), action.path, unit(action.target));
+		} else if (action0 instanceof Action.UnitAttackLongRange action) {
+			attackRange(unit(action.attacker), unit(action.target));
+		} else if (action0 instanceof Action.UnitBuild action) {
+			buildUnit(building(action.factory), action.unit);
+		} else if (action0 instanceof Action.UnitTransport action) {
+			unitTransport(unit(action.unit), action.transport);
+		} else if (action0 instanceof Action.UnitTransportFinish action) {
+			transportFinish(unit(action.unit));
+		} else if (action0 instanceof Action.UnitRepair action) {
+			unitRepair(unit(action.unit));
+		} else {
+			throw new IllegalArgumentException(Objects.toString(action0));
+		}
+	}
+
+	private void start() {
 		turnBegin();
 	}
 
@@ -218,7 +245,7 @@ public class Game {
 			unit.setActive(unit.getTeam() == turn);
 	}
 
-	public void turnEnd() {
+	private void turnEnd() {
 		beforeTurnEnd.notify(new Event(this));
 
 		for (Building building : buildings().forEach()) {
@@ -264,7 +291,7 @@ public class Game {
 		return winner;
 	}
 
-	public void move(Unit unit, ListInt path) {
+	private void move(Unit unit, ListInt path) {
 		path = calcRealPath(unit, path);
 		if (path.isEmpty() || !isMoveValid(unit, path))
 			throw new IllegalStateException(Cell.toString(path));
@@ -300,7 +327,7 @@ public class Game {
 		return path;
 	}
 
-	public void moveAndAttack(Unit attacker, ListInt path, Unit target) {
+	private void moveAndAttack(Unit attacker, ListInt path, Unit target) {
 		if (attacker.type.weapon.type != Weapon.Type.CloseRange)
 			throw new UnsupportedOperationException("Only close range weapon are supported");
 
@@ -322,7 +349,7 @@ public class Game {
 		attacker.setActive(false);
 	}
 
-	public void attackRange(Unit attacker, Unit target) {
+	private void attackRange(Unit attacker, Unit target) {
 		if (attacker.type.weapon.type != Weapon.Type.LongRange)
 			throw new UnsupportedOperationException("Only long range weapon are supported");
 
@@ -375,7 +402,7 @@ public class Game {
 		}
 	}
 
-	public Unit buildUnit(Building factory, Unit.Type unitType) {
+	private Unit buildUnit(Building factory, Unit.Type unitType) {
 		int pos = factory.getPos();
 		if (!factory.type.canBuildUnits || !factory.isActive() || unit(pos) != null)
 			throw new IllegalStateException();
@@ -392,7 +419,7 @@ public class Game {
 		return unit;
 	}
 
-	public Unit unitTransport(Unit transportedUnit, Unit.Type transportType) {
+	private Unit unitTransport(Unit transportedUnit, Unit.Type transportType) {
 		int pos = transportedUnit.getPos();
 
 		if (!transportedUnit.isActive() || transportedUnit.type.category != Unit.Category.Land)
@@ -418,7 +445,7 @@ public class Game {
 		return newUnit;
 	}
 
-	public Unit transportFinish(Unit trasportUnit) {
+	private Unit transportFinish(Unit trasportUnit) {
 		int pos = trasportUnit.getPos();
 
 		if (!trasportUnit.isActive() || !trasportUnit.type.transportUnits)
@@ -440,7 +467,7 @@ public class Game {
 		return transportedUnit;
 	}
 
-	public void unitRepair(Unit unit) {
+	private void unitRepair(Unit unit) {
 		if (!unit.isActive() || unit.getHealth() == unit.type.health)
 			throw new IllegalArgumentException();
 
@@ -554,6 +581,17 @@ public class Game {
 		public GameEnd(Game source, Team winner) {
 			super(Objects.requireNonNull(source));
 			this.winner = Objects.requireNonNull(winner);
+		}
+
+	}
+
+	public static class ActionEvent extends Event {
+
+		public final Action action;
+
+		public ActionEvent(Game source, Action action) {
+			super(source);
+			this.action = Objects.requireNonNull(action);
 		}
 
 	}

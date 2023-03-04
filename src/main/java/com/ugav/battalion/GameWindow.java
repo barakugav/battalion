@@ -85,6 +85,7 @@ class GameWindow extends JPanel implements Clearable {
 			suspendActions();
 			// TODO
 		}));
+		register.register(game.onAction, e -> logger.dbgln(e.action));
 
 		(gameActionsThread = new GameActionsThread()).start();
 
@@ -109,13 +110,13 @@ class GameWindow extends JPanel implements Clearable {
 					e.printStackTrace();
 				}
 				if (action != null) {
-					performAction(action);
+					game.performAction(action);
 					continue;
 				}
 
 				if (playComputerTurn) {
 					playComputerTurn = false;
-					computer.playTurn(game, this::performAction);
+					computer.playTurn(game);
 				}
 			}
 		}
@@ -126,11 +127,6 @@ class GameWindow extends JPanel implements Clearable {
 
 		void playComputerTurn() {
 			playComputerTurn = true;
-		}
-
-		private void performAction(Action action) {
-			logger.dbgln(action);
-			action.apply(game);
 		}
 
 	}

@@ -31,18 +31,14 @@ class ArenaPanelAnimated extends ArenaPanelGameAbstract {
 
 		@Override
 		public void run() {
-			new Action.Start().apply(game);
+			game.performAction(new Action.Start());
 			while (running && actions.hasNext())
-				performAction(actions.next());
+				game.performAction(actions.next());
 			running = false;
 		}
 
 		void setRunning(boolean running) {
 			this.running = running;
-		}
-
-		private void performAction(Action action) {
-			action.apply(game);
 		}
 
 	}

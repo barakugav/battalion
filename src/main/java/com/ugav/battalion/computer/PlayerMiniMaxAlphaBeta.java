@@ -3,7 +3,6 @@ package com.ugav.battalion.computer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Building;
@@ -27,7 +26,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 	}
 
 	@Override
-	public void playTurn(Game game, Consumer<Action> actionsHandler) {
+	public void playTurn(Game game) {
 		final Team us = game.getTurn();
 		for (;;) {
 			long t0 = System.currentTimeMillis();
@@ -35,10 +34,10 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			long t1 = System.currentTimeMillis();
 			logger.dbgln("Engine action computed in " + (t1 - t0) + "ms");
 			if (action == null) {
-				actionsHandler.accept(new Action.TurnEnd());
+				game.performAction(new Action.TurnEnd());
 				return;
 			}
-			actionsHandler.accept(action);
+			game.performAction(action);
 			assert game.getTurn() == us;
 		}
 	}
@@ -53,7 +52,7 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 		@Override
 		public Node getModifiedPosition(Node position, Action action) {
 			Node child = new Node(Game.copyOf(position.game));
-			action.apply(child.game);
+			child.game.performAction(action);
 			return child;
 		}
 
