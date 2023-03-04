@@ -2,6 +2,7 @@ package com.ugav.battalion;
 
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.event.WindowEvent;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -51,14 +52,23 @@ class GameFrame extends JFrame {
 	}
 
 	private void displayWindow(JComponent window) {
-		if (activeWindow != null) {
-			((Clearable) activeWindow).clear();
-			remove(activeWindow);
-		}
+		closeDisplayedWindow();
 		assert window instanceof Clearable;
 		add(activeWindow = window);
 		revalidate();
 		repaint();
+	}
+
+	private void closeDisplayedWindow() {
+		if (activeWindow != null) {
+			((Clearable) activeWindow).clear();
+			remove(activeWindow);
+		}
+	}
+
+	void exitGame() {
+		closeDisplayedWindow();
+		dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
 	}
 
 }

@@ -1,9 +1,11 @@
 package com.ugav.battalion;
 
 import java.awt.CardLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -11,8 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 
@@ -31,10 +36,10 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 	private final Globals globals;
 	private final Levels levels;
 
-	private final JPanel buttonsPanel;
+	private final JPanel tabsPanel;
 	private final CardLayout cardLayout;
-	private final ButtonsSet mainButtonSet;
-	private final ButtonsSet levelsButtonSet;
+	private final Tab mainTab;
+	private final Tab campaignTab;
 
 	private final ArenaPanelAnimated animatedArena;
 
@@ -44,12 +49,11 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 		this.globals = Objects.requireNonNull(globals);
 		levels = new Levels(globals.levelSerializer);
 
-		buttonsPanel = new JPanel();
-		buttonsPanel.setLayout(cardLayout = new CardLayout());
-		buttonsPanel.add(mainButtonSet = createMainButtonSet(), mainButtonSet.name);
-		buttonsPanel.add(levelsButtonSet = createLevelsButtonSet(), levelsButtonSet.name);
-		buttonsPanel.setOpaque(false);
-		add(buttonsPanel, JLayeredPane.PALETTE_LAYER);
+		cardLayout = new CardLayout();
+		mainTab = new MainTab();
+		campaignTab = new CampaignTab();
+		tabsPanel = createTabsPanel();
+		add(tabsPanel, JLayeredPane.PALETTE_LAYER);
 
 		Pair<Level, Iter<Action>> bgGame = getAnimatedBackgroundGame(globals);
 		animatedArena = new ArenaPanelAnimated(globals, Game.fromLevel(bgGame.e1), bgGame.e2);
@@ -57,7 +61,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 
 		Runnable resizeComponents = () -> {
 			Dimension container = getSize();
-			for (JComponent comp : List.of(buttonsPanel, animatedArena)) {
+			for (JComponent comp : List.of(tabsPanel, animatedArena)) {
 				Dimension compSize = comp.getPreferredSize();
 				int x = (container.width - compSize.width) / 2;
 				int y = (container.height - compSize.height) / 2;
@@ -75,52 +79,24 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 
 		});
 
-		showButtonSet(mainButtonSet);
+		showTab(mainTab);
 	}
 
-	private void showButtonSet(ButtonsSet buttonsSet) {
-		cardLayout.show(buttonsPanel, buttonsSet.name);
+	private JPanel createTabsPanel() {
+		JPanel tabsPanel = new JPanel();
+		tabsPanel.setLayout(cardLayout);
+		for (Tab tab : List.of(mainTab, campaignTab)) {
+			JPanel tabPanel = new JPanel(new GridBagLayout());
+			tabPanel.add(tab, Utils.gbConstraints(0, 0, 1, 1, GridBagConstraints.NONE, 1, 1));
+			tabPanel.setOpaque(false);
+			tabsPanel.add(tabPanel, tab.name);
+		}
+		tabsPanel.setOpaque(false);
+		return tabsPanel;
 	}
 
-	private ButtonsSet createMainButtonSet() {
-		ButtonsSet buttonSet = new ButtonsSet("Main");
-
-		buttonSet.addButton("Campaign", e -> showButtonSet(levelsButtonSet));
-		buttonSet.addButton("Bonus Level", e -> this.globals.frame.openLevelGame(levels.getLevel("Bonus Level")));
-		buttonSet.addButton("Custom Level", e -> {
-			JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType(),
-					Cookies.getCookieValue(Cookies.LEVEL_DISK_LAST_DIR));
-			int result = fileChooser.showOpenDialog(globals.frame);
-			if (result == JFileChooser.APPROVE_OPTION) {
-				Cookies.setCookieValue(Cookies.LEVEL_DISK_LAST_DIR,
-						fileChooser.getCurrentDirectory().getAbsolutePath());
-				String selectedFile = fileChooser.getSelectedFile().getAbsolutePath();
-				try {
-					Level level = globals.levelSerializer.levelRead(selectedFile);
-					this.globals.frame.openLevelGame(level);
-				} catch (RuntimeException ex) {
-//					debug.print("failed to load file from: ", selectedFile);
-					ex.printStackTrace();
-				}
-			}
-		});
-		buttonSet.addButton("Level Builder", e -> this.globals.frame.openLevelBuilder());
-		buttonSet.addButton("Options", e -> this.globals.frame.openOptionsMenu());
-
-		buttonSet.addFiller();
-		return buttonSet;
-	}
-
-	private ButtonsSet createLevelsButtonSet() {
-		ButtonsSet buttonSet = new ButtonsSet("Campaign");
-
-		for (Pair<String, Level> lvl : levels.getLevels())
-			buttonSet.addButton(lvl.e1, e -> this.globals.frame.openLevelGame(lvl.e2));
-
-		buttonSet.addButton("Back", e -> showButtonSet(mainButtonSet));
-
-		buttonSet.addFiller();
-		return buttonSet;
+	private void showTab(Tab tab) {
+		cardLayout.show(tabsPanel, tab.name);
 	}
 
 	@Override
@@ -128,28 +104,133 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 		animatedArena.clear();
 	}
 
-	private static class ButtonsSet extends JPanel {
+	private class MainTab extends Tab {
 
-		private final String name;
-		private int buttonCount;
+		private static final Color ExitColor = new Color(254, 106, 106);
+		private static final long serialVersionUID = 1L;
+
+		MainTab() {
+			super("Main");
+
+			addTitle("Main Menu");
+
+			ButtonColumn buttonSet = new ButtonColumn();
+			buttonSet.addButton("Campaign", e -> showTab(campaignTab));
+			buttonSet.addButton("Bonus Level", e -> globals.frame.openLevelGame(levels.getLevel("Bonus Level")));
+			buttonSet.addButton("Custom Level", e -> {
+				JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType(),
+						Cookies.getCookieValue(Cookies.LEVEL_DISK_LAST_DIR));
+				int result = fileChooser.showOpenDialog(globals.frame);
+				if (result == JFileChooser.APPROVE_OPTION) {
+					Cookies.setCookieValue(Cookies.LEVEL_DISK_LAST_DIR,
+							fileChooser.getCurrentDirectory().getAbsolutePath());
+					String selectedFile = fileChooser.getSelectedFile().getAbsolutePath();
+					try {
+						Level level = globals.levelSerializer.levelRead(selectedFile);
+						globals.frame.openLevelGame(level);
+					} catch (RuntimeException ex) {
+//						debug.print("failed to load file from: ", selectedFile);
+						ex.printStackTrace();
+					}
+				}
+			});
+			buttonSet.addButton("Level Builder", e -> globals.frame.openLevelBuilder());
+			buttonSet.addButton("Options", e -> globals.frame.openOptionsMenu());
+			addComp(buttonSet);
+
+			ButtonColumn additionalButtonSet = new ButtonColumn();
+			additionalButtonSet.addButton("Exit", e -> globals.frame.exitGame()).setBackground(ExitColor);
+			addComp(additionalButtonSet);
+		}
+
+	}
+
+	private class CampaignTab extends Tab {
 
 		private static final long serialVersionUID = 1L;
 
-		ButtonsSet(String name) {
-			super(new GridBagLayout());
+		CampaignTab() {
+			super("Campaign");
+
+			addTitle("Campaign");
+
+			ButtonColumn levelsButtonSet = new ButtonColumn();
+			for (Pair<String, Level> lvl : levels.getLevels())
+				levelsButtonSet.addButton(lvl.e1, e -> globals.frame.openLevelGame(lvl.e2));
+			addComp(levelsButtonSet);
+
+			ButtonColumn additionalButtonSet = new ButtonColumn();
+			additionalButtonSet.addButton("Back", e -> showTab(mainTab));
+			addComp(additionalButtonSet);
+		}
+
+	}
+
+	private static class Tab extends ColumnWithMargins {
+
+		final String name;
+
+		private static final int Margin = 6;
+		private static final Color BackgroundColor = new Color(64, 62, 64);
+		private static final Color TitleColor = new Color(255, 234, 201);
+		private static final long serialVersionUID = 1L;
+
+		Tab(String name) {
+			super(Margin);
 			this.name = Objects.requireNonNull(name);
-			setOpaque(false);
+			setBorder(BorderFactory.createRaisedBevelBorder());
+			setBackground(BackgroundColor);
 		}
 
-		void addButton(String label, ActionListener action) {
-			GridBagConstraints c = Utils.gbConstraints(0, buttonCount++, 1, 1, GridBagConstraints.HORIZONTAL, 1, 0);
-			add(Utils.newButton(label, action), c);
+		JLabel addTitle(String title) {
+			JLabel label = new JLabel(title);
+			label.setForeground(TitleColor);
+			return addComp(label);
 		}
 
-		void addFiller() {
-			JPanel filler = new JPanel();
-			filler.setPreferredSize(new Dimension(0, 0));
-			add(filler, Utils.gbConstraints(0, buttonCount, 1, 1, GridBagConstraints.VERTICAL, 0, 1));
+	}
+
+	private static class ButtonColumn extends ColumnWithMargins {
+
+		private static final int Margin = 3;
+		private static final Color BackgroundColor = new Color(49, 42, 41);
+		private static final Color ButtonColor = new Color(156, 156, 156);
+		private static final long serialVersionUID = 1L;
+
+		ButtonColumn() {
+			super(Margin);
+			setBackground(BackgroundColor);
+		}
+
+		JButton addButton(String label, ActionListener action) {
+			JButton button = Utils.newButton(label, action);
+			button.setPreferredSize(new Dimension(200, 30));
+			button.setBackground(ButtonColor);
+			button.setOpaque(true);
+			return addComp(button);
+		}
+
+	}
+
+	private static class ColumnWithMargins extends JPanel {
+
+		private int compCount;
+		private final int margin;
+		private static final long serialVersionUID = 1L;
+
+		ColumnWithMargins(int margin) {
+			super(new GridBagLayout());
+			if (margin < 0)
+				throw new IllegalArgumentException();
+			this.margin = margin;
+		}
+
+		<Comp extends JComponent> Comp addComp(Comp comp) {
+			final int y = compCount++;
+			GridBagConstraints c = Utils.gbConstraints(0, y, 1, 1, GridBagConstraints.HORIZONTAL, 1, 0);
+			c.insets = new Insets(y > 0 ? 0 : margin, margin, margin, margin);
+			add(comp, c);
+			return comp;
 		}
 	}
 
