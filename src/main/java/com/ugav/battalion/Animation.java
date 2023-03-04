@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.SwingUtilities;
 
@@ -347,6 +348,7 @@ interface Animation {
 
 		@Override
 		public void beforeFirst() {
+			arena.mapMoveAnimation.mapMoveStart();
 		}
 
 		@Override
@@ -372,6 +374,7 @@ interface Animation {
 		@Override
 		public void afterLast() {
 			arena.mapPos = target;
+			arena.mapMoveAnimation.mapMoveEnd();
 		}
 
 		@Override
@@ -381,8 +384,8 @@ interface Animation {
 
 		static class Manager implements TickTask {
 			private final ArenaPanelAbstract<?, ?, ?> arena;
-			private Animation.MapMove animation;
-			private Position userChoosenPos;
+			private final AtomicBoolean isMapMoving = new AtomicBoolean();
+			private Position userChosenPos;
 
 			final Event.Notifier<Event> onMapMove = new Event.Notifier<>();
 
@@ -391,62 +394,51 @@ interface Animation {
 			}
 
 			synchronized void userMapMove(Direction dir) {
-				if (animation != null)
+				if (isMapMoving.get())
 					return; /* User input is ignored during animation */
 
-				Position userChoosenPosNew = (userChoosenPos == null ? arena.mapPos : userChoosenPos).add(dir);
+				Position userChoosenPosNew = (userChosenPos == null ? arena.mapPos : userChosenPos).add(dir);
 				if (userChoosenPosNew.dist(arena.mapPos) >= 3)
 					return;
 				if (!userChoosenPosNew.isInRect(arena.arenaWidth() - ArenaPanelAbstract.DISPLAYED_ARENA_WIDTH,
 						arena.arenaHeight() - ArenaPanelAbstract.DISPLAYED_ARENA_HEIGHT))
 					return;
 
-				userChoosenPos = userChoosenPosNew;
+				userChosenPos = userChoosenPosNew;
 			}
 
-			synchronized Animation createAnimation(Position target) {
-				return new MapMove(arena, target) {
+			private void mapMoveStart() {
+				synchronized (this) {
+					if (!isMapMoving.compareAndSet(false, true))
+						throw new IllegalStateException();
+					userChosenPos = null;
+				}
+				onMapMove.notify(new Event(this));
+			}
 
-					@Override
-					public void beforeFirst() {
-						synchronized (Manager.this) {
-							if (animation != null)
-								throw new IllegalStateException();
-							userChoosenPos = null;
-							animation = this;
-						}
-						onMapMove.notify(new Event(this));
-						super.beforeFirst();
-					}
-
-					@Override
-					public void afterLast() {
-						super.afterLast();
-						synchronized (Manager.this) {
-							if (animation != this)
-								throw new IllegalStateException();
-							animation = null;
-						}
-					}
-				};
+			private void mapMoveEnd() {
+				synchronized (this) {
+					if (!isMapMoving.compareAndSet(true, false))
+						throw new IllegalStateException();
+				}
 			}
 
 			@Override
 			public synchronized void run() {
-				if (userChoosenPos == null)
+				if (userChosenPos == null)
 					return;
-				double dx = userChoosenPos.x - arena.mapPos.x;
-				double dy = userChoosenPos.y - arena.mapPos.y;
+				double dx = userChosenPos.x - arena.mapPos.x;
+				double dy = userChosenPos.y - arena.mapPos.y;
 				if (dx == 0 && dy == 0)
 					return;
 				double l = Math.sqrt(dx * dx + dy * dy);
 				double stepSize = StepSize * Math.sqrt(l);
-				if (arena.mapPos.dist(userChoosenPos) > stepSize) {
+				if (arena.mapPos.dist(userChosenPos) > stepSize) {
 					double x = arena.mapPos.x + dx / l * stepSize;
 					double y = arena.mapPos.y + dy / l * stepSize;
 					arena.mapPos = Position.of(x, y);
 				} else {
-					arena.mapPos = userChoosenPos;
+					arena.mapPos = userChosenPos;
 				}
 			}
 

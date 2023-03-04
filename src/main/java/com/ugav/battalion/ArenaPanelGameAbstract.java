@@ -132,7 +132,8 @@ class ArenaPanelGameAbstract extends
 				throw new IllegalStateException();
 		}
 
-		return Animation.of(mapMoveAnimation.createAnimation(Position.of(x, y)), animation);
+		Animation mapMoveAnimation = new Animation.MapMove(this, Position.of(x, y));
+		return Animation.of(mapMoveAnimation, animation);
 	}
 
 	class EntityLayer extends

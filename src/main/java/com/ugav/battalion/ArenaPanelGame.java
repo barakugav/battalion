@@ -50,7 +50,7 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 			final Team player = Team.Red;
 			if (e.nextTurn == player) {
 				Position p = Position.fromCell(playerLastPos.val.intValue());
-				runAnimationAndWait(mapMoveAnimation.createAnimation(p));
+				runAnimationAndWait(new Animation.MapMove(this, p));
 			}
 		});
 
