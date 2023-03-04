@@ -12,9 +12,12 @@ import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -37,9 +40,9 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 	private final Levels levels;
 
 	private final JPanel tabsPanel;
-	private final CardLayout cardLayout;
 	private final Tab mainTab;
 	private final Tab campaignTab;
+	private final Tab optionsTab;
 
 	private final ArenaPanelAnimated animatedArena;
 
@@ -49,9 +52,9 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 		this.globals = Objects.requireNonNull(globals);
 		levels = new Levels(globals.levelSerializer);
 
-		cardLayout = new CardLayout();
 		mainTab = new MainTab();
 		campaignTab = new CampaignTab();
+		optionsTab = new OptionTab();
 		tabsPanel = createTabsPanel();
 		add(tabsPanel, JLayeredPane.PALETTE_LAYER);
 
@@ -84,8 +87,8 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 
 	private JPanel createTabsPanel() {
 		JPanel tabsPanel = new JPanel();
-		tabsPanel.setLayout(cardLayout);
-		for (Tab tab : List.of(mainTab, campaignTab)) {
+		tabsPanel.setLayout(new CardLayout());
+		for (Tab tab : List.of(mainTab, campaignTab, optionsTab)) {
 			JPanel tabPanel = new JPanel(new GridBagLayout());
 			tabPanel.add(tab, Utils.gbConstraints(0, 0, 1, 1, GridBagConstraints.NONE, 1, 1));
 			tabPanel.setOpaque(false);
@@ -96,7 +99,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 	}
 
 	private void showTab(Tab tab) {
-		cardLayout.show(tabsPanel, tab.name);
+		((CardLayout) tabsPanel.getLayout()).show(tabsPanel, tab.name);
 	}
 
 	@Override
@@ -111,7 +114,6 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 
 		MainTab() {
 			super("Main");
-
 			addTitle("Main Menu");
 
 			ButtonColumn buttonSet = new ButtonColumn();
@@ -135,7 +137,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 				}
 			});
 			buttonSet.addButton("Level Builder", e -> globals.frame.openLevelBuilder());
-			buttonSet.addButton("Options", e -> globals.frame.openOptionsMenu());
+			buttonSet.addButton("Options", e -> showTab(optionsTab));
 			addComp(buttonSet);
 
 			ButtonColumn additionalButtonSet = new ButtonColumn();
@@ -151,13 +153,36 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 
 		CampaignTab() {
 			super("Campaign");
-
 			addTitle("Campaign");
 
 			ButtonColumn levelsButtonSet = new ButtonColumn();
 			for (Pair<String, Level> lvl : levels.getLevels())
 				levelsButtonSet.addButton(lvl.e1, e -> globals.frame.openLevelGame(lvl.e2));
 			addComp(levelsButtonSet);
+
+			ButtonColumn additionalButtonSet = new ButtonColumn();
+			additionalButtonSet.addButton("Back", e -> showTab(mainTab));
+			addComp(additionalButtonSet);
+		}
+
+	}
+
+	private class OptionTab extends Tab {
+
+		private static final long serialVersionUID = 1L;
+
+		OptionTab() {
+			super("Options");
+			addTitle("Options");
+
+			CheckboxColumn debugOptions = new CheckboxColumn();
+			debugOptions.addCheckbox("showGrid", globals.debug.showGrid,
+					selected -> globals.debug.showGrid = selected.booleanValue());
+			debugOptions.addCheckbox("showUnitID", globals.debug.showUnitID,
+					selected -> globals.debug.showUnitID = selected.booleanValue());
+			debugOptions.addCheckbox("playAllTeams", globals.debug.playAllTeams,
+					selected -> globals.debug.playAllTeams = selected.booleanValue());
+			addComp(debugOptions);
 
 			ButtonColumn additionalButtonSet = new ButtonColumn();
 			additionalButtonSet.addButton("Back", e -> showTab(mainTab));
@@ -208,6 +233,45 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 			button.setBackground(ButtonColor);
 			button.setOpaque(true);
 			return addComp(button);
+		}
+
+	}
+
+	private static class CheckboxColumn extends ColumnWithMargins {
+
+		private static final int Margin = 3;
+		private static final Color BackgroundColor = new Color(80, 79, 80);
+		private static final Color CheckboxTextColor = new Color(245, 245, 245);
+		private static final long serialVersionUID = 1L;
+
+		CheckboxColumn() {
+			super(Margin);
+			setBackground(BackgroundColor);
+		}
+
+		JCheckBox addCheckbox(String text, boolean selected, Consumer<Boolean> onSelectedChange) {
+			JCheckBox checkbox = new JCheckBox(text, selected);
+			checkbox.addActionListener(e -> onSelectedChange.accept(Boolean.valueOf(checkbox.isSelected())));
+			checkbox.setPreferredSize(new Dimension(200, 30));
+			checkbox.setBackground(BackgroundColor);
+			checkbox.setForeground(CheckboxTextColor);
+			checkbox.setFocusPainted(false);
+			checkbox.setOpaque(true);
+			// Set default icon for checkbox
+			checkbox.setIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxUnselected)));
+			// Set selected icon when checkbox state is selected
+			checkbox.setSelectedIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxSelected)));
+			// Set disabled icon for checkbox
+			checkbox.setDisabledIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxUnselected)));
+			// Set disabled-selected icon for checkbox
+			checkbox.setDisabledSelectedIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxSelected)));
+			// Set checkbox icon when checkbox is pressed
+			checkbox.setPressedIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxPressed)));
+			// Set icon when a mouse is over the checkbox
+			checkbox.setRolloverIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxUnselectedHovered)));
+			// Set icon when a mouse is over a selected checkbox
+			checkbox.setRolloverSelectedIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxSelectedHovered)));
+			return addComp(checkbox);
 		}
 
 	}

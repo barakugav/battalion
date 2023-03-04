@@ -47,10 +47,6 @@ class GameFrame extends JFrame {
 		displayWindow(new LevelBuilderWindow(globals));
 	}
 
-	void openOptionsMenu() {
-		displayWindow(new OptionsWindow(globals));
-	}
-
 	private void displayWindow(JComponent window) {
 		closeDisplayedWindow();
 		assert window instanceof Clearable;
