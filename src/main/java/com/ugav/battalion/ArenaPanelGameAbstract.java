@@ -5,6 +5,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
+import com.ugav.battalion.Animation.MapMove.Manager.MapPosRange;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
@@ -51,10 +52,8 @@ class ArenaPanelGameAbstract extends
 
 	void initGame() {
 		tickTaskManager.start();
-
 		entityLayer().reset();
-
-		mapViewSet(Cell.of(0, 0));
+		mapMove.setPos(Position.of(0, 0));
 	}
 
 	@Override
@@ -99,7 +98,7 @@ class ArenaPanelGameAbstract extends
 	}
 
 	private Animation centerMapBeforeAnimation(Unit unit, Animation animation) {
-		Position mapMovePos = mapMoveAnimation.calcMapPosCentered(Position.fromCell(unit.getPos()));
+		Position mapMovePos = mapMove.calcMapPosCentered(Position.fromCell(unit.getPos()));
 		Animation mapMoveAnimation = new Animation.MapMove(this, mapMovePos);
 		return Animation.of(mapMoveAnimation, animation);
 	}
@@ -119,27 +118,26 @@ class ArenaPanelGameAbstract extends
 		}
 		int topLeft = Cell.of(xmin, ymin);
 		int bottomRight = Cell.of(xmax, ymax);
-		boolean topLeftVisible = Cell.isInRect(topLeft, mapPos.x, mapPos.y, mapPos.x + DISPLAYED_ARENA_WIDTH - 1,
-				mapPos.y + DISPLAYED_ARENA_HEIGHT - 1);
-		boolean bottomRightVisible = Cell.isInRect(bottomRight, mapPos.x, mapPos.y,
-				mapPos.x + DISPLAYED_ARENA_WIDTH - 1, mapPos.y + DISPLAYED_ARENA_HEIGHT - 1);
+		MapPosRange displayedRange = mapMove.getDisplayedRange();
+		boolean topLeftVisible = displayedRange.contains(Position.fromCell(topLeft));
+		boolean bottomRightVisible = displayedRange.contains(Position.fromCell(bottomRight));
 		if (topLeftVisible && bottomRightVisible)
 			return animation; /* already visible */
 
-		if (xmin > xmax + DISPLAYED_ARENA_WIDTH || ymin > ymax + DISPLAYED_ARENA_HEIGHT)
+		if (xmin > xmax + displayedArenaWidth() || ymin > ymax + displayedArenaHeight())
 			throw new IllegalArgumentException("can't display rect [" + topLeft + ", " + bottomRight + "]");
-		int x = xmin + (xmax - xmin) / 2 - DISPLAYED_ARENA_WIDTH / 2;
-		x = Math.max(0, Math.min(game.width() - DISPLAYED_ARENA_WIDTH, x));
-		int y = ymin + (ymax - ymin) / 2 - DISPLAYED_ARENA_HEIGHT / 2;
-		y = Math.max(0, Math.min(game.height() - DISPLAYED_ARENA_WIDTH, y));
+		int x = (int) (xmin + (xmax - xmin) / 2 - displayedArenaWidth() / 2);
+		int y = (int) (ymin + (ymax - ymin) / 2 - displayedArenaHeight() / 2);
+		Position pos = mapMove.getDisplayedRange().closestContainedPoint(Position.of(x, y));
 
 		for (Iter.Int it = cells.iterator(); it.hasNext();) {
 			int cell = it.next();
-			if (!Cell.isInRect(cell, x, y, x + DISPLAYED_ARENA_WIDTH - 1, y + DISPLAYED_ARENA_HEIGHT - 1))
+			if (!Cell.isInRect(cell, pos.x, pos.y, pos.x + displayedArenaWidth() - 1,
+					pos.y + displayedArenaHeight() - 1))
 				throw new IllegalStateException();
 		}
 
-		Animation mapMoveAnimation = new Animation.MapMove(this, Position.of(x, y));
+		Animation mapMoveAnimation = new Animation.MapMove(this, pos);
 		return Animation.of(mapMoveAnimation, animation);
 	}
 

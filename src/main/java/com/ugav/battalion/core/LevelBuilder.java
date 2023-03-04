@@ -31,7 +31,7 @@ public class LevelBuilder {
 	}
 
 	public void reset(int width, int height) {
-		if (!(Level.MINIMUM_WIDTH <= width && width < 100 && Level.MINIMUM_HEIGHT <= height && height < 100))
+		if (width < 0 || height < 0)
 			throw new IllegalArgumentException();
 		tiles = Cell.Array.fromFunc(width, height, p -> TileDesc.of(Terrain.FlatLand1, null, null));
 		startingMoney.clear();

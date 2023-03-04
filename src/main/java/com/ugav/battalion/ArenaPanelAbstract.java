@@ -5,6 +5,8 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -33,7 +35,6 @@ import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
 import com.ugav.battalion.core.IBuilding;
 import com.ugav.battalion.core.IUnit;
-import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
@@ -45,11 +46,10 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	private int arenaWidth;
 	private int arenaHeight;
-	Position mapPos;
 
 	final EntityLayer<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> entityLayer;
 
-	final Animation.MapMove.Manager mapMoveAnimation = new Animation.MapMove.Manager(this);
+	final Animation.MapMove.Manager mapMove = new Animation.MapMove.Manager(this);
 	final TickTask.Manager tickTaskManager = new TickTask.Manager();
 
 	private boolean isMapMoveByKeyEnable = true;
@@ -61,20 +61,25 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	final Globals globals;
 
 	static final int TILE_SIZE_PIXEL = 56;
-	static final int DISPLAYED_ARENA_WIDTH = Level.MINIMUM_WIDTH;
-	static final int DISPLAYED_ARENA_HEIGHT = Level.MINIMUM_WIDTH;
 
 	private static final long serialVersionUID = 1L;
 
 	ArenaPanelAbstract(Globals globals) {
 		this.globals = Objects.requireNonNull(globals);
 
-		mapPos = Position.of(0, 0);
-
 		entityLayer = createEntityLayer();
+
+		mapMove.setPos(Position.of(0, 0));
+
 		add(entityLayer, JLayeredPane.DEFAULT_LAYER);
-		Dimension entityLayerSize = entityLayer.getPreferredSize();
-		entityLayer.setBounds(0, 0, entityLayerSize.width, entityLayerSize.height);
+
+		addComponentListener(new ComponentAdapter() {
+			@Override
+			public void componentResized(ComponentEvent e) {
+				onResize();
+			}
+		});
+		onResize();
 
 		entityLayer.addKeyListener(keyListener = new KeyAdapter() {
 			@Override
@@ -83,7 +88,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					return;
 				Direction dir = keyToDir(e.getKeyCode());
 				if (dir != null)
-					mapMoveAnimation.userMapMove(dir);
+					mapMove.userMapMove(dir);
 			}
 
 			private static Direction keyToDir(int keyCode) {
@@ -108,7 +113,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		tickTaskManager.addTask(1000, this::repaint);
 
-		tickTaskManager.addTask(100, mapMoveAnimation);
+		tickTaskManager.addTask(100, mapMove);
 		tickTaskManager.addTask(100, animationTask);
 	}
 
@@ -130,9 +135,20 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		return animationsActive.get() > 0;
 	}
 
+	double displayedArenaWidth() {
+		return (double) entityLayer.getWidth() / TILE_SIZE_PIXEL;
+	}
+
+	double displayedArenaHeight() {
+		return (double) entityLayer.getHeight() / TILE_SIZE_PIXEL;
+	}
+
+	private void onResize() {
+		entityLayer.setBounds(0, 0, getWidth(), getHeight());
+		mapMove.setPos(mapMove.getCurrent());
+	}
+
 	void updateArenaSize(int width, int height) {
-		if (!(DISPLAYED_ARENA_WIDTH <= width && width < 100) || !(DISPLAYED_ARENA_HEIGHT <= height && height < 100))
-			throw new IllegalArgumentException("illegal arena size: " + width + " " + height);
 		this.arenaWidth = width;
 		this.arenaHeight = height;
 	}
@@ -145,11 +161,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		return arenaHeight;
 	}
 
-	void mapViewSet(int pos) {
-		if (!Cell.isInRect(pos, arenaWidth - DISPLAYED_ARENA_WIDTH, arenaHeight - DISPLAYED_ARENA_HEIGHT))
-			throw new IllegalArgumentException();
-		mapMoveAnimation.onMapMove.notify(new Event(this)); // TODO ugly
-		mapPos = Position.fromCell(pos);
+	boolean isInArena(int p) {
+		return Cell.isInRect(p, arenaWidth - 1, arenaHeight - 1);
 	}
 
 	void setMapMoveByKeyEnable(boolean enable) {
@@ -157,11 +170,11 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	}
 
 	int displayedX(double x) {
-		return (int) (x - mapPos.x * TILE_SIZE_PIXEL);
+		return (int) x - (int) (mapMove.getCurrent().x * TILE_SIZE_PIXEL);
 	}
 
 	int displayedY(double y) {
-		return (int) (y - mapPos.y * TILE_SIZE_PIXEL);
+		return (int) y - (int) (mapMove.getCurrent().y * TILE_SIZE_PIXEL);
 	}
 
 	int displayedXCell(double x) {
@@ -173,15 +186,15 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	}
 
 	int displayedXInv(int x) {
-		return (int) (x + mapPos.x * TILE_SIZE_PIXEL);
+		return (int) (x + mapMove.getCurrent().x * TILE_SIZE_PIXEL);
 	}
 
 	int displayedYInv(int y) {
-		return (int) (y + mapPos.y * TILE_SIZE_PIXEL);
+		return (int) (y + mapMove.getCurrent().y * TILE_SIZE_PIXEL);
 	}
 
 	Position getCurrentMapOrigin() {
-		return mapPos;
+		return mapMove.getCurrent();
 	}
 
 	@Override
@@ -218,7 +231,9 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					requestFocusInWindow();
 					int clickx = EntityLayer.this.arena.displayedXInv(e.getX()) / TILE_SIZE_PIXEL;
 					int clicky = EntityLayer.this.arena.displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
-					onTileClick.notify(new TileClickEvent(EntityLayer.this.arena, Cell.of(clickx, clicky)));
+					int click = Cell.of(clickx, clicky);
+					if (arena.isInArena(click))
+						onTileClick.notify(new TileClickEvent(EntityLayer.this.arena, click));
 				}
 			});
 			addMouseMotionListener(mouseMotionListener = new MouseAdapter() {
@@ -238,6 +253,22 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		@Override
 		protected void paintComponent(Graphics g) {
+			/* paint cells out of map */
+			Position mapPos = arena.mapMove.getCurrent();
+			int xmin = (int) Math.floor(mapPos.x);
+			int xmax = (int) Math.ceil(mapPos.x + arena.displayedArenaWidth());
+			int ymin = (int) Math.floor(mapPos.y);
+			int ymax = (int) Math.ceil(mapPos.y + arena.displayedArenaHeight());
+			g.setColor(Color.BLACK);
+			for (Iter.Int it = Cell.Iter2D.of(xmin, xmax + 1, ymin, ymax + 1); it.hasNext();) {
+				int cell = it.next();
+				if (arena.isInArena(cell))
+					continue;
+				int x = arena.displayedXCell(Cell.x(cell));
+				int y = arena.displayedYCell(Cell.y(cell));
+				g.fillRect(x, y, TILE_SIZE_PIXEL, TILE_SIZE_PIXEL);
+			}
+
 			List<ArenaComp> comps = new ArrayList<>(this.comps.values());
 			comps.sort((o1, o2) -> {
 				int c;
@@ -289,11 +320,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					g.drawString("U" + id, x, y);
 				}
 			}
-		}
-
-		@Override
-		public Dimension getPreferredSize() {
-			return new Dimension(TILE_SIZE_PIXEL * DISPLAYED_ARENA_WIDTH, TILE_SIZE_PIXEL * DISPLAYED_ARENA_HEIGHT);
 		}
 
 		void removeAllArenaComps() {
@@ -369,10 +395,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			this.pos = pos;
 		}
 
-		private boolean inArena(int p) {
-			return Cell.isInRect(p, arena.arenaWidth - 1, arena.arenaHeight - 1);
-		}
-
 		@Override
 		public void paintComponent(Graphics g) {
 			IntFunction<Pair<Direction, Direction>> quadrantToDirs = quadrant -> {
@@ -402,7 +424,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 							p3 = Cell.add(Cell.add(pos, dirs.e1), dirs.e2);
 					Set<Terrain.Category> waters = EnumSet.of(Terrain.Category.Water, Terrain.Category.BridgeLow,
 							Terrain.Category.BridgeHigh, Terrain.Category.Shore);
-					IntPredicate isWater = p -> !inArena(p) || waters.contains(arena.getTerrain(p).category);
+					IntPredicate isWater = p -> !arena.isInArena(p) || waters.contains(arena.getTerrain(p).category);
 					boolean c1 = !isWater.test(p1), c2 = !isWater.test(p2), c3 = !isWater.test(p3);
 
 					if (c1 || c2 || c3) {
@@ -418,7 +440,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					int p = Cell.add(pos, dir);
 					Set<Terrain.Category> roads = EnumSet.of(Terrain.Category.Road, Terrain.Category.BridgeLow,
 							Terrain.Category.BridgeHigh);
-					variant += inArena(p) && roads.contains(arena.getTerrain(p).category) ? "v" : "x";
+					variant += arena.isInArena(p) && roads.contains(arena.getTerrain(p).category) ? "v" : "x";
 				}
 				arena.drawRelativeToMap(g, "Road_" + variant, pos);
 
@@ -429,7 +451,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					Set<Terrain.Category> endCategoties = EnumSet.of(Terrain.Category.Road, Terrain.Category.FlatLand,
 							Terrain.Category.Forest, Terrain.Category.Hiils, Terrain.Category.Mountain,
 							Terrain.Category.Shore);
-					if (inArena(p) && endCategoties.contains(arena.getTerrain(p).category))
+					if (arena.isInArena(p) && endCategoties.contains(arena.getTerrain(p).category))
 						ends.add(dir);
 				}
 
@@ -452,12 +474,12 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					Pair<Direction, Direction> dirs = quadrantToDirs.apply(quadrant);
 					int p1 = Cell.add(pos, dirs.e1), p2 = Cell.add(pos, dirs.e2),
 							p3 = Cell.add(Cell.add(pos, dirs.e1), dirs.e2);
-					IntPredicate isWater = p -> (!inArena(p)
+					IntPredicate isWater = p -> (!arena.isInArena(p)
 							|| EnumSet.of(Terrain.Category.Water, Terrain.Category.Shore, Terrain.Category.BridgeLow,
 									Terrain.Category.BridgeHigh).contains(arena.getTerrain(p).category));
 					Predicate<Direction> isBridge = dir -> {
 						int p = Cell.add(pos, dir);
-						if (!inArena(p) || !EnumSet.of(Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh)
+						if (!arena.isInArena(p) || !EnumSet.of(Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh)
 								.contains(arena.getTerrain(p).category))
 							return false;
 						boolean bridgeHorizonal = isBridgeHorizontal.test(p);

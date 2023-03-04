@@ -51,15 +51,15 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 	private final LevelBuilder builder;
 	private final Globals globals;
-	private final Menu menu;
+	private final SideMenu menu;
 	private final ArenaPanel arenaPanel;
 	private final Logger logger;
 
 	LevelBuilderWindow(Globals globals) {
 		this.globals = Objects.requireNonNull(globals);
 		logger = new Logger(true); // TODO
-		builder = new LevelBuilder(Level.MINIMUM_WIDTH, Level.MINIMUM_HEIGHT);
-		menu = new Menu();
+		builder = new LevelBuilder(10, 10);
+		menu = new SideMenu();
 		arenaPanel = new ArenaPanel(globals);
 
 		setLayout(new GridBagLayout());
@@ -68,13 +68,15 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		c.gridx = 0;
 		c.gridwidth = 1;
-		c.weightx = 1;
+		c.weightx = 0;
+		c.weighty = 1;
 		c.fill = GridBagConstraints.BOTH;
 		add(menu, c);
-		c.gridx = 5;
+		c.gridx = 1;
 		c.gridwidth = 1;
-		c.weightx = 0;
-		c.fill = GridBagConstraints.NONE;
+		c.weightx = 1;
+		c.weighty = 1;
+		c.fill = GridBagConstraints.BOTH;
 		add(arenaPanel, c);
 
 		arenaPanel.reset();
@@ -86,7 +88,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		arenaPanel.clear();
 	}
 
-	private class Menu extends JPanel implements Clearable {
+	private class SideMenu extends JPanel implements Clearable {
 
 		private static final long serialVersionUID = 1L;
 
@@ -102,7 +104,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		private static final Object removeBuildingObj = new Object();
 		private static final Object removeUnitObj = new Object();
 
-		Menu() {
+		SideMenu() {
 			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
 			terrainTab = new EntityTab("terrains");
@@ -370,7 +372,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					height = Integer.parseInt(heightText.getText());
 				} catch (NumberFormatException ex) {
 				}
-				if (!(Level.MINIMUM_WIDTH <= width && width < 100 && Level.MINIMUM_HEIGHT <= height && height < 100))
+				if (width < 0 || height < 0)
 					return; /* TODO print message to user */
 				dispose();
 				builder.reset(width, height);
@@ -423,7 +425,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		void reset() {
 			entityLayer().reset();
 			updateArenaSize(builder.width(), builder.height());
-			mapViewSet(Cell.of(0, 0));
+			mapMove.setPos(Position.of(0, 0));
 		}
 
 		@Override
@@ -474,11 +476,11 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					builder.setTile(cell, tile.terrain, tile.building, unit);
 				// TODO else user message
 
-			} else if (selectedObj == Menu.removeBuildingObj) {
+			} else if (selectedObj == SideMenu.removeBuildingObj) {
 				if (tile.hasBuilding())
 					builder.setTile(cell, tile.terrain, null, tile.unit);
 
-			} else if (selectedObj == Menu.removeUnitObj) {
+			} else if (selectedObj == SideMenu.removeUnitObj) {
 				if (tile.hasUnit())
 					builder.setTile(cell, tile.terrain, tile.building, null);
 

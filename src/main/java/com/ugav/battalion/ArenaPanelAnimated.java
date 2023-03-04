@@ -9,6 +9,7 @@ import com.ugav.battalion.util.Iter;
 class ArenaPanelAnimated extends ArenaPanelGameAbstract {
 
 	private final Iter<Action> actions;
+	private final GameActionsThread gameActionsThread = new GameActionsThread();
 
 	private static final long serialVersionUID = 1L;
 
@@ -20,10 +21,17 @@ class ArenaPanelAnimated extends ArenaPanelGameAbstract {
 		setMapMoveByKeyEnable(false);
 
 		initGame();
-		(gameActionsThread = new GameActionsThread()).start();
 	}
 
-	private final GameActionsThread gameActionsThread;
+	void runAnimation() {
+		gameActionsThread.start();
+	}
+
+	@Override
+	public void clear() {
+		gameActionsThread.setRunning(false);
+		super.clear();
+	}
 
 	private class GameActionsThread extends Thread {
 
@@ -41,12 +49,6 @@ class ArenaPanelAnimated extends ArenaPanelGameAbstract {
 			this.running = running;
 		}
 
-	}
-
-	@Override
-	public void clear() {
-		gameActionsThread.setRunning(false);
-		super.clear();
 	}
 
 }

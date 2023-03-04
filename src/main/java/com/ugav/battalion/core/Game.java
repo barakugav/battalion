@@ -133,7 +133,7 @@ public class Game {
 	}
 
 	public Iter.Int cells() {
-		return new Cell.Iter2D(width(), height());
+		return Cell.Iter2D.of(width(), height());
 	}
 
 	public Iter<Building> buildings() {

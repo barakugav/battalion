@@ -13,14 +13,8 @@ public class Level {
 	private final Cell.Array<TileDesc> tiles;
 	private final Map<Team, Integer> startingMoney;
 
-	public static final int MINIMUM_WIDTH = 10;
-	public static final int MINIMUM_HEIGHT = 10;
-
 	Level(Cell.Array<TileDesc> tiles, Map<Team, Integer> startingMoney) {
-		int width = tiles.width();
-		int height = tiles.height();
-		if (width < MINIMUM_WIDTH || height < MINIMUM_HEIGHT)
-			throw new IllegalArgumentException("illegal size: " + width + " " + height);
+		int width = tiles.width(), height = tiles.height();
 		this.tiles = Cell.Array.fromFunc(width, height, cell -> tiles.at(cell));
 		this.startingMoney = Collections.unmodifiableMap(new HashMap<>(startingMoney));
 	}

@@ -78,10 +78,11 @@ class GameSideMenu extends JPanel implements Clearable {
 		MiniMap miniMap = new MiniMap();
 		panel.add(miniMap, Utils.gbConstraints(0, 0, 1, 1));
 
+		Dimension size = new Dimension(170, 150);
+		panel.setPreferredSize(size);
 		Dimension miniMapSize = miniMap.getPreferredSize();
-		if (miniMapSize.width > 150 || miniMapSize.height > 150)
+		if (miniMapSize.width > size.width || miniMapSize.height > size.width)
 			throw new IllegalArgumentException("Map too big for minimap");
-		panel.setPreferredSize(new Dimension(150, 150));
 
 		return panel;
 	}
@@ -234,8 +235,8 @@ class GameSideMenu extends JPanel implements Clearable {
 			Position currentMapPos = window.arenaPanel.getCurrentMapOrigin();
 			int x = (int) (currentMapPos.x * TileSize);
 			int y = (int) (currentMapPos.y * TileSize);
-			int width = TileSize * ArenaPanelAbstract.DISPLAYED_ARENA_WIDTH - 1;
-			int height = TileSize * ArenaPanelAbstract.DISPLAYED_ARENA_HEIGHT - 1;
+			int width = (int) (TileSize * window.arenaPanel.displayedArenaWidth() - 1);
+			int height = (int) (TileSize * window.arenaPanel.displayedArenaHeight() - 1);
 			g.setColor(CurrentMapColor);
 			g.drawRect(x, y, width, height);
 		}

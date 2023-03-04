@@ -47,7 +47,7 @@ interface Animation {
 		@Override
 		public void beforeFirst() {
 			comp.isAnimated = comp.isMoving = true;
-			comp.arena.mapMoveAnimation.mapMoveStart();
+			comp.arena.mapMove.mapMoveStart();
 		}
 
 		@Override
@@ -70,7 +70,7 @@ interface Animation {
 			comp.pos = Position.of(x, y);
 
 			if (isMapFollow())
-				comp.arena.mapPos = comp.arena.mapMoveAnimation.calcMapPosCentered(comp.pos);
+				comp.arena.mapMove.setPos(comp.arena.mapMove.calcMapPosCentered(comp.pos));
 
 			return ++cursor < length * StepSize;
 		}
@@ -79,9 +79,9 @@ interface Animation {
 		public void afterLast() {
 			comp.pos = Position.fromCell(path.last());
 			if (isMapFollow())
-				comp.arena.mapPos = comp.arena.mapMoveAnimation.calcMapPosCentered(comp.pos);
+				comp.arena.mapMove.setPos(comp.arena.mapMove.calcMapPosCentered(comp.pos));
 			comp.isAnimated = comp.isMoving = false;
-			comp.arena.mapMoveAnimation.mapMoveEnd();
+			comp.arena.mapMove.mapMoveEnd();
 		}
 
 		private boolean isMapFollow() {
@@ -350,54 +350,63 @@ interface Animation {
 	static class MapMove implements Animation {
 
 		private final ArenaPanelGameAbstract arena;
-		private final Position target;
+		private final Position target0;
 		private static final double StepSize = 0.1;
 
 		MapMove(ArenaPanelGameAbstract arena, Position target) {
 			this.arena = arena;
-			this.target = target;
+			this.target0 = target;
+		}
+
+		private Position target() {
+			return arena.mapMove.getMapPosRange().closestContainedPoint(target0);
 		}
 
 		@Override
 		public void beforeFirst() {
-			arena.mapMoveAnimation.mapMoveStart();
+			arena.mapMove.mapMoveStart();
 		}
 
 		@Override
 		public boolean advanceAnimationStep() {
-			if (arena.mapPos.equals(target))
+			Position current = arena.mapMove.currentPos;
+			Position target = target();
+			if (current.equals(target))
 				return false;
 
-			double dx = target.x - arena.mapPos.x;
-			double dy = target.y - arena.mapPos.y;
+			double dx = target.x - current.x;
+			double dy = target.y - current.y;
 			double l = Math.sqrt(dx * dx + dy * dy);
 			double stepSize = StepSize * Math.sqrt(l);
-			if (arena.mapPos.dist(target) > stepSize) {
-				double x = arena.mapPos.x + dx / l * stepSize;
-				double y = arena.mapPos.y + dy / l * stepSize;
-				arena.mapPos = Position.of(x, y);
+			if (current.dist(target) > stepSize) {
+				double x = current.x + dx / l * stepSize;
+				double y = current.y + dy / l * stepSize;
+				arena.mapMove.setPos(Position.of(x, y));
 				return true;
 			} else {
-				arena.mapPos = target;
+				arena.mapMove.setPos(target);
 				return false;
 			}
 		}
 
 		@Override
 		public void afterLast() {
-			arena.mapPos = target;
-			arena.mapMoveAnimation.mapMoveEnd();
+			arena.mapMove.setPos(target());
+			arena.mapMove.mapMoveEnd();
 		}
 
 		@Override
 		public String toString() {
-			return "MapMove(" + target + ")";
+			return "MapMove(" + target() + ")";
 		}
 
 		static class Manager implements TickTask {
 			private final ArenaPanelAbstract<?, ?, ?> arena;
 			private final AtomicBoolean isMapMoving = new AtomicBoolean();
-			private Position userChosenPos;
+
+			private boolean userChosenPosValid;
+			private int userChosenPos;
+			private Position currentPos;
 
 			final Event.Notifier<Event> onMapMove = new Event.Notifier<>();
 
@@ -405,25 +414,83 @@ interface Animation {
 				this.arena = Objects.requireNonNull(arena);
 			}
 
+			Position getCurrent() {
+				return currentPos;
+			}
+
+			void setPos(Position pos) {
+				currentPos = getMapPosRange().closestContainedPoint(pos);
+			}
+
+			static class MapPosRange {
+				final double xmin, xmax, ymin, ymax;
+
+				MapPosRange(double xmin, double xmax, double ymin, double ymax) {
+					this.xmin = xmin;
+					this.xmax = xmax;
+					this.ymin = ymin;
+					this.ymax = ymax;
+				}
+
+				boolean contains(Position pos) {
+					return pos.isInRect(xmin, ymin, xmax, ymax);
+				}
+
+				Position closestContainedPoint(Position pos) {
+					double x = Math.max(xmin, Math.min(pos.x, xmax));
+					double y = Math.max(ymin, Math.min(pos.y, ymax));
+					return Position.of(x, y);
+				}
+
+			}
+
+			MapPosRange getMapPosRange() {
+				double xmin, xmax, ymin, ymax;
+				double shownWidth = arena.displayedArenaWidth();
+				if (shownWidth >= arena.arenaWidth()) {
+					xmin = xmax = (arena.arenaWidth() - shownWidth) / 2;
+				} else {
+					xmin = 0;
+					xmax = Math.ceil(arena.arenaWidth() - shownWidth);
+				}
+				double shownHeight = arena.displayedArenaHeight();
+				if (shownHeight >= arena.arenaHeight()) {
+					ymin = ymax = (arena.arenaHeight() - shownHeight) / 2;
+				} else {
+					ymin = 0;
+					ymax = Math.ceil(arena.arenaHeight() - shownHeight);
+				}
+
+				return new MapPosRange(xmin, xmax, ymin, ymax);
+			}
+
+			boolean isValidMapPos(Position pos) {
+				return getMapPosRange().contains(pos);
+			}
+
+			MapPosRange getDisplayedRange() {
+				double x = currentPos.x, y = currentPos.y;
+				return new MapPosRange(x, x + arena.displayedArenaWidth() - 1, y, y + arena.displayedArenaHeight() - 1);
+			}
+
 			synchronized void userMapMove(Direction dir) {
 				if (isMapMoving.get())
 					return; /* User input is ignored during animation */
 
-				Position userChoosenPosNew = (userChosenPos == null ? arena.mapPos : userChosenPos).add(dir);
-				if (userChoosenPosNew.dist(arena.mapPos) >= 3)
-					return;
-				if (!userChoosenPosNew.isInRect(arena.arenaWidth() - ArenaPanelGameAbstract.DISPLAYED_ARENA_WIDTH,
-						arena.arenaHeight() - ArenaPanelGameAbstract.DISPLAYED_ARENA_HEIGHT))
+				Position userChoosenPosNew = (!userChosenPosValid ? currentPos : Position.fromCell(userChosenPos))
+						.add(dir);
+				if (userChoosenPosNew.dist(currentPos) >= 3 || !isValidMapPos(userChoosenPosNew))
 					return;
 
-				userChosenPos = userChoosenPosNew;
+				userChosenPos = Cell.of((int) userChoosenPosNew.x, (int) userChoosenPosNew.y);
+				userChosenPosValid = true;
 			}
 
 			private void mapMoveStart() {
 				synchronized (this) {
 					if (!isMapMoving.compareAndSet(false, true))
 						throw new IllegalStateException();
-					userChosenPos = null;
+					userChosenPosValid = false;
 				}
 				onMapMove.notify(new Event(this));
 			}
@@ -435,30 +502,29 @@ interface Animation {
 				}
 			}
 
-			 Position calcMapPosCentered(Position center) {
-				double mapx = center.x + 0.5 - ArenaPanelGameAbstract.DISPLAYED_ARENA_WIDTH / 2.0;
-				double mapy = center.y + 0.5 - ArenaPanelGameAbstract.DISPLAYED_ARENA_HEIGHT / 2.0;
-				mapx = Math.max(0, Math.min(mapx, arena.arenaWidth() - ArenaPanelGameAbstract.DISPLAYED_ARENA_WIDTH));
-				mapy = Math.max(0, Math.min(mapy, arena.arenaHeight() - ArenaPanelGameAbstract.DISPLAYED_ARENA_HEIGHT));
-				return Position.of(mapx, mapy);
+			Position calcMapPosCentered(Position center) {
+				double mapx = center.x + 0.5 - arena.displayedArenaWidth() / 2.0;
+				double mapy = center.y + 0.5 - arena.displayedArenaHeight() / 2.0;
+				return getMapPosRange().closestContainedPoint(Position.of(mapx, mapy));
 			}
 
 			@Override
 			public synchronized void run() {
-				if (userChosenPos == null)
+				if (!userChosenPosValid)
 					return;
-				double dx = userChosenPos.x - arena.mapPos.x;
-				double dy = userChosenPos.y - arena.mapPos.y;
+				double dx = Cell.x(userChosenPos) - currentPos.x;
+				double dy = Cell.y(userChosenPos) - currentPos.y;
 				if (dx == 0 && dy == 0)
 					return;
+				Position position = Position.fromCell(userChosenPos);
 				double l = Math.sqrt(dx * dx + dy * dy);
 				double stepSize = StepSize * Math.sqrt(l);
-				if (arena.mapPos.dist(userChosenPos) > stepSize) {
-					double x = arena.mapPos.x + dx / l * stepSize;
-					double y = arena.mapPos.y + dy / l * stepSize;
-					arena.mapPos = Position.of(x, y);
+				if (currentPos.dist(position) > stepSize) {
+					double x = currentPos.x + dx / l * stepSize;
+					double y = currentPos.y + dy / l * stepSize;
+					arena.mapMove.setPos(Position.of(x, y));
 				} else {
-					arena.mapPos = userChosenPos;
+					arena.mapMove.setPos(position);
 				}
 			}
 

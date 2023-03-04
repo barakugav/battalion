@@ -23,6 +23,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
+import javax.swing.Timer;
 
 import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Cell;
@@ -65,7 +66,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 		Runnable resizeComponents = () -> {
 			Dimension container = getSize();
 			for (JComponent comp : List.of(tabsPanel, animatedArena)) {
-				Dimension compSize = comp.getPreferredSize();
+				Dimension compSize = comp == animatedArena ? container : comp.getPreferredSize();
 				int x = (container.width - compSize.width) / 2;
 				int y = (container.height - compSize.height) / 2;
 				comp.setBounds(x, y, compSize.width, compSize.height);
@@ -83,6 +84,11 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 		});
 
 		showTab(mainTab);
+
+		/* start animation after a second of delay */
+		Timer timer = new Timer(1000, e -> animatedArena.runAnimation());
+		timer.setRepeats(false);
+		timer.start();
 	}
 
 	private JPanel createTabsPanel() {

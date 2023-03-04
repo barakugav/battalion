@@ -94,24 +94,30 @@ public class Cell {
 
 	public static class Iter2D implements Iter.Int {
 
-		private final short width, height;
+		private final short xBegin, xEnd, yEnd;
 		private short x, y;
 
-		public Iter2D(int width, int height) {
-			if (width < 0 || height < 0)
+		private Iter2D(int xBegin, int xEnd, int yBegin, int yEnd) {
+			if (xBegin > xEnd || yBegin > yEnd)
 				throw new IllegalArgumentException();
-			this.width = (short) width;
-			this.height = (short) height;
-			x = y = 0;
+			this.xBegin = (short) xBegin;
+			this.xEnd = (short) xEnd;
+			this.yEnd = (short) yEnd;
+			x = (short) xBegin;
+			y = (short) yBegin;
 		}
 
 		public static Iter2D of(int width, int height) {
-			return new Iter2D(width, height);
+			return new Iter2D(0, width, 0, height);
+		}
+
+		public static Iter2D of(int xBegin, int xEnd, int yBegin, int yEnd) {
+			return new Iter2D(xBegin, xEnd, yBegin, yEnd);
 		}
 
 		@Override
 		public boolean hasNext() {
-			return x < width && y < height;
+			return x < xEnd && y < yEnd;
 		}
 
 		@Override
@@ -119,8 +125,8 @@ public class Cell {
 			if (!hasNext())
 				throw new NoSuchElementException();
 			int cell = Cell.of(x, y);
-			if (++x >= width) {
-				x = 0;
+			if (++x >= xEnd) {
+				x = xBegin;
 				y++;
 			}
 			return cell;
