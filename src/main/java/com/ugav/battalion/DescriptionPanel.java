@@ -24,7 +24,6 @@ import com.ugav.battalion.util.Event;
 class DescriptionPanel extends JPanel implements Clearable {
 
 	private Object shownObj;
-	private final CardLayout layout;
 	private final TerrainPanel terrainPanel;
 	private final BuildingPanel buildingPanel;
 	private final UnitPanel unitPanel;
@@ -34,7 +33,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 	private static final long serialVersionUID = 1L;
 
 	DescriptionPanel(GameWindow window) {
-		setLayout(layout = new CardLayout());
+		setLayout(new CardLayout());
 		setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
 
 		add(new JPanel(), EmptyPanel);
@@ -78,7 +77,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 	}
 
 	private void showPanel(AbstractDescriptionSubPanel panel) {
-		layout.show(this, panel != null ? panel.name : EmptyPanel);
+		((CardLayout) getLayout()).show(this, panel != null ? panel.name : EmptyPanel);
 	}
 
 	@Override
