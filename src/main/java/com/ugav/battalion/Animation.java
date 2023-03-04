@@ -47,6 +47,7 @@ interface Animation {
 		@Override
 		public void beforeFirst() {
 			comp.isAnimated = comp.isMoving = true;
+			comp.arena.mapMoveAnimation.mapMoveStart();
 		}
 
 		@Override
@@ -68,12 +69,23 @@ interface Animation {
 			double y = y1 + (y2 - y1) * frac;
 			comp.pos = Position.of(x, y);
 
+			if (isMapFollow())
+				comp.arena.mapPos = comp.arena.mapMoveAnimation.calcMapPosCentered(comp.pos);
+
 			return ++cursor < length * StepSize;
 		}
 
 		@Override
 		public void afterLast() {
+			comp.pos = Position.fromCell(path.last());
+			if (isMapFollow())
+				comp.arena.mapPos = comp.arena.mapMoveAnimation.calcMapPosCentered(comp.pos);
 			comp.isAnimated = comp.isMoving = false;
+			comp.arena.mapMoveAnimation.mapMoveEnd();
+		}
+
+		private boolean isMapFollow() {
+			return !comp.unit().type.invisible;
 		}
 
 		@Override
@@ -84,14 +96,14 @@ interface Animation {
 	}
 
 	static class Attack implements Animation, ArenaComp {
-		private final ArenaPanelAbstract<?, ?, ?> arena;
+		private final ArenaPanelGameAbstract arena;
 		private final UnitComp comp;
 		private final int target;
 		private Position basePos;
 		private int cursor = 0;
 		private static final int Duration = 20;
 
-		Attack(ArenaPanelAbstract<?, ?, ?> arena, UnitComp comp, int target) {
+		Attack(ArenaPanelGameAbstract arena, UnitComp comp, int target) {
 			this.arena = arena;
 			this.comp = comp;
 			this.target = target;
@@ -272,12 +284,12 @@ interface Animation {
 	}
 
 	static class UnitDeath implements Animation, ArenaComp {
-		private final ArenaPanelAbstract<?, ?, ?> arena;
+		private final ArenaPanelGameAbstract arena;
 		private final UnitComp comp;
 		private int cursor = 0;
 		private static final int Duration = 90;
 
-		UnitDeath(ArenaPanelAbstract<?, ?, ?> arena, UnitComp comp) {
+		UnitDeath(ArenaPanelGameAbstract arena, UnitComp comp) {
 			this.arena = arena;
 			this.comp = comp;
 		}
@@ -337,11 +349,11 @@ interface Animation {
 
 	static class MapMove implements Animation {
 
-		private final ArenaPanelAbstract<?, ?, ?> arena;
+		private final ArenaPanelGameAbstract arena;
 		private final Position target;
 		private static final double StepSize = 0.1;
 
-		MapMove(ArenaPanelAbstract<?, ?, ?> arena, Position target) {
+		MapMove(ArenaPanelGameAbstract arena, Position target) {
 			this.arena = arena;
 			this.target = target;
 		}
@@ -400,8 +412,8 @@ interface Animation {
 				Position userChoosenPosNew = (userChosenPos == null ? arena.mapPos : userChosenPos).add(dir);
 				if (userChoosenPosNew.dist(arena.mapPos) >= 3)
 					return;
-				if (!userChoosenPosNew.isInRect(arena.arenaWidth() - ArenaPanelAbstract.DISPLAYED_ARENA_WIDTH,
-						arena.arenaHeight() - ArenaPanelAbstract.DISPLAYED_ARENA_HEIGHT))
+				if (!userChoosenPosNew.isInRect(arena.arenaWidth() - ArenaPanelGameAbstract.DISPLAYED_ARENA_WIDTH,
+						arena.arenaHeight() - ArenaPanelGameAbstract.DISPLAYED_ARENA_HEIGHT))
 					return;
 
 				userChosenPos = userChoosenPosNew;
@@ -421,6 +433,14 @@ interface Animation {
 					if (!isMapMoving.compareAndSet(true, false))
 						throw new IllegalStateException();
 				}
+			}
+
+			 Position calcMapPosCentered(Position center) {
+				double mapx = center.x + 0.5 - ArenaPanelGameAbstract.DISPLAYED_ARENA_WIDTH / 2.0;
+				double mapy = center.y + 0.5 - ArenaPanelGameAbstract.DISPLAYED_ARENA_HEIGHT / 2.0;
+				mapx = Math.max(0, Math.min(mapx, arena.arenaWidth() - ArenaPanelGameAbstract.DISPLAYED_ARENA_WIDTH));
+				mapy = Math.max(0, Math.min(mapy, arena.arenaHeight() - ArenaPanelGameAbstract.DISPLAYED_ARENA_HEIGHT));
+				return Position.of(mapx, mapy);
 			}
 
 			@Override

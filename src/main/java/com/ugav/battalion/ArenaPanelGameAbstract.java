@@ -67,11 +67,12 @@ class ArenaPanelGameAbstract extends
 	private void animateUnitAdd(Unit unit) {
 		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
 		Animation animation;
-		if (!unit.type.invisible)
+		if (!unit.type.invisible) {
 			animation = new Animation.UnitAppear(comp);
-		else
+		} else {
 			animation = new Animation.UnitAppearDisappear(comp);
-		animation = makeSureAnimationIsVisible(animation, ListInt.of(unit.getPos()));
+		}
+		animation = centerMapBeforeAnimation(unit, animation);
 		runAnimationAndWait(animation);
 	}
 
@@ -79,7 +80,7 @@ class ArenaPanelGameAbstract extends
 		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
 		Animation animation = new Animation.UnitMove(comp, path);
 		animation = appearDisappearAnimationWrap(comp, animation);
-		animation = makeSureAnimationIsVisible(animation, path);
+		animation = centerMapBeforeAnimation(unit, animation);
 		runAnimationAndWait(animation);
 	}
 
@@ -95,6 +96,12 @@ class ArenaPanelGameAbstract extends
 		if (unitComp.unit().type.invisible)
 			animation = Animation.of(new Animation.UnitAppearDisappear(unitComp), animation);
 		return animation;
+	}
+
+	private Animation centerMapBeforeAnimation(Unit unit, Animation animation) {
+		Position mapMovePos = mapMoveAnimation.calcMapPosCentered(Position.fromCell(unit.getPos()));
+		Animation mapMoveAnimation = new Animation.MapMove(this, mapMovePos);
+		return Animation.of(mapMoveAnimation, animation);
 	}
 
 	private Animation makeSureAnimationIsVisible(Animation animation, ListInt cells) {
@@ -158,7 +165,6 @@ class ArenaPanelGameAbstract extends
 				if (e.unit.isDead()) {
 					UnitComp unitComp = (UnitComp) comps.get(e.unit);
 					Animation animation = new Animation.UnitDeath(ArenaPanelGameAbstract.this, unitComp);
-					animation = makeSureAnimationIsVisible(animation, ListInt.of(e.unit.getPos()));
 					runAnimationAndWait(animation);
 				}
 				Utils.swingRun(() -> {
@@ -177,7 +183,7 @@ class ArenaPanelGameAbstract extends
 			register.register(game.onConquer, e -> {
 				UnitComp unitComp = (UnitComp) comps.get(e.conquerer);
 				Animation animation = new Animation.Conquer(unitComp);
-				animation = makeSureAnimationIsVisible(animation, ListInt.of(e.conquerer.getPos()));
+				animation = centerMapBeforeAnimation(e.conquerer, animation);
 				runAnimationAndWait(animation);
 			});
 
