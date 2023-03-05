@@ -39,8 +39,8 @@ class GameFrame extends JFrame {
 		displayWindow(new MainMenuWindow(globals));
 	}
 
-	void openLevelGame(Level level) {
-		displayWindow(new GameWindow(globals, level));
+	void openLevelGame(Level level, String levelName) {
+		displayWindow(new GameWindow(globals, level, levelName));
 	}
 
 	void openLevelBuilder() {

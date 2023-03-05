@@ -1,12 +1,12 @@
 package com.ugav.battalion;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -32,39 +32,27 @@ import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Utils;
 
-class GameSideMenu extends JPanel implements Clearable {
+class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 
 	private final GameWindow window;
 	private final DescriptionPanel descriptionPanel;
 	private final Map<Team, JLabel> labelMoney;
 	private final Event.Register register = new Event.Register();
 
+	private static final Color BackgroundColor = new Color(64, 62, 64);
 	private static final long serialVersionUID = 1L;
 
 	GameSideMenu(GameWindow window) {
+		setMargin(6);
 		this.window = Objects.requireNonNull(window);
 
 		labelMoney = new HashMap<>();
 
-		setLayout(new GridBagLayout());
-		GridBagConstraints c = new GridBagConstraints();
-		c.gridx = 0;
-		c.gridwidth = 1;
-		c.weightx = 1;
-		c.fill = GridBagConstraints.BOTH;
-
-		c.gridy = 0;
-		c.weighty = 0;
-		add(createMinimapPanel(), c);
-		c.gridy = 2;
-		c.weighty = 0;
-		add(createTeamsPanel(), c);
-		c.gridy = 4;
-		c.weighty = 1;
-		add(descriptionPanel = new DescriptionPanel(window), c);
-		c.gridy = 6;
-		c.weighty = 0;
-		add(createButtonsPannel(), c);
+		setBackground(BackgroundColor);
+		addComp(createMinimapPanel());
+		addComp(createTeamsPanel());
+		addComp(descriptionPanel = new DescriptionPanel(window), 1);
+		addComp(createButtonsPannel());
 
 		for (Team team : Team.realTeams)
 			updateMoneyLabel(team, window.game.getMoney(team));
@@ -73,10 +61,17 @@ class GameSideMenu extends JPanel implements Clearable {
 	private JPanel createMinimapPanel() {
 		JPanel panel = new JPanel(new GridBagLayout());
 		panel.setBackground(Color.BLACK);
+		panel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
 		panel.setOpaque(true);
 
 		MiniMap miniMap = new MiniMap();
-		panel.add(miniMap, Utils.gbConstraints(0, 0, 1, 1));
+		panel.add(miniMap, Utils.gbConstraints(0, 0, 1, 1, GridBagConstraints.NONE, 1, 1));
+
+		JLabel lvlNameLabel = new JLabel(window.levelName, SwingConstants.CENTER);
+		lvlNameLabel.setBackground(new Color(63, 0, 0));
+		lvlNameLabel.setForeground(new Color(250, 250, 250));
+		lvlNameLabel.setOpaque(true);
+		panel.add(lvlNameLabel, Utils.gbConstraints(0, 1, 1, 1, GridBagConstraints.HORIZONTAL, 1, 0));
 
 		Dimension size = new Dimension(170, 150);
 		panel.setPreferredSize(size);
@@ -88,17 +83,22 @@ class GameSideMenu extends JPanel implements Clearable {
 	}
 
 	private JPanel createTeamsPanel() {
-		JPanel panel = new JPanel(new GridBagLayout());
+		Menus.ColumnWithMargins panel = new Menus.ColumnWithMargins();
+		final int margin = 3;
+		panel.setMarginx(0);
+		panel.setMarginy(margin);
+		panel.setMarginOnlyBetween(true);
+		panel.setBackground(new Color(80, 79, 80));
 		panel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
 
-		for (int teamIdx = 0; teamIdx < Team.realTeams.size(); teamIdx++) {
-			Team team = Team.realTeams.get(teamIdx);
+		for (Team team : Team.realTeams) {
 			JPanel teamPanel = new JPanel(new GridBagLayout());
-			teamPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+			teamPanel.setBackground(new Color(156, 156, 156));
+			int topBorder = panel.getComponentCount() == 0 ? 0 : 2;
+			teamPanel.setBorder(BorderFactory.createMatteBorder(topBorder, 0, 2, 0, Color.BLACK));
 			GridBagConstraints c = new GridBagConstraints();
 
 			JPanel colorBox = new JPanel();
-			colorBox.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 			colorBox.setBackground(getTeamColor(team));
 			c.gridx = 0;
 			c.gridy = 0;
@@ -118,7 +118,7 @@ class GameSideMenu extends JPanel implements Clearable {
 			c.fill = GridBagConstraints.BOTH;
 			teamPanel.add(icon, c);
 
-			JLabel label = new JLabel(team.toString());
+			JLabel label = new JLabel(team.toString() + " Team");
 			Font labelFont = label.getFont();
 			label.setFont(new Font(labelFont.getName(), labelFont.getStyle(), 10));
 			c.gridx = 5;
@@ -128,7 +128,8 @@ class GameSideMenu extends JPanel implements Clearable {
 			c.fill = GridBagConstraints.BOTH;
 			teamPanel.add(label, c);
 
-			JLabel money = new JLabel("$0", SwingConstants.RIGHT);
+			JLabel money = new JLabel("", SwingConstants.RIGHT);
+			money.setBorder(BorderFactory.createEmptyBorder(0, 0, 2, 2));
 			Font moneyFont = label.getFont();
 			money.setFont(new Font(moneyFont.getName(), moneyFont.getStyle(), 10));
 			labelMoney.put(team, money);
@@ -139,16 +140,19 @@ class GameSideMenu extends JPanel implements Clearable {
 			c.fill = GridBagConstraints.BOTH;
 			teamPanel.add(money, c);
 
-			c = Utils.gbConstraints(0, teamIdx, 1, 1, GridBagConstraints.HORIZONTAL, 0, 0);
-			c = new GridBagConstraints();
-			c.gridx = 0;
-			c.gridy = teamIdx;
-			c.weightx = c.gridwidth = 1;
-			c.gridheight = 1;
-			c.weighty = 0;
-			c.fill = GridBagConstraints.BOTH;
-			panel.add(teamPanel, c);
+			panel.addComp(teamPanel);
 		}
+
+		int fillerHeight = 130;
+		for (Component comp : panel.getComponents())
+			fillerHeight -= (comp.getPreferredSize().height + margin);
+		if (fillerHeight < 0)
+			throw new IllegalArgumentException();
+		System.out.println(fillerHeight);
+		JPanel filler = new JPanel();
+		filler.setPreferredSize(new Dimension(1, fillerHeight));
+		filler.setOpaque(false);
+		panel.addComp(filler);
 
 		return panel;
 	}
@@ -165,9 +169,10 @@ class GameSideMenu extends JPanel implements Clearable {
 	}
 
 	private JPanel createButtonsPannel() {
-		JPanel panel = new JPanel(new GridLayout(0, 1));
-		panel.add(Utils.newButton("End Turn", onlyIfActionsEnabled(e -> window.endTurn())));
-		panel.add(Utils.newButton("Main Menu", onlyIfActionsEnabled(e -> window.globals.frame.openMainMenu())));
+		Menus.ButtonColumn panel = new Menus.ButtonColumn();
+		panel.setButtonSize(new Dimension(150, 30));
+		panel.addButton("End Turn", onlyIfActionsEnabled(e -> window.endTurn()));
+		panel.addButton("Main Menu", onlyIfActionsEnabled(e -> window.globals.frame.openMainMenu()));
 		return panel;
 	}
 

@@ -23,6 +23,7 @@ import com.ugav.battalion.util.Utils;
 
 class GameWindow extends JPanel implements Clearable {
 
+	final String levelName;
 	final Globals globals;
 	private final GameSideMenu menu;
 	final ArenaPanelGame arenaPanel;
@@ -36,8 +37,9 @@ class GameWindow extends JPanel implements Clearable {
 
 	private static final long serialVersionUID = 1L;
 
-	GameWindow(Globals globals, Level level) {
+	GameWindow(Globals globals, Level level, String levelName) {
 		this.globals = Objects.requireNonNull(globals);
+		this.levelName = Objects.requireNonNull(levelName);
 
 		game = Game.fromLevel(level);
 		arenaPanel = new ArenaPanelGame(this);

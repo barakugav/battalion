@@ -24,23 +24,26 @@ import com.ugav.battalion.util.Event;
 class DescriptionPanel extends JPanel implements Clearable {
 
 	private Object shownObj;
+	private final DescriptionSubPanel emptyPanel;
 	private final TerrainPanel terrainPanel;
 	private final BuildingPanel buildingPanel;
 	private final UnitPanel unitPanel;
 	private final Event.Register register = new Event.Register();
 
-	private static final String EmptyPanel = "empty";
+	private static final Color BackgroundColor = new Color(80, 79, 80);
+	private static final Color TextColor = new Color(245, 245, 245);
 	private static final long serialVersionUID = 1L;
 
 	DescriptionPanel(GameWindow window) {
 		setLayout(new CardLayout());
 		setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+		setBackground(BackgroundColor);
 
-		add(new JPanel(), EmptyPanel);
+		add(emptyPanel = new DescriptionSubPanel("empty"), emptyPanel.name);
 		add(terrainPanel = new TerrainPanel(), terrainPanel.name);
 		add(buildingPanel = new BuildingPanel(), buildingPanel.name);
 		add(unitPanel = new UnitPanel(), unitPanel.name);
-		showPanel(null);
+		showPanel(emptyPanel);
 
 		register.register(window.arenaPanel.onEntityClick, e -> showObject(e.obj));
 		register.register(window.game.onEntityChange, e -> {
@@ -71,13 +74,13 @@ class DescriptionPanel extends JPanel implements Clearable {
 			shownObj = unit;
 
 		} else {
-			showPanel(null);
+			showPanel(emptyPanel);
 			shownObj = null;
 		}
 	}
 
-	private void showPanel(AbstractDescriptionSubPanel panel) {
-		((CardLayout) getLayout()).show(this, panel != null ? panel.name : EmptyPanel);
+	private void showPanel(DescriptionSubPanel panel) {
+		((CardLayout) getLayout()).show(this, panel.name);
 	}
 
 	@Override
@@ -85,19 +88,21 @@ class DescriptionPanel extends JPanel implements Clearable {
 		register.unregisterAll();
 	}
 
-	private static class AbstractDescriptionSubPanel extends JPanel {
+	private static class DescriptionSubPanel extends JPanel {
 
 		final String name;
 
 		private static final long serialVersionUID = 1L;
 
-		AbstractDescriptionSubPanel(String name) {
+		DescriptionSubPanel(String name) {
 			this.name = Objects.requireNonNull(name);
+			setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+			setBackground(BackgroundColor);
 		}
 
 	}
 
-	private static class TerrainPanel extends AbstractDescriptionSubPanel {
+	private static class TerrainPanel extends DescriptionSubPanel {
 
 		private final JLabel title;
 		private final JTextArea text;
@@ -113,12 +118,14 @@ class DescriptionPanel extends JPanel implements Clearable {
 			Font titleFont = title.getFont();
 			Font titleFontNew = new Font(titleFont.getName(), Font.BOLD, titleFont.getSize());
 			title.setFont(titleFontNew);
+			title.setForeground(TextColor);
 
 			text = new JTextArea();
 			text.setEditable(false);
 			text.setWrapStyleWord(true);
 			text.setLineWrap(true);
 			text.setOpaque(false);
+			text.setForeground(TextColor);
 			image = new JLabel();
 			JLabel techs = new JLabel();
 
@@ -164,7 +171,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 
 	}
 
-	private static class BuildingPanel extends AbstractDescriptionSubPanel {
+	private static class BuildingPanel extends DescriptionSubPanel {
 
 		private final JLabel title;
 		private final JTextArea text;
@@ -180,12 +187,14 @@ class DescriptionPanel extends JPanel implements Clearable {
 			Font titleFont = title.getFont();
 			Font titleFontNew = new Font(titleFont.getName(), Font.BOLD, titleFont.getSize());
 			title.setFont(titleFontNew);
+			title.setForeground(TextColor);
 
 			text = new JTextArea();
 			text.setEditable(false);
 			text.setWrapStyleWord(true);
 			text.setLineWrap(true);
 			text.setOpaque(false);
+			text.setForeground(TextColor);
 			image = new JLabel();
 			JLabel techs = new JLabel();
 
@@ -230,7 +239,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 
 	}
 
-	static class UnitPanel extends AbstractDescriptionSubPanel {
+	static class UnitPanel extends DescriptionSubPanel {
 
 		private final JLabel title;
 		private final JLabel image;
@@ -249,34 +258,42 @@ class DescriptionPanel extends JPanel implements Clearable {
 			Font titleFont = title.getFont();
 			Font boldFont = new Font(titleFont.getName(), Font.BOLD, titleFont.getSize());
 			title.setFont(boldFont);
+			title.setForeground(TextColor);
 
 			image = new JLabel();
 
 			JPanel stats = new JPanel(new GridBagLayout());
+			stats.setOpaque(false);
 			GridBagConstraints c = new GridBagConstraints();
 			c.gridx = 0;
 			c.weighty = c.gridheight = 1;
 			c.weightx = c.gridwidth = 1;
 			c.fill = GridBagConstraints.BOTH;
 			JLabel healthLabel = new JLabel("Health:");
+			healthLabel.setForeground(TextColor);
 			healthLabel.setFont(boldFont);
 			c.gridy = 0;
 			stats.add(healthLabel, c);
 			health = new JLabel();
+			health.setForeground(TextColor);
 			c.gridy = 1;
 			stats.add(health, c);
 			JLabel damageLabel = new JLabel("Damage:");
+			damageLabel.setForeground(TextColor);
 			damageLabel.setFont(boldFont);
 			c.gridy = 2;
 			stats.add(damageLabel, c);
 			damage = new JLabel();
+			damage.setForeground(TextColor);
 			c.gridy = 3;
 			stats.add(damage, c);
 			JLabel moveLabel = new JLabel("Move:");
+			moveLabel.setForeground(TextColor);
 			moveLabel.setFont(boldFont);
 			c.gridy = 4;
 			stats.add(moveLabel, c);
 			move = new JLabel();
+			move.setForeground(TextColor);
 			c.gridy = 5;
 			stats.add(move, c);
 
@@ -285,6 +302,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 			text.setWrapStyleWord(true);
 			text.setLineWrap(true);
 			text.setOpaque(false);
+			text.setForeground(TextColor);
 			JLabel techs = new JLabel();
 
 			c.gridx = 0;

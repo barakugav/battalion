@@ -5,19 +5,14 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -122,9 +117,10 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 			super("Main");
 			addTitle("Main Menu");
 
-			ButtonColumn buttonSet = new ButtonColumn();
+			Menus.ButtonColumn buttonSet = new Menus.ButtonColumn();
 			buttonSet.addButton("Campaign", e -> showTab(campaignTab));
-			buttonSet.addButton("Bonus Level", e -> globals.frame.openLevelGame(levels.getLevel("Bonus Level")));
+			buttonSet.addButton("Bonus Level",
+					e -> globals.frame.openLevelGame(levels.getLevel("Bonus Level"), "Bonus Level"));
 			buttonSet.addButton("Custom Level", e -> {
 				JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType(),
 						Cookies.getCookieValue(Cookies.LEVEL_DISK_LAST_DIR));
@@ -135,7 +131,8 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 					String selectedFile = fileChooser.getSelectedFile().getAbsolutePath();
 					try {
 						Level level = globals.levelSerializer.levelRead(selectedFile);
-						globals.frame.openLevelGame(level);
+						String basename = new File(selectedFile).getName();
+						globals.frame.openLevelGame(level, basename);
 					} catch (RuntimeException ex) {
 //						debug.print("failed to load file from: ", selectedFile);
 						ex.printStackTrace();
@@ -146,7 +143,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 			buttonSet.addButton("Options", e -> showTab(optionsTab));
 			addComp(buttonSet);
 
-			ButtonColumn additionalButtonSet = new ButtonColumn();
+			Menus.ButtonColumn additionalButtonSet = new Menus.ButtonColumn();
 			additionalButtonSet.addButton("Exit", e -> globals.frame.exitGame()).setBackground(ExitColor);
 			addComp(additionalButtonSet);
 		}
@@ -161,12 +158,12 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 			super("Campaign");
 			addTitle("Campaign");
 
-			ButtonColumn levelsButtonSet = new ButtonColumn();
+			Menus.ButtonColumn levelsButtonSet = new Menus.ButtonColumn();
 			for (Pair<String, Level> lvl : levels.getLevels())
-				levelsButtonSet.addButton(lvl.e1, e -> globals.frame.openLevelGame(lvl.e2));
+				levelsButtonSet.addButton(lvl.e1, e -> globals.frame.openLevelGame(lvl.e2, lvl.e1));
 			addComp(levelsButtonSet);
 
-			ButtonColumn additionalButtonSet = new ButtonColumn();
+			Menus.ButtonColumn additionalButtonSet = new Menus.ButtonColumn();
 			additionalButtonSet.addButton("Back", e -> showTab(mainTab));
 			addComp(additionalButtonSet);
 		}
@@ -181,7 +178,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 			super("Options");
 			addTitle("Options");
 
-			CheckboxColumn debugOptions = new CheckboxColumn();
+			Menus.CheckboxColumn debugOptions = new Menus.CheckboxColumn();
 			debugOptions.addCheckbox("showGrid", globals.debug.showGrid,
 					selected -> globals.debug.showGrid = selected.booleanValue());
 			debugOptions.addCheckbox("showUnitID", globals.debug.showUnitID,
@@ -190,24 +187,23 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 					selected -> globals.debug.playAllTeams = selected.booleanValue());
 			addComp(debugOptions);
 
-			ButtonColumn additionalButtonSet = new ButtonColumn();
+			Menus.ButtonColumn additionalButtonSet = new Menus.ButtonColumn();
 			additionalButtonSet.addButton("Back", e -> showTab(mainTab));
 			addComp(additionalButtonSet);
 		}
 
 	}
 
-	private static class Tab extends ColumnWithMargins {
+	private static class Tab extends Menus.ColumnWithMargins {
 
 		final String name;
 
-		private static final int Margin = 6;
 		private static final Color BackgroundColor = new Color(64, 62, 64);
 		private static final Color TitleColor = new Color(255, 234, 201);
 		private static final long serialVersionUID = 1L;
 
 		Tab(String name) {
-			super(Margin);
+			setMargin(6);
 			this.name = Objects.requireNonNull(name);
 			setBorder(BorderFactory.createRaisedBevelBorder());
 			setBackground(BackgroundColor);
@@ -219,89 +215,6 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 			return addComp(label);
 		}
 
-	}
-
-	private static class ButtonColumn extends ColumnWithMargins {
-
-		private static final int Margin = 3;
-		private static final Color BackgroundColor = new Color(49, 42, 41);
-		private static final Color ButtonColor = new Color(156, 156, 156);
-		private static final long serialVersionUID = 1L;
-
-		ButtonColumn() {
-			super(Margin);
-			setBackground(BackgroundColor);
-		}
-
-		JButton addButton(String label, ActionListener action) {
-			JButton button = Utils.newButton(label, action);
-			button.setPreferredSize(new Dimension(200, 30));
-			button.setBackground(ButtonColor);
-			button.setOpaque(true);
-			return addComp(button);
-		}
-
-	}
-
-	private static class CheckboxColumn extends ColumnWithMargins {
-
-		private static final int Margin = 3;
-		private static final Color BackgroundColor = new Color(80, 79, 80);
-		private static final Color CheckboxTextColor = new Color(245, 245, 245);
-		private static final long serialVersionUID = 1L;
-
-		CheckboxColumn() {
-			super(Margin);
-			setBackground(BackgroundColor);
-		}
-
-		JCheckBox addCheckbox(String text, boolean selected, Consumer<Boolean> onSelectedChange) {
-			JCheckBox checkbox = new JCheckBox(text, selected);
-			checkbox.addActionListener(e -> onSelectedChange.accept(Boolean.valueOf(checkbox.isSelected())));
-			checkbox.setPreferredSize(new Dimension(200, 30));
-			checkbox.setBackground(BackgroundColor);
-			checkbox.setForeground(CheckboxTextColor);
-			checkbox.setFocusPainted(false);
-			checkbox.setOpaque(true);
-			// Set default icon for checkbox
-			checkbox.setIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxUnselected)));
-			// Set selected icon when checkbox state is selected
-			checkbox.setSelectedIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxSelected)));
-			// Set disabled icon for checkbox
-			checkbox.setDisabledIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxUnselected)));
-			// Set disabled-selected icon for checkbox
-			checkbox.setDisabledSelectedIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxSelected)));
-			// Set checkbox icon when checkbox is pressed
-			checkbox.setPressedIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxPressed)));
-			// Set icon when a mouse is over the checkbox
-			checkbox.setRolloverIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxUnselectedHovered)));
-			// Set icon when a mouse is over a selected checkbox
-			checkbox.setRolloverSelectedIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxSelectedHovered)));
-			return addComp(checkbox);
-		}
-
-	}
-
-	private static class ColumnWithMargins extends JPanel {
-
-		private int compCount;
-		private final int margin;
-		private static final long serialVersionUID = 1L;
-
-		ColumnWithMargins(int margin) {
-			super(new GridBagLayout());
-			if (margin < 0)
-				throw new IllegalArgumentException();
-			this.margin = margin;
-		}
-
-		<Comp extends JComponent> Comp addComp(Comp comp) {
-			final int y = compCount++;
-			GridBagConstraints c = Utils.gbConstraints(0, y, 1, 1, GridBagConstraints.HORIZONTAL, 1, 0);
-			c.insets = new Insets(y > 0 ? 0 : margin, margin, margin, margin);
-			add(comp, c);
-			return comp;
-		}
 	}
 
 	private static Pair<Level, Iter<Action>> getAnimatedBackgroundGame(Globals globals) {
