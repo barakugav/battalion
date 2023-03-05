@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -163,12 +164,57 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 		}
 	}
 
+	private final AtomicBoolean isExitPopupOpen = new AtomicBoolean();
+
 	private JPanel createButtonsPannel() {
 		Menus.ButtonColumn panel = new Menus.ButtonColumn();
 		panel.setButtonSize(new Dimension(150, 30));
 		panel.addButton("End Turn", onlyIfActionsEnabled(e -> window.endTurn()));
-		panel.addButton("Main Menu", onlyIfActionsEnabled(e -> window.globals.frame.openMainMenu()));
+		panel.addButton("Settings", e -> {
+			if (isExitPopupOpen.compareAndSet(false, true)) {
+				ExitPopup popup = new ExitPopup();
+				Dimension popupSize = popup.getPreferredSize();
+				int x = (window.arenaPanel.getWidth() - popupSize.width) / 2;
+				int y = (window.arenaPanel.getHeight() - popupSize.height) / 2;
+				window.arenaPanel.showPopup(popup, x, y, popupSize.width, popupSize.height);
+			} else {
+				window.arenaPanel.closePopup();
+			}
+		});
 		return panel;
+	}
+
+	private class ExitPopup extends Menus.ColumnWithMargins implements Clearable {
+
+		private static final Color BackgroundColor = new Color(64, 62, 64);
+		private static final Color TitleColor = new Color(255, 234, 201);
+		private static final long serialVersionUID = 1L;
+
+		ExitPopup() {
+			setMargin(6);
+			setBorder(BorderFactory.createRaisedBevelBorder());
+			setBackground(BackgroundColor);
+			addTitle("Settings");
+
+			Menus.ButtonColumn buttonSet = new Menus.ButtonColumn();
+			buttonSet.addButton("Resume", e -> window.arenaPanel.closePopup());
+			buttonSet.addButton("Options", e -> System.out.println("Options")); // TODO
+			buttonSet.addButton("Quit", e -> window.globals.frame.openMainMenu());
+			addComp(buttonSet);
+		}
+
+		JLabel addTitle(String title) {
+			JLabel label = new JLabel(title);
+			label.setForeground(TitleColor);
+			return addComp(label);
+		}
+
+		@Override
+		public void clear() {
+			if (!isExitPopupOpen.compareAndSet(true, false))
+				throw new IllegalStateException();
+		}
+
 	}
 
 	void initGame() {

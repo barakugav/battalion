@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.function.LongToIntFunction;
 
 import javax.swing.JLayeredPane;
+import javax.swing.JPanel;
 
 import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Building;
@@ -204,6 +205,28 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 			m.beforeClose();
 			m.clear();
 			remove(m);
+		}
+	}
+
+	private JPanel openPopup;
+
+	void showPopup(JPanel popup, int x, int y, int width, int height) {
+		if (openPopup != null)
+			throw new IllegalStateException();
+		window.suspendActions();
+		openPopup = popup;
+		add(popup, JLayeredPane.POPUP_LAYER);
+		popup.setBounds(x, y, width, height);
+		revalidate();
+	}
+
+	void closePopup() {
+		JPanel p = openPopup;
+		if (p != null) {
+			openPopup = null;
+			((Clearable) p).clear();
+			remove(p);
+			window.resumeActions();
 		}
 	}
 
