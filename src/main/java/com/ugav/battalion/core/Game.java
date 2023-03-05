@@ -176,7 +176,6 @@ public class Game {
 						return false;
 					}));
 		}
-
 	}
 
 	private Cell.Bitmap getVisibleUnitBitmap(Team viewer) {
@@ -421,12 +420,19 @@ public class Game {
 
 	private Unit unitTransport(Unit transportedUnit, Unit.Type transportType) {
 		int pos = transportedUnit.getPos();
+		Team team = transportedUnit.getTeam();
 
 		if (!transportedUnit.isActive() || transportedUnit.type.category != Unit.Category.Land)
 			throw new IllegalArgumentException();
 		if (!transportType.transportUnits || !transportType.canStandOn(terrain(pos)))
 			throw new IllegalArgumentException();
-		Team team = transportedUnit.getTeam();
+		if (transportType.category == Unit.Category.Land && !canBuildLandUnits(team))
+			throw new IllegalArgumentException();
+		if (EnumSet.of(Unit.Category.Water, Unit.Category.DeepWater).contains(transportType.category)
+				&& !canBuildLandUnits(team))
+			throw new IllegalArgumentException();
+		if (transportType.category == Unit.Category.Air && !canBuildLandUnits(team))
+			throw new IllegalArgumentException();
 
 		final int cost = 0; // TODO
 		moneyChange(team, -cost);
@@ -476,6 +482,41 @@ public class Game {
 
 		unit.setHealth(unit.type.health);
 		unit.setActive(false);
+	}
+
+	private final Supplier<Boolean>[] canBuildLandUnits;
+	private final Supplier<Boolean>[] canBuildWaterUnits;
+	private final Supplier<Boolean>[] canBuildAirUnits;
+	{
+		@SuppressWarnings("unchecked")
+		Supplier<Boolean>[] canBuildLandUnits0 = new Supplier[Team.values().length];
+		@SuppressWarnings("unchecked")
+		Supplier<Boolean>[] canBuildWaterUnits0 = new Supplier[Team.values().length];
+		@SuppressWarnings("unchecked")
+		Supplier<Boolean>[] canBuildAirUnits0 = new Supplier[Team.values().length];
+		canBuildLandUnits = canBuildLandUnits0;
+		canBuildWaterUnits = canBuildWaterUnits0;
+		canBuildAirUnits = canBuildAirUnits0;
+		for (Team team : Team.values()) {
+			canBuildLandUnits[team.ordinal()] = valuesCache.newVal(() -> Boolean
+					.valueOf(buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildLand).hasNext()));
+			canBuildWaterUnits[team.ordinal()] = valuesCache.newVal(() -> Boolean
+					.valueOf(buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildWater).hasNext()));
+			canBuildAirUnits[team.ordinal()] = valuesCache.newVal(() -> Boolean
+					.valueOf(buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildAir).hasNext()));
+		}
+	}
+
+	public boolean canBuildLandUnits(Team team) {
+		return canBuildLandUnits[team.ordinal()].get().booleanValue();
+	}
+
+	public boolean canBuildWaterUnits(Team team) {
+		return canBuildWaterUnits[team.ordinal()].get().booleanValue();
+	}
+
+	public boolean canBuildAirUnits(Team team) {
+		return canBuildAirUnits[team.ordinal()].get().booleanValue();
 	}
 
 	private static class TeamData {

@@ -195,15 +195,7 @@ public class Building extends Entity implements IBuilding {
 		Consumer<UnitSale> addSale = sale -> sales.put(sale.type, sale);
 
 		Team team = getTeam();
-		boolean canBuildLandUnits = game.buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildLand)
-				.hasNext();
-		boolean canBuildWaterUnits = game.buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildWater)
-				.hasNext()
-				&& EnumSet.of(Terrain.Category.Water, Terrain.Category.Shore).contains(game.terrain(pos).category);
-		boolean canBuildAirUnits = game.buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildAir)
-				.hasNext();
-
-		if (canBuildLandUnits) {
+		if (game.canBuildLandUnits(team)) {
 			addSale.accept(UnitSale.of(Unit.Type.Soldier, 75));
 			addSale.accept(UnitSale.of(Unit.Type.Bazooka, 100));
 			addSale.accept(UnitSale.of(Unit.Type.TankAntiAir, 230));
@@ -212,14 +204,14 @@ public class Building extends Entity implements IBuilding {
 			addSale.accept(UnitSale.of(Unit.Type.Artillery, 470));
 			addSale.accept(UnitSale.of(Unit.Type.TankBig, 470));
 		}
-		if (canBuildWaterUnits) {
+		if (game.canBuildWaterUnits(team)) {
 			addSale.accept(UnitSale.of(Unit.Type.SpeedBoat, 200));
 			addSale.accept(UnitSale.of(Unit.Type.ShipAntiAir, 450));
 			addSale.accept(UnitSale.of(Unit.Type.Ship, 500));
 			addSale.accept(UnitSale.of(Unit.Type.ShipArtillery, 800));
 			addSale.accept(UnitSale.of(Unit.Type.Submarine, 475));
 		}
-		if (canBuildAirUnits) {
+		if (game.canBuildAirUnits(team)) {
 			addSale.accept(UnitSale.of(Unit.Type.Airplane, 340));
 			addSale.accept(UnitSale.of(Unit.Type.Zeppelin, 650));
 		}

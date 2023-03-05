@@ -46,12 +46,12 @@ class UnitMenu extends JPanel implements Clearable {
 		Terrain terrain = window.game.terrain(unit.getPos());
 		if (!unit.type.transportUnits) {
 			boolean transportAirEn = unit.type.category == Unit.Category.Land
-					&& Unit.Type.AirTransporter.canStandOn(terrain);
+					&& Unit.Type.AirTransporter.canStandOn(terrain) && window.game.canBuildAirUnits(unit.getTeam());
 			createUnitMenuButton(Images.Label.UnitMenuTransportAir, transportAirEn,
 					e -> window.gameAction(new Action.UnitTransport(unit.getPos(), Unit.Type.AirTransporter)));
 
 			boolean transportWaterEn = unit.type.category == Unit.Category.Land
-					&& Unit.Type.ShipTransporter.canStandOn(terrain);
+					&& Unit.Type.ShipTransporter.canStandOn(terrain) && window.game.canBuildWaterUnits(unit.getTeam());
 			createUnitMenuButton(Images.Label.UnitMenuTransportWater, transportWaterEn,
 					e -> window.gameAction(new Action.UnitTransport(unit.getPos(), Unit.Type.ShipTransporter)));
 
