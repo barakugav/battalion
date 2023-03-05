@@ -15,7 +15,7 @@ class GameFrame extends JFrame {
 	private final Globals globals;
 
 	private static final String TITLE = "Battalion";
-	private static final int FRAME_WIDTH = 750;
+	private static final int FRAME_WIDTH = 760;
 	private static final int FRAME_HEIGHT = 600;
 
 	private static final long serialVersionUID = 1L;
@@ -30,6 +30,7 @@ class GameFrame extends JFrame {
 		setLocationByPlatform(true);
 		setResizable(false);
 		setPreferredSize(new Dimension(FRAME_WIDTH, FRAME_HEIGHT));
+		setIconImage(Images.getImg(Images.Label.FrameIcon));
 
 		/* By default display main menu */
 		openMainMenu();

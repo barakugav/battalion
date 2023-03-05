@@ -36,6 +36,8 @@ class Images {
 		FactoryMenuImg,
 
 		CheckboxUnselected, CheckboxUnselectedHovered, CheckboxSelected, CheckboxSelectedHovered, CheckboxPressed,
+
+		FrameIcon,
 	}
 
 	private static class ImgDesc {
@@ -219,6 +221,7 @@ class Images {
 		images0.put(Label.CheckboxSelected, loadImg("img/gui/checkbox_selected.png"));
 		images0.put(Label.CheckboxSelectedHovered, loadImg("img/gui/checkbox_selected_hovered.png"));
 		images0.put(Label.CheckboxPressed, loadImg("img/gui/checkbox_pressed.png"));
+		images0.put(Label.FrameIcon, loadImg("img/gui/frame_icon.png"));
 
 		BiConsumer<Label, String> addUnitMenuIcon = (label, path) -> {
 			BufferedImage img = loadImg("img/gui/unit_menu_box.png");

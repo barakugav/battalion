@@ -274,7 +274,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 			healthLabel.setFont(boldFont);
 			c.gridy = 0;
 			stats.add(healthLabel, c);
-			health = new JLabel();
+			health = new JLabel("", SwingConstants.RIGHT);
 			health.setForeground(TextColor);
 			c.gridy = 1;
 			stats.add(health, c);
@@ -283,7 +283,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 			damageLabel.setFont(boldFont);
 			c.gridy = 2;
 			stats.add(damageLabel, c);
-			damage = new JLabel();
+			damage = new JLabel("", SwingConstants.RIGHT);
 			damage.setForeground(TextColor);
 			c.gridy = 3;
 			stats.add(damage, c);
@@ -292,7 +292,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 			moveLabel.setFont(boldFont);
 			c.gridy = 4;
 			stats.add(moveLabel, c);
-			move = new JLabel();
+			move = new JLabel("", SwingConstants.RIGHT);
 			move.setForeground(TextColor);
 			c.gridy = 5;
 			stats.add(move, c);

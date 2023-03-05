@@ -1,7 +1,6 @@
 package com.ugav.battalion;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -143,16 +142,12 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 			panel.addComp(teamPanel);
 		}
 
-		int fillerHeight = 130;
-		for (Component comp : panel.getComponents())
-			fillerHeight -= (comp.getPreferredSize().height + margin);
-		if (fillerHeight < 0)
-			throw new IllegalArgumentException();
-		System.out.println(fillerHeight);
 		JPanel filler = new JPanel();
-		filler.setPreferredSize(new Dimension(1, fillerHeight));
+		filler.setPreferredSize(new Dimension(0, 0));
 		filler.setOpaque(false);
-		panel.addComp(filler);
+		panel.addComp(filler, 1);
+
+		panel.setPreferredSize(new Dimension(panel.getPreferredSize().width, 130));
 
 		return panel;
 	}

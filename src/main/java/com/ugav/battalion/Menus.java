@@ -42,6 +42,7 @@ class Menus {
 			button.setPreferredSize(new Dimension(buttonSize));
 			button.setBackground(ButtonColor);
 			button.setOpaque(true);
+			button.setFocusable(false);
 			return addComp(button);
 		}
 
