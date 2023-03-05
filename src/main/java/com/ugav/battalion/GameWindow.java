@@ -133,14 +133,15 @@ class GameWindow extends JPanel implements Clearable {
 	@Override
 	public void clear() {
 		gameActionsThread.setRunning(false);
+		register.unregisterAll();
+		menu.clear();
+		arenaPanel.clear();
+		stats.clear();
 		try {
 			gameActionsThread.join();
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
-		register.unregisterAll();
-		menu.clear();
-		arenaPanel.clear();
 	}
 
 	void endTurn() {

@@ -43,4 +43,8 @@ class GestureTask implements TickTask {
 		return counter / GestureDuration;
 	}
 
+	@Override
+	public void clear() {
+	}
+
 }

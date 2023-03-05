@@ -8,8 +8,7 @@ import javax.swing.Timer;
 
 import com.ugav.battalion.util.Pair;
 
-@FunctionalInterface
-interface TickTask {
+interface TickTask extends Clearable {
 
 	void run();
 
@@ -44,6 +43,8 @@ interface TickTask {
 		}
 
 		void stop() {
+			for (Pair<TickTask, Integer> task : tasks)
+				task.e1.clear();
 			tickTimer.stop();
 		}
 	}

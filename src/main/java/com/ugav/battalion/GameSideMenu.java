@@ -241,7 +241,16 @@ class GameSideMenu extends Menus.ColumnWithMargins implements GameMenu {
 			game = window.game;
 			setPreferredSize(new Dimension(game.width() * TileSize, game.height() * TileSize));
 
-			window.arenaPanel.tickTaskManager.addTask(1000, this::repaint);
+			window.arenaPanel.tickTaskManager.addTask(1000, new TickTask() {
+				@Override
+				public void clear() {
+				}
+
+				@Override
+				public void run() {
+					repaint();
+				}
+			});
 		}
 
 		private void drawImg(Graphics g, int cell, BufferedImage img) {

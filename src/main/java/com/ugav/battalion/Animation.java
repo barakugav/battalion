@@ -530,6 +530,10 @@ interface Animation {
 				}
 			}
 
+			@Override
+			public void clear() {
+			}
+
 		}
 
 	}
@@ -586,35 +590,18 @@ interface Animation {
 					entry.animation.beforeFirst();
 				if (!entry.animation.advanceAnimationStep()) {
 					it.remove();
-					entry.animation.afterLast();
-					if (entry.future != null)
-						entry.future.run();
-					synchronized (entry) {
-						entry.notify();
-					}
+					endAnimation(entry);
 				}
 			}
-
-			if (animated && !isAnimationRunning) {
-				isAnimationRunning = true;
-				onAnimationBegin.notify(new Event(Task.this));
-			}
-			if (!animated && isAnimationRunning) {
-				isAnimationRunning = false;
-				onAnimationEnd.notify(new Event(Task.this));
-			}
+			setAnimationRunning(animated);
 		}
 
-		void animate(Animation animation, Runnable future) {
-			animate(animation, false, future);
+		void animateAndWait(Animation animation) {
+			animate(animation, true);
 		}
 
-		void animateAndWait(Animation animation, Runnable future) {
-			animate(animation, true, future);
-		}
-
-		private void animate(Animation animation, boolean wait, Runnable future) {
-			AnimationEntry entry = new AnimationEntry(animation, future);
+		private void animate(Animation animation, boolean wait) {
+			AnimationEntry entry = new AnimationEntry(animation);
 			if (wait) {
 				if (SwingUtilities.isEventDispatchThread())
 					throw new IllegalStateException("Can't wait for animation from GUI thread");
@@ -635,12 +622,39 @@ interface Animation {
 
 		private static class AnimationEntry {
 			final Animation animation;
-			final Runnable future;
 			int animationCount;
 
-			AnimationEntry(Animation animation, Runnable future) {
+			AnimationEntry(Animation animation) {
 				this.animation = Objects.requireNonNull(animation);
-				this.future = future;
+			}
+		}
+
+		@Override
+		public void clear() {
+			while (!queue.isEmpty()) {
+				for (Iterator<AnimationEntry> it = queue.iterator(); it.hasNext();) {
+					AnimationEntry entry = it.next();
+					it.remove();
+					endAnimation(entry);
+				}
+			}
+			setAnimationRunning(false);
+		}
+
+		private void setAnimationRunning(boolean animated) {
+			if (animated == isAnimationRunning)
+				return;
+			if (isAnimationRunning = animated) {
+				onAnimationBegin.notify(new Event(Task.this));
+			} else {
+				onAnimationEnd.notify(new Event(Task.this));
+			}
+		}
+
+		private static void endAnimation(AnimationEntry entry) {
+			entry.animation.afterLast();
+			synchronized (entry) {
+				entry.notify();
 			}
 		}
 

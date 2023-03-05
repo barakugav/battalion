@@ -111,7 +111,17 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			}
 		});
 
-		tickTaskManager.addTask(1000, this::repaint);
+		tickTaskManager.addTask(1000, new TickTask() {
+
+			@Override
+			public void clear() {
+			}
+
+			@Override
+			public void run() {
+				repaint();
+			}
+		});
 
 		tickTaskManager.addTask(100, mapMove);
 		tickTaskManager.addTask(100, animationTask);
@@ -128,7 +138,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	synchronized void runAnimationAndWait(Animation animation) {
 		animationsActive.incrementAndGet();
-		animationTask.animateAndWait(animation, () -> animationsActive.decrementAndGet());
+		animationTask.animateAndWait(animation);
+		animationsActive.decrementAndGet();
 	}
 
 	boolean isAnimationActive() {
@@ -200,9 +211,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	@Override
 	public void clear() {
 		tickTaskManager.stop();
-
 		entityLayer.removeKeyListener(keyListener);
-
 		entityLayer.clear();
 	}
 
