@@ -321,4 +321,20 @@ interface GameMenu extends Clearable {
 
 	}
 
+	static class GameEndPopup extends Menus.Window implements Clearable {
+
+		private static final long serialVersionUID = 1L;
+
+		GameEndPopup(Team winner) {
+			final Team player = Team.Red;
+			boolean victory = player == winner;
+			addTitle("Game Finish: " + (victory ? "Victory!" : "You lost..."));
+		}
+
+		@Override
+		public void clear() {
+		}
+
+	}
+
 }

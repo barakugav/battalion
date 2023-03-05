@@ -9,10 +9,12 @@ import java.awt.event.ActionListener;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import com.ugav.battalion.util.Utils;
@@ -135,6 +137,26 @@ class Menus {
 			add(comp, c);
 			return comp;
 		}
+	}
+
+	static class Window extends Menus.ColumnWithMargins {
+
+		private static final Color BackgroundColor = new Color(64, 62, 64);
+		private static final Color TitleColor = new Color(255, 234, 201);
+		private static final long serialVersionUID = 1L;
+
+		Window() {
+			setMargin(6);
+			setBorder(BorderFactory.createRaisedBevelBorder());
+			setBackground(BackgroundColor);
+		}
+
+		JLabel addTitle(String title) {
+			JLabel label = new JLabel(title);
+			label.setForeground(TitleColor);
+			return addComp(label);
+		}
+
 	}
 
 }

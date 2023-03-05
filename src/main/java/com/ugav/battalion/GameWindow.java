@@ -8,7 +8,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import com.ugav.battalion.computer.Player;
@@ -79,12 +78,8 @@ class GameWindow extends JPanel implements Clearable {
 			if (e.nextTurn == player)
 				resumeActions();
 		}));
-		register.register(game.onGameEnd, Utils.swingListener(e -> {
-			logger.dbgln("Game finished");
-			JOptionPane.showMessageDialog(this, "Winner: " + e.winner);
-			suspendActions();
-			// TODO
-		}));
+		register.register(game.onGameEnd,
+				Utils.swingListener(e -> arenaPanel.showPopup(new GameMenu.GameEndPopup(e.winner), 50)));
 		register.register(game.onAction, e -> logger.dbgln(e.action));
 
 		(gameActionsThread = new GameActionsThread()).start();

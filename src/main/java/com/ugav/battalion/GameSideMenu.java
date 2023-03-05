@@ -181,16 +181,11 @@ class GameSideMenu extends Menus.ColumnWithMargins implements GameMenu {
 		return panel;
 	}
 
-	private class ExitPopup extends Menus.ColumnWithMargins implements Clearable {
+	private class ExitPopup extends Menus.Window implements Clearable {
 
-		private static final Color BackgroundColor = new Color(64, 62, 64);
-		private static final Color TitleColor = new Color(255, 234, 201);
 		private static final long serialVersionUID = 1L;
 
 		ExitPopup() {
-			setMargin(6);
-			setBorder(BorderFactory.createRaisedBevelBorder());
-			setBackground(BackgroundColor);
 			addTitle("Settings");
 
 			Menus.ButtonColumn buttonSet = new Menus.ButtonColumn();
@@ -198,12 +193,6 @@ class GameSideMenu extends Menus.ColumnWithMargins implements GameMenu {
 			buttonSet.addButton("Options", e -> System.out.println("Options")); // TODO
 			buttonSet.addButton("Quit", e -> window.globals.frame.openMainMenu());
 			addComp(buttonSet);
-		}
-
-		JLabel addTitle(String title) {
-			JLabel label = new JLabel(title);
-			label.setForeground(TitleColor);
-			return addComp(label);
 		}
 
 		@Override

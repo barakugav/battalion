@@ -12,10 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
-import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -194,25 +192,13 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 
 	}
 
-	private static class Tab extends Menus.ColumnWithMargins {
+	private static class Tab extends Menus.Window {
 
 		final String name;
-
-		private static final Color BackgroundColor = new Color(64, 62, 64);
-		private static final Color TitleColor = new Color(255, 234, 201);
 		private static final long serialVersionUID = 1L;
 
 		Tab(String name) {
-			setMargin(6);
 			this.name = Objects.requireNonNull(name);
-			setBorder(BorderFactory.createRaisedBevelBorder());
-			setBackground(BackgroundColor);
-		}
-
-		JLabel addTitle(String title) {
-			JLabel label = new JLabel(title);
-			label.setForeground(TitleColor);
-			return addComp(label);
 		}
 
 	}
