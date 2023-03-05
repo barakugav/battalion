@@ -28,6 +28,8 @@ public abstract class Entity {
 		onChange().notify(new EntityChange(this));
 	}
 
+	abstract public int getPos();
+
 	public boolean isActive() {
 		return active;
 	}

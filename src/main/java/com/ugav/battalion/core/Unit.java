@@ -95,6 +95,7 @@ public class Unit extends Entity implements IUnit {
 		onChange().notify(new EntityChange(this));
 	}
 
+	@Override
 	public int getPos() {
 		return pos;
 	}
@@ -554,7 +555,7 @@ public class Unit extends Entity implements IUnit {
 
 	@Override
 	public String toString() {
-		return "" + getTeam().toString().charAt(0) + type;
+		return "" + getTeam().toString().charAt(0) + type + Cell.toString(getPos());
 	}
 
 	@Override

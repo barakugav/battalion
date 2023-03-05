@@ -126,6 +126,7 @@ public class Building extends Entity implements IBuilding {
 		return copy;
 	}
 
+	@Override
 	public int getPos() {
 		return pos;
 	}
@@ -240,7 +241,7 @@ public class Building extends Entity implements IBuilding {
 
 	@Override
 	public String toString() {
-		return "" + getTeam().toString().charAt(0) + type;
+		return "" + getTeam().toString().charAt(0) + type + Cell.toString(getPos());
 	}
 
 	@Override

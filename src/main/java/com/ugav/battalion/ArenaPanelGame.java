@@ -2,6 +2,7 @@ package com.ugav.battalion;
 
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.util.EnumSet;
 import java.util.Objects;
 import java.util.function.LongToIntFunction;
 
@@ -23,6 +24,13 @@ import com.ugav.battalion.util.Utils.Holder;
 class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 	private final GameWindow window;
+
+	private Selection selection = Selection.None;
+	private Entity selectedEntity;
+
+	private static enum Selection {
+		None, UnitMoveOrAttack, UnitEctActions, UnitObservation, FactoryBuild
+	}
 
 	private final Event.Register register = new Event.Register();
 	final Event.Notifier<EntityClick> onEntityClick = new Event.Notifier<>();
@@ -70,20 +78,18 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		return (EntityLayer) entityLayer;
 	}
 
-	private boolean isUnitSelected() {
-		return selection != SelectionNone && game.unit(selection) != null;
-	}
-
 	private void cellClicked(int cell) {
-		closeMenus();
-
 		if (window.isActionSuspended())
 			return;
-		if (selection == SelectionNone) {
+		closeMenus();
+		if (selection == Selection.None) {
 			trySelect(cell);
 
-		} else if (isUnitSelected()) {
+		} else if (selection == Selection.UnitMoveOrAttack) {
 			unitSecondSelection(cell);
+
+		} else {
+			clearSelection();
 		}
 	}
 
@@ -92,15 +98,17 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		Building building = game.building(cell);
 		if (unit != null) {
 			onEntityClick.notify(new EntityClick(this, cell, unit));
-			if (!unit.isActive())
-				return;
-			setSelection(cell);
+
+			if (unit.isActive())
+				setSelection(Selection.UnitMoveOrAttack, unit);
+			else if (unit.getTeam() != window.game.getTurn())
+				setSelection(Selection.UnitObservation, unit);
+
 		} else if (building != null) {
 			onEntityClick.notify(new EntityClick(this, cell, building));
 			if (!building.isActive())
 				return;
-			setSelection(cell);
-
+			setSelection(Selection.FactoryBuild, building);
 			if (building.type.canBuildUnits)
 				openFactoryMenu(building);
 
@@ -110,10 +118,8 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 	}
 
 	private void unitSecondSelection(int target) {
-		Unit targetUnit = game.unit(target);
-		Unit selectedUnit = game.unit(selection);
-
-		if (selection == target) {
+		Unit selectedUnit = (Unit) selectedEntity, targetUnit = game.unit(target);
+		if (targetUnit == selectedUnit) {
 			/* double click */
 			openUnitMenu(selectedUnit);
 
@@ -135,7 +141,8 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 	private void openUnitMenu(Unit unit) {
 		closeMenus();
-		clearSelection();
+
+		setSelection(Selection.UnitEctActions, unit);
 
 		unitMenu = new UnitMenu(window, unit);
 		Dimension unitMenuSize = unitMenu.getPreferredSize();
@@ -157,13 +164,16 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		unitMenu.setBounds(x, y, unitMenuSize.width, unitMenuSize.height);
 		revalidate();
 
-		register.register(unitMenu.onActionChosen, e -> closeUnitMenu());
+		register.register(unitMenu.onActionChosen, e -> {
+			closeUnitMenu();
+			clearSelection();
+		});
 	}
 
 	private void closeUnitMenu() {
 		if (unitMenu == null)
 			return;
-		if (selection == unitMenu.unit.getPos())
+		if (selection == Selection.UnitEctActions && selectedEntity == unitMenu.unit)
 			clearSelection();
 		register.unregisterAll(unitMenu.onActionChosen);
 		unitMenu.clear();
@@ -175,7 +185,8 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 	private void openFactoryMenu(Building factory) {
 		closeMenus();
-		clearSelection();
+
+		setSelection(Selection.FactoryBuild, factory);
 
 		factoryMenu = new FactoryMenu(window, factory);
 		factoryMenu.setPreferredSize(getSize());
@@ -193,7 +204,7 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 	private void closeFactoryMenu() {
 		if (factoryMenu == null)
 			return;
-		if (selection == factoryMenu.factory.getPos())
+		if (selection == Selection.FactoryBuild && selectedEntity == factoryMenu.factory)
 			clearSelection();
 		register.unregisterAll(factoryMenu.onActionChosen);
 		factoryMenu.clear();
@@ -206,40 +217,26 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		closeFactoryMenu();
 	}
 
-	private int selection = SelectionNone;
-	private static final int SelectionNone = Cell.of(-1, -1);
-
 	private void clearSelection() {
-		setSelection(SelectionNone);
+		setSelection(Selection.None, null);
 	}
 
-	private void setSelection(int newSelection) {
-//		logger.dbgln("setSelection ", Cell.toString(newSelection));
-		selection = newSelection;
-		onSelectionChange.notify(new SelectionChange(this, newSelection, getSelectedEntity()));
-	}
-
-	Entity getSelectedEntity() {
-		if (selection == SelectionNone)
-			return null;
-		Unit unit = game.unit(selection);
-		if (unit != null)
-			return unit;
-		Building building = game.building(selection);
-		if (building != null)
-			return building;
-		throw new IllegalStateException();
+	private void setSelection(Selection selectionType, Entity entity) {
+//		window.logger.dbgln("setSelection(" + selectionType + ", " + entity + ")");
+		selection = selectionType;
+		selectedEntity = entity;
+		onSelectionChange.notify(new SelectionChange(this, selectionType, entity));
 	}
 
 	static class SelectionChange extends Event {
 
-		final int cell;
-		final Entity obj;
+		final Selection selection;
+		final Entity entity;
 
-		public SelectionChange(Object source, int cell, Entity obj) {
+		public SelectionChange(Object source, Selection selection, Entity entity) {
 			super(source);
-			this.cell = cell;
-			this.obj = obj;
+			this.selection = selection;
+			this.entity = entity;
 		}
 
 	}
@@ -274,7 +271,7 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 			super.initUI();
 
 			register.register(game.onUnitRemove, Utils.swingListener(e -> {
-				if (e.unit.getPos() == selection)
+				if (e.unit == selectedEntity)
 					clearSelection();
 			}));
 			register.register(onSelectionChange, e -> movePath.clear());
@@ -285,25 +282,23 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		@Override
 		public void clear() {
 			register.unregisterAll();
-
 			super.clear();
 		}
 
 		void hoveredUpdated(int hovered) {
-			if (!isUnitSelected() || window.isActionSuspended())
+			if (window.isActionSuspended() || selection != Selection.UnitMoveOrAttack)
 				return;
-			Unit unit = (Unit) getSelectedEntity();
+			Unit unit = (Unit) selectedEntity;
 
 			if (unit.getAttackableMap().contains(hovered)) {
-				updateAttackMovePath(hovered);
+				updateAttackMovePath(unit, hovered);
 
 			} else if (unit.getPassableMap().contains(hovered)) {
-				updateMovePath(hovered);
+				updateMovePath(unit, hovered);
 			}
 		}
 
-		private void updateAttackMovePath(int targetPos) {
-			Unit attacker = game.unit(selection);
+		private void updateAttackMovePath(Unit attacker, int targetPos) {
 			switch (attacker.type.weapon.type) {
 			case LongRange:
 				movePath.clear();
@@ -327,9 +322,7 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 			}
 		}
 
-		private void updateMovePath(int targetPos) {
-			Unit unit = game.unit(selection);
-
+		private void updateMovePath(Unit unit, int targetPos) {
 			/* Update move path from unit position to hovered position */
 			int last = movePath.isEmpty() ? unit.getPos() : movePath.last();
 
@@ -365,32 +358,34 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		protected void paintComponent(Graphics g) {
 			super.paintComponent(g);
 
-			if (selection != SelectionNone) {
-				drawRelativeToMap(g, Images.Label.Selection, selection);
+			if (selection != Selection.None)
+				drawRelativeToMap(g, Images.Label.Selection, selectedEntity.getPos());
 
-				if (getSelectedEntity() instanceof Unit unit) {
-					Cell.Bitmap passableMap = unit.getPassableMap();
-					Cell.Bitmap attackableMap = unit.getAttackableMap();
-					Cell.Bitmap potentiallyAttackableMap = unit.getPotentiallyAttackableMap();
+			if (EnumSet.of(Selection.UnitMoveOrAttack, Selection.UnitObservation).contains(selection)) {
+				Unit unit = (Unit) selectedEntity;
+				Cell.Bitmap passableMap = unit.getPassableMap();
+				Cell.Bitmap attackableMap = unit.getAttackableMap();
+				Cell.Bitmap potentiallyAttackableMap = unit.getPotentiallyAttackableMap();
 
-					for (Iter.Int it = game.cells(); it.hasNext();) {
-						int cell = it.next();
-						if (passableMap.contains(cell))
-							drawRelativeToMap(g, Images.Label.Passable, cell);
-						else if (attackableMap.contains(cell))
-							drawRelativeToMap(g, Images.Label.Attackable, cell);
-						else if (potentiallyAttackableMap.contains(cell))
-							drawRelativeToMap(g, Images.Label.PotentiallyAttackable, cell);
-					}
+				for (Iter.Int it = game.cells(); it.hasNext();) {
+					int cell = it.next();
+					if (passableMap.contains(cell))
+						drawRelativeToMap(g, Images.Label.Passable, cell);
+					else if (attackableMap.contains(cell))
+						drawRelativeToMap(g, Images.Label.Attackable, cell);
+					else if (potentiallyAttackableMap.contains(cell))
+						drawRelativeToMap(g, Images.Label.PotentiallyAttackable, cell);
 				}
 			}
-			if (getSelectedEntity() instanceof Unit unit) {
+
+			if (selection == Selection.UnitMoveOrAttack) {
+				Unit unit = (Unit) selectedEntity;
 				if (movePath.isEmpty()) {
-					drawRelativeToMap(g, "MovePathSourceNone", selection);
+					drawRelativeToMap(g, "MovePathSourceNone", selectedEntity.getPos());
 				} else {
 					LongToIntFunction calcDir = idx0 -> {
 						int idx = (int) idx0;
-						int p1 = idx >= 0 ? movePath.get(idx) : selection;
+						int p1 = idx >= 0 ? movePath.get(idx) : selectedEntity.getPos();
 						int p2 = movePath.get(idx + 1);
 						Direction dir = Cell.diffDir(p1, p2);
 						switch (dir) {
@@ -408,7 +403,7 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 					};
 
 					int sourceDir = calcDir.applyAsInt(-1);
-					drawRelativeToMap(g, "MovePathSource" + sourceDir, selection);
+					drawRelativeToMap(g, "MovePathSource" + sourceDir, selectedEntity.getPos());
 
 					for (int idx = 0; idx < movePath.size() - 1; idx++) {
 						int prevDir = calcDir.applyAsInt(idx - 1);
