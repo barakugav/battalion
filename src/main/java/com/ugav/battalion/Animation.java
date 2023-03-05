@@ -479,7 +479,8 @@ interface Animation {
 
 				Position userChoosenPosNew = (!userChosenPosValid ? currentPos : Position.fromCell(userChosenPos))
 						.add(dir);
-				if (userChoosenPosNew.dist(currentPos) >= 3 || !isValidMapPos(userChoosenPosNew))
+				userChoosenPosNew = getMapPosRange().closestContainedPoint(userChoosenPosNew);
+				if (userChoosenPosNew.dist(currentPos) >= 3)
 					return;
 
 				userChosenPos = Cell.of((int) userChoosenPosNew.x, (int) userChoosenPosNew.y);
