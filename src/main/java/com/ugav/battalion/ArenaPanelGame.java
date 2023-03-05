@@ -25,10 +25,10 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 	private final GameWindow window;
 
-	private Selection selection = Selection.None;
-	private Entity selectedEntity;
+	Selection selection = Selection.None;
+	Entity selectedEntity;
 
-	private static enum Selection {
+	static enum Selection {
 		None, UnitMoveOrAttack, UnitEctActions, UnitObservation, FactoryBuild
 	}
 
@@ -46,7 +46,8 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 		register.register(entityLayer.onTileClick, e -> cellClicked(e.cell));
 
-		register.register(mapMove.onMapMove, e -> closeMenus());
+		register.register(game.beforeTurnEnd, e -> clearSelection());
+		register.register(mapMove.onMapMove, e -> clearSelection());
 
 		Holder<Integer> playerLastPos = new Holder<>();
 		register.register(game.beforeTurnEnd, Utils.swingListener(e -> {
@@ -78,10 +79,22 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		return (EntityLayer) entityLayer;
 	}
 
+	void clearSelection() {
+		setSelection(Selection.None, null);
+		closeOpenMenu();
+	}
+
+	private void setSelection(Selection selectionType, Entity entity) {
+//		window.logger.dbgln("setSelection(" + selectionType + ", " + entity + ")");
+		selection = selectionType;
+		selectedEntity = entity;
+		onSelectionChange.notify(new SelectionChange(this, selectionType, entity));
+	}
+
 	private void cellClicked(int cell) {
 		if (window.isActionSuspended())
 			return;
-		closeMenus();
+		closeOpenMenu();
 		if (selection == Selection.None) {
 			trySelect(cell);
 
@@ -137,14 +150,14 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		}
 	}
 
-	private UnitMenu unitMenu;
+	private GameMenu openMenu;
 
 	private void openUnitMenu(Unit unit) {
-		closeMenus();
+		closeOpenMenu();
 
 		setSelection(Selection.UnitEctActions, unit);
+		GameMenu.UnitMenu unitMenu = new GameMenu.UnitMenu(window, unit);
 
-		unitMenu = new UnitMenu(window, unit);
 		Dimension unitMenuSize = unitMenu.getPreferredSize();
 
 		int unitX = displayedXCell(Cell.x(unit.getPos()));
@@ -160,72 +173,38 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		if (y + unitMenuSize.height > unitY + yOverlap)
 			y = unitY + TILE_SIZE_PIXEL - yOverlap;
 
-		add(unitMenu, JLayeredPane.POPUP_LAYER);
-		unitMenu.setBounds(x, y, unitMenuSize.width, unitMenuSize.height);
-		revalidate();
-
-		register.register(unitMenu.onActionChosen, e -> {
-			closeUnitMenu();
-			clearSelection();
-		});
+		showMenu(unitMenu, x, y, unitMenuSize.width, unitMenuSize.height);
 	}
-
-	private void closeUnitMenu() {
-		if (unitMenu == null)
-			return;
-		if (selection == Selection.UnitEctActions && selectedEntity == unitMenu.unit)
-			clearSelection();
-		register.unregisterAll(unitMenu.onActionChosen);
-		unitMenu.clear();
-		remove(unitMenu);
-		unitMenu = null;
-	}
-
-	private FactoryMenu factoryMenu;
 
 	private void openFactoryMenu(Building factory) {
-		closeMenus();
+		closeOpenMenu();
 
 		setSelection(Selection.FactoryBuild, factory);
+		GameMenu.FactoryMenu factoryMenu = new GameMenu.FactoryMenu(window, factory);
 
-		factoryMenu = new FactoryMenu(window, factory);
 		factoryMenu.setPreferredSize(getSize());
 		Dimension factoryMenuSize = factoryMenu.getPreferredSize();
-
-		register.register(factoryMenu.onActionChosen, e -> closeFactoryMenu());
-
-		add(factoryMenu, JLayeredPane.POPUP_LAYER);
 		int x = (getWidth() - factoryMenuSize.width) / 2;
 		int y = (getHeight() - factoryMenuSize.height) / 2;
-		factoryMenu.setBounds(x, y, factoryMenuSize.width, factoryMenuSize.height);
+		showMenu(factoryMenu, x, y, factoryMenuSize.width, factoryMenuSize.height);
+	}
+
+	private void showMenu(GameMenu menu, int x, int y, int width, int height) {
+		closeOpenMenu();
+		openMenu = menu;
+		add(menu, JLayeredPane.PALETTE_LAYER);
+		menu.setBounds(x, y, width, height);
 		revalidate();
 	}
 
-	private void closeFactoryMenu() {
-		if (factoryMenu == null)
-			return;
-		if (selection == Selection.FactoryBuild && selectedEntity == factoryMenu.factory)
-			clearSelection();
-		register.unregisterAll(factoryMenu.onActionChosen);
-		factoryMenu.clear();
-		remove(factoryMenu);
-		factoryMenu = null;
-	}
-
-	void closeMenus() {
-		closeUnitMenu();
-		closeFactoryMenu();
-	}
-
-	private void clearSelection() {
-		setSelection(Selection.None, null);
-	}
-
-	private void setSelection(Selection selectionType, Entity entity) {
-//		window.logger.dbgln("setSelection(" + selectionType + ", " + entity + ")");
-		selection = selectionType;
-		selectedEntity = entity;
-		onSelectionChange.notify(new SelectionChange(this, selectionType, entity));
+	void closeOpenMenu() {
+		GameMenu m = openMenu;
+		if (m != null) {
+			openMenu = null;
+			m.beforeClose();
+			m.clear();
+			remove(m);
+		}
 	}
 
 	static class SelectionChange extends Event {
