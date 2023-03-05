@@ -28,6 +28,7 @@ class GameWindow extends JPanel implements Clearable {
 	final ArenaPanelGame arenaPanel;
 
 	final Game game;
+	private final GameStats stats;
 	private final Player computer = new PlayerMiniMaxAlphaBeta();
 	private final Logger logger = new Logger(true); // TODO
 	private final Event.Register register = new Event.Register();
@@ -41,6 +42,7 @@ class GameWindow extends JPanel implements Clearable {
 		this.levelName = Objects.requireNonNull(levelName);
 
 		game = Game.fromLevel(level);
+		stats = new GameStats(game);
 		arenaPanel = new ArenaPanelGame(this);
 		menu = new GameSideMenu(this);
 
@@ -79,7 +81,7 @@ class GameWindow extends JPanel implements Clearable {
 				resumeActions();
 		}));
 		register.register(game.onGameEnd,
-				Utils.swingListener(e -> arenaPanel.showPopup(new GameMenu.GameEndPopup(e.winner), 50)));
+				Utils.swingListener(e -> arenaPanel.showPopup(new GameMenu.GameEndPopup(this, e.winner, stats), 50)));
 		register.register(game.onAction, e -> logger.dbgln(e.action));
 
 		(gameActionsThread = new GameActionsThread()).start();

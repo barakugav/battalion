@@ -6,6 +6,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -16,10 +18,15 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
 
 import com.ugav.battalion.util.Utils;
 
 class Menus {
+
+	private static final Color TitleColor = new Color(255, 234, 201);
 
 	static class ButtonColumn extends ColumnWithMargins {
 
@@ -142,7 +149,6 @@ class Menus {
 	static class Window extends Menus.ColumnWithMargins {
 
 		private static final Color BackgroundColor = new Color(64, 62, 64);
-		private static final Color TitleColor = new Color(255, 234, 201);
 		private static final long serialVersionUID = 1L;
 
 		Window() {
@@ -155,6 +161,76 @@ class Menus {
 			JLabel label = new JLabel(title);
 			label.setForeground(TitleColor);
 			return addComp(label);
+		}
+
+	}
+
+	static class Table extends JPanel {
+
+		private final List<Column> columns = new ArrayList<>();
+		private int rowCount;
+
+		private static final long serialVersionUID = 1L;
+		private static final Color TextColor = Color.WHITE;
+		private static final Color RowColor1 = new Color(85, 85, 85);
+		private static final Color RowColor2 = new Color(73, 73, 73);
+		private static final Color ColumnSeperatorColor = new Color(60, 60, 60);
+		private static final int ColumnSeperatorWidth = 2;
+		private static final int CellMargin = 6;
+
+		Table() {
+			setLayout(new GridBagLayout());
+			setBorder(BorderFactory.createLineBorder(ColumnSeperatorColor, ColumnSeperatorWidth));
+		}
+
+		Column addColumn() {
+			Column c = new Column();
+			columns.add(c);
+			return c;
+		}
+
+		void addRow(Object... row) {
+			if (row.length != columns.size())
+				throw new IllegalArgumentException();
+			Color backgroundColor = rowCount % 2 == 0 ? RowColor1 : RowColor2;
+			for (int colIdx = 0; colIdx < row.length; colIdx++) {
+				Column column = columns.get(colIdx);
+				String val = Objects.toString(row[colIdx]);
+				JLabel cell = new JLabel(val, column.horizontalAlignment);
+				if (column.prefWidthValid)
+					cell.setPreferredSize(
+							new Dimension(column.prefWidth, cell.getPreferredSize().height + CellMargin * 2));
+				cell.setForeground(TextColor);
+				cell.setBackground(backgroundColor);
+				cell.setOpaque(true);
+				if (colIdx > 0)
+					cell.setBorder(
+							BorderFactory.createMatteBorder(0, ColumnSeperatorWidth, 0, 0, ColumnSeperatorColor));
+				Border margins = BorderFactory.createEmptyBorder(CellMargin, CellMargin, CellMargin, CellMargin);
+				cell.setBorder(new CompoundBorder(cell.getBorder(), margins));
+				add(cell, Utils.gbConstraints(colIdx, rowCount, 1, 1, GridBagConstraints.BOTH, column.prefWidthValid ? 0 : 1, 0));
+			}
+			rowCount++;
+		}
+
+		static class Column {
+
+			private int prefWidth;
+			private boolean prefWidthValid;
+			private int horizontalAlignment = SwingConstants.LEADING;
+
+			private Column() {
+			}
+
+			void setPrefWidth(int prefWidth) {
+				this.prefWidth = prefWidth;
+				prefWidthValid = true;
+			}
+
+			void setHorizontalAlignment(int alignment) {
+				horizontalAlignment = alignment;
+			}
+
 		}
 
 	}

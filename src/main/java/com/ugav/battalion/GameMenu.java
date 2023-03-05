@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.ObjIntConsumer;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -325,10 +326,31 @@ interface GameMenu extends Clearable {
 
 		private static final long serialVersionUID = 1L;
 
-		GameEndPopup(Team winner) {
+		GameEndPopup(GameWindow window, Team winner, GameStats stats) {
 			final Team player = Team.Red;
 			boolean victory = player == winner;
-			addTitle("Game Finish: " + (victory ? "Victory!" : "You lost..."));
+			addTitle("Game Finished: " + (victory ? "Victory!" : "You lost..."));
+
+			Menus.Table statsTable = new Menus.Table();
+			Menus.Table.Column statsColumn = statsTable.addColumn();
+//			statsColumn.setPrefWidth(120);
+			statsColumn.setHorizontalAlignment(SwingConstants.LEFT);
+			Menus.Table.Column valsColumn = statsTable.addColumn();
+			valsColumn.setPrefWidth(60);
+			valsColumn.setHorizontalAlignment(SwingConstants.RIGHT);
+
+			ObjIntConsumer<String> addRow = (stat, val) -> statsTable.addRow(stat, Integer.toString(val));
+			addRow.accept("turnsPlayed", stats.getTurnsPlayed());
+			addRow.accept("unitsBuilt", stats.getUnitsBuilt());
+			addRow.accept("enemiesTerminated", stats.getEnemiesTerminated());
+			addRow.accept("unitsCasualties", stats.getUnitsCasualties());
+			addRow.accept("moneyGained", stats.getMoneyGained());
+			addRow.accept("moneySpent", stats.getMoneySpent());
+			addComp(statsTable);
+
+			Menus.ButtonColumn buttonSet = new Menus.ButtonColumn();
+			buttonSet.addButton("Quit", e -> window.globals.frame.openMainMenu());
+			addComp(buttonSet);
 		}
 
 		@Override

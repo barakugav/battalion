@@ -33,7 +33,9 @@ public class Game {
 
 	public final Event.Notifier<EntityChange> onEntityChange = new Event.Notifier<>();
 	public final Event.Notifier<UnitAdd> onUnitAdd = new Event.Notifier<>();
+	public final Event.Notifier<UnitBuy> onUnitBuy = new Event.Notifier<>();
 	public final Event.Notifier<UnitRemove> onUnitRemove = new Event.Notifier<>();
+	public final Event.Notifier<UnitDeath> onUnitDeath = new Event.Notifier<>();
 	public final Event.Notifier<UnitMove> beforeUnitMove = new Event.Notifier<>();
 	public final Event.Notifier<UnitAttack> beforeUnitAttack = new Event.Notifier<>();
 	public final Event.Notifier<ConquerEvent> onConquer = new Event.Notifier<>();
@@ -203,7 +205,7 @@ public class Game {
 			throw new IllegalStateException();
 		data.money += delta;
 		assert data.money >= 0;
-		onMoneyChange.notify(new MoneyChange(this, team, data.money));
+		onMoneyChange.notify(new MoneyChange(this, team, delta, data.money));
 	}
 
 	public void performAction(Action action0) {
@@ -394,6 +396,7 @@ public class Game {
 
 		if (target.isDead()) {
 			removeUnit(target);
+			onUnitDeath.notify(new UnitDeath(this, target));
 			onUnitRemove.notify(new UnitRemove(this, target));
 
 			if (isFinished())
@@ -414,6 +417,7 @@ public class Game {
 		Unit unit = Unit.valueOf(this, UnitDesc.of(unitType, team), pos);
 		setUnit(pos, unit);
 		onUnitAdd.notify(new UnitAdd(this, unit));
+		onUnitBuy.notify(new UnitBuy(this, unit));
 
 		return unit;
 	}
@@ -541,11 +545,33 @@ public class Game {
 
 	}
 
+	public static class UnitBuy extends Event {
+
+		public final Unit unit;
+
+		public UnitBuy(Game source, Unit unit) {
+			super(Objects.requireNonNull(source));
+			this.unit = Objects.requireNonNull(unit);
+		}
+
+	}
+
 	public static class UnitAdd extends Event {
 
 		public final Unit unit;
 
 		public UnitAdd(Game source, Unit unit) {
+			super(Objects.requireNonNull(source));
+			this.unit = Objects.requireNonNull(unit);
+		}
+
+	}
+
+	public static class UnitDeath extends Event {
+
+		public final Unit unit;
+
+		public UnitDeath(Game source, Unit unit) {
 			super(Objects.requireNonNull(source));
 			this.unit = Objects.requireNonNull(unit);
 		}
@@ -592,11 +618,13 @@ public class Game {
 	public static class MoneyChange extends Event {
 
 		public final Team team;
+		public final int delta;
 		public final int newAmount;
 
-		public MoneyChange(Game source, Team team, int newAmount) {
+		public MoneyChange(Game source, Team team, int delta, int newAmount) {
 			super(Objects.requireNonNull(source));
 			this.team = Objects.requireNonNull(team);
+			this.delta = delta;
 			this.newAmount = newAmount;
 		}
 

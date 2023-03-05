@@ -159,18 +159,16 @@ class ArenaPanelGameAbstract extends
 				Utils.swingRun(() -> addUnitComp(e.unit));
 				animateUnitAdd(e.unit);
 			});
-			register.register(game.onUnitRemove, e -> {
-				if (e.unit.isDead()) {
-					UnitComp unitComp = (UnitComp) comps.get(e.unit);
-					Animation animation = new Animation.UnitDeath(ArenaPanelGameAbstract.this, unitComp);
-					runAnimationAndWait(animation);
-				}
-				Utils.swingRun(() -> {
-					UnitComp unitComp = (UnitComp) comps.remove(e.unit);
-					if (unitComp != null)
-						unitComp.clear();
-				});
+			register.register(game.onUnitDeath, e -> {
+				UnitComp unitComp = (UnitComp) comps.get(e.unit);
+				Animation animation = new Animation.UnitDeath(ArenaPanelGameAbstract.this, unitComp);
+				runAnimationAndWait(animation);
 			});
+			register.register(game.onUnitRemove, Utils.swingListener(e -> {
+				UnitComp unitComp = (UnitComp) comps.remove(e.unit);
+				if (unitComp != null)
+					unitComp.clear();
+			}));
 			register.register(game.onEntityChange, e -> {
 				if (e.source instanceof Unit unit) {
 					UnitComp comp = (UnitComp) comps.get(unit);
