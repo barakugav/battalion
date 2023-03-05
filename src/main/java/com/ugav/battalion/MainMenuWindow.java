@@ -11,7 +11,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -19,6 +18,7 @@ import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import com.ugav.battalion.Levels.LevelHandle;
 import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
@@ -32,7 +32,6 @@ import com.ugav.battalion.util.Utils;
 class MainMenuWindow extends JLayeredPane implements Clearable {
 
 	private final Globals globals;
-	private final Levels levels;
 
 	private final JPanel tabsPanel;
 	private final Tab mainTab;
@@ -45,7 +44,6 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 
 	MainMenuWindow(Globals globals) {
 		this.globals = Objects.requireNonNull(globals);
-		levels = new Levels(globals.levelSerializer);
 
 		mainTab = new MainTab();
 		campaignTab = new CampaignTab();
@@ -119,7 +117,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 			Menus.ButtonColumn buttonSet = new Menus.ButtonColumn();
 			buttonSet.addButton("Campaign", e -> showTab(campaignTab));
 			buttonSet.addButton("Bonus Level",
-					e -> globals.frame.openLevelGame(levels.getLevel("Bonus Level"), "Bonus Level"));
+					e -> globals.frame.openLevelGame(globals.levels.getLevel("Bonus Level")));
 			buttonSet.addButton("Custom Level", e -> {
 				JFileChooser fileChooser = Levels.createFileChooser(globals.levelSerializer.getFileType(),
 						Cookies.getCookieValue(Cookies.LEVEL_DISK_LAST_DIR));
@@ -129,9 +127,10 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 							fileChooser.getCurrentDirectory().getAbsolutePath());
 					String selectedFile = fileChooser.getSelectedFile().getAbsolutePath();
 					try {
-						Level level = globals.levelSerializer.levelRead(selectedFile);
 						String basename = new File(selectedFile).getName();
-						globals.frame.openLevelGame(level, basename);
+						LevelHandle level = new LevelHandle(basename,
+								() -> globals.levelSerializer.levelRead(selectedFile), -1);
+						globals.frame.openLevelGame(level);
 					} catch (RuntimeException ex) {
 //						debug.print("failed to load file from: ", selectedFile);
 						ex.printStackTrace();
@@ -158,8 +157,8 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 			addTitle("Campaign");
 
 			Menus.ButtonColumn levelsButtonSet = new Menus.ButtonColumn();
-			for (Pair<String, Supplier<Level>> lvl : levels.getCampaign())
-				levelsButtonSet.addButton(lvl.e1, e -> globals.frame.openLevelGame(lvl.e2.get(), lvl.e1));
+			for (LevelHandle lvl : globals.levels.getCampaign())
+				levelsButtonSet.addButton(lvl.name, e -> globals.frame.openLevelGame(lvl));
 			addComp(levelsButtonSet);
 
 			Menus.ButtonColumn additionalButtonSet = new Menus.ButtonColumn();

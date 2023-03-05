@@ -65,7 +65,7 @@ class GameSideMenu extends Menus.ColumnWithMargins implements GameMenu {
 		MiniMap miniMap = new MiniMap();
 		panel.add(miniMap, Utils.gbConstraints(0, 0, 1, 1, GridBagConstraints.NONE, 1, 1));
 
-		JLabel lvlNameLabel = new JLabel(window.levelName, SwingConstants.CENTER);
+		JLabel lvlNameLabel = new JLabel(window.level.name, SwingConstants.CENTER);
 		lvlNameLabel.setBackground(new Color(63, 0, 0));
 		lvlNameLabel.setForeground(new Color(250, 250, 250));
 		lvlNameLabel.setOpaque(true);

@@ -24,6 +24,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
 import com.ugav.battalion.ArenaPanelGame.Selection;
+import com.ugav.battalion.Levels.LevelHandle;
 import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Level.UnitDesc;
@@ -325,6 +326,8 @@ interface GameMenu extends Clearable {
 	static class GameEndPopup extends Menus.Window implements Clearable {
 
 		private static final long serialVersionUID = 1L;
+		private static final Color NextLevelColor = new Color(96, 181, 102);
+		private static final Color QuitColor = new Color(254, 106, 106);
 
 		GameEndPopup(GameWindow window, Team winner, GameStats stats) {
 			final Team player = Team.Red;
@@ -349,7 +352,14 @@ interface GameMenu extends Clearable {
 			addComp(statsTable);
 
 			Menus.ButtonColumn buttonSet = new Menus.ButtonColumn();
-			buttonSet.addButton("Quit", e -> window.globals.frame.openMainMenu());
+
+			List<LevelHandle> campaign = window.globals.levels.getCampaign();
+			if (window.level.isCampaignLevel() && window.level.campaignIdx + 1 < campaign.size()) {
+				LevelHandle nextLevel = campaign.get(window.level.campaignIdx + 1);
+				buttonSet.addButton("Next Level", e -> window.globals.frame.openLevelGame(nextLevel))
+						.setBackground(NextLevelColor);
+			}
+			buttonSet.addButton("Quit", e -> window.globals.frame.openMainMenu()).setBackground(QuitColor);
 			addComp(buttonSet);
 		}
 

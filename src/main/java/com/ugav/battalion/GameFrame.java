@@ -7,7 +7,7 @@ import java.awt.event.WindowEvent;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 
-import com.ugav.battalion.core.Level;
+import com.ugav.battalion.Levels.LevelHandle;
 
 class GameFrame extends JFrame {
 
@@ -40,8 +40,8 @@ class GameFrame extends JFrame {
 		displayWindow(new MainMenuWindow(globals));
 	}
 
-	void openLevelGame(Level level, String levelName) {
-		displayWindow(new GameWindow(globals, level, levelName));
+	void openLevelGame(LevelHandle level) {
+		displayWindow(new GameWindow(globals, level));
 	}
 
 	void openLevelBuilder() {

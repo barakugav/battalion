@@ -10,11 +10,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JPanel;
 
+import com.ugav.battalion.Levels.LevelHandle;
 import com.ugav.battalion.computer.Player;
 import com.ugav.battalion.computer.PlayerMiniMaxAlphaBeta;
 import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Game;
-import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Logger;
@@ -22,7 +22,7 @@ import com.ugav.battalion.util.Utils;
 
 class GameWindow extends JPanel implements Clearable {
 
-	final String levelName;
+	final LevelHandle level;
 	final Globals globals;
 	private final GameSideMenu menu;
 	final ArenaPanelGame arenaPanel;
@@ -37,11 +37,11 @@ class GameWindow extends JPanel implements Clearable {
 
 	private static final long serialVersionUID = 1L;
 
-	GameWindow(Globals globals, Level level, String levelName) {
+	GameWindow(Globals globals, LevelHandle level) {
 		this.globals = Objects.requireNonNull(globals);
-		this.levelName = Objects.requireNonNull(levelName);
+		this.level = Objects.requireNonNull(level);
 
-		game = Game.fromLevel(level);
+		game = Game.fromLevel(level.level.get());
 		stats = new GameStats(game);
 		arenaPanel = new ArenaPanelGame(this);
 		menu = new GameSideMenu(this);
