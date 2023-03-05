@@ -135,6 +135,7 @@ class Images {
 		addUnit.accept(Unit.Type.Bazooka, "img/unit/bazooka.png");
 		addUnit.accept(Unit.Type.Tank, "img/unit/tank.png");
 		addUnit.accept(Unit.Type.TankBig, "img/unit/tank_big.png");
+		addUnit.accept(Unit.Type.TankInvisible, "img/unit/tank_invisible.png");
 		addUnit.accept(Unit.Type.TankAntiAir, "img/unit/tank_anti_air.png");
 		addUnit.accept(Unit.Type.Artillery, "img/unit/artillery.png");
 		addUnit.accept(Unit.Type.Mortar, "img/unit/mortar.png");
@@ -496,6 +497,7 @@ class Images {
 			return 1;
 		case Tank:
 		case TankBig:
+		case TankInvisible:
 		case TankAntiAir:
 		case Artillery:
 		case Mortar:

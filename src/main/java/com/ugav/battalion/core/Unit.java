@@ -240,6 +240,8 @@ public class Unit extends Entity implements IUnit {
 				Tech.Conquerer),
 		Tank(Category.Land, Weapon.closeRange(), 70, 35, 6, Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater),
 		TankBig(Category.Land, Weapon.closeRange(), 140, 70, 4, Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater),
+		TankInvisible(Category.Land, Weapon.closeRange(), 40, 30, 5, Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater,
+				Tech.Invisible),
 		TankAntiAir(Category.Land, Weapon.closeRange(), 70, 17, 5, Tech.StandOnLandRough, Tech.AttAny),
 		Artillery(Category.Land, Weapon.longRange(3, 5), 40, 40, 4, Tech.StandOnLandRough, Tech.AttAny),
 		Mortar(Category.Land, Weapon.longRange(2, 3), 50, 40, 5, Tech.StandOnLandFlat, Tech.AttAny),

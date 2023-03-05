@@ -222,9 +222,9 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 				if (building != null)
 					drawImg(g, cell, Images.getMinimapBuilding(building.getTeam()));
 
-				Unit unit = game.unit(cell);
-				if (unit != null)
-					drawImg(g, cell, Images.getMinimapUnit(unit.getTeam()));
+				final Team player = Team.Red;
+				if (game.isUnitVisible(cell, player))
+					drawImg(g, cell, Images.getMinimapUnit(game.unit(cell).getTeam()));
 			}
 
 			Position currentMapPos = window.arenaPanel.getCurrentMapOrigin();
