@@ -115,6 +115,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 			title.setFont(titleFontNew);
 
 			text = new JTextArea();
+			text.setEditable(false);
 			text.setWrapStyleWord(true);
 			text.setLineWrap(true);
 			text.setOpaque(false);
@@ -181,6 +182,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 			title.setFont(titleFontNew);
 
 			text = new JTextArea();
+			text.setEditable(false);
 			text.setWrapStyleWord(true);
 			text.setLineWrap(true);
 			text.setOpaque(false);
@@ -279,6 +281,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 			stats.add(move, c);
 
 			text = new JTextArea();
+			text.setEditable(false);
 			text.setWrapStyleWord(true);
 			text.setLineWrap(true);
 			text.setOpaque(false);
