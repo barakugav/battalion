@@ -191,7 +191,6 @@ class ArenaPanelGameAbstract extends
 		@Override
 		public void clear() {
 			register.unregisterAll();
-
 			super.clear();
 		}
 

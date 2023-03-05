@@ -7,12 +7,10 @@ import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -32,7 +30,7 @@ import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Utils;
 
-class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
+class GameSideMenu extends Menus.ColumnWithMargins implements GameMenu {
 
 	private final GameWindow window;
 	private final DescriptionPanel descriptionPanel;
@@ -164,21 +162,20 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 		}
 	}
 
-	private final AtomicBoolean isExitPopupOpen = new AtomicBoolean();
+	private ExitPopup exitPopup;
+	private static final int ExitPopupLayer = 90;
 
 	private JPanel createButtonsPannel() {
 		Menus.ButtonColumn panel = new Menus.ButtonColumn();
 		panel.setButtonSize(new Dimension(150, 30));
-		panel.addButton("End Turn", onlyIfActionsEnabled(e -> window.endTurn()));
+		panel.addButton("End Turn", ifActionEnabled(e -> window.endTurn()));
 		panel.addButton("Settings", e -> {
-			if (isExitPopupOpen.compareAndSet(false, true)) {
-				ExitPopup popup = new ExitPopup();
-				Dimension popupSize = popup.getPreferredSize();
-				int x = (window.arenaPanel.getWidth() - popupSize.width) / 2;
-				int y = (window.arenaPanel.getHeight() - popupSize.height) / 2;
-				window.arenaPanel.showPopup(popup, x, y, popupSize.width, popupSize.height);
-			} else {
-				window.arenaPanel.closePopup();
+			synchronized (GameSideMenu.this) {
+				if (exitPopup == null) {
+					window.arenaPanel.showPopup(exitPopup = new ExitPopup(), ExitPopupLayer);
+				} else {
+					window.arenaPanel.closePopup(exitPopup);
+				}
 			}
 		});
 		return panel;
@@ -197,7 +194,7 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 			addTitle("Settings");
 
 			Menus.ButtonColumn buttonSet = new Menus.ButtonColumn();
-			buttonSet.addButton("Resume", e -> window.arenaPanel.closePopup());
+			buttonSet.addButton("Resume", e -> window.arenaPanel.closePopup(ExitPopup.this));
 			buttonSet.addButton("Options", e -> System.out.println("Options")); // TODO
 			buttonSet.addButton("Quit", e -> window.globals.frame.openMainMenu());
 			addComp(buttonSet);
@@ -211,8 +208,11 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 
 		@Override
 		public void clear() {
-			if (!isExitPopupOpen.compareAndSet(true, false))
-				throw new IllegalStateException();
+			synchronized (GameSideMenu.this) {
+				if (exitPopup != this)
+					throw new IllegalStateException();
+				exitPopup = null;
+			}
 		}
 
 	}
@@ -231,11 +231,13 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 		labelMoney.get(team).setText("$" + money);
 	}
 
-	private ActionListener onlyIfActionsEnabled(ActionListener l) {
-		return e -> {
-			if (!window.isActionSuspended())
-				l.actionPerformed(e);
-		};
+	@Override
+	public GameWindow window() {
+		return window;
+	}
+
+	@Override
+	public void beforeClose() {
 	}
 
 	private class MiniMap extends JPanel {

@@ -485,6 +485,7 @@ interface Animation {
 
 				userChosenPos = Cell.of((int) userChoosenPosNew.x, (int) userChoosenPosNew.y);
 				userChosenPosValid = true;
+				onMapMove.notify(new Event(this));
 			}
 
 			private void mapMoveStart() {

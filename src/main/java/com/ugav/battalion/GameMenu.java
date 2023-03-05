@@ -33,15 +33,37 @@ import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Pair;
 import com.ugav.battalion.util.Utils;
 
-abstract class GameMenu extends JPanel implements Clearable {
+interface GameMenu extends Clearable {
 
-	private static final long serialVersionUID = 1L;
+	GameWindow window();
 
-	abstract void beforeClose();
+	void beforeClose();
 
-	static class FactoryMenu extends GameMenu {
+	default ActionListener ifActionEnabled(ActionListener l) {
+		return e -> {
+			if (window().isActionEnabled())
+				l.actionPerformed(e);
+		};
+	}
 
-		private final GameWindow window;
+	abstract class Abstract extends JPanel implements GameMenu {
+
+		final GameWindow window;
+		private static final long serialVersionUID = 1L;
+
+		Abstract(GameWindow window) {
+			this.window = Objects.requireNonNull(window);
+		}
+
+		@Override
+		public GameWindow window() {
+			return window;
+		}
+
+	}
+
+	static class FactoryMenu extends GameMenu.Abstract {
+
 		private final DescriptionPanel.UnitPanel unitDesc = new DescriptionPanel.UnitPanel();
 		final Building factory;
 		private final List<Pair<JButton, ActionListener>> listeners = new ArrayList<>();
@@ -50,7 +72,7 @@ abstract class GameMenu extends JPanel implements Clearable {
 		private static final long serialVersionUID = 1L;
 
 		FactoryMenu(GameWindow window, Building factory) {
-			this.window = Objects.requireNonNull(window);
+			super(window);
 			if (!factory.type.canBuildUnits)
 				throw new IllegalArgumentException(factory.type.toString());
 			this.factory = factory;
@@ -207,7 +229,7 @@ abstract class GameMenu extends JPanel implements Clearable {
 		}
 
 		@Override
-		void beforeClose() {
+		public void beforeClose() {
 			ArenaPanelGame arena = window.arenaPanel;
 			if (arena.selection == Selection.FactoryBuild && arena.selectedEntity == factory)
 				arena.clearSelection();
@@ -215,16 +237,15 @@ abstract class GameMenu extends JPanel implements Clearable {
 
 	}
 
-	static class UnitMenu extends GameMenu {
+	static class UnitMenu extends GameMenu.Abstract {
 
 		private static final long serialVersionUID = 1L;
 
-		private final GameWindow window;
 		final Unit unit;
 		private final List<Pair<JButton, ActionListener>> listeners = new ArrayList<>();
 
 		UnitMenu(GameWindow window, Unit unit) {
-			this.window = Objects.requireNonNull(window);
+			super(window);
 			this.unit = Objects.requireNonNull(unit);
 
 			initUI();
@@ -292,7 +313,7 @@ abstract class GameMenu extends JPanel implements Clearable {
 		}
 
 		@Override
-		void beforeClose() {
+		public void beforeClose() {
 			ArenaPanelGame arena = window.arenaPanel;
 			if (arena.selection == Selection.UnitEctActions && arena.selectedEntity == unit)
 				arena.clearSelection();

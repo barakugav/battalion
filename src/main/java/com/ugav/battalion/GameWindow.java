@@ -154,8 +154,8 @@ class GameWindow extends JPanel implements Clearable {
 			gameActionsThread.playComputerTurn();
 	}
 
-	boolean isActionSuspended() {
-		return actionsSuspended.get() > 0;
+	boolean isActionEnabled() {
+		return actionsSuspended.get() == 0;
 	}
 
 	void suspendActions() {

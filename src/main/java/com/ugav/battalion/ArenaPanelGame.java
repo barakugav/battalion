@@ -1,8 +1,15 @@
 package com.ugav.battalion;
 
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.event.MouseAdapter;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.LongToIntFunction;
 
@@ -25,6 +32,8 @@ import com.ugav.battalion.util.Utils.Holder;
 class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 	private final GameWindow window;
+	private GameMenu openMenu;
+	private final List<Popup> openPopups = new ArrayList<>();
 
 	Selection selection = Selection.None;
 	Entity selectedEntity;
@@ -33,7 +42,6 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		None, UnitMoveOrAttack, UnitEctActions, UnitObservation, FactoryBuild
 	}
 
-	private final Event.Register register = new Event.Register();
 	final Event.Notifier<EntityClick> onEntityClick = new Event.Notifier<>();
 	final Event.Notifier<SelectionChange> onSelectionChange = new Event.Notifier<>();
 
@@ -93,7 +101,7 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 	}
 
 	private void cellClicked(int cell) {
-		if (window.isActionSuspended())
+		if (!window.isActionEnabled())
 			return;
 		closeOpenMenu();
 		if (selection == Selection.None) {
@@ -151,8 +159,6 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		}
 	}
 
-	private GameMenu openMenu;
-
 	private void openUnitMenu(Unit unit) {
 		closeOpenMenu();
 
@@ -193,8 +199,9 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 	private void showMenu(GameMenu menu, int x, int y, int width, int height) {
 		closeOpenMenu();
 		openMenu = menu;
-		add(menu, JLayeredPane.PALETTE_LAYER);
-		menu.setBounds(x, y, width, height);
+		Component m = (Component) menu;
+		add(m, JLayeredPane.PALETTE_LAYER);
+		m.setBounds(x, y, width, height);
 		revalidate();
 	}
 
@@ -204,30 +211,86 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 			openMenu = null;
 			m.beforeClose();
 			m.clear();
-			remove(m);
+			remove((Component) m);
+			revalidate();
 		}
 	}
 
-	private JPanel openPopup;
+	private static class Popup extends JPanel {
+		final JPanel popup;
+		private static final long serialVersionUID = 1L;
 
-	void showPopup(JPanel popup, int x, int y, int width, int height) {
-		if (openPopup != null)
-			throw new IllegalStateException();
+		Popup(JPanel popup) {
+			this.popup = Objects.requireNonNull(popup);
+
+			setLayout(new GridBagLayout());
+			add(popup, Utils.gbConstraints(1, 1, 1, 1, GridBagConstraints.NONE, 0, 0));
+			setOpaque(false);
+
+			/* Dummy listener to block the mouse events reaching the arena layer */
+			addMouseListener(new MouseAdapter() {
+			});
+		}
+	}
+
+	void showPopup(JPanel popup, int layer) {
+		if (!(0 <= layer && layer < 100))
+			throw new IllegalArgumentException();
 		window.suspendActions();
-		openPopup = popup;
-		add(popup, JLayeredPane.POPUP_LAYER);
-		popup.setBounds(x, y, width, height);
+
+		Popup popup0 = new Popup(popup);
+		popup0.setPreferredSize(getSize());
+
+		synchronized (openPopups) {
+			openPopups.add(popup0);
+		}
+
+		add(popup0, Integer.valueOf(JLayeredPane.POPUP_LAYER.intValue() + layer));
+		Dimension popupSize = popup0.getPreferredSize();
+		int x = (getWidth() - popupSize.width) / 2;
+		int y = (getHeight() - popupSize.height) / 2;
+		popup0.setBounds(x, y, popupSize.width, popupSize.height);
 		revalidate();
 	}
 
-	void closePopup() {
-		JPanel p = openPopup;
-		if (p != null) {
-			openPopup = null;
-			((Clearable) p).clear();
-			remove(p);
-			window.resumeActions();
+	void closePopup(JPanel popup) {
+		Popup popup0 = null;
+		synchronized (openPopups) {
+			for (Iterator<Popup> it = openPopups.iterator(); it.hasNext();) {
+				Popup p = it.next();
+				if (p.popup == popup) {
+					it.remove();
+					popup0 = p;
+					break;
+				}
+			}
 		}
+		if (popup0 == null)
+			throw new IllegalStateException();
+		closePopup0(popup0);
+	}
+
+	private void closePopup0(Popup popup) {
+		((Clearable) popup.popup).clear();
+		remove(popup);
+		window.resumeActions();
+	}
+
+	private void closePopupAll() {
+		List<Popup> popups;
+		synchronized (openPopups) {
+			popups = new ArrayList<>(openPopups);
+			openPopups.clear();
+		}
+		for (Popup popup : popups)
+			closePopup0(popup);
+	}
+
+	@Override
+	public void clear() {
+		closePopupAll();
+		closeOpenMenu();
+		super.clear();
 	}
 
 	static class SelectionChange extends Event {
@@ -262,8 +325,6 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 		private final ListInt movePath;
 
-		private final Event.Register register = new Event.Register();
-
 		EntityLayer() {
 			movePath = new ListInt.Array();
 		}
@@ -281,14 +342,8 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 			register.register(onHoverChange, e -> hoveredUpdated(e.cell));
 		}
 
-		@Override
-		public void clear() {
-			register.unregisterAll();
-			super.clear();
-		}
-
 		void hoveredUpdated(int hovered) {
-			if (window.isActionSuspended() || selection != Selection.UnitMoveOrAttack)
+			if (!window.isActionEnabled() || selection != Selection.UnitMoveOrAttack)
 				return;
 			Unit unit = (Unit) selectedEntity;
 
