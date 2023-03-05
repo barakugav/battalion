@@ -5,7 +5,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -15,22 +16,23 @@ import com.ugav.battalion.util.Pair;
 
 class Levels {
 
-	private final Map<String, Level> levels;
+	private final Map<String, Supplier<Level>> levels;
 	private final List<String> campaign;
 
 	Levels(LevelSerializer levelSerializer) {
 		levels = new HashMap<>();
-		levels.put("Level 01", levelSerializer.levelRead("level/level01.xml"));
-		levels.put("Level 02", levelSerializer.levelRead("level/level02.xml"));
-		levels.put("Level 03", levelSerializer.levelRead("level/level03.xml"));
-		levels.put("Level 04", levelSerializer.levelRead("level/level04.xml"));
-		levels.put("Level 05", levelSerializer.levelRead("level/level05.xml"));
-		levels.put("Level 06", levelSerializer.levelRead("level/level06.xml"));
-		levels.put("Level 07", levelSerializer.levelRead("level/level07.xml"));
-		levels.put("Level 08", levelSerializer.levelRead("level/level08.xml"));
-		levels.put("Level 09", levelSerializer.levelRead("level/level09.xml"));
-		levels.put("Level 10", levelSerializer.levelRead("level/level10.xml"));
-		levels.put("Bonus Level", levelSerializer.levelRead("level/bonus_level.xml"));
+		BiConsumer<String, String> load = (name, path) -> levels.put(name, () -> levelSerializer.levelRead(path));
+		load.accept("Level 01", "level/level01.xml");
+		load.accept("Level 02", "level/level02.xml");
+		load.accept("Level 03", "level/level03.xml");
+		load.accept("Level 04", "level/level04.xml");
+		load.accept("Level 05", "level/level05.xml");
+		load.accept("Level 06", "level/level06.xml");
+		load.accept("Level 07", "level/level07.xml");
+		load.accept("Level 08", "level/level08.xml");
+		load.accept("Level 09", "level/level09.xml");
+		load.accept("Level 10", "level/level10.xml");
+		load.accept("Bonus Level", "level/bonus_level.xml");
 
 		campaign = new ArrayList<>();
 		campaign.add("Level 01");
@@ -46,11 +48,11 @@ class Levels {
 	}
 
 	Level getLevel(String name) {
-		return Objects.requireNonNull(levels.get(name));
+		return levels.get(name).get();
 	}
 
-	List<Pair<String, Level>> getLevels() {
-		List<Pair<String, Level>> lvls = new ArrayList<>();
+	List<Pair<String, Supplier<Level>>> getCampaign() {
+		List<Pair<String, Supplier<Level>>> lvls = new ArrayList<>();
 		for (String lvl : campaign)
 			lvls.add(Pair.of(lvl.toString(), levels.get(lvl)));
 		return lvls;

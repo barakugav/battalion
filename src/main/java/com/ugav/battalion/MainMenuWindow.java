@@ -11,6 +11,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -157,8 +158,8 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 			addTitle("Campaign");
 
 			Menus.ButtonColumn levelsButtonSet = new Menus.ButtonColumn();
-			for (Pair<String, Level> lvl : levels.getLevels())
-				levelsButtonSet.addButton(lvl.e1, e -> globals.frame.openLevelGame(lvl.e2, lvl.e1));
+			for (Pair<String, Supplier<Level>> lvl : levels.getCampaign())
+				levelsButtonSet.addButton(lvl.e1, e -> globals.frame.openLevelGame(lvl.e2.get(), lvl.e1));
 			addComp(levelsButtonSet);
 
 			Menus.ButtonColumn additionalButtonSet = new Menus.ButtonColumn();
