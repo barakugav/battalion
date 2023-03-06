@@ -40,82 +40,165 @@ class Images {
 		FrameIcon,
 	}
 
-	private static class ImgDesc {
-
-		private final Object[] keys;
-
-		ImgDesc(Object... keys) {
-			this.keys = Objects.requireNonNull(keys);
-		}
-
-		@Override
-		public boolean equals(Object other) {
-			if (other == this)
-				return true;
-			if (!(other instanceof ImgDesc))
-				return false;
-			ImgDesc o = (ImgDesc) other;
-			return getClass().equals(o.getClass()) && Arrays.equals(keys, o.keys);
-		}
-
-		@Override
-		public int hashCode() {
-			return Arrays.hashCode(keys);
-		}
-
-		@Override
-		public String toString() {
-			return Arrays.toString(keys);
-		}
-
-	}
-
-	private static class UnitImgDesc extends ImgDesc {
-
-		private static final Object StandTag = new Object();
-		private static final Object MoveTag = new Object();
-
-		private UnitImgDesc(Unit.Type type, Team team, Direction orientation, Object gestureTag, int gesture) {
-			super(type, team, orientation, gestureTag, Integer.valueOf(gesture));
-		}
-
-		static UnitImgDesc ofStand(Unit.Type type, Team team, Direction orientation, int gesture) {
-			orientation = orientation != null ? orientation : Direction.XPos;
-			return new UnitImgDesc(type, team, orientation, StandTag, gesture);
-		}
-
-		static UnitImgDesc ofStand(IUnit unit, Direction orientation, int gesture) {
-			return ofStand(unit.getType(), unit.getTeam(), orientation, gesture);
-		}
-
-		static UnitImgDesc ofMove(Unit.Type type, Team team, Direction orientation, int gesture) {
-			orientation = orientation != null ? orientation : Direction.XPos;
-			return new UnitImgDesc(type, team, orientation, MoveTag, gesture);
-		}
-
-		static UnitImgDesc ofMove(IUnit unit, Direction orientation, int gesture) {
-			return ofMove(unit.getType(), unit.getTeam(), orientation, gesture);
-		}
-
-	}
-
-	private static class BuildingImgDesc extends ImgDesc {
-
-		private BuildingImgDesc(Building.Type type, Team team, int gesture) {
-			super(type, team, Integer.valueOf(gesture));
-		}
-
-		static BuildingImgDesc of(IBuilding building, int gesture) {
-			return new BuildingImgDesc(building.getType(), building.getTeam(), gesture);
-		}
-
-	}
-
 	private static final Map<Object, BufferedImage> images;
 	private static final Map<Terrain, BufferedImage> terrains;
 	private static final Map<UnitImgDesc, BufferedImage> units;
 	private static final Map<BuildingImgDesc, BufferedImage> buildings;
 	private static final Map<Object, BufferedImage> miniMapImages;
+
+	static BufferedImage getImg(Object obj) {
+		BufferedImage img = getImg0(obj);
+		if (img == null)
+			throw new IllegalArgumentException("No image found for object: " + obj);
+		return img;
+	}
+
+	private static BufferedImage getImg0(Object obj) {
+		if (obj instanceof IUnit unit) {
+			return getUnitImgStand(unit, null, 0);
+		} else if (obj instanceof IBuilding building) {
+			return getBuildingImg(building, 0);
+		} else if (obj instanceof Terrain terrain) {
+			return terrains.get(terrain);
+		} else {
+			return images.get(obj);
+		}
+	}
+
+	static BufferedImage getUnitImgStand(IUnit unit, Direction orientation, int gesture) {
+		if (gesture >= getGestureNumUnitStand(unit.getType()))
+			throw new IllegalArgumentException();
+		return units.get(UnitImgDesc.ofStand(unit, orientation, gesture));
+	}
+
+	static BufferedImage getUnitImgMove(IUnit unit, Direction orientation, int gesture) {
+		if (gesture >= getGestureNumUnitMove(unit.getType()))
+			throw new IllegalArgumentException();
+		return units.get(UnitImgDesc.ofMove(unit, orientation, gesture));
+	}
+
+	static BufferedImage getBuildingImg(IBuilding building, int gesture) {
+		return buildings.get(BuildingImgDesc.of(building, gesture));
+	}
+
+	static BufferedImage getFlagImg(Team team, int gesture) {
+		return getImg(flagKey(team, gesture));
+	}
+
+	static BufferedImage getFlagGlowImg(Team team, int gesture) {
+		return getImg(flagGlowKey(team, gesture));
+	}
+
+	static BufferedImage getAttackImg(int gesture) {
+		return getImg(attackKey(gesture));
+	}
+
+	static BufferedImage getExplosionImg(int gesture) {
+		return getImg(explosionKey(gesture));
+	}
+
+	static BufferedImage getMinimapTerrain(Terrain.Category terrain) {
+		return Objects.requireNonNull(miniMapImages.get(terrain), "img not found for terrain: " + terrain);
+	}
+
+	static BufferedImage getMinimapUnit(Team team) {
+		return Objects.requireNonNull(miniMapImages.get("Unit" + team), "unit img not found for team: " + team);
+	}
+
+	static BufferedImage getMinimapBuilding(Team team) {
+		return Objects.requireNonNull(miniMapImages.get("Building" + team), "building img not found for team: " + team);
+	}
+
+	static int getGestureNumUnitStand(Unit.Type type) {
+		switch (type) {
+		case Soldier:
+		case Bazooka:
+			return 1;
+		case Tank:
+		case TankBig:
+		case TankInvisible:
+		case TankAntiAir:
+		case Artillery:
+		case Mortar:
+		case SpeedBoat:
+		case Ship:
+		case ShipAntiAir:
+		case ShipArtillery:
+		case Submarine:
+		case ShipTransporter:
+		case Airplane:
+		case Zeppelin:
+		case AirTransporter:
+			return 4;
+		case Turrent:
+			return 1;
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + type);
+		}
+	}
+
+	static int getGestureNumUnitMove(Unit.Type type) {
+		return isUnitHasDifferentStandMoveGesture(type) ? getGestureNumUnitMove0(type) : getGestureNumUnitStand(type);
+	}
+
+	private static boolean isUnitHasDifferentStandMoveGesture(Unit.Type type) {
+		return getGestureNumUnitMove0(type) > 0;
+	}
+
+	private static int getGestureNumUnitMove0(Unit.Type type) {
+		switch (type) {
+		case Soldier:
+		case Bazooka:
+			return 4;
+		default:
+			return 0;
+		}
+	}
+
+	static int getGestureNum(Object obj) {
+		if (obj instanceof Building.Type) {
+			switch ((Building.Type) obj) {
+			case OilRefinery:
+			case OilRefineryBig:
+				return 7;
+			case OilRig:
+				return 4;
+			case Factory:
+			case Capital:
+			case ControllerLand:
+			case ControllerWater:
+			case ControllerAir:
+				return 1;
+			default:
+				/* fall through */
+			}
+		} else if ("Flag".equals(obj)) {
+			return 4;
+		} else if ("Attack".equals(obj)) {
+			return 3;
+		} else if ("Explosion".equals(obj)) {
+			return 15;
+		}
+
+		throw new IllegalArgumentException("Unexpected value: " + obj);
+	}
+
+	private static String flagKey(Team team, int gesture) {
+		return "Flag" + team + gesture;
+	}
+
+	private static String flagGlowKey(Team team, int gesture) {
+		return "FlagGlow" + team + gesture;
+	}
+
+	private static String attackKey(int gesture) {
+		return "Attack" + gesture;
+	}
+
+	private static String explosionKey(int gesture) {
+		return "Explosion" + gesture;
+	}
+
 	static {
 		/* Terrain */
 		Map<Terrain, BufferedImage> terrains0 = new HashMap<>();
@@ -365,10 +448,6 @@ class Images {
 		return flags;
 	}
 
-	private static String flagKey(Team team, int gesture) {
-		return "Flag" + team + gesture;
-	}
-
 	private static Map<Object, BufferedImage> loadFlagGlowImages(String path) {
 		int gestureNum = getGestureNum("Flag");
 		BufferedImage img = loadImg(path);
@@ -385,10 +464,6 @@ class Images {
 		return flags;
 	}
 
-	private static String flagGlowKey(Team team, int gesture) {
-		return "FlagGlow" + team + gesture;
-	}
-
 	private static Map<Object, BufferedImage> loadAttackImages(String path) {
 		int gestureNum = getGestureNum("Attack");
 		BufferedImage fullImg = loadImg(path);
@@ -401,10 +476,6 @@ class Images {
 		return flags;
 	}
 
-	private static String attackKey(int gesture) {
-		return "Attack" + gesture;
-	}
-
 	private static Map<Object, BufferedImage> loadExplosionImages(String path) {
 		int gestureNum = getGestureNum("Explosion");
 		BufferedImage fullImg = loadImg(path);
@@ -415,10 +486,6 @@ class Images {
 			flags.put(explosionKey(gesture), img);
 		}
 		return flags;
-	}
-
-	private static String explosionKey(int gesture) {
-		return "Explosion" + gesture;
 	}
 
 	private static BufferedImage toBlue(BufferedImage redImg) {
@@ -440,141 +507,75 @@ class Images {
 		});
 	}
 
-	static BufferedImage getImg(Object obj) {
-		BufferedImage img = getImg0(obj);
-		if (img == null)
-			throw new IllegalArgumentException("No image found for object: " + obj);
-		return img;
-	}
+	private static class ImgDesc {
 
-	private static BufferedImage getImg0(Object obj) {
-		if (obj instanceof IUnit unit) {
-			return getUnitImgStand(unit, null, 0);
-		} else if (obj instanceof IBuilding building) {
-			return getBuildingImg(building, 0);
-		} else if (obj instanceof Terrain terrain) {
-			return terrains.get(terrain);
-		} else {
-			return images.get(obj);
-		}
-	}
+		private final Object[] keys;
 
-	static BufferedImage getUnitImgStand(IUnit unit, Direction orientation, int gesture) {
-		if (gesture >= getGestureNumUnitStand(unit.getType()))
-			throw new IllegalArgumentException();
-		return units.get(UnitImgDesc.ofStand(unit, orientation, gesture));
-	}
-
-	static BufferedImage getUnitImgMove(IUnit unit, Direction orientation, int gesture) {
-		if (gesture >= getGestureNumUnitMove(unit.getType()))
-			throw new IllegalArgumentException();
-		return units.get(UnitImgDesc.ofMove(unit, orientation, gesture));
-	}
-
-	static BufferedImage getBuildingImg(IBuilding building, int gesture) {
-		return buildings.get(BuildingImgDesc.of(building, gesture));
-	}
-
-	static BufferedImage getFlagImg(Team team, int gesture) {
-		return getImg(flagKey(team, gesture));
-	}
-
-	static BufferedImage getFlagGlowImg(Team team, int gesture) {
-		return getImg(flagGlowKey(team, gesture));
-	}
-
-	static BufferedImage getAttackImg(int gesture) {
-		return getImg(attackKey(gesture));
-	}
-
-	static BufferedImage getExplosionImg(int gesture) {
-		return getImg(explosionKey(gesture));
-	}
-
-	static BufferedImage getMinimapTerrain(Terrain.Category terrain) {
-		return Objects.requireNonNull(miniMapImages.get(terrain), "img not found for terrain: " + terrain);
-	}
-
-	static BufferedImage getMinimapUnit(Team team) {
-		return Objects.requireNonNull(miniMapImages.get("Unit" + team), "unit img not found for team: " + team);
-	}
-
-	static BufferedImage getMinimapBuilding(Team team) {
-		return Objects.requireNonNull(miniMapImages.get("Building" + team), "building img not found for team: " + team);
-	}
-
-	static int getGestureNumUnitStand(Unit.Type type) {
-		switch (type) {
-		case Soldier:
-		case Bazooka:
-			return 1;
-		case Tank:
-		case TankBig:
-		case TankInvisible:
-		case TankAntiAir:
-		case Artillery:
-		case Mortar:
-		case SpeedBoat:
-		case Ship:
-		case ShipAntiAir:
-		case ShipArtillery:
-		case Submarine:
-		case ShipTransporter:
-		case Airplane:
-		case Zeppelin:
-		case AirTransporter:
-			return 4;
-		case Turrent:
-			return 1;
-		default:
-			throw new IllegalArgumentException("Unexpected value: " + type);
-		}
-	}
-
-	static int getGestureNumUnitMove(Unit.Type type) {
-		return isUnitHasDifferentStandMoveGesture(type) ? getGestureNumUnitMove0(type) : getGestureNumUnitStand(type);
-	}
-
-	private static boolean isUnitHasDifferentStandMoveGesture(Unit.Type type) {
-		return getGestureNumUnitMove0(type) > 0;
-	}
-
-	private static int getGestureNumUnitMove0(Unit.Type type) {
-		switch (type) {
-		case Soldier:
-		case Bazooka:
-			return 4;
-		default:
-			return 0;
-		}
-	}
-
-	static int getGestureNum(Object obj) {
-		if (obj instanceof Building.Type) {
-			switch ((Building.Type) obj) {
-			case OilRefinery:
-			case OilRefineryBig:
-				return 7;
-			case OilRig:
-				return 4;
-			case Factory:
-			case Capital:
-			case ControllerLand:
-			case ControllerWater:
-			case ControllerAir:
-				return 1;
-			default:
-				/* fall through */
-			}
-		} else if ("Flag".equals(obj)) {
-			return 4;
-		} else if ("Attack".equals(obj)) {
-			return 3;
-		} else if ("Explosion".equals(obj)) {
-			return 15;
+		ImgDesc(Object... keys) {
+			this.keys = Objects.requireNonNull(keys);
 		}
 
-		throw new IllegalArgumentException("Unexpected value: " + obj);
+		@Override
+		public boolean equals(Object other) {
+			if (other == this)
+				return true;
+			if (!(other instanceof ImgDesc))
+				return false;
+			ImgDesc o = (ImgDesc) other;
+			return getClass().equals(o.getClass()) && Arrays.equals(keys, o.keys);
+		}
+
+		@Override
+		public int hashCode() {
+			return Arrays.hashCode(keys);
+		}
+
+		@Override
+		public String toString() {
+			return Arrays.toString(keys);
+		}
+
+	}
+
+	private static class UnitImgDesc extends ImgDesc {
+
+		private static final Object StandTag = new Object();
+		private static final Object MoveTag = new Object();
+
+		private UnitImgDesc(Unit.Type type, Team team, Direction orientation, Object gestureTag, int gesture) {
+			super(type, team, orientation, gestureTag, Integer.valueOf(gesture));
+		}
+
+		static UnitImgDesc ofStand(Unit.Type type, Team team, Direction orientation, int gesture) {
+			orientation = orientation != null ? orientation : Direction.XPos;
+			return new UnitImgDesc(type, team, orientation, StandTag, gesture);
+		}
+
+		static UnitImgDesc ofStand(IUnit unit, Direction orientation, int gesture) {
+			return ofStand(unit.getType(), unit.getTeam(), orientation, gesture);
+		}
+
+		static UnitImgDesc ofMove(Unit.Type type, Team team, Direction orientation, int gesture) {
+			orientation = orientation != null ? orientation : Direction.XPos;
+			return new UnitImgDesc(type, team, orientation, MoveTag, gesture);
+		}
+
+		static UnitImgDesc ofMove(IUnit unit, Direction orientation, int gesture) {
+			return ofMove(unit.getType(), unit.getTeam(), orientation, gesture);
+		}
+
+	}
+
+	private static class BuildingImgDesc extends ImgDesc {
+
+		private BuildingImgDesc(Building.Type type, Team team, int gesture) {
+			super(type, team, Integer.valueOf(gesture));
+		}
+
+		static BuildingImgDesc of(IBuilding building, int gesture) {
+			return new BuildingImgDesc(building.getType(), building.getTeam(), gesture);
+		}
+
 	}
 
 }
