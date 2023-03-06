@@ -118,7 +118,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				EntityTab tab = new EntityTab("Buildings" + team);
 				for (Building.Type type : Building.Type.values())
 					tab.addEntityButton(BuildingDesc.of(type, team));
-				tab.addEntityButton(new EntityButton(removeBuildingObj, Images.Label.Delete));
+				tab.addEntityButton(new EntityButton(removeBuildingObj, Images.Delete));
 				buildlingsTabs.put(team, tab);
 			}
 
@@ -132,7 +132,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 						tab.addEntityButton(UnitDesc.transporter(type, UnitDesc.of(Type.Soldier, team)));
 					}
 				}
-				tab.addEntityButton(new EntityButton(removeUnitObj, Images.Label.Delete));
+				tab.addEntityButton(new EntityButton(removeUnitObj, Images.Delete));
 				unitsTabs.put(team, tab);
 			}
 
@@ -162,9 +162,9 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			return entitiesTabsPanel;
 		}
 
-		private JButton createEntityTabButton(Object drawable, ActionListener listener) {
+		private JButton createEntityTabButton(BufferedImage icon, ActionListener listener) {
 			final int ImgButtonSize = 20;
-			Image img = Images.getImg(drawable).getScaledInstance(ImgButtonSize, ImgButtonSize, Image.SCALE_SMOOTH);
+			Image img = icon.getScaledInstance(ImgButtonSize, ImgButtonSize, Image.SCALE_SMOOTH);
 			JButton button = new JButton(new ImageIcon(img));
 //			button.setBorder(BorderFactory.createEmptyBorder());
 			button.setContentAreaFilled(false);
@@ -186,16 +186,17 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		private JPanel createEntitiesTabsButtons() {
 			JPanel panel = new JPanel(new GridLayout(1, 0));
 
-			panel.add(createEntityTabButton(Terrain.Mountain1, e -> selectEntitiesTab(terrainTab)));
+			BufferedImage terrainIcon = Images.Terrains.get(Terrain.Mountain1);
+			panel.add(createEntityTabButton(terrainIcon, e -> selectEntitiesTab(terrainTab)));
 
 			for (Team team : Team.values()) {
-				BuildingDesc desc = BuildingDesc.of(Building.Type.Factory, team);
-				panel.add(createEntityTabButton(desc, e -> selectEntitiesTab(buildlingsTabs.get(team))));
+				BufferedImage icon = Images.Buildings.getDefault(BuildingDesc.of(Building.Type.Factory, team));
+				panel.add(createEntityTabButton(icon, e -> selectEntitiesTab(buildlingsTabs.get(team))));
 			}
 
 			for (Team team : Team.realTeams) {
-				UnitDesc desc = UnitDesc.of(Unit.Type.Soldier, team);
-				panel.add(createEntityTabButton(desc, e -> selectEntitiesTab(unitsTabs.get(team))));
+				BufferedImage icon = Images.Units.getDefault(UnitDesc.of(Unit.Type.Soldier, team));
+				panel.add(createEntityTabButton(icon, e -> selectEntitiesTab(unitsTabs.get(team))));
 			}
 
 			return panel;
@@ -229,7 +230,6 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			void setIcons(Object iconTag) {
 				BufferedImage img = Images.getImg(iconTag);
-				BufferedImage selectImg = Images.getImg(Images.Label.Selection);
 				Graphics g;
 
 				/* Regular icon */
@@ -242,7 +242,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				BufferedImage selectedIcon = new BufferedImage(IconWidth, IconHeight, BufferedImage.TYPE_INT_ARGB);
 				g = selectedIcon.getGraphics();
 				g.drawImage(img, 0, (IconHeight - img.getHeight()) / 2, null);
-				g.drawImage(selectImg, 0, 0, null);
+				g.drawImage(Images.Selection, 0, 0, null);
 				setSelectedIcon(new ImageIcon(selectedIcon));
 			}
 

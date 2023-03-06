@@ -107,7 +107,7 @@ interface GameMenu extends Clearable {
 			unitDesc.showUnit(UnitDesc.of(Unit.Type.Soldier, Team.Red));
 			panel.add(unitDesc);
 
-			JLabel img = new JLabel(new ImageIcon(Images.getImg(Images.Label.FactoryMenuImg)));
+			JLabel img = new JLabel(new ImageIcon(Images.FactoryMenuImg));
 			panel.add(img);
 
 			return panel;
@@ -183,7 +183,7 @@ interface GameMenu extends Clearable {
 
 			Building.UnitSale unitSale = sales.get(unit);
 			if (unitSale != null) {
-				button = new JButton(new ImageIcon(Images.getImg(UnitDesc.of(unit, factory.getTeam()))));
+				button = new JButton(new ImageIcon(Images.Units.getDefault(UnitDesc.of(unit, factory.getTeam()))));
 				price = new JLabel(Integer.toString(unitSale.price), SwingConstants.CENTER);
 				boolean canBuy = unitSale.price <= window.game.getMoney(factory.getTeam());
 				price.setForeground(canBuy ? Color.BLACK : Color.RED);
@@ -198,7 +198,7 @@ interface GameMenu extends Clearable {
 				button.addActionListener(listener);
 				listeners.add(Pair.of(button, listener));
 			} else {
-				button = new JButton(new ImageIcon(Images.getImg(Images.Label.UnitLocked)));
+				button = new JButton(new ImageIcon(Images.UnitLocked));
 				price = new JLabel("", SwingConstants.CENTER);
 			}
 
@@ -263,33 +263,32 @@ interface GameMenu extends Clearable {
 			if (!unit.type.transportUnits) {
 				boolean transportAirEn = unit.type.category == Unit.Category.Land
 						&& Unit.Type.AirTransporter.canStandOn(terrain) && window.game.canBuildAirUnits(unit.getTeam());
-				createUnitMenuButton(Images.Label.UnitMenuTransportAir, transportAirEn,
+				createUnitMenuButton(Images.UnitMenuTransportAir, transportAirEn,
 						e -> window.gameAction(new Action.UnitTransport(unit.getPos(), Unit.Type.AirTransporter)));
 
 				boolean transportWaterEn = unit.type.category == Unit.Category.Land
 						&& Unit.Type.ShipTransporter.canStandOn(terrain)
 						&& window.game.canBuildWaterUnits(unit.getTeam());
-				createUnitMenuButton(Images.Label.UnitMenuTransportWater, transportWaterEn,
+				createUnitMenuButton(Images.UnitMenuTransportWater, transportWaterEn,
 						e -> window.gameAction(new Action.UnitTransport(unit.getPos(), Unit.Type.ShipTransporter)));
 
 			} else {
 				Unit transportedUnit = unit.getTransportedUnit();
 
 				boolean transportFinishEn = transportedUnit.type.canStandOn(terrain);
-				createUnitMenuButton(Images.Label.UnitMenuTransportFinish, transportFinishEn,
+				createUnitMenuButton(Images.UnitMenuTransportFinish, transportFinishEn,
 						e -> window.gameAction(new Action.UnitTransportFinish(unit.getPos())));
 			}
 
 			boolean repairEn = unit.getHealth() < unit.type.health; // TODO and has enough money
-			createUnitMenuButton(Images.Label.UnitMenuRepair, repairEn,
+			createUnitMenuButton(Images.UnitMenuRepair, repairEn,
 					e -> window.gameAction(new Action.UnitRepair(unit.getPos())));
 
-			createUnitMenuButton(Images.Label.UnitMenuCancel, true, e -> {
+			createUnitMenuButton(Images.UnitMenuCancel, true, e -> {
 			});
 		}
 
-		private void createUnitMenuButton(Images.Label label, boolean enable, ActionListener l) {
-			BufferedImage img = Images.getImg(label);
+		private void createUnitMenuButton(BufferedImage img, boolean enable, ActionListener l) {
 			if (!enable)
 				img = Utils.imgTransparent(img, .5f);
 			JButton button = new JButton(new ImageIcon(img));

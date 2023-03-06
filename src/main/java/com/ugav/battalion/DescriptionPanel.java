@@ -166,7 +166,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 		private void showTerrain(Terrain terrain) {
 			title.setText(terrain.category.toString());
 			text.setText("description about " + terrain.category.toString());
-			image.setIcon(new ImageIcon(Images.getImg(terrain)));
+			image.setIcon(new ImageIcon(Images.Terrains.get(terrain)));
 		}
 
 	}
@@ -234,7 +234,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 		private void showBuilding(Building building) {
 			title.setText(building.type.toString());
 			text.setText("description about " + building.type.toString());
-			image.setIcon(new ImageIcon(Images.getBuildingImg(building, 0)));
+			image.setIcon(new ImageIcon(Images.Buildings.get(building, 0)));
 		}
 
 	}
@@ -347,7 +347,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 			int health0 = unit instanceof Unit u ? u.getHealth() : unit.getType().health;
 
 			title.setText(unit.getType().toString());
-			image.setIcon(new ImageIcon(Images.getUnitImgStand(unit, Direction.XPos, 0)));
+			image.setIcon(new ImageIcon(Images.Units.standImg(unit, Direction.XPos, 0)));
 			health.setText("" + health0 + "/" + unit.getType().health);
 			damage.setText("" + unit.getType().damage);
 			move.setText("" + unit.getType().moveLimit);

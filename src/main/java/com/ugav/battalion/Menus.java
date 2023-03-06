@@ -77,19 +77,19 @@ class Menus {
 			checkbox.setFocusPainted(false);
 			checkbox.setOpaque(true);
 			// Set default icon for checkbox
-			checkbox.setIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxUnselected)));
+			checkbox.setIcon(new ImageIcon(Images.CheckboxUnselected));
 			// Set selected icon when checkbox state is selected
-			checkbox.setSelectedIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxSelected)));
+			checkbox.setSelectedIcon(new ImageIcon(Images.CheckboxSelected));
 			// Set disabled icon for checkbox
-			checkbox.setDisabledIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxUnselected)));
+			checkbox.setDisabledIcon(new ImageIcon(Images.CheckboxUnselected));
 			// Set disabled-selected icon for checkbox
-			checkbox.setDisabledSelectedIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxSelected)));
+			checkbox.setDisabledSelectedIcon(new ImageIcon(Images.CheckboxSelected));
 			// Set checkbox icon when checkbox is pressed
-			checkbox.setPressedIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxPressed)));
+			checkbox.setPressedIcon(new ImageIcon(Images.CheckboxPressed));
 			// Set icon when a mouse is over the checkbox
-			checkbox.setRolloverIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxUnselectedHovered)));
+			checkbox.setRolloverIcon(new ImageIcon(Images.CheckboxUnselectedHovered));
 			// Set icon when a mouse is over a selected checkbox
-			checkbox.setRolloverSelectedIcon(new ImageIcon(Images.getImg(Images.Label.CheckboxSelectedHovered)));
+			checkbox.setRolloverSelectedIcon(new ImageIcon(Images.CheckboxSelectedHovered));
 			return addComp(checkbox);
 		}
 
@@ -208,7 +208,8 @@ class Menus {
 							BorderFactory.createMatteBorder(0, ColumnSeperatorWidth, 0, 0, ColumnSeperatorColor));
 				Border margins = BorderFactory.createEmptyBorder(CellMargin, CellMargin, CellMargin, CellMargin);
 				cell.setBorder(new CompoundBorder(cell.getBorder(), margins));
-				add(cell, Utils.gbConstraints(colIdx, rowCount, 1, 1, GridBagConstraints.BOTH, column.prefWidthValid ? 0 : 1, 0));
+				add(cell, Utils.gbConstraints(colIdx, rowCount, 1, 1, GridBagConstraints.BOTH,
+						column.prefWidthValid ? 0 : 1, 0));
 			}
 			rowCount++;
 		}

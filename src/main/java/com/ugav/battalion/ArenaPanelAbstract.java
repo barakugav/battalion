@@ -431,22 +431,23 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					IntPredicate isWater = p -> !arena.isInArena(p) || waters.contains(arena.getTerrain(p).category);
 					boolean c1 = !isWater.test(p1), c2 = !isWater.test(p2), c3 = !isWater.test(p3);
 
-					if (c1 || c2 || c3) {
-						int variant = (c1 ? 1 : 0) + (c2 ? 2 : 0);
-						arena.drawRelativeToMap(g, "WaterEdge" + quadrant + variant, pos);
-
-					}
+					if (c1 || c2 || c3)
+						arena.drawRelativeToMap(g, Images.WaterEdges.get(quadrant, c1, c2), pos);
 				}
 
 			} else if (terrain == Terrain.Road) {
-				String variant = "";
-				for (Direction dir : List.of(Direction.XPos, Direction.YNeg, Direction.XNeg, Direction.YPos)) {
+				Predicate<Direction> checkDir = dir -> {
 					int p = Cell.add(pos, dir);
 					Set<Terrain.Category> roads = EnumSet.of(Terrain.Category.Road, Terrain.Category.BridgeLow,
 							Terrain.Category.BridgeHigh);
-					variant += arena.isInArena(p) && roads.contains(arena.getTerrain(p).category) ? "v" : "x";
-				}
-				arena.drawRelativeToMap(g, "Road_" + variant, pos);
+					return arena.isInArena(p) && roads.contains(arena.getTerrain(p).category);
+				};
+				boolean xpos = checkDir.test(Direction.XPos);
+				boolean yneg = checkDir.test(Direction.YNeg);
+				boolean xneg = checkDir.test(Direction.XNeg);
+				boolean ypos = checkDir.test(Direction.YPos);
+				BufferedImage img = Images.Roads.get(xpos, yneg, xneg, ypos);
+				arena.drawRelativeToMap(g, img, pos);
 
 			} else if (EnumSet.of(Terrain.BridgeLow, Terrain.BridgeHigh).contains(terrain)) {
 				Set<Direction> ends = EnumSet.noneOf(Direction.class);
@@ -462,12 +463,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				Set<Direction> orientation = isBridgeHorizontal.test(pos) ? EnumSet.of(Direction.XPos, Direction.XNeg)
 						: EnumSet.of(Direction.YPos, Direction.YNeg);
 				for (Direction dir : orientation) {
-					String label = "bridge_" + (terrain == Terrain.BridgeHigh ? "high" : "low");
-					label += "_"
-							+ Map.of(Direction.XPos, "0", Direction.YNeg, "1", Direction.XNeg, "2", Direction.YPos, "3")
-									.get(dir);
-					label += ends.contains(dir) ? "x" : "v";
-					arena.drawRelativeToMap(g, label, pos);
+					BufferedImage img = Images.Bridges.get(terrain, dir, ends.contains(dir));
+					arena.drawRelativeToMap(g, img, pos);
 				}
 
 			} else if (terrain == Terrain.Shore) {
@@ -495,18 +492,12 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					if (c1)
 						connections.add(dirs.e1);
 
-					if (!(c1 || c2) && c3) {
-						arena.drawRelativeToMap(g, "WaterEdge" + quadrant + 0, pos);
-					} else if (c1 || c2) {
-						int variant = (c1 ? 1 : 0) + (c2 ? 2 : 0);
-						arena.drawRelativeToMap(g, "Shore" + quadrant + variant, pos);
-					}
+					if (c1 || c2 || c3)
+						arena.drawRelativeToMap(g, Images.Shores.get(quadrant, c1, c2), pos);
 				}
 				if (connections.isEmpty()) {
-					arena.drawRelativeToMap(g, "Shore03", pos);
-					arena.drawRelativeToMap(g, "Shore13", pos);
-					arena.drawRelativeToMap(g, "Shore23", pos);
-					arena.drawRelativeToMap(g, "Shore33", pos);
+					for (int quadrant = 0; quadrant < 4; quadrant++)
+						arena.drawRelativeToMap(g, Images.Shores.get(quadrant, true, true), pos);
 				}
 
 			} else {
@@ -552,7 +543,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		@Override
 		public void paintComponent(Graphics g) {
-			arena.drawRelativeToMap(g, Images.getBuildingImg(building, getGasture()), pos);
+			arena.drawRelativeToMap(g, Images.Buildings.get(building, getGasture()), pos);
 
 			/* Draw flag */
 			BufferedImage flagImg = Images.getFlagImg(building.getTeam(), getFlagGesture());
@@ -608,7 +599,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 			IUnit trasportedUnit = unit.getTransportedUnit();
 			if (trasportedUnit != null) {
-				BufferedImage imgBig = Images.getImg(trasportedUnit);
+				BufferedImage imgBig = Images.Units.getDefault(trasportedUnit);
 				final int miniWidth = 28;
 				int height = imgBig.getHeight() * miniWidth / imgBig.getWidth();
 				BufferedImage img = Utils
@@ -627,9 +618,9 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		BufferedImage getUnitImg() {
 			if (isMoving)
-				return Images.getUnitImgMove(unit, orientation, getGasture());
+				return Images.Units.moveImg(unit, orientation, getGasture());
 			else
-				return Images.getUnitImgStand(unit, orientation, getGasture());
+				return Images.Units.standImg(unit, orientation, getGasture());
 		}
 
 		@Override

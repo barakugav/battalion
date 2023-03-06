@@ -5,7 +5,7 @@ import java.util.Set;
 
 public enum Direction {
 
-	XPos(1, 0), XNeg(-1, 0), YPos(0, 1), YNeg(0, -1);
+	XPos(1, 0), YPos(0, 1), XNeg(-1, 0), YNeg(0, -1);
 
 	public final int dx, dy;
 

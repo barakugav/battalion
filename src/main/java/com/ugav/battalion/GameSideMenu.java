@@ -106,7 +106,7 @@ class GameSideMenu extends Menus.ColumnWithMargins implements GameMenu {
 			teamPanel.add(colorBox, c);
 
 			// TODO images
-			Image img = Images.getUnitImgStand(UnitDesc.of(Unit.Type.Soldier, team), Direction.XPos, 0);
+			Image img = Images.Units.standImg(UnitDesc.of(Unit.Type.Soldier, team), Direction.XPos, 0);
 			img = img.getScaledInstance(28, 28, Image.SCALE_SMOOTH);
 			JLabel icon = new JLabel(new ImageIcon(img));
 			c.gridx = 1;
@@ -262,15 +262,15 @@ class GameSideMenu extends Menus.ColumnWithMargins implements GameMenu {
 			for (Iter.Int it = game.cells(); it.hasNext();) {
 				int cell = it.next();
 				Terrain terrain = game.terrain(cell);
-				drawImg(g, cell, Images.getMinimapTerrain(terrain.category));
+				drawImg(g, cell, Images.MiniMap.terrain(terrain.category));
 
 				Building building = game.building(cell);
 				if (building != null)
-					drawImg(g, cell, Images.getMinimapBuilding(building.getTeam()));
+					drawImg(g, cell, Images.MiniMap.building(building.getTeam()));
 
 				final Team player = Team.Red;
 				if (game.isUnitVisible(cell, player))
-					drawImg(g, cell, Images.getMinimapUnit(game.unit(cell).getTeam()));
+					drawImg(g, cell, Images.MiniMap.unit(game.unit(cell).getTeam()));
 			}
 
 			Position currentMapPos = window.arenaPanel.getCurrentMapOrigin();

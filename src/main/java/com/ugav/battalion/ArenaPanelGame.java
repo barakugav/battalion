@@ -458,7 +458,7 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 			super.paintComponent(g);
 
 			if (selection != Selection.None)
-				drawRelativeToMap(g, Images.Label.Selection, selectedEntity.getPos());
+				drawRelativeToMap(g, Images.Selection, selectedEntity.getPos());
 
 			if (EnumSet.of(Selection.UnitMoveOrAttack, Selection.UnitObserve).contains(selection)) {
 				Unit unit = (Unit) selectedEntity;
@@ -469,11 +469,11 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 				for (Iter.Int it = game.cells(); it.hasNext();) {
 					int cell = it.next();
 					if (passableMap.contains(cell))
-						drawRelativeToMap(g, Images.Label.Passable, cell);
+						drawRelativeToMap(g, Images.Passable, cell);
 					else if (attackableMap.contains(cell))
-						drawRelativeToMap(g, Images.Label.Attackable, cell);
+						drawRelativeToMap(g, Images.Attackable, cell);
 					else if (potentiallyAttackableMap.contains(cell))
-						drawRelativeToMap(g, Images.Label.PotentiallyAttackable, cell);
+						drawRelativeToMap(g, Images.PotentiallyAttackable, cell);
 				}
 			}
 
