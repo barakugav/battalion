@@ -112,31 +112,35 @@ class Images {
 	}
 
 	private static final Map<Object, BufferedImage> images;
+	private static final Map<Terrain, BufferedImage> terrains;
+	private static final Map<UnitImgDesc, BufferedImage> units;
+	private static final Map<BuildingImgDesc, BufferedImage> buildings;
 	private static final Map<Object, BufferedImage> miniMapImages;
 	static {
-		Map<Object, BufferedImage> images0 = new HashMap<>();
-
 		/* Terrain */
+		Map<Terrain, BufferedImage> terrains0 = new HashMap<>();
 		for (int type = 1; type <= 7; type++)
-			images0.put(Terrain.valueOf("FlatLand" + type), loadImg("img/terrain/flat_land_0" + type + ".png"));
-		images0.put(Terrain.Forest1, loadImg("img/terrain/forest_01.png"));
-		images0.put(Terrain.Forest2, loadImg("img/terrain/forest_02.png"));
-		images0.put(Terrain.Hills1, loadImg("img/terrain/hills_01.png"));
-		images0.put(Terrain.Hills2, loadImg("img/terrain/hills_02.png"));
-		images0.put(Terrain.Hills3, loadImg("img/terrain/hills_03.png"));
-		images0.put(Terrain.Hills4, loadImg("img/terrain/hills_04.png"));
-		images0.put(Terrain.Mountain1, loadImg("img/terrain/mountain_01.png"));
-		images0.put(Terrain.Mountain2, loadImg("img/terrain/mountain_02.png"));
-		images0.put(Terrain.Mountain3, loadImg("img/terrain/mountain_03.png"));
-		images0.put(Terrain.Mountain4, loadImg("img/terrain/mountain_04.png"));
-		images0.put(Terrain.Road, loadImg("img/terrain/road_vxvx.png"));
-		images0.put(Terrain.BridgeLow, loadImg("img/terrain/bridge_low.png"));
-		images0.put(Terrain.BridgeHigh, loadImg("img/terrain/bridge_high.png"));
-		images0.put(Terrain.Shore, loadImg("img/terrain/shore.png"));
-		images0.put(Terrain.ClearWater, loadImg("img/terrain/water_clear.png"));
+			terrains0.put(Terrain.valueOf("FlatLand" + type), loadImg("img/terrain/flat_land_0" + type + ".png"));
+		terrains0.put(Terrain.Forest1, loadImg("img/terrain/forest_01.png"));
+		terrains0.put(Terrain.Forest2, loadImg("img/terrain/forest_02.png"));
+		terrains0.put(Terrain.Hills1, loadImg("img/terrain/hills_01.png"));
+		terrains0.put(Terrain.Hills2, loadImg("img/terrain/hills_02.png"));
+		terrains0.put(Terrain.Hills3, loadImg("img/terrain/hills_03.png"));
+		terrains0.put(Terrain.Hills4, loadImg("img/terrain/hills_04.png"));
+		terrains0.put(Terrain.Mountain1, loadImg("img/terrain/mountain_01.png"));
+		terrains0.put(Terrain.Mountain2, loadImg("img/terrain/mountain_02.png"));
+		terrains0.put(Terrain.Mountain3, loadImg("img/terrain/mountain_03.png"));
+		terrains0.put(Terrain.Mountain4, loadImg("img/terrain/mountain_04.png"));
+		terrains0.put(Terrain.Road, loadImg("img/terrain/road_vxvx.png"));
+		terrains0.put(Terrain.BridgeLow, loadImg("img/terrain/bridge_low.png"));
+		terrains0.put(Terrain.BridgeHigh, loadImg("img/terrain/bridge_high.png"));
+		terrains0.put(Terrain.Shore, loadImg("img/terrain/shore.png"));
+		terrains0.put(Terrain.ClearWater, loadImg("img/terrain/water_clear.png"));
+		terrains = Collections.unmodifiableMap(terrains0);
 
 		/* Units */
-		BiConsumer<Unit.Type, String> addUnit = (type, path) -> images0.putAll(loadUnitImgs(type, path));
+		Map<UnitImgDesc, BufferedImage> units0 = new HashMap<>();
+		BiConsumer<Unit.Type, String> addUnit = (type, path) -> units0.putAll(loadUnitImgs(type, path));
 		addUnit.accept(Unit.Type.Soldier, "img/unit/soldier.png");
 		addUnit.accept(Unit.Type.Bazooka, "img/unit/bazooka.png");
 		addUnit.accept(Unit.Type.Tank, "img/unit/tank.png");
@@ -155,9 +159,11 @@ class Images {
 		addUnit.accept(Unit.Type.Airplane, "img/unit/airplane.png");
 		addUnit.accept(Unit.Type.Zeppelin, "img/unit/zeppelin.png");
 		addUnit.accept(Unit.Type.AirTransporter, "img/unit/unit_ship_air.png");
+		units = Collections.unmodifiableMap(units0);
 
 		/* Buildings */
-		BiConsumer<Building.Type, String> addBuilding = (type, path) -> images0.putAll(loadBuildingImgs(type, path));
+		Map<BuildingImgDesc, BufferedImage> buildings0 = new HashMap<>();
+		BiConsumer<Building.Type, String> addBuilding = (type, path) -> buildings0.putAll(loadBuildingImgs(type, path));
 		addBuilding.accept(Building.Type.Capital, "img/building/capital.png");
 		addBuilding.accept(Building.Type.Factory, "img/building/facotry.png");
 		addBuilding.accept(Building.Type.ControllerLand, "img/building/controller_land.png");
@@ -166,6 +172,9 @@ class Images {
 		addBuilding.accept(Building.Type.OilRefinery, "img/building/oil_refinery.png");
 		addBuilding.accept(Building.Type.OilRefineryBig, "img/building/oil_refinery_big.png");
 		addBuilding.accept(Building.Type.OilRig, "img/building/oil_rig.png");
+		buildings = Collections.unmodifiableMap(buildings0);
+
+		Map<Object, BufferedImage> images0 = new HashMap<>();
 		images0.putAll(loadFlagImages("img/building/flag.png"));
 		images0.putAll(loadFlagGlowImages("img/building/flag_glow.png"));
 		images0.putAll(loadAttackImages("img/gui/attack_animation.png"));
@@ -439,14 +448,12 @@ class Images {
 	}
 
 	private static BufferedImage getImg0(Object obj) {
-		if (obj instanceof IUnit) {
-			IUnit unit = (IUnit) obj;
-			return images.get(UnitImgDesc.ofStand(unit, null, 0));
-
-		} else if (obj instanceof IBuilding) {
-			IBuilding building = (IBuilding) obj;
-			return images.get(BuildingImgDesc.of(building, 0));
-
+		if (obj instanceof IUnit unit) {
+			return getUnitImgStand(unit, null, 0);
+		} else if (obj instanceof IBuilding building) {
+			return getBuildingImg(building, 0);
+		} else if (obj instanceof Terrain terrain) {
+			return terrains.get(terrain);
 		} else {
 			return images.get(obj);
 		}
@@ -455,17 +462,17 @@ class Images {
 	static BufferedImage getUnitImgStand(IUnit unit, Direction orientation, int gesture) {
 		if (gesture >= getGestureNumUnitStand(unit.getType()))
 			throw new IllegalArgumentException();
-		return getImg(UnitImgDesc.ofStand(unit, orientation, gesture));
+		return units.get(UnitImgDesc.ofStand(unit, orientation, gesture));
 	}
 
 	static BufferedImage getUnitImgMove(IUnit unit, Direction orientation, int gesture) {
 		if (gesture >= getGestureNumUnitMove(unit.getType()))
 			throw new IllegalArgumentException();
-		return getImg(UnitImgDesc.ofMove(unit, orientation, gesture));
+		return units.get(UnitImgDesc.ofMove(unit, orientation, gesture));
 	}
 
 	static BufferedImage getBuildingImg(IBuilding building, int gesture) {
-		return getImg(BuildingImgDesc.of(building, gesture));
+		return buildings.get(BuildingImgDesc.of(building, gesture));
 	}
 
 	static BufferedImage getFlagImg(Team team, int gesture) {
