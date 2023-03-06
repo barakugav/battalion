@@ -492,8 +492,11 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					if (c1)
 						connections.add(dirs.e1);
 
-					if (c1 || c2 || c3)
+					if (!(c1 || c2) && c3) {
+						arena.drawRelativeToMap(g, Images.WaterEdges.get(quadrant, false, false), pos);
+					} else if (c1 || c2) {
 						arena.drawRelativeToMap(g, Images.Shores.get(quadrant, c1, c2), pos);
+					}
 				}
 				if (connections.isEmpty()) {
 					for (int quadrant = 0; quadrant < 4; quadrant++)
