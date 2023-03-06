@@ -117,12 +117,18 @@ class Images {
 		Map<Object, BufferedImage> images0 = new HashMap<>();
 
 		/* Terrain */
-		for (int type = 1; type <= 5; type++)
+		for (int type = 1; type <= 7; type++)
 			images0.put(Terrain.valueOf("FlatLand" + type), loadImg("img/terrain/flat_land_0" + type + ".png"));
-		images0.put(Terrain.Trees, loadImg("img/terrain/forest.png"));
-		images0.put(Terrain.Hills, loadImg("img/terrain/land_hills.png"));
-		images0.put(Terrain.Mountain, loadImg("img/terrain/mountain.png"));
-		images0.put(Terrain.MountainBig, loadImg("img/terrain/mountain_high.png"));
+		images0.put(Terrain.Forest1, loadImg("img/terrain/forest_01.png"));
+		images0.put(Terrain.Forest2, loadImg("img/terrain/forest_02.png"));
+		images0.put(Terrain.Hills1, loadImg("img/terrain/hills_01.png"));
+		images0.put(Terrain.Hills2, loadImg("img/terrain/hills_02.png"));
+		images0.put(Terrain.Hills3, loadImg("img/terrain/hills_03.png"));
+		images0.put(Terrain.Hills4, loadImg("img/terrain/hills_04.png"));
+		images0.put(Terrain.Mountain1, loadImg("img/terrain/mountain_01.png"));
+		images0.put(Terrain.Mountain2, loadImg("img/terrain/mountain_02.png"));
+		images0.put(Terrain.Mountain3, loadImg("img/terrain/mountain_03.png"));
+		images0.put(Terrain.Mountain4, loadImg("img/terrain/mountain_04.png"));
 		images0.put(Terrain.Road, loadImg("img/terrain/road_vxvx.png"));
 		images0.put(Terrain.BridgeLow, loadImg("img/terrain/bridge_low.png"));
 		images0.put(Terrain.BridgeHigh, loadImg("img/terrain/bridge_high.png"));

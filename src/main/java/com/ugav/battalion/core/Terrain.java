@@ -10,11 +10,15 @@ import java.util.function.IntPredicate;
 public enum Terrain {
 
 	FlatLand1(Category.FlatLand), FlatLand2(Category.FlatLand), FlatLand3(Category.FlatLand),
-	FlatLand4(Category.FlatLand), FlatLand5(Category.FlatLand),
+	FlatLand4(Category.FlatLand), FlatLand5(Category.FlatLand), FlatLand6(Category.FlatLand),
+	FlatLand7(Category.FlatLand),
 
-	Trees(Category.Forest), Hills(Category.Hiils),
+	Forest1(Category.Forest), Forest2(Category.Forest),
 
-	Mountain(Category.Mountain), MountainBig(Category.Mountain),
+	Hills1(Category.Hiils), Hills2(Category.Hiils), Hills3(Category.Hiils), Hills4(Category.Hiils),
+
+	Mountain1(Category.Mountain), Mountain2(Category.Mountain), Mountain3(Category.Mountain),
+	Mountain4(Category.Mountain),
 
 	Road(Category.Road),
 

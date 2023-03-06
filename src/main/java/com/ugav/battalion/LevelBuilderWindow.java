@@ -186,7 +186,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		private JPanel createEntitiesTabsButtons() {
 			JPanel panel = new JPanel(new GridLayout(1, 0));
 
-			panel.add(createEntityTabButton(Terrain.Mountain, e -> selectEntitiesTab(terrainTab)));
+			panel.add(createEntityTabButton(Terrain.Mountain1, e -> selectEntitiesTab(terrainTab)));
 
 			for (Team team : Team.values()) {
 				BuildingDesc desc = BuildingDesc.of(Building.Type.Factory, team);
