@@ -8,12 +8,13 @@ import java.awt.GridBagLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.LongToIntFunction;
+import java.util.function.IntFunction;
 
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
@@ -480,46 +481,34 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 			if (selection == Selection.UnitMoveOrAttack) {
 				Unit unit = (Unit) selectedEntity;
 				if (movePath.isEmpty()) {
-					drawRelativeToMap(g, "MovePathSourceNone", selectedEntity.getPos());
+					drawRelativeToMap(g, Images.MovePath.none, selectedEntity.getPos());
 				} else {
-					LongToIntFunction calcDir = idx0 -> {
-						int idx = (int) idx0;
+					IntFunction<Direction> calcDir = idx -> {
 						int p1 = idx >= 0 ? movePath.get(idx) : selectedEntity.getPos();
 						int p2 = movePath.get(idx + 1);
-						Direction dir = Cell.diffDir(p1, p2);
-						switch (dir) {
-						case XPos:
-							return 0;
-						case YNeg:
-							return 1;
-						case XNeg:
-							return 2;
-						case YPos:
-							return 3;
-						default:
-							throw new IllegalArgumentException("Unexpected value: " + dir);
-						}
+						return Cell.diffDir(p1, p2);
 					};
 
-					int sourceDir = calcDir.applyAsInt(-1);
-					drawRelativeToMap(g, "MovePathSource" + sourceDir, selectedEntity.getPos());
+					drawRelativeToMap(g, Images.MovePath.source(calcDir.apply(-1)), selectedEntity.getPos());
 
 					for (int idx = 0; idx < movePath.size() - 1; idx++) {
-						int prevDir = calcDir.applyAsInt(idx - 1);
-						int dir = calcDir.applyAsInt(idx);
-						String label = "MovePath";
+						Direction prevDir = calcDir.apply(idx - 1);
+						Direction dir = calcDir.apply(idx);
+						BufferedImage img;
 						if (prevDir == dir) {
-							label += "Straight" + (dir % 2 == 0 ? "Horizontal" : "Vertical");
+							img = dir.isXDir() ? Images.MovePath.horizontal : Images.MovePath.vertical;
 						} else {
-							label += "Turn" + ((dir == (prevDir + 1) % 4) ? dir : Utils.mod(dir - 1, 4));
+							img = Images.MovePath.turn(prevDir.opposite(), dir);
 						}
-						drawRelativeToMap(g, label, movePath.get(idx));
+						drawRelativeToMap(g, img, movePath.get(idx));
 					}
 
 					int dest = movePath.last();
-					int destDir = (calcDir.applyAsInt(movePath.size() - 2) + 2) % 4;
-					String destLabel = "MovePathDest" + (unit.getReachableMap().contains(dest) ? "" : "Unstand");
-					drawRelativeToMap(g, destLabel + destDir, dest);
+					Direction destDir = calcDir.apply(movePath.size() - 2).opposite();
+					boolean destCanStand = unit.getReachableMap().contains(dest);
+					BufferedImage destImg = destCanStand ? Images.MovePath.destination(destDir)
+							: Images.MovePath.destinationNoStand(destDir);
+					drawRelativeToMap(g, destImg, dest);
 				}
 			}
 		}

@@ -14,7 +14,7 @@ public enum Direction {
 		this.dy = dc;
 	}
 
-	Direction opposite() {
+	public Direction opposite() {
 		switch (this) {
 		case XPos:
 			return XNeg;
@@ -29,14 +29,18 @@ public enum Direction {
 		}
 	}
 
-	Set<Direction> orthogonal() {
+	public Set<Direction> orthogonal() {
+		return isXDir() ? EnumSet.of(YPos, YNeg) : EnumSet.of(XPos, XNeg);
+	}
+
+	public boolean isXDir() {
 		switch (this) {
 		case XPos:
 		case XNeg:
-			return EnumSet.of(YPos, YNeg);
+			return true;
 		case YPos:
 		case YNeg:
-			return EnumSet.of(XPos, XNeg);
+			return false;
 		default:
 			throw new IllegalArgumentException("Unexpected value: " + this);
 		}

@@ -229,7 +229,7 @@ class ArenaPanelGameAbstract extends
 				/* Draw flag glow */
 				Team conquerTeam = building().getConquerTeam();
 				if (conquerTeam != null) {
-					BufferedImage flagImg = Images.getFlagGlowImg(conquerTeam, getFlagGesture());
+					BufferedImage flagImg = Images.Ect.flagGlow(conquerTeam, getFlagGesture());
 					int x = arena.displayedXCell(pos().xInt()) + 39;
 					int y = arena.displayedYCell(pos().yInt()) - 6;
 					g.drawImage(flagImg, x, y, arena);
@@ -238,12 +238,12 @@ class ArenaPanelGameAbstract extends
 
 			@Override
 			int getGasture() {
-				return gestureTask.getGesture() % Images.getGestureNum(building().getType());
+				return gestureTask.getGesture() % Images.Buildings.gestureNum(building().getType());
 			}
 
 			@Override
 			int getFlagGesture() {
-				return gestureTask.getGesture() % Images.getGestureNum("Flag");
+				return gestureTask.getGesture() % Images.Ect.FlagGestureNum;
 			}
 
 		}
@@ -271,8 +271,8 @@ class ArenaPanelGameAbstract extends
 			int getGasture() {
 				if (unit().getTeam() == game.getTurn() && !unit().isActive())
 					return 0;
-				int gestureNum = isMoving ? Images.getGestureNumUnitMove(unit().type)
-						: Images.getGestureNumUnitStand(unit().type);
+				int gestureNum = isMoving ? Images.Units.moveGestureNum(unit().type)
+						: Images.Units.standGestureNum(unit().type);
 				return gestureTask.getGesture() % gestureNum;
 			}
 

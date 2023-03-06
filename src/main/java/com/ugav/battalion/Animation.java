@@ -148,9 +148,9 @@ interface Animation {
 
 		@Override
 		public void paintComponent(Graphics g) {
-			int gestureNum = Images.getGestureNum("Attack");
+			int gestureNum = Images.Ect.AttackGestureNum;
 			int gestureIdx = (int) (cursor / ((double) Duration / gestureNum));
-			BufferedImage img = Images.getAttackImg(gestureIdx);
+			BufferedImage img = Images.Ect.attack(gestureIdx);
 
 			int x = arena.displayedXCell(Cell.x(target));
 			int y = arena.displayedYCell(Cell.y(target));
@@ -322,9 +322,9 @@ interface Animation {
 		@Override
 		public void paintComponent(Graphics g) {
 			Position pos = comp.pos;
-			int gestureNum = Images.getGestureNum("Explosion");
+			int gestureNum = Images.Ect.ExplosionGestureNum;
 			int gestureIdx = (int) (cursor / ((double) Duration / gestureNum));
-			BufferedImage img = Images.getExplosionImg(gestureIdx);
+			BufferedImage img = Images.Ect.explosion(gestureIdx);
 
 			int x = arena.displayedXCell(pos.x);
 			int y = arena.displayedYCell(pos.y);

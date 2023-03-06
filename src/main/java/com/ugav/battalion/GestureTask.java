@@ -17,12 +17,14 @@ class GestureTask implements TickTask {
 		Set<Integer> possibleGestureNum = new HashSet<>();
 		IntConsumer addGestureNum = x -> possibleGestureNum.add(Integer.valueOf(x));
 		for (Unit.Type type : Unit.Type.values()) {
-			addGestureNum.accept(Images.getGestureNumUnitMove(type));
-			addGestureNum.accept(Images.getGestureNumUnitStand(type));
+			addGestureNum.accept(Images.Units.moveGestureNum(type));
+			addGestureNum.accept(Images.Units.standGestureNum(type));
 		}
 		for (Building.Type type : Building.Type.values())
-			addGestureNum.accept(Images.getGestureNum(type));
-		addGestureNum.accept(Images.getGestureNum("Flag"));
+			addGestureNum.accept(Images.Buildings.gestureNum(type));
+		addGestureNum.accept(Images.Ect.FlagGestureNum);
+		addGestureNum.accept(Images.Ect.AttackGestureNum);
+		addGestureNum.accept(Images.Ect.ExplosionGestureNum);
 
 		int gestureNum = 1;
 		for (int x : Utils.toArray(possibleGestureNum)) {

@@ -546,7 +546,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			arena.drawRelativeToMap(g, Images.Buildings.get(building, getGasture()), pos);
 
 			/* Draw flag */
-			BufferedImage flagImg = Images.getFlagImg(building.getTeam(), getFlagGesture());
+			BufferedImage flagImg = Images.Ect.flag(building.getTeam(), getFlagGesture());
 			int x = arena.displayedXCell(Cell.x(pos)) + 42;
 			int y = arena.displayedYCell(Cell.y(pos)) - 3;
 			g.drawImage(flagImg, x, y, arena);

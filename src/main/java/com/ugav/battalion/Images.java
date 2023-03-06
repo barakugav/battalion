@@ -35,6 +35,7 @@ class Images {
 	static final Bridges Bridges = new Bridges();
 	static final Shores Shores = new Shores();
 	static final MiniMap MiniMap = new MiniMap();
+	static final MovePath MovePath = new MovePath();
 	static final Ect Ect = new Ect();
 
 	static BufferedImage getImg(Object obj) {
@@ -56,128 +57,18 @@ class Images {
 		}
 	}
 
-	static BufferedImage getFlagImg(Team team, int gesture) {
-		return Ect.get(flagKey(team, gesture));
-	}
-
-	static BufferedImage getFlagGlowImg(Team team, int gesture) {
-		return Ect.get(flagGlowKey(team, gesture));
-	}
-
-	static BufferedImage getAttackImg(int gesture) {
-		return Ect.get(attackKey(gesture));
-	}
-
-	static BufferedImage getExplosionImg(int gesture) {
-		return Ect.get(explosionKey(gesture));
-	}
-
-	static int getGestureNumUnitStand(Unit.Type type) {
-		switch (type) {
-		case Soldier:
-		case Bazooka:
-			return 1;
-		case Tank:
-		case TankBig:
-		case TankInvisible:
-		case TankAntiAir:
-		case Artillery:
-		case Mortar:
-		case SpeedBoat:
-		case Ship:
-		case ShipAntiAir:
-		case ShipArtillery:
-		case Submarine:
-		case ShipTransporter:
-		case Airplane:
-		case Zeppelin:
-		case AirTransporter:
-			return 4;
-		case Turrent:
-			return 1;
-		default:
-			throw new IllegalArgumentException("Unexpected value: " + type);
-		}
-	}
-
-	static int getGestureNumUnitMove(Unit.Type type) {
-		return isUnitHasDifferentStandMoveGesture(type) ? getGestureNumUnitMove0(type) : getGestureNumUnitStand(type);
-	}
-
-	private static boolean isUnitHasDifferentStandMoveGesture(Unit.Type type) {
-		return getGestureNumUnitMove0(type) > 0;
-	}
-
-	private static int getGestureNumUnitMove0(Unit.Type type) {
-		switch (type) {
-		case Soldier:
-		case Bazooka:
-			return 4;
-		default:
-			return 0;
-		}
-	}
-
-	static int getGestureNum(Object obj) {
-		if (obj instanceof Building.Type) {
-			switch ((Building.Type) obj) {
-			case OilRefinery:
-			case OilRefineryBig:
-				return 7;
-			case OilRig:
-				return 4;
-			case Factory:
-			case Capital:
-			case ControllerLand:
-			case ControllerWater:
-			case ControllerAir:
-				return 1;
-			default:
-				/* fall through */
-			}
-		} else if ("Flag".equals(obj)) {
-			return 4;
-		} else if ("Attack".equals(obj)) {
-			return 3;
-		} else if ("Explosion".equals(obj)) {
-			return 15;
-		}
-
-		throw new IllegalArgumentException("Unexpected value: " + obj);
-	}
-
-	private static String flagKey(Team team, int gesture) {
-		return "Flag" + team + gesture;
-	}
-
-	private static String flagGlowKey(Team team, int gesture) {
-		return "FlagGlow" + team + gesture;
-	}
-
-	private static String attackKey(int gesture) {
-		return "Attack" + gesture;
-	}
-
-	private static String explosionKey(int gesture) {
-		return "Explosion" + gesture;
-	}
-
 	static class Terrains {
 		private final Map<Terrain, BufferedImage> terrains = new HashMap<>();
 
 		private Terrains() {
 			for (int type = 1; type <= 7; type++)
 				terrains.put(Terrain.valueOf("FlatLand" + type), loadImg("img/terrain/flat_land_0" + type + ".png"));
-			terrains.put(Terrain.Forest1, loadImg("img/terrain/forest_01.png"));
-			terrains.put(Terrain.Forest2, loadImg("img/terrain/forest_02.png"));
-			terrains.put(Terrain.Hills1, loadImg("img/terrain/hills_01.png"));
-			terrains.put(Terrain.Hills2, loadImg("img/terrain/hills_02.png"));
-			terrains.put(Terrain.Hills3, loadImg("img/terrain/hills_03.png"));
-			terrains.put(Terrain.Hills4, loadImg("img/terrain/hills_04.png"));
-			terrains.put(Terrain.Mountain1, loadImg("img/terrain/mountain_01.png"));
-			terrains.put(Terrain.Mountain2, loadImg("img/terrain/mountain_02.png"));
-			terrains.put(Terrain.Mountain3, loadImg("img/terrain/mountain_03.png"));
-			terrains.put(Terrain.Mountain4, loadImg("img/terrain/mountain_04.png"));
+			for (int type = 1; type <= 2; type++)
+				terrains.put(Terrain.valueOf("Forest" + type), loadImg("img/terrain/forest_0" + type + ".png"));
+			for (int type = 1; type <= 4; type++)
+				terrains.put(Terrain.valueOf("Hills" + type), loadImg("img/terrain/hills_0" + type + ".png"));
+			for (int type = 1; type <= 4; type++)
+				terrains.put(Terrain.valueOf("Mountain" + type), loadImg("img/terrain/mountain_0" + type + ".png"));
 			terrains.put(Terrain.Road, loadImg("img/terrain/road_vxvx.png"));
 			terrains.put(Terrain.BridgeLow, loadImg("img/terrain/bridge_low.png"));
 			terrains.put(Terrain.BridgeHigh, loadImg("img/terrain/bridge_high.png"));
@@ -194,30 +85,30 @@ class Images {
 		private final Map<Desc, BufferedImage> imgs = new HashMap<>();
 
 		private Units() {
-			addUnit(Unit.Type.Soldier, "img/unit/soldier.png");
-			addUnit(Unit.Type.Bazooka, "img/unit/bazooka.png");
-			addUnit(Unit.Type.Tank, "img/unit/tank.png");
-			addUnit(Unit.Type.TankBig, "img/unit/tank_big.png");
-			addUnit(Unit.Type.TankInvisible, "img/unit/tank_invisible.png");
-			addUnit(Unit.Type.TankAntiAir, "img/unit/tank_anti_air.png");
-			addUnit(Unit.Type.Artillery, "img/unit/artillery.png");
-			addUnit(Unit.Type.Mortar, "img/unit/mortar.png");
-			addUnit(Unit.Type.Turrent, "img/unit/turrent.png");
-			addUnit(Unit.Type.SpeedBoat, "img/unit/speed_boat.png");
-			addUnit(Unit.Type.Ship, "img/unit/ship_close_range.png");
-			addUnit(Unit.Type.ShipAntiAir, "img/unit/ship_anti_air.png");
-			addUnit(Unit.Type.ShipArtillery, "img/unit/ship_artillery.png");
-			addUnit(Unit.Type.Submarine, "img/unit/submarine.png");
-			addUnit(Unit.Type.ShipTransporter, "img/unit/unit_ship_water.png");
-			addUnit(Unit.Type.Airplane, "img/unit/airplane.png");
-			addUnit(Unit.Type.Zeppelin, "img/unit/zeppelin.png");
-			addUnit(Unit.Type.AirTransporter, "img/unit/unit_ship_air.png");
+			loadUnit(Unit.Type.Soldier, "img/unit/soldier.png");
+			loadUnit(Unit.Type.Bazooka, "img/unit/bazooka.png");
+			loadUnit(Unit.Type.Tank, "img/unit/tank.png");
+			loadUnit(Unit.Type.TankBig, "img/unit/tank_big.png");
+			loadUnit(Unit.Type.TankInvisible, "img/unit/tank_invisible.png");
+			loadUnit(Unit.Type.TankAntiAir, "img/unit/tank_anti_air.png");
+			loadUnit(Unit.Type.Artillery, "img/unit/artillery.png");
+			loadUnit(Unit.Type.Mortar, "img/unit/mortar.png");
+			loadUnit(Unit.Type.Turrent, "img/unit/turrent.png");
+			loadUnit(Unit.Type.SpeedBoat, "img/unit/speed_boat.png");
+			loadUnit(Unit.Type.Ship, "img/unit/ship_close_range.png");
+			loadUnit(Unit.Type.ShipAntiAir, "img/unit/ship_anti_air.png");
+			loadUnit(Unit.Type.ShipArtillery, "img/unit/ship_artillery.png");
+			loadUnit(Unit.Type.Submarine, "img/unit/submarine.png");
+			loadUnit(Unit.Type.ShipTransporter, "img/unit/unit_ship_water.png");
+			loadUnit(Unit.Type.Airplane, "img/unit/airplane.png");
+			loadUnit(Unit.Type.Zeppelin, "img/unit/zeppelin.png");
+			loadUnit(Unit.Type.AirTransporter, "img/unit/unit_ship_air.png");
 		}
 
-		private void addUnit(Unit.Type type, String path) {
-			boolean differentGestures = isUnitHasDifferentStandMoveGesture(type);
-			int gestureNumStand = getGestureNumUnitStand(type);
-			int gestureNum = gestureNumStand + getGestureNumUnitMove0(type);
+		private void loadUnit(Unit.Type type, String path) {
+			boolean differentGestures = hasDifferentStandMoveGesture(type);
+			int gestureNumStand = standGestureNum(type);
+			int gestureNum = gestureNumStand + moveGestureNum0(type);
 			BufferedImage img = loadImg(path);
 			int width = img.getWidth() / 4;
 			int height = img.getHeight() / gestureNum;
@@ -247,7 +138,21 @@ class Images {
 					}
 				}
 			}
+		}
 
+		private static Direction orientationIdxToObj(int index) {
+			switch (index) {
+			case 0:
+				return Direction.XPos;
+			case 1:
+				return Direction.YPos;
+			case 2:
+				return Direction.XNeg;
+			case 3:
+				return Direction.YNeg;
+			default:
+				throw new IllegalArgumentException();
+			}
 		}
 
 		BufferedImage getDefault(IUnit unit) {
@@ -255,15 +160,61 @@ class Images {
 		}
 
 		BufferedImage standImg(IUnit unit, Direction orientation, int gesture) {
-			if (gesture >= getGestureNumUnitStand(unit.getType()))
+			if (gesture >= standGestureNum(unit.getType()))
 				throw new IllegalArgumentException();
 			return imgs.get(Desc.ofStand(unit, orientation, gesture));
 		}
 
 		BufferedImage moveImg(IUnit unit, Direction orientation, int gesture) {
-			if (gesture >= getGestureNumUnitMove(unit.getType()))
+			if (gesture >= moveGestureNum(unit.getType()))
 				throw new IllegalArgumentException();
 			return imgs.get(Desc.ofMove(unit, orientation, gesture));
+		}
+
+		int standGestureNum(Unit.Type type) {
+			switch (type) {
+			case Soldier:
+			case Bazooka:
+				return 1;
+			case Tank:
+			case TankBig:
+			case TankInvisible:
+			case TankAntiAir:
+			case Artillery:
+			case Mortar:
+			case SpeedBoat:
+			case Ship:
+			case ShipAntiAir:
+			case ShipArtillery:
+			case Submarine:
+			case ShipTransporter:
+			case Airplane:
+			case Zeppelin:
+			case AirTransporter:
+				return 4;
+			case Turrent:
+				return 1;
+			default:
+				throw new IllegalArgumentException("Unexpected value: " + type);
+			}
+		}
+
+		int moveGestureNum(Unit.Type type) {
+			return hasDifferentStandMoveGesture(type) ? moveGestureNum0(type) : standGestureNum(type);
+		}
+
+		private static boolean hasDifferentStandMoveGesture(Unit.Type type) {
+			return moveGestureNum0(type) > 0;
+		}
+
+		private static int moveGestureNum0(Unit.Type type) {
+			switch (type) {
+			case Soldier:
+			case Bazooka:
+				return 4;
+			default:
+				return 0;
+			}
 		}
 
 		private static class Desc extends ImgDesc {
@@ -301,18 +252,18 @@ class Images {
 		private final Map<Desc, BufferedImage> imgs = new HashMap<>();
 
 		private Buildings() {
-			addBuilding(Building.Type.Capital, "img/building/capital.png");
-			addBuilding(Building.Type.Factory, "img/building/facotry.png");
-			addBuilding(Building.Type.ControllerLand, "img/building/controller_land.png");
-			addBuilding(Building.Type.ControllerWater, "img/building/controller_water.png");
-			addBuilding(Building.Type.ControllerAir, "img/building/controller_air.png");
-			addBuilding(Building.Type.OilRefinery, "img/building/oil_refinery.png");
-			addBuilding(Building.Type.OilRefineryBig, "img/building/oil_refinery_big.png");
-			addBuilding(Building.Type.OilRig, "img/building/oil_rig.png");
+			loadBuilding(Building.Type.Capital, "img/building/capital.png");
+			loadBuilding(Building.Type.Factory, "img/building/facotry.png");
+			loadBuilding(Building.Type.ControllerLand, "img/building/controller_land.png");
+			loadBuilding(Building.Type.ControllerWater, "img/building/controller_water.png");
+			loadBuilding(Building.Type.ControllerAir, "img/building/controller_air.png");
+			loadBuilding(Building.Type.OilRefinery, "img/building/oil_refinery.png");
+			loadBuilding(Building.Type.OilRefineryBig, "img/building/oil_refinery_big.png");
+			loadBuilding(Building.Type.OilRig, "img/building/oil_rig.png");
 		}
 
-		private void addBuilding(Building.Type type, String path) {
-			int gestureNum = getGestureNum(type);
+		private void loadBuilding(Building.Type type, String path) {
+			int gestureNum = gestureNum(type);
 			BufferedImage img = loadImg(path);
 			int width = img.getWidth() / gestureNum;
 			for (int gesture = 0; gesture < gestureNum; gesture++) {
@@ -332,6 +283,24 @@ class Images {
 
 		BufferedImage get(IBuilding building, int gesture) {
 			return imgs.get(Desc.of(building, gesture));
+		}
+
+		int gestureNum(Building.Type type) {
+			switch (type) {
+			case OilRefinery:
+			case OilRefineryBig:
+				return 7;
+			case OilRig:
+				return 4;
+			case Factory:
+			case Capital:
+			case ControllerLand:
+			case ControllerWater:
+			case ControllerAir:
+				return 1;
+			default:
+				throw new IllegalArgumentException("Unexpected value: " + type);
+			}
 		}
 
 		private static class Desc extends ImgDesc {
@@ -567,34 +536,131 @@ class Images {
 		UnitMenuCancel = addUnitMenuIcon.apply("img/gui/unit_menu_cancel.png");
 	}
 
-	static class Ect {
-		private final Map<Object, BufferedImage> imgs = new HashMap<>();
+	static class MovePath {
+		final BufferedImage none;
+		final BufferedImage vertical;
+		final BufferedImage horizontal;
+		private final BufferedImage[] source = new BufferedImage[Direction.values().length];
+		private final BufferedImage[] destination = new BufferedImage[Direction.values().length];
+		private final BufferedImage[] destinationNoStand = new BufferedImage[Direction.values().length];
+		private final BufferedImage[] turn = new BufferedImage[Direction.values().length];
 
-		Ect() {
-			imgs.putAll(loadFlagImages("img/building/flag.png"));
-			imgs.putAll(loadFlagGlowImages("img/building/flag_glow.png"));
-			imgs.putAll(loadAttackImages("img/gui/attack_animation.png"));
-			imgs.putAll(loadExplosionImages("img/gui/explosion_animation.png"));
+		private MovePath() {
+			none = loadImg("img/gui/move_path_source_none.png");
+			BufferedImage straight = loadImg("img/gui/move_path_straight.png");
+			vertical = Utils.imgRotate(straight, 0);
+			horizontal = Utils.imgRotate(straight, Math.PI / 2);
 
-			imgs.put("MovePathSourceNone", loadImg("img/gui/move_path_source_none.png"));
-			BufferedImage moveSource = loadImg("img/gui/move_path_source_down.png");
-			BufferedImage movePathDest = loadImg("img/gui/move_path_destination_down.png");
-			BufferedImage movePathDestUnstand = loadImg("img/gui/move_path_destination_unstandable_down.png");
-			BufferedImage movePathStraight = loadImg("img/gui/move_path_straight.png");
-			BufferedImage movePathTurn = loadImg("img/gui/move_path_turn_down_right.png");
-			for (int dir = 0; dir < 4; dir++) {
-				double rotateAngle = -(dir + 1) * Math.PI / 2;
-				imgs.put("MovePathSource" + dir, Utils.imgRotate(moveSource, rotateAngle));
-				imgs.put("MovePathDest" + dir, Utils.imgRotate(movePathDest, rotateAngle));
-				imgs.put("MovePathDestUnstand" + dir, Utils.imgRotate(movePathDestUnstand, rotateAngle));
-				imgs.put("MovePathTurn" + dir, Utils.imgRotate(movePathTurn, rotateAngle));
+			BufferedImage sourceImg = loadImg("img/gui/move_path_source_down.png");
+			BufferedImage destImg = loadImg("img/gui/move_path_destination_down.png");
+			BufferedImage destNoStandImg = loadImg("img/gui/move_path_destination_unstandable_down.png");
+			BufferedImage turnImg = loadImg("img/gui/move_path_turn_down_right.png");
+			for (Direction dir : Direction.values()) {
+				int dirIdx = dir.ordinal();
+				double rotateAngle = (dirIdx - 1) * Math.PI / 2;
+				source[dirIdx] = Utils.imgRotate(sourceImg, rotateAngle);
+				destination[dirIdx] = Utils.imgRotate(destImg, rotateAngle);
+				destinationNoStand[dirIdx] = Utils.imgRotate(destNoStandImg, rotateAngle);
+				turn[dirIdx] = Utils.imgRotate(turnImg, (3 - dirIdx) * Math.PI / 2);
 			}
-			imgs.put("MovePathStraightVertical", Utils.imgRotate(movePathStraight, 0));
-			imgs.put("MovePathStraightHorizontal", Utils.imgRotate(movePathStraight, Math.PI / 2));
 		}
 
-		BufferedImage get(Object key) {
-			return imgs.get(key);
+		BufferedImage source(Direction dir) {
+			return source[dir.ordinal()];
+		}
+
+		BufferedImage destination(Direction dir) {
+			return destination[dir.ordinal()];
+		}
+
+		BufferedImage destinationNoStand(Direction dir) {
+			return destinationNoStand[dir.ordinal()];
+		}
+
+		BufferedImage turn(Direction d1, Direction d2) {
+			final int dirs = Direction.values().length;
+			int i1 = dirs - d1.ordinal(), i2 = dirs - d2.ordinal();
+			return ((i1 + 1) % dirs == i2) ? turn[i2] : turn[i1];
+		}
+
+	}
+
+	static class Ect {
+
+		final int FlagGestureNum = 4;
+		final int AttackGestureNum = 3;
+		final int ExplosionGestureNum = 15;
+
+		private final BufferedImage[][] flag = new BufferedImage[Team.values().length][FlagGestureNum];
+		private final BufferedImage[][] flagGlow = new BufferedImage[Team.values().length][FlagGestureNum];
+		private final BufferedImage[] attack = new BufferedImage[ExplosionGestureNum];
+		private final BufferedImage[] explosion = new BufferedImage[ExplosionGestureNum];
+
+		Ect() {
+			loadFlagImages("img/building/flag.png");
+			loadFlagGlowImages("img/building/flag_glow.png");
+			loadAttackImages("img/gui/attack_animation.png");
+			loadExplosionImages("img/gui/explosion_animation.png");
+		}
+
+		BufferedImage flag(Team team, int gesture) {
+			return flag[team.ordinal()][gesture];
+		}
+
+		BufferedImage flagGlow(Team team, int gesture) {
+			return flagGlow[team.ordinal()][gesture];
+		}
+
+		BufferedImage attack(int gesture) {
+			return attack[gesture];
+		}
+
+		BufferedImage explosion(int gesture) {
+			return explosion[gesture];
+		}
+
+		private void loadFlagImages(String path) {
+			int gestureNum = FlagGestureNum;
+			BufferedImage img = loadImg(path);
+			int width = img.getWidth() / gestureNum;
+			for (int gesture = 0; gesture < gestureNum; gesture++) {
+				BufferedImage redImg = Utils.imgSub(img, gesture * width, 0, width, img.getHeight());
+				BufferedImage blueImg = toBlue(redImg);
+				BufferedImage whiteImg = toWhite(redImg);
+				flag[Team.Red.ordinal()][gesture] = redImg;
+				flag[Team.Blue.ordinal()][gesture] = blueImg;
+				flag[Team.None.ordinal()][gesture] = whiteImg;
+			}
+		}
+
+		private void loadFlagGlowImages(String path) {
+			int gestureNum = FlagGestureNum;
+			BufferedImage img = loadImg(path);
+			int width = img.getWidth() / gestureNum;
+			for (int gesture = 0; gesture < gestureNum; gesture++) {
+				BufferedImage redImg = Utils.imgSub(img, gesture * width, 0, width, img.getHeight());
+				BufferedImage blueImg = toBlue(redImg);
+				BufferedImage whiteImg = toWhite(redImg);
+				flagGlow[Team.Red.ordinal()][gesture] = redImg;
+				flagGlow[Team.Blue.ordinal()][gesture] = blueImg;
+				flagGlow[Team.None.ordinal()][gesture] = whiteImg;
+			}
+		}
+
+		private void loadAttackImages(String path) {
+			int gestureNum = AttackGestureNum;
+			BufferedImage fullImg = loadImg(path);
+			int width = fullImg.getWidth() / gestureNum;
+			for (int gesture = 0; gesture < gestureNum; gesture++)
+				attack[gesture] = Utils.imgSub(fullImg, gesture * width, 0, width, fullImg.getHeight());
+		}
+
+		private void loadExplosionImages(String path) {
+			int gestureNum = ExplosionGestureNum;
+			BufferedImage fullImg = loadImg(path);
+			int width = fullImg.getWidth() / gestureNum;
+			for (int gesture = 0; gesture < gestureNum; gesture++)
+				explosion[gesture] = Utils.imgSub(fullImg, gesture * width, 0, width, fullImg.getHeight());
 		}
 
 	}
@@ -606,77 +672,6 @@ class Images {
 			throw new UncheckedIOException("Failed to load img file: " + path, e);
 		}
 	};
-
-	private static Direction orientationIdxToObj(int index) {
-		switch (index) {
-		case 0:
-			return Direction.XPos;
-		case 1:
-			return Direction.YPos;
-		case 2:
-			return Direction.XNeg;
-		case 3:
-			return Direction.YNeg;
-		default:
-			throw new IllegalArgumentException();
-		}
-	}
-
-	private static Map<Object, BufferedImage> loadFlagImages(String path) {
-		int gestureNum = getGestureNum("Flag");
-		BufferedImage img = loadImg(path);
-		int width = img.getWidth() / gestureNum;
-		Map<Object, BufferedImage> flags = new HashMap<>();
-		for (int gesture = 0; gesture < gestureNum; gesture++) {
-			BufferedImage redImg = Utils.imgSub(img, gesture * width, 0, width, img.getHeight());
-			BufferedImage blueImg = toBlue(redImg);
-			BufferedImage whiteImg = toWhite(redImg);
-			flags.put(flagKey(Team.Red, gesture), redImg);
-			flags.put(flagKey(Team.Blue, gesture), blueImg);
-			flags.put(flagKey(Team.None, gesture), whiteImg);
-		}
-		return flags;
-	}
-
-	private static Map<Object, BufferedImage> loadFlagGlowImages(String path) {
-		int gestureNum = getGestureNum("Flag");
-		BufferedImage img = loadImg(path);
-		int width = img.getWidth() / gestureNum;
-		Map<Object, BufferedImage> flags = new HashMap<>();
-		for (int gesture = 0; gesture < gestureNum; gesture++) {
-			BufferedImage redImg = Utils.imgSub(img, gesture * width, 0, width, img.getHeight());
-			BufferedImage blueImg = toBlue(redImg);
-			BufferedImage whiteImg = toWhite(redImg);
-			flags.put(flagGlowKey(Team.Red, gesture), redImg);
-			flags.put(flagGlowKey(Team.Blue, gesture), blueImg);
-			flags.put(flagGlowKey(Team.None, gesture), whiteImg);
-		}
-		return flags;
-	}
-
-	private static Map<Object, BufferedImage> loadAttackImages(String path) {
-		int gestureNum = getGestureNum("Attack");
-		BufferedImage fullImg = loadImg(path);
-		int width = fullImg.getWidth() / gestureNum;
-		Map<Object, BufferedImage> flags = new HashMap<>();
-		for (int gesture = 0; gesture < gestureNum; gesture++) {
-			BufferedImage img = Utils.imgSub(fullImg, gesture * width, 0, width, fullImg.getHeight());
-			flags.put(attackKey(gesture), img);
-		}
-		return flags;
-	}
-
-	private static Map<Object, BufferedImage> loadExplosionImages(String path) {
-		int gestureNum = getGestureNum("Explosion");
-		BufferedImage fullImg = loadImg(path);
-		int width = fullImg.getWidth() / gestureNum;
-		Map<Object, BufferedImage> flags = new HashMap<>();
-		for (int gesture = 0; gesture < gestureNum; gesture++) {
-			BufferedImage img = Utils.imgSub(fullImg, gesture * width, 0, width, fullImg.getHeight());
-			flags.put(explosionKey(gesture), img);
-		}
-		return flags;
-	}
 
 	private static BufferedImage toBlue(BufferedImage redImg) {
 		if (redImg.getRaster().getNumBands() != 4)
