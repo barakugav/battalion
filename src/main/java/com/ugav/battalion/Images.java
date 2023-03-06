@@ -39,13 +39,6 @@ class Images {
 	static final Ect Ect = new Ect();
 
 	static BufferedImage getImg(Object obj) {
-		BufferedImage img = getImg0(obj);
-		if (img == null)
-			throw new IllegalArgumentException("No image found for object: " + obj);
-		return img;
-	}
-
-	private static BufferedImage getImg0(Object obj) {
 		if (obj instanceof IUnit unit) {
 			return Units.getDefault(unit);
 		} else if (obj instanceof IBuilding building) {
@@ -72,7 +65,6 @@ class Images {
 			loadTerrain(Terrain.Road, "img/terrain/road_vxvx.png");
 			loadTerrain(Terrain.BridgeLow, "img/terrain/bridge_low.png");
 			loadTerrain(Terrain.BridgeHigh, "img/terrain/bridge_high.png");
-			loadTerrain(Terrain.Shore, "img/terrain/shore.png");
 			loadTerrain(Terrain.ClearWater, "img/terrain/water_clear.png");
 		}
 
@@ -89,7 +81,7 @@ class Images {
 		}
 
 		BufferedImage get(Terrain terrain, int gesture) {
-			return imgs.get(new Desc(terrain, gesture));
+			return checkExists(imgs, new Desc(terrain, gesture));
 		}
 
 		int gestureNum(Terrain terrain) {
@@ -114,9 +106,9 @@ class Images {
 			case Road:
 			case BridgeLow:
 			case BridgeHigh:
-			case Shore:
 				return 1;
 			case ClearWater:
+			case Shore:
 				return 4;
 			default:
 				throw new IllegalArgumentException("Unexpected value: " + terrain);
@@ -213,13 +205,13 @@ class Images {
 		BufferedImage standImg(IUnit unit, Direction orientation, int gesture) {
 			if (gesture >= standGestureNum(unit.getType()))
 				throw new IllegalArgumentException();
-			return imgs.get(Desc.ofStand(unit, orientation, gesture));
+			return checkExists(imgs, Desc.ofStand(unit, orientation, gesture));
 		}
 
 		BufferedImage moveImg(IUnit unit, Direction orientation, int gesture) {
 			if (gesture >= moveGestureNum(unit.getType()))
 				throw new IllegalArgumentException();
-			return imgs.get(Desc.ofMove(unit, orientation, gesture));
+			return checkExists(imgs, Desc.ofMove(unit, orientation, gesture));
 		}
 
 		int standGestureNum(Unit.Type type) {
@@ -332,7 +324,7 @@ class Images {
 		}
 
 		BufferedImage get(IBuilding building, int gesture) {
-			return imgs.get(Desc.of(building, gesture));
+			return checkExists(imgs, Desc.of(building, gesture));
 		}
 
 		int gestureNum(Building.Type type) {
@@ -376,22 +368,27 @@ class Images {
 					for (boolean connected2 : bs) {
 						int variant = (connected1 ? 1 : 0) + (connected2 ? 2 : 0);
 						String suffix = "" + quadrant + variant;
-						imgs.put(new Desc(quadrant, connected1, connected2),
-								loadImg("img/terrain/water_edge_" + suffix + ".png"));
+						BufferedImage img = loadImg("img/terrain/water_edge_" + suffix + ".png");
+						int gestureNum = Terrains.gestureNum(Terrain.ClearWater);
+						int width = img.getWidth() / gestureNum;
+						for (int gesture = 0; gesture < gestureNum; gesture++) {
+							BufferedImage subImg = Utils.imgSub(img, gesture * width, 0, width, img.getHeight());
+							imgs.put(new Desc(quadrant, connected1, connected2, gesture), subImg);
+						}
 					}
 				}
 			}
 		}
 
-		BufferedImage get(int quadrant, boolean connected1, boolean connected2) {
-			return imgs.get(new Desc(quadrant, connected1, connected2));
+		BufferedImage get(int quadrant, boolean connected1, boolean connected2, int gesture) {
+			return checkExists(imgs, new Desc(quadrant, connected1, connected2, gesture));
 		}
 
 		private static class Desc extends ImgDesc {
 
 			@SuppressWarnings("boxing")
-			Desc(int quadrant, boolean connected1, boolean connected2) {
-				super(quadrant, connected1, connected2);
+			Desc(int quadrant, boolean connected1, boolean connected2, int gesture) {
+				super(quadrant, connected1, connected2, gesture);
 			}
 
 		}
@@ -420,7 +417,7 @@ class Images {
 		}
 
 		BufferedImage get(boolean xpos, boolean yneg, boolean xneg, boolean ypos) {
-			return imgs.get(new Desc(xpos, yneg, xneg, ypos));
+			return checkExists(imgs, new Desc(xpos, yneg, xneg, ypos));
 		}
 
 		private static class Desc extends ImgDesc {
@@ -454,7 +451,7 @@ class Images {
 			if (!EnumSet.of(Terrain.BridgeLow, Terrain.BridgeHigh).contains(bridge))
 				throw new IllegalArgumentException(Objects.toString(bridge));
 			boolean isHigh = bridge == Terrain.BridgeHigh;
-			return imgs.get(new Desc(isHigh, dir, isConnectedToLand));
+			return checkExists(imgs, new Desc(isHigh, dir, isConnectedToLand));
 		}
 
 		private static class Desc extends ImgDesc {
@@ -480,22 +477,27 @@ class Images {
 							continue;
 						int variant = (connected1 ? 1 : 0) + (connected2 ? 2 : 0);
 						String suffix = "" + quadrant + variant;
-						imgs.put(new Desc(quadrant, connected1, connected2),
-								loadImg("img/terrain/shore_" + suffix + ".png"));
+						BufferedImage img = loadImg("img/terrain/shore_" + suffix + ".png");
+						int gestureNum = Terrains.gestureNum(Terrain.Shore);
+						int width = img.getWidth() / gestureNum;
+						for (int gesture = 0; gesture < gestureNum; gesture++) {
+							BufferedImage subImg = Utils.imgSub(img, gesture * width, 0, width, img.getHeight());
+							imgs.put(new Desc(quadrant, connected1, connected2, gesture), subImg);
+						}
 					}
 				}
 			}
 		}
 
-		BufferedImage get(int quadrant, boolean connected1, boolean connected2) {
-			return imgs.get(new Desc(quadrant, connected1, connected2));
+		BufferedImage get(int quadrant, boolean connected1, boolean connected2, int gesture) {
+			return checkExists(imgs, new Desc(quadrant, connected1, connected2, gesture));
 		}
 
 		private static class Desc extends ImgDesc {
 
 			@SuppressWarnings("boxing")
-			Desc(int quadrant, boolean connected1, boolean connected2) {
-				super(quadrant, connected1, connected2);
+			Desc(int quadrant, boolean connected1, boolean connected2, int gesture) {
+				super(quadrant, connected1, connected2, gesture);
 			}
 
 		}
@@ -525,15 +527,15 @@ class Images {
 		}
 
 		BufferedImage terrain(Terrain.Category t) {
-			return terrains.get(t);
+			return checkExists(terrains, t);
 		}
 
 		BufferedImage unit(Team team) {
-			return unit.get(team);
+			return checkExists(unit, team);
 		}
 
 		BufferedImage building(Team team) {
-			return building.get(team);
+			return checkExists(building, team);
 		}
 
 	}
@@ -713,6 +715,13 @@ class Images {
 				explosion[gesture] = Utils.imgSub(fullImg, gesture * width, 0, width, fullImg.getHeight());
 		}
 
+	}
+
+	private static <K> BufferedImage checkExists(Map<K, BufferedImage> imgs, K key) {
+		BufferedImage img = imgs.get(key);
+		if (img == null)
+			throw new IllegalArgumentException("No image found for key: " + key);
+		return img;
 	}
 
 	private static BufferedImage loadImg(String path) {

@@ -417,7 +417,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					boolean c1 = !isWater.test(p1), c2 = !isWater.test(p2), c3 = !isWater.test(p3);
 
 					if (c1 || c2 || c3)
-						arena.drawRelativeToMap(g, Images.WaterEdges.get(quadrant, c1, c2), pos);
+						arena.drawRelativeToMap(g, Images.WaterEdges.get(quadrant, c1, c2, getGasture()), pos);
 				}
 
 			} else if (terrain == Terrain.Road) {
@@ -478,14 +478,14 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 						connections.add(dirs.e1);
 
 					if (!(c1 || c2) && c3) {
-						arena.drawRelativeToMap(g, Images.WaterEdges.get(quadrant, false, false), pos);
+						arena.drawRelativeToMap(g, Images.WaterEdges.get(quadrant, false, false, getGasture()), pos);
 					} else if (c1 || c2) {
-						arena.drawRelativeToMap(g, Images.Shores.get(quadrant, c1, c2), pos);
+						arena.drawRelativeToMap(g, Images.Shores.get(quadrant, c1, c2, getGasture()), pos);
 					}
 				}
 				if (connections.isEmpty()) {
 					for (int quadrant = 0; quadrant < 4; quadrant++)
-						arena.drawRelativeToMap(g, Images.Shores.get(quadrant, true, true), pos);
+						arena.drawRelativeToMap(g, Images.Shores.get(quadrant, true, true, getGasture()), pos);
 				}
 
 			} else {
