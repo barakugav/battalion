@@ -481,7 +481,7 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 			if (selection == Selection.UnitMoveOrAttack) {
 				Unit unit = (Unit) selectedEntity;
 				if (movePath.isEmpty()) {
-					drawRelativeToMap(g, Images.MovePath.none, selectedEntity.getPos());
+					drawRelativeToMap(g, Images.MovePath.None, selectedEntity.getPos());
 				} else {
 					IntFunction<Direction> calcDir = idx -> {
 						int p1 = idx >= 0 ? movePath.get(idx) : selectedEntity.getPos();
@@ -496,7 +496,7 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 						Direction dir = calcDir.apply(idx);
 						BufferedImage img;
 						if (prevDir == dir) {
-							img = dir.isXDir() ? Images.MovePath.horizontal : Images.MovePath.vertical;
+							img = dir.isXDir() ? Images.MovePath.Horizontal : Images.MovePath.Vertical;
 						} else {
 							img = Images.MovePath.turn(prevDir.opposite(), dir);
 						}

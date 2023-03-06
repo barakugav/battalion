@@ -27,17 +27,6 @@ class Images {
 	private Images() {
 	}
 
-	static final Terrains Terrains = new Terrains();
-	static final Buildings Buildings = new Buildings();
-	static final Units Units = new Units();
-	static final WaterEdges WaterEdges = new WaterEdges();
-	static final Roads Roads = new Roads();
-	static final Bridges Bridges = new Bridges();
-	static final Shores Shores = new Shores();
-	static final MiniMap MiniMap = new MiniMap();
-	static final MovePath MovePath = new MovePath();
-	static final Ect Ect = new Ect();
-
 	static BufferedImage getImg(Object obj) {
 		if (obj instanceof IUnit unit) {
 			return Units.getDefault(unit);
@@ -51,9 +40,11 @@ class Images {
 	}
 
 	static class Terrains {
-		private final Map<Desc, BufferedImage> imgs = new HashMap<>();
-
 		private Terrains() {
+		}
+
+		private static final Map<Desc, BufferedImage> imgs = new HashMap<>();
+		static {
 			for (int type = 1; type <= 7; type++)
 				loadTerrain(Terrain.valueOf("FlatLand" + type), "img/terrain/flat_land_0" + type + ".png");
 			for (int type = 1; type <= 2; type++)
@@ -68,7 +59,7 @@ class Images {
 			loadTerrain(Terrain.ClearWater, "img/terrain/water_clear.png");
 		}
 
-		private void loadTerrain(Terrain terrain, String path) {
+		private static void loadTerrain(Terrain terrain, String path) {
 			int gestureNum = gestureNum(terrain);
 			BufferedImage img = loadImg(path);
 			int width = img.getWidth() / gestureNum;
@@ -76,15 +67,15 @@ class Images {
 				imgs.put(new Desc(terrain, gesture), Utils.imgSub(img, gesture * width, 0, width, img.getHeight()));
 		}
 
-		BufferedImage getDefault(Terrain terrain) {
+		static BufferedImage getDefault(Terrain terrain) {
 			return get(terrain, 0);
 		}
 
-		BufferedImage get(Terrain terrain, int gesture) {
+		static BufferedImage get(Terrain terrain, int gesture) {
 			return checkExists(imgs, new Desc(terrain, gesture));
 		}
 
-		int gestureNum(Terrain terrain) {
+		static int gestureNum(Terrain terrain) {
 			switch (terrain) {
 			case FlatLand1:
 			case FlatLand2:
@@ -125,9 +116,11 @@ class Images {
 	}
 
 	static class Units {
-		private final Map<Desc, BufferedImage> imgs = new HashMap<>();
-
 		private Units() {
+		}
+
+		private static final Map<Desc, BufferedImage> imgs = new HashMap<>();
+		static {
 			loadUnit(Unit.Type.Soldier, "img/unit/soldier.png");
 			loadUnit(Unit.Type.Bazooka, "img/unit/bazooka.png");
 			loadUnit(Unit.Type.Tank, "img/unit/tank.png");
@@ -148,7 +141,7 @@ class Images {
 			loadUnit(Unit.Type.AirTransporter, "img/unit/unit_ship_air.png");
 		}
 
-		private void loadUnit(Unit.Type type, String path) {
+		private static void loadUnit(Unit.Type type, String path) {
 			boolean differentGestures = hasDifferentStandMoveGesture(type);
 			int gestureNumStand = standGestureNum(type);
 			int gestureNum = gestureNumStand + moveGestureNum0(type);
@@ -198,23 +191,23 @@ class Images {
 			}
 		}
 
-		BufferedImage getDefault(IUnit unit) {
+		static BufferedImage getDefault(IUnit unit) {
 			return standImg(unit, null, 0);
 		}
 
-		BufferedImage standImg(IUnit unit, Direction orientation, int gesture) {
+		static BufferedImage standImg(IUnit unit, Direction orientation, int gesture) {
 			if (gesture >= standGestureNum(unit.getType()))
 				throw new IllegalArgumentException();
 			return checkExists(imgs, Desc.ofStand(unit, orientation, gesture));
 		}
 
-		BufferedImage moveImg(IUnit unit, Direction orientation, int gesture) {
+		static BufferedImage moveImg(IUnit unit, Direction orientation, int gesture) {
 			if (gesture >= moveGestureNum(unit.getType()))
 				throw new IllegalArgumentException();
 			return checkExists(imgs, Desc.ofMove(unit, orientation, gesture));
 		}
 
-		int standGestureNum(Unit.Type type) {
+		static int standGestureNum(Unit.Type type) {
 			switch (type) {
 			case Soldier:
 			case Bazooka:
@@ -242,7 +235,7 @@ class Images {
 			}
 		}
 
-		int moveGestureNum(Unit.Type type) {
+		static int moveGestureNum(Unit.Type type) {
 			return hasDifferentStandMoveGesture(type) ? moveGestureNum0(type) : standGestureNum(type);
 		}
 
@@ -292,9 +285,11 @@ class Images {
 	}
 
 	static class Buildings {
-		private final Map<Desc, BufferedImage> imgs = new HashMap<>();
-
 		private Buildings() {
+		}
+
+		private static final Map<Desc, BufferedImage> imgs = new HashMap<>();
+		static {
 			loadBuilding(Building.Type.Capital, "img/building/capital.png");
 			loadBuilding(Building.Type.Factory, "img/building/facotry.png");
 			loadBuilding(Building.Type.ControllerLand, "img/building/controller_land.png");
@@ -305,7 +300,7 @@ class Images {
 			loadBuilding(Building.Type.OilRig, "img/building/oil_rig.png");
 		}
 
-		private void loadBuilding(Building.Type type, String path) {
+		static private void loadBuilding(Building.Type type, String path) {
 			int gestureNum = gestureNum(type);
 			BufferedImage img = loadImg(path);
 			int width = img.getWidth() / gestureNum;
@@ -319,15 +314,15 @@ class Images {
 			}
 		}
 
-		BufferedImage getDefault(IBuilding building) {
+		static BufferedImage getDefault(IBuilding building) {
 			return get(building, 0);
 		}
 
-		BufferedImage get(IBuilding building, int gesture) {
+		static BufferedImage get(IBuilding building, int gesture) {
 			return checkExists(imgs, Desc.of(building, gesture));
 		}
 
-		int gestureNum(Building.Type type) {
+		static int gestureNum(Building.Type type) {
 			switch (type) {
 			case OilRefinery:
 			case OilRefineryBig:
@@ -359,9 +354,11 @@ class Images {
 	}
 
 	static class WaterEdges {
-		private final Map<Desc, BufferedImage> imgs = new HashMap<>();
-
 		private WaterEdges() {
+		}
+
+		private static final Map<Desc, BufferedImage> imgs = new HashMap<>();
+		static {
 			boolean[] bs = new boolean[] { false, true };
 			for (int quadrant = 0; quadrant < 4; quadrant++) {
 				for (boolean connected1 : bs) {
@@ -380,7 +377,7 @@ class Images {
 			}
 		}
 
-		BufferedImage get(int quadrant, boolean connected1, boolean connected2, int gesture) {
+		static BufferedImage get(int quadrant, boolean connected1, boolean connected2, int gesture) {
 			return checkExists(imgs, new Desc(quadrant, connected1, connected2, gesture));
 		}
 
@@ -396,9 +393,11 @@ class Images {
 	}
 
 	static class Roads {
-		private final Map<Desc, BufferedImage> imgs = new HashMap<>();
-
 		private Roads() {
+		}
+
+		private final static Map<Desc, BufferedImage> imgs = new HashMap<>();
+		static {
 			boolean[] bs = new boolean[] { false, true };
 			for (boolean xpos : bs) {
 				for (boolean yneg : bs) {
@@ -416,7 +415,7 @@ class Images {
 			}
 		}
 
-		BufferedImage get(boolean xpos, boolean yneg, boolean xneg, boolean ypos) {
+		static BufferedImage get(boolean xpos, boolean yneg, boolean xneg, boolean ypos) {
 			return checkExists(imgs, new Desc(xpos, yneg, xneg, ypos));
 		}
 
@@ -431,9 +430,11 @@ class Images {
 	}
 
 	static class Bridges {
-		private final Map<Desc, BufferedImage> imgs = new HashMap<>();
-
 		private Bridges() {
+		}
+
+		private static final Map<Desc, BufferedImage> imgs = new HashMap<>();
+		static {
 			boolean[] bs = new boolean[] { false, true };
 			for (boolean high : bs) {
 				for (Direction dir : Direction.values()) {
@@ -447,7 +448,7 @@ class Images {
 			}
 		}
 
-		BufferedImage get(Terrain bridge, Direction dir, boolean isConnectedToLand) {
+		static BufferedImage get(Terrain bridge, Direction dir, boolean isConnectedToLand) {
 			if (!EnumSet.of(Terrain.BridgeLow, Terrain.BridgeHigh).contains(bridge))
 				throw new IllegalArgumentException(Objects.toString(bridge));
 			boolean isHigh = bridge == Terrain.BridgeHigh;
@@ -466,9 +467,11 @@ class Images {
 	}
 
 	static class Shores {
-		private final Map<Desc, BufferedImage> imgs = new HashMap<>();
-
 		private Shores() {
+		}
+
+		private static final Map<Desc, BufferedImage> imgs = new HashMap<>();
+		static {
 			boolean[] bs = new boolean[] { false, true };
 			for (int quadrant = 0; quadrant < 4; quadrant++) {
 				for (boolean connected1 : bs) {
@@ -489,7 +492,7 @@ class Images {
 			}
 		}
 
-		BufferedImage get(int quadrant, boolean connected1, boolean connected2, int gesture) {
+		static BufferedImage get(int quadrant, boolean connected1, boolean connected2, int gesture) {
 			return checkExists(imgs, new Desc(quadrant, connected1, connected2, gesture));
 		}
 
@@ -505,11 +508,13 @@ class Images {
 	}
 
 	static class MiniMap {
-		private final Map<Terrain.Category, BufferedImage> terrains = new HashMap<>();
-		private final Map<Team, BufferedImage> unit = new HashMap<>();
-		private final Map<Team, BufferedImage> building = new HashMap<>();
-
 		private MiniMap() {
+		}
+
+		private static final Map<Terrain.Category, BufferedImage> terrains = new HashMap<>();
+		private static final Map<Team, BufferedImage> unit = new HashMap<>();
+		private static final Map<Team, BufferedImage> building = new HashMap<>();
+		static {
 			terrains.put(Terrain.Category.FlatLand, loadImg("img/gui/minimap_land.png"));
 			terrains.put(Terrain.Category.Forest, loadImg("img/gui/minimap_land.png"));
 			terrains.put(Terrain.Category.Hiils, loadImg("img/gui/minimap_land.png"));
@@ -526,15 +531,15 @@ class Images {
 			building.put(Team.None, toWhite(loadImg("img/gui/minimap_building.png")));
 		}
 
-		BufferedImage terrain(Terrain.Category t) {
+		static BufferedImage terrain(Terrain.Category t) {
 			return checkExists(terrains, t);
 		}
 
-		BufferedImage unit(Team team) {
+		static BufferedImage unit(Team team) {
 			return checkExists(unit, team);
 		}
 
-		BufferedImage building(Team team) {
+		static BufferedImage building(Team team) {
 			return checkExists(building, team);
 		}
 
@@ -589,19 +594,21 @@ class Images {
 	}
 
 	static class MovePath {
-		final BufferedImage none;
-		final BufferedImage vertical;
-		final BufferedImage horizontal;
-		private final BufferedImage[] source = new BufferedImage[Direction.values().length];
-		private final BufferedImage[] destination = new BufferedImage[Direction.values().length];
-		private final BufferedImage[] destinationNoStand = new BufferedImage[Direction.values().length];
-		private final BufferedImage[] turn = new BufferedImage[Direction.values().length];
-
 		private MovePath() {
-			none = loadImg("img/gui/move_path_source_none.png");
+		}
+
+		static final BufferedImage None;
+		static final BufferedImage Vertical;
+		static final BufferedImage Horizontal;
+		private static final BufferedImage[] source = new BufferedImage[Direction.values().length];
+		private static final BufferedImage[] destination = new BufferedImage[Direction.values().length];
+		private static final BufferedImage[] destinationNoStand = new BufferedImage[Direction.values().length];
+		private static final BufferedImage[] turn = new BufferedImage[Direction.values().length];
+		static {
+			None = loadImg("img/gui/move_path_source_none.png");
 			BufferedImage straight = loadImg("img/gui/move_path_straight.png");
-			vertical = Utils.imgRotate(straight, 0);
-			horizontal = Utils.imgRotate(straight, Math.PI / 2);
+			Vertical = Utils.imgRotate(straight, 0);
+			Horizontal = Utils.imgRotate(straight, Math.PI / 2);
 
 			BufferedImage sourceImg = loadImg("img/gui/move_path_source_down.png");
 			BufferedImage destImg = loadImg("img/gui/move_path_destination_down.png");
@@ -617,19 +624,19 @@ class Images {
 			}
 		}
 
-		BufferedImage source(Direction dir) {
+		static BufferedImage source(Direction dir) {
 			return source[dir.ordinal()];
 		}
 
-		BufferedImage destination(Direction dir) {
+		static BufferedImage destination(Direction dir) {
 			return destination[dir.ordinal()];
 		}
 
-		BufferedImage destinationNoStand(Direction dir) {
+		static BufferedImage destinationNoStand(Direction dir) {
 			return destinationNoStand[dir.ordinal()];
 		}
 
-		BufferedImage turn(Direction d1, Direction d2) {
+		static BufferedImage turn(Direction d1, Direction d2) {
 			final int dirs = Direction.values().length;
 			int i1 = dirs - d1.ordinal(), i2 = dirs - d2.ordinal();
 			return ((i1 + 1) % dirs == i2) ? turn[i2] : turn[i1];
@@ -638,40 +645,41 @@ class Images {
 	}
 
 	static class Ect {
+		private Ect() {
+		}
 
-		final int FlagGestureNum = 4;
-		final int AttackGestureNum = 3;
-		final int ExplosionGestureNum = 15;
+		static final int FlagGestureNum = 4;
+		static final int AttackGestureNum = 3;
+		static final int ExplosionGestureNum = 15;
 
-		private final BufferedImage[][] flag = new BufferedImage[Team.values().length][FlagGestureNum];
-		private final BufferedImage[][] flagGlow = new BufferedImage[Team.values().length][FlagGestureNum];
-		private final BufferedImage[] attack = new BufferedImage[ExplosionGestureNum];
-		private final BufferedImage[] explosion = new BufferedImage[ExplosionGestureNum];
-
-		Ect() {
+		private static final BufferedImage[][] flag = new BufferedImage[Team.values().length][FlagGestureNum];
+		private static final BufferedImage[][] flagGlow = new BufferedImage[Team.values().length][FlagGestureNum];
+		private static final BufferedImage[] attack = new BufferedImage[ExplosionGestureNum];
+		private static final BufferedImage[] explosion = new BufferedImage[ExplosionGestureNum];
+		static {
 			loadFlagImages("img/building/flag.png");
 			loadFlagGlowImages("img/building/flag_glow.png");
 			loadAttackImages("img/gui/attack_animation.png");
 			loadExplosionImages("img/gui/explosion_animation.png");
 		}
 
-		BufferedImage flag(Team team, int gesture) {
+		static BufferedImage flag(Team team, int gesture) {
 			return flag[team.ordinal()][gesture];
 		}
 
-		BufferedImage flagGlow(Team team, int gesture) {
+		static BufferedImage flagGlow(Team team, int gesture) {
 			return flagGlow[team.ordinal()][gesture];
 		}
 
-		BufferedImage attack(int gesture) {
+		static BufferedImage attack(int gesture) {
 			return attack[gesture];
 		}
 
-		BufferedImage explosion(int gesture) {
+		static BufferedImage explosion(int gesture) {
 			return explosion[gesture];
 		}
 
-		private void loadFlagImages(String path) {
+		private static void loadFlagImages(String path) {
 			int gestureNum = FlagGestureNum;
 			BufferedImage img = loadImg(path);
 			int width = img.getWidth() / gestureNum;
@@ -685,7 +693,7 @@ class Images {
 			}
 		}
 
-		private void loadFlagGlowImages(String path) {
+		private static void loadFlagGlowImages(String path) {
 			int gestureNum = FlagGestureNum;
 			BufferedImage img = loadImg(path);
 			int width = img.getWidth() / gestureNum;
@@ -699,7 +707,7 @@ class Images {
 			}
 		}
 
-		private void loadAttackImages(String path) {
+		private static void loadAttackImages(String path) {
 			int gestureNum = AttackGestureNum;
 			BufferedImage fullImg = loadImg(path);
 			int width = fullImg.getWidth() / gestureNum;
@@ -707,7 +715,7 @@ class Images {
 				attack[gesture] = Utils.imgSub(fullImg, gesture * width, 0, width, fullImg.getHeight());
 		}
 
-		private void loadExplosionImages(String path) {
+		private static void loadExplosionImages(String path) {
 			int gestureNum = ExplosionGestureNum;
 			BufferedImage fullImg = loadImg(path);
 			int width = fullImg.getWidth() / gestureNum;
