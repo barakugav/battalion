@@ -77,8 +77,8 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 
 		showTab(mainTab);
 
-		/* start animation after a second of delay */
-		Timer timer = new Timer(1000, e -> animatedArena.runAnimation());
+		/* start animation after delay of 0.1sec */
+		Timer timer = new Timer(100, e -> animatedArena.runAnimation());
 		timer.setRepeats(false);
 		timer.start();
 	}

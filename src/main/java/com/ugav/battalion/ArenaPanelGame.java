@@ -6,6 +6,8 @@ import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -37,9 +39,10 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 	Selection selection = Selection.None;
 	Entity selectedEntity;
+	private final ListInt movePath = new ListInt.Array();
 
 	static enum Selection {
-		None, UnitMoveOrAttack, UnitEctActions, UnitObservation, FactoryBuild
+		None, UnitMoveOrAttack, UnitEctActions, UnitObserve, FactoryBuild
 	}
 
 	final Event.Notifier<EntityClick> onEntityClick = new Event.Notifier<>();
@@ -54,9 +57,12 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		entityLayer().initUI();
 
 		register.register(entityLayer.onTileClick, e -> cellClicked(e.cell));
-
-		register.register(game.beforeTurnEnd, e -> clearSelection());
 		register.register(mapMove.onMapMove, e -> clearSelection());
+		register.register(game.beforeTurnEnd, Utils.swingListener(e -> clearSelection()));
+		register.register(game.onUnitRemove, Utils.swingListener(e -> {
+			if (e.unit == selectedEntity)
+				clearSelection();
+		}));
 
 		Holder<Integer> playerLastPos = new Holder<>();
 		register.register(game.beforeTurnEnd, Utils.swingListener(e -> {
@@ -73,9 +79,6 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 				runAnimationAndWait(new Animation.MapMove(this, p));
 			}
 		});
-
-		register.register(animationTask.onAnimationBegin, e -> window.suspendActions());
-		register.register(animationTask.onAnimationEnd, e -> window.resumeActions());
 	}
 
 	@Override
@@ -124,15 +127,15 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 			if (unit.isActive())
 				setSelection(Selection.UnitMoveOrAttack, unit);
 			else if (unit.getTeam() != window.game.getTurn())
-				setSelection(Selection.UnitObservation, unit);
+				setSelection(Selection.UnitObserve, unit);
 
 		} else if (building != null) {
 			onEntityClick.notify(new EntityClick(this, cell, building));
-			if (!building.isActive())
-				return;
-			setSelection(Selection.FactoryBuild, building);
-			if (building.type.canBuildUnits)
-				openFactoryMenu(building);
+			if (building.isActive()) {
+				setSelection(Selection.FactoryBuild, building);
+				if (building.type.canBuildUnits)
+					openFactoryMenu(building);
+			}
 
 		} else {
 			onEntityClick.notify(new EntityClick(this, cell, game.terrain(cell)));
@@ -147,16 +150,51 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 		} else if (!game.isUnitVisible(target, selectedUnit.getTeam())) {
 			if (selectedUnit.getReachableMap().contains(target))
-				entityLayer().unitMove(selectedUnit, target);
+				unitMove(selectedUnit, target);
 			clearSelection();
 
 		} else if (game.isAttackValid(selectedUnit, targetUnit)) {
-			entityLayer().unitAttack(selectedUnit, targetUnit);
+			unitAttack(selectedUnit, targetUnit);
 			clearSelection();
 
 		} else {
 			clearSelection();
 		}
+	}
+
+	private void unitMove(Unit unit, int destination) {
+		if (movePath.isEmpty() || movePath.last() != destination) {
+			movePath.clear();
+			movePath.addAll(unit.calcPath(destination));
+		}
+		window.gameAction(new Action.UnitMove(unit.getPos(), movePath));
+	}
+
+	private void unitAttack(Unit attacker, Unit target) {
+		switch (attacker.type.weapon.type) {
+		case CloseRange:
+			int moveTarget = movePath.isEmpty() ? attacker.getPos() : movePath.last();
+			int targetPos = target.getPos();
+
+			if (!Cell.areNeighbors(moveTarget, targetPos) || !attacker.getReachableMap().contains(moveTarget)) {
+				movePath.clear();
+				if (!Cell.areNeighbors(attacker.getPos(), targetPos))
+					movePath.addAll(attacker.calcPathForAttack(targetPos));
+			}
+			window.gameAction(new Action.UnitMoveAndAttack(attacker.getPos(), movePath, target.getPos()));
+			break;
+
+		case LongRange:
+			window.gameAction(new Action.UnitAttackLongRange(attacker.getPos(), target.getPos()));
+			break;
+
+		case None:
+			break;
+
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + attacker.type.weapon.type);
+		}
+
 	}
 
 	private void openUnitMenu(Unit unit) {
@@ -323,23 +361,38 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 		private static final long serialVersionUID = 1L;
 
-		private final ListInt movePath;
+		private final MouseMotionListener mouseMotionListener;
+
+		final Event.Notifier<HoverChangeEvent> onHoverChange = new Event.Notifier<>();
 
 		EntityLayer() {
-			movePath = new ListInt.Array();
+			addMouseMotionListener(mouseMotionListener = new MouseAdapter() {
+
+				int hovered = Cell.of(-1, -1);
+
+				@Override
+				public void mouseMoved(MouseEvent e) {
+					int x = displayedXInv(e.getX()) / TILE_SIZE_PIXEL;
+					int y = displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
+					if (Cell.x(hovered) != x || Cell.y(hovered) != y) {
+						hovered = Cell.of(x, y);
+						onHoverChange.notify(new HoverChangeEvent(ArenaPanelGame.this, hovered));
+					}
+				}
+			});
 		}
 
 		@Override
 		void initUI() {
 			super.initUI();
-
-			register.register(game.onUnitRemove, Utils.swingListener(e -> {
-				if (e.unit == selectedEntity)
-					clearSelection();
-			}));
 			register.register(onSelectionChange, e -> movePath.clear());
-			register.register(game.onTurnEnd, Utils.swingListener(e -> clearSelection()));
 			register.register(onHoverChange, e -> hoveredUpdated(e.cell));
+		}
+
+		@Override
+		public void clear() {
+			removeMouseMotionListener(mouseMotionListener);
+			super.clear();
 		}
 
 		void hoveredUpdated(int hovered) {
@@ -357,19 +410,16 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 		private void updateAttackMovePath(Unit attacker, int targetPos) {
 			switch (attacker.type.weapon.type) {
-			case LongRange:
-				movePath.clear();
-				break;
-
 			case CloseRange:
 				int last = movePath.isEmpty() ? attacker.getPos() : movePath.last();
 				if (Cell.areNeighbors(targetPos, last)
 						&& (!game.isUnitVisible(last, game.getTurn()) || game.unit(last) == attacker))
 					break;
 				movePath.clear();
-				movePath.addAll(Objects.requireNonNull(attacker.calcPathForAttack(targetPos)));
+				movePath.addAll(attacker.calcPathForAttack(targetPos));
 				break;
 
+			case LongRange:
 			case None:
 				movePath.clear();
 				break;
@@ -385,23 +435,15 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 			if (movePath.contains(targetPos)) {
 				/* Already contained in path, remove all unnecessary steps */
-				while (!movePath.isEmpty()) {
-					if (movePath.last() == targetPos)
-						break;
-					movePath.removeIndex(movePath.size() - 1);
-				}
+				while (!movePath.isEmpty() && movePath.last() != targetPos)
+					movePath.removeLast();
 
 			} else if (movePath.size() < unit.type.moveLimit && Cell.areNeighbors(last, targetPos)) {
-				if (targetPos == unit.getPos())
-					movePath.clear();
-				else {
-
+				if (targetPos != unit.getPos()) {
 					/* Append to the end of the move path */
-					int index = movePath.indexOf(targetPos);
-					if (index == -1)
-						movePath.add(targetPos);
-					else
-						movePath.subList(index, movePath.size()).clear();
+					movePath.add(targetPos);
+				} else {
+					movePath.clear();
 				}
 
 			} else {
@@ -418,7 +460,7 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 			if (selection != Selection.None)
 				drawRelativeToMap(g, Images.Label.Selection, selectedEntity.getPos());
 
-			if (EnumSet.of(Selection.UnitMoveOrAttack, Selection.UnitObservation).contains(selection)) {
+			if (EnumSet.of(Selection.UnitMoveOrAttack, Selection.UnitObserve).contains(selection)) {
 				Unit unit = (Unit) selectedEntity;
 				Cell.Bitmap passableMap = unit.getPassableMap();
 				Cell.Bitmap attackableMap = unit.getAttackableMap();
@@ -480,44 +522,6 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 					drawRelativeToMap(g, destLabel + destDir, dest);
 				}
 			}
-		}
-
-		private void unitMove(Unit unit, int destination) {
-			if (destination != movePath.get(movePath.size() - 1)) {
-				movePath.clear();
-				movePath.addAll(unit.calcPath(destination));
-			}
-			ListInt path = new ListInt.Array(movePath);
-			window.gameAction(new Action.UnitMove(unit.getPos(), path));
-		}
-
-		private void unitAttack(Unit attacker, Unit target) {
-			switch (attacker.type.weapon.type) {
-			case CloseRange:
-				int moveTarget = movePath.isEmpty() ? attacker.getPos() : movePath.last();
-				int targetPos = target.getPos();
-
-				if (!Cell.areNeighbors(moveTarget, targetPos) || !attacker.getReachableMap().contains(moveTarget)) {
-					movePath.clear();
-					if (!Cell.areNeighbors(attacker.getPos(), targetPos)) {
-						movePath.addAll(Objects.requireNonNull(attacker.calcPathForAttack(targetPos)));
-					}
-				}
-				ListInt path = new ListInt.Array(movePath);
-				window.gameAction(new Action.UnitMoveAndAttack(attacker.getPos(), path, target.getPos()));
-				break;
-
-			case LongRange:
-				window.gameAction(new Action.UnitAttackLongRange(attacker.getPos(), target.getPos()));
-				break;
-
-			case None:
-				break;
-
-			default:
-				throw new IllegalArgumentException("Unexpected value: " + attacker.type.weapon.type);
-			}
-
 		}
 	}
 

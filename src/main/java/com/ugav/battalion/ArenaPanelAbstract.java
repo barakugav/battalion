@@ -13,7 +13,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -197,11 +196,11 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	}
 
 	int displayedXInv(int x) {
-		return (int) (x + mapMove.getCurrent().x * TILE_SIZE_PIXEL);
+		return x + (int) (mapMove.getCurrent().x * TILE_SIZE_PIXEL);
 	}
 
 	int displayedYInv(int y) {
-		return (int) (y + mapMove.getCurrent().y * TILE_SIZE_PIXEL);
+		return y + (int) (mapMove.getCurrent().y * TILE_SIZE_PIXEL);
 	}
 
 	Position getCurrentMapOrigin() {
@@ -221,13 +220,9 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		private final ArenaPanelAbstract<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> arena;
 		final Map<Object, ArenaComp> comps = Collections.synchronizedMap(new IdentityHashMap<>());
 
-		private int hovered = Cell.of(-1, -1);
-
-		final Event.Notifier<HoverChangeEvent> onHoverChange = new Event.Notifier<>();
 		final Event.Notifier<TileClickEvent> onTileClick = new Event.Notifier<>();
 
 		private final MouseListener mouseListener;
-		private final MouseMotionListener mouseMotionListener;
 
 		private static final long serialVersionUID = 1L;
 
@@ -245,19 +240,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 						onTileClick.notify(new TileClickEvent(EntityLayer.this.arena, click));
 				}
 			});
-			addMouseMotionListener(mouseMotionListener = new MouseAdapter() {
-				@Override
-				public void mouseMoved(MouseEvent e) {
-					int x = EntityLayer.this.arena.displayedXInv(e.getX()) / TILE_SIZE_PIXEL;
-					int y = EntityLayer.this.arena.displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
-					if (Cell.x(hovered) != x || Cell.y(hovered) != y) {
-						hovered = Cell.of(x, y);
-						onHoverChange.notify(new HoverChangeEvent(EntityLayer.this.arena, hovered));
-					}
-				}
-			});
-			setFocusable(true);
-			requestFocusInWindow();
 		}
 
 		@Override
@@ -300,8 +282,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				comp.paintComponent(g);
 
 			if (arena.globals.debug.showGrid) {
-				final int fontSize = 9;
 				Font font = g.getFont();
+				final int fontSize = 9;
 				font = new Font(font.getName(), font.getStyle(), fontSize);
 				g.setFont(font);
 				g.setColor(Color.YELLOW);
@@ -340,8 +322,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		@Override
 		public void clear() {
 			removeMouseListener(mouseListener);
-			removeMouseMotionListener(mouseMotionListener);
-
 			removeAllArenaComps();
 		}
 

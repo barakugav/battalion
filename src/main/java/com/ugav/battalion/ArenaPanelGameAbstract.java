@@ -59,7 +59,6 @@ class ArenaPanelGameAbstract extends
 	@Override
 	public void clear() {
 		register.unregisterAll();
-
 		super.clear();
 	}
 
@@ -156,7 +155,7 @@ class ArenaPanelGameAbstract extends
 
 		void initUI() {
 			register.register(game.onUnitAdd, e -> {
-				Utils.swingRun(() -> addUnitComp(e.unit));
+				Utils.swingRun(() -> new UnitComp(e.unit));
 				animateUnitAdd(e.unit);
 			});
 			register.register(game.onUnitDeath, e -> {
@@ -189,6 +188,7 @@ class ArenaPanelGameAbstract extends
 		@Override
 		public void clear() {
 			register.unregisterAll();
+			gestureTask.clear();
 			super.clear();
 		}
 
@@ -202,19 +202,13 @@ class ArenaPanelGameAbstract extends
 
 				Unit unit = game.unit(cell);
 				if (unit != null)
-					addUnitComp(unit);
+					comps.put(unit, new UnitComp(unit));
 
 				Building building = game.building(cell);
 				if (building != null)
 					comps.put(building, new BuildingComp(cell, building));
 
 			}
-		}
-
-		private UnitComp addUnitComp(Unit unit) {
-			UnitComp comp = new UnitComp(unit);
-			comps.put(unit, comp);
-			return comp;
 		}
 
 		class BuildingComp extends ArenaPanelAbstract.BuildingComp {

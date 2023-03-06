@@ -42,6 +42,10 @@ public interface ListInt {
 
 	public void removeIndex(int index);
 
+	default void removeLast() {
+		removeIndex(size() - 1);
+	}
+
 	default int indexOf(int x) {
 		int idx = 0;
 		for (Iter.Int it = iterator(); it.hasNext(); idx++)
