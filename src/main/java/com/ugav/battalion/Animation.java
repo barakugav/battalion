@@ -216,7 +216,7 @@ interface Animation {
 		private static final int Duration = 30;
 
 		UnitAppear(UnitComp comp) {
-			this.comp = comp;
+			this.comp = Objects.requireNonNull(comp);
 		}
 
 		@Override

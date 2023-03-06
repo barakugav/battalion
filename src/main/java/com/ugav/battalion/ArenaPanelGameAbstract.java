@@ -155,7 +155,7 @@ class ArenaPanelGameAbstract extends
 
 		void initUI() {
 			register.register(game.onUnitAdd, e -> {
-				Utils.swingRun(() -> new UnitComp(e.unit));
+				Utils.swingRun(() -> comps.put(e.unit, new UnitComp(e.unit)));
 				animateUnitAdd(e.unit);
 			});
 			register.register(game.onUnitDeath, e -> {
