@@ -638,7 +638,7 @@ class Images {
 
 		static BufferedImage turn(Direction d1, Direction d2) {
 			final int dirs = Direction.values().length;
-			int i1 = dirs - d1.ordinal(), i2 = dirs - d2.ordinal();
+			int i1 = dirs - 1 - d1.ordinal(), i2 = dirs - 1 - d2.ordinal();
 			return ((i1 + 1) % dirs == i2) ? turn[i2] : turn[i1];
 		}
 
