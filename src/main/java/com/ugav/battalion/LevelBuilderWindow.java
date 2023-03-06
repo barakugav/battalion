@@ -229,7 +229,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			}
 
 			void setIcons(Object iconTag) {
-				BufferedImage img = Images.getImg(iconTag);
+				BufferedImage img = iconTag instanceof BufferedImage im ? im : Images.getImg(iconTag);
 				Graphics g;
 
 				/* Regular icon */
