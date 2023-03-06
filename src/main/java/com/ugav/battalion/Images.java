@@ -47,37 +47,88 @@ class Images {
 
 	private static BufferedImage getImg0(Object obj) {
 		if (obj instanceof IUnit unit) {
-			return Units.standImg(unit, null, 0);
+			return Units.getDefault(unit);
 		} else if (obj instanceof IBuilding building) {
-			return Buildings.get(building, 0);
+			return Buildings.getDefault(building);
 		} else if (obj instanceof Terrain terrain) {
-			return Terrains.get(terrain);
+			return Terrains.getDefault(terrain);
 		} else {
 			throw new IllegalArgumentException(Objects.toString(obj));
 		}
 	}
 
 	static class Terrains {
-		private final Map<Terrain, BufferedImage> terrains = new HashMap<>();
+		private final Map<Desc, BufferedImage> imgs = new HashMap<>();
 
 		private Terrains() {
 			for (int type = 1; type <= 7; type++)
-				terrains.put(Terrain.valueOf("FlatLand" + type), loadImg("img/terrain/flat_land_0" + type + ".png"));
+				loadTerrain(Terrain.valueOf("FlatLand" + type), "img/terrain/flat_land_0" + type + ".png");
 			for (int type = 1; type <= 2; type++)
-				terrains.put(Terrain.valueOf("Forest" + type), loadImg("img/terrain/forest_0" + type + ".png"));
+				loadTerrain(Terrain.valueOf("Forest" + type), "img/terrain/forest_0" + type + ".png");
 			for (int type = 1; type <= 4; type++)
-				terrains.put(Terrain.valueOf("Hills" + type), loadImg("img/terrain/hills_0" + type + ".png"));
+				loadTerrain(Terrain.valueOf("Hills" + type), "img/terrain/hills_0" + type + ".png");
 			for (int type = 1; type <= 4; type++)
-				terrains.put(Terrain.valueOf("Mountain" + type), loadImg("img/terrain/mountain_0" + type + ".png"));
-			terrains.put(Terrain.Road, loadImg("img/terrain/road_vxvx.png"));
-			terrains.put(Terrain.BridgeLow, loadImg("img/terrain/bridge_low.png"));
-			terrains.put(Terrain.BridgeHigh, loadImg("img/terrain/bridge_high.png"));
-			terrains.put(Terrain.Shore, loadImg("img/terrain/shore.png"));
-			terrains.put(Terrain.ClearWater, loadImg("img/terrain/water_clear.png"));
+				loadTerrain(Terrain.valueOf("Mountain" + type), "img/terrain/mountain_0" + type + ".png");
+			loadTerrain(Terrain.Road, "img/terrain/road_vxvx.png");
+			loadTerrain(Terrain.BridgeLow, "img/terrain/bridge_low.png");
+			loadTerrain(Terrain.BridgeHigh, "img/terrain/bridge_high.png");
+			loadTerrain(Terrain.Shore, "img/terrain/shore.png");
+			loadTerrain(Terrain.ClearWater, "img/terrain/water_clear.png");
 		}
 
-		BufferedImage get(Terrain t) {
-			return terrains.get(t);
+		private void loadTerrain(Terrain terrain, String path) {
+			int gestureNum = gestureNum(terrain);
+			BufferedImage img = loadImg(path);
+			int width = img.getWidth() / gestureNum;
+			for (int gesture = 0; gesture < gestureNum; gesture++)
+				imgs.put(new Desc(terrain, gesture), Utils.imgSub(img, gesture * width, 0, width, img.getHeight()));
+		}
+
+		BufferedImage getDefault(Terrain terrain) {
+			return get(terrain, 0);
+		}
+
+		BufferedImage get(Terrain terrain, int gesture) {
+			return imgs.get(new Desc(terrain, gesture));
+		}
+
+		int gestureNum(Terrain terrain) {
+			switch (terrain) {
+			case FlatLand1:
+			case FlatLand2:
+			case FlatLand3:
+			case FlatLand4:
+			case FlatLand5:
+			case FlatLand6:
+			case FlatLand7:
+			case Forest1:
+			case Forest2:
+			case Hills1:
+			case Hills2:
+			case Hills3:
+			case Hills4:
+			case Mountain1:
+			case Mountain2:
+			case Mountain3:
+			case Mountain4:
+			case Road:
+			case BridgeLow:
+			case BridgeHigh:
+			case Shore:
+				return 1;
+			case ClearWater:
+				return 4;
+			default:
+				throw new IllegalArgumentException("Unexpected value: " + terrain);
+			}
+		}
+
+		private static class Desc extends ImgDesc {
+
+			private Desc(Terrain terrain, int gesture) {
+				super(terrain, Integer.valueOf(gesture));
+			}
+
 		}
 	}
 
@@ -274,7 +325,6 @@ class Images {
 				imgs.put(new Desc(type, Team.Blue, gesture), blueImg);
 				imgs.put(new Desc(type, Team.None, gesture), whiteImg);
 			}
-
 		}
 
 		BufferedImage getDefault(IBuilding building) {

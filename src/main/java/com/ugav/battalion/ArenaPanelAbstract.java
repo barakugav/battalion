@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
@@ -401,29 +400,15 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		@Override
 		public void paintComponent(Graphics g) {
-			IntFunction<Pair<Direction, Direction>> quadrantToDirs = quadrant -> {
-				switch (quadrant) {
-				case 0:
-					return Pair.of(Direction.XPos, Direction.YNeg);
-				case 1:
-					return Pair.of(Direction.YNeg, Direction.XNeg);
-				case 2:
-					return Pair.of(Direction.XNeg, Direction.YPos);
-				case 3:
-					return Pair.of(Direction.YPos, Direction.XPos);
-				default:
-					throw new IllegalArgumentException("Unexpected value: " + quadrant);
-				}
-			};
 			IntPredicate isBridgeHorizontal = bridgePos -> Objects.requireNonNull(
 					Terrain.isBridgeVertical(bridgePos, p -> arena.getTerrain(p), arena.arenaWidth, arena.arenaHeight),
 					"Can't determine bridge orientation").booleanValue();
 
 			Terrain terrain = arena.getTerrain(pos);
 			if (terrain == Terrain.ClearWater) {
-				arena.drawRelativeToMap(g, terrain, pos);
+				arena.drawRelativeToMap(g, Images.Terrains.get(terrain, getGasture()), pos);
 				for (int quadrant = 0; quadrant < 4; quadrant++) {
-					Pair<Direction, Direction> dirs = quadrantToDirs.apply(quadrant);
+					Pair<Direction, Direction> dirs = quadrantToDirs(quadrant);
 					int p1 = Cell.add(pos, dirs.e1), p2 = Cell.add(pos, dirs.e2),
 							p3 = Cell.add(Cell.add(pos, dirs.e1), dirs.e2);
 					Set<Terrain.Category> waters = EnumSet.of(Terrain.Category.Water, Terrain.Category.BridgeLow,
@@ -468,11 +453,11 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				}
 
 			} else if (terrain == Terrain.Shore) {
-				arena.drawRelativeToMap(g, Terrain.ClearWater, pos);
+				arena.drawRelativeToMap(g, Images.Terrains.get(Terrain.ClearWater, getGasture()), pos);
 				Set<Direction> connections = EnumSet.noneOf(Direction.class);
 
 				for (int quadrant = 0; quadrant < 4; quadrant++) {
-					Pair<Direction, Direction> dirs = quadrantToDirs.apply(quadrant);
+					Pair<Direction, Direction> dirs = quadrantToDirs(quadrant);
 					int p1 = Cell.add(pos, dirs.e1), p2 = Cell.add(pos, dirs.e2),
 							p3 = Cell.add(Cell.add(pos, dirs.e1), dirs.e2);
 					IntPredicate isWater = p -> (!arena.isInArena(p)
@@ -504,13 +489,23 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 				}
 
 			} else {
-				arena.drawRelativeToMap(g, terrain, pos);
+				arena.drawRelativeToMap(g, Images.Terrains.get(terrain, getGasture()), pos);
 			}
-
 		}
 
-		void drawImage(Graphics g, Object obj) {
-			arena.drawRelativeToMap(g, obj, pos);
+		private static Pair<Direction, Direction> quadrantToDirs(int quadrant) {
+			switch (quadrant) {
+			case 0:
+				return Pair.of(Direction.XPos, Direction.YNeg);
+			case 1:
+				return Pair.of(Direction.YNeg, Direction.XNeg);
+			case 2:
+				return Pair.of(Direction.XNeg, Direction.YPos);
+			case 3:
+				return Pair.of(Direction.YPos, Direction.XPos);
+			default:
+				throw new IllegalArgumentException("Unexpected value: " + quadrant);
+			}
 		}
 
 		@Override
@@ -525,6 +520,10 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		@Override
 		public Position pos() {
 			return Position.fromCell(pos);
+		}
+
+		int getGasture() {
+			return 0;
 		}
 
 	}

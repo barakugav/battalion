@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.function.IntConsumer;
 
 import com.ugav.battalion.core.Building;
+import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.util.Utils;
 
@@ -22,6 +23,8 @@ class GestureTask implements TickTask {
 		}
 		for (Building.Type type : Building.Type.values())
 			addGestureNum.accept(Images.Buildings.gestureNum(type));
+		for (Terrain terrain : Terrain.values())
+			addGestureNum.accept(Images.Terrains.gestureNum(terrain));
 		addGestureNum.accept(Images.Ect.FlagGestureNum);
 		addGestureNum.accept(Images.Ect.AttackGestureNum);
 		addGestureNum.accept(Images.Ect.ExplosionGestureNum);

@@ -186,7 +186,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		private JPanel createEntitiesTabsButtons() {
 			JPanel panel = new JPanel(new GridLayout(1, 0));
 
-			BufferedImage terrainIcon = Images.Terrains.get(Terrain.Mountain1);
+			BufferedImage terrainIcon = Images.Terrains.getDefault(Terrain.Mountain1);
 			panel.add(createEntityTabButton(terrainIcon, e -> selectEntitiesTab(terrainTab)));
 
 			for (Team team : Team.values()) {

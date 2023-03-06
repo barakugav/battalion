@@ -166,7 +166,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 		private void showTerrain(Terrain terrain) {
 			title.setText(terrain.category.toString());
 			text.setText("description about " + terrain.category.toString());
-			image.setIcon(new ImageIcon(Images.Terrains.get(terrain)));
+			image.setIcon(new ImageIcon(Images.Terrains.getDefault(terrain)));
 		}
 
 	}

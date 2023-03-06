@@ -18,7 +18,7 @@ import com.ugav.battalion.util.ListInt;
 import com.ugav.battalion.util.Utils;
 
 class ArenaPanelGameAbstract extends
-		ArenaPanelAbstract<ArenaPanelAbstract.TerrainComp, ArenaPanelGameAbstract.EntityLayer.BuildingComp, ArenaPanelGameAbstract.EntityLayer.UnitComp>
+		ArenaPanelAbstract<ArenaPanelGameAbstract.EntityLayer.TerrainComp, ArenaPanelGameAbstract.EntityLayer.BuildingComp, ArenaPanelGameAbstract.EntityLayer.UnitComp>
 		implements Clearable {
 
 	final Game game;
@@ -141,7 +141,7 @@ class ArenaPanelGameAbstract extends
 	}
 
 	class EntityLayer extends
-			ArenaPanelAbstract.EntityLayer<ArenaPanelAbstract.TerrainComp, EntityLayer.BuildingComp, EntityLayer.UnitComp> {
+			ArenaPanelAbstract.EntityLayer<EntityLayer.TerrainComp, EntityLayer.BuildingComp, EntityLayer.UnitComp> {
 
 		private static final long serialVersionUID = 1L;
 
@@ -197,7 +197,7 @@ class ArenaPanelGameAbstract extends
 
 			for (Iter.Int it = game.cells(); it.hasNext();) {
 				int cell = it.next();
-				TerrainComp terrainComp = new TerrainComp(ArenaPanelGameAbstract.this, cell);
+				TerrainComp terrainComp = new TerrainComp(cell);
 				comps.put("Terrain " + cell, terrainComp); // TODO bug, comps is identity map
 
 				Unit unit = game.unit(cell);
@@ -208,6 +208,18 @@ class ArenaPanelGameAbstract extends
 				if (building != null)
 					comps.put(building, new BuildingComp(cell, building));
 
+			}
+		}
+
+		class TerrainComp extends ArenaPanelAbstract.TerrainComp {
+
+			TerrainComp(int pos) {
+				super(ArenaPanelGameAbstract.this, pos);
+			}
+
+			@Override
+			int getGasture() {
+				return gestureTask.getGesture() % Images.Terrains.gestureNum(getTerrain(pos));
 			}
 		}
 
