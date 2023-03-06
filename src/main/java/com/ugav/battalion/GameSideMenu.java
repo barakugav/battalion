@@ -276,8 +276,8 @@ class GameSideMenu extends Menus.ColumnWithMargins implements GameMenu {
 			Position currentMapPos = window.arenaPanel.getCurrentMapOrigin();
 			int x = (int) (currentMapPos.x * TileSize);
 			int y = (int) (currentMapPos.y * TileSize);
-			int width = (int) (TileSize * window.arenaPanel.displayedArenaWidth() - 1);
-			int height = (int) (TileSize * window.arenaPanel.displayedArenaHeight() - 1);
+			int width = (int) Math.ceil(TileSize * window.arenaPanel.displayedArenaWidth()) - 1;
+			int height = (int) Math.ceil(TileSize * window.arenaPanel.displayedArenaHeight()) - 1;
 			g.setColor(CurrentMapColor);
 			g.drawRect(x, y, width, height);
 		}

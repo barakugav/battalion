@@ -117,7 +117,7 @@ class ArenaPanelGameAbstract extends
 		}
 		int topLeft = Cell.of(xmin, ymin);
 		int bottomRight = Cell.of(xmax, ymax);
-		MapPosRange displayedRange = mapMove.getDisplayedRange();
+		MapPosRange displayedRange = mapMove.getDisplayedRangeFully();
 		boolean topLeftVisible = displayedRange.contains(Position.fromCell(topLeft));
 		boolean bottomRightVisible = displayedRange.contains(Position.fromCell(bottomRight));
 		if (topLeftVisible && bottomRightVisible)

@@ -404,8 +404,9 @@ interface Animation {
 			private final ArenaPanelAbstract<?, ?, ?> arena;
 			private final AtomicBoolean isMapMoving = new AtomicBoolean();
 
-			private boolean userChosenPosValid;
-			private int userChosenPos;
+			private double userChosenDx;
+			private double userChosenDy;
+			private boolean userChosenDirValid;
 			private Position currentPos;
 
 			final Event.Notifier<Event> onMapMove = new Event.Notifier<>();
@@ -451,14 +452,14 @@ interface Animation {
 					xmin = xmax = (arena.arenaWidth() - shownWidth) / 2;
 				} else {
 					xmin = 0;
-					xmax = Math.ceil(arena.arenaWidth() - shownWidth);
+					xmax = arena.arenaWidth() - shownWidth;
 				}
 				double shownHeight = arena.displayedArenaHeight();
 				if (shownHeight >= arena.arenaHeight()) {
 					ymin = ymax = (arena.arenaHeight() - shownHeight) / 2;
 				} else {
 					ymin = 0;
-					ymax = Math.ceil(arena.arenaHeight() - shownHeight);
+					ymax = arena.arenaHeight() - shownHeight;
 				}
 
 				return new MapPosRange(xmin, xmax, ymin, ymax);
@@ -470,29 +471,32 @@ interface Animation {
 
 			MapPosRange getDisplayedRange() {
 				double x = currentPos.x, y = currentPos.y;
-				return new MapPosRange(x, x + arena.displayedArenaWidth() - 1, y, y + arena.displayedArenaHeight() - 1);
+				return new MapPosRange(x, x + arena.displayedArenaWidth(), y, y + arena.displayedArenaHeight());
 			}
 
-			synchronized void userMapMove(Direction dir) {
+			MapPosRange getDisplayedRangeFully() {
+				MapPosRange d = getDisplayedRange();
+				return new MapPosRange(d.xmin, d.xmax - 1, d.ymin, d.ymax - 1);
+			}
+
+			synchronized void userMapMove(double dx, double dy) {
 				if (isMapMoving.get())
 					return; /* User input is ignored during animation */
-
-				Position userChoosenPosNew = (!userChosenPosValid ? currentPos : Position.fromCell(userChosenPos))
-						.add(dir);
-				userChoosenPosNew = getMapPosRange().closestContainedPoint(userChoosenPosNew);
-				if (userChoosenPosNew.dist(currentPos) >= 3)
-					return;
-
-				userChosenPos = Cell.of((int) userChoosenPosNew.x, (int) userChoosenPosNew.y);
-				userChosenPosValid = true;
+				userChosenDx = dx;
+				userChosenDy = dy;
+				userChosenDirValid = true;
 				onMapMove.notify(new Event(this));
+			}
+
+			synchronized void userMapMoveCancel() {
+				userChosenDirValid = false;
 			}
 
 			private void mapMoveStart() {
 				synchronized (this) {
 					if (!isMapMoving.compareAndSet(false, true))
 						throw new IllegalStateException();
-					userChosenPosValid = false;
+					userChosenDirValid = false;
 				}
 				onMapMove.notify(new Event(this));
 			}
@@ -512,22 +516,11 @@ interface Animation {
 
 			@Override
 			public synchronized void run() {
-				if (!userChosenPosValid)
+				if (!userChosenDirValid)
 					return;
-				double dx = Cell.x(userChosenPos) - currentPos.x;
-				double dy = Cell.y(userChosenPos) - currentPos.y;
-				if (dx == 0 && dy == 0)
-					return;
-				Position position = Position.fromCell(userChosenPos);
-				double l = Math.sqrt(dx * dx + dy * dy);
-				double stepSize = StepSize * Math.sqrt(l);
-				if (currentPos.dist(position) > stepSize) {
-					double x = currentPos.x + dx / l * stepSize;
-					double y = currentPos.y + dy / l * stepSize;
-					arena.mapMove.setPos(Position.of(x, y));
-				} else {
-					arena.mapMove.setPos(position);
-				}
+				double x = currentPos.x + userChosenDx * StepSize;
+				double y = currentPos.y + userChosenDy * StepSize;
+				arena.mapMove.setPos(Position.of(x, y));
 			}
 
 			@Override

@@ -57,7 +57,6 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		entityLayer().initUI();
 
 		register.register(entityLayer.onTileClick, e -> cellClicked(e.cell));
-		register.register(mapMove.onMapMove, e -> clearSelection());
 		register.register(game.beforeTurnEnd, Utils.swingListener(e -> clearSelection()));
 		register.register(game.onUnitRemove, Utils.swingListener(e -> {
 			if (e.unit == selectedEntity)
@@ -374,8 +373,9 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 				public void mouseMoved(MouseEvent e) {
 					int x = displayedXInv(e.getX()) / TILE_SIZE_PIXEL;
 					int y = displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
-					if (Cell.x(hovered) != x || Cell.y(hovered) != y) {
-						hovered = Cell.of(x, y);
+					int newHovered = Cell.of(x, y);
+					if (isInArena(newHovered) && hovered != newHovered) {
+						hovered = newHovered;
 						onHoverChange.notify(new HoverChangeEvent(ArenaPanelGame.this, hovered));
 					}
 				}

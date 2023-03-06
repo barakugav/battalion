@@ -18,7 +18,7 @@ class ArenaPanelAnimated extends ArenaPanelGameAbstract {
 		this.actions = Objects.requireNonNull(actions);
 
 		entityLayer().initUI();
-		setMapMoveByKeyEnable(false);
+		setMapMoveByUserEnable(false);
 
 		initGame();
 	}

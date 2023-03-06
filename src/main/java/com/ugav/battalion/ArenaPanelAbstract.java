@@ -7,9 +7,6 @@ import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -30,6 +27,7 @@ import java.util.function.Predicate;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 
+import com.ugav.battalion.Animation.MapMove.Manager.MapPosRange;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
 import com.ugav.battalion.core.IBuilding;
@@ -49,11 +47,10 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	final EntityLayer<TerrainCompImpl, BuildingCompImpl, UnitCompImpl> entityLayer;
 
 	final Animation.MapMove.Manager mapMove = new Animation.MapMove.Manager(this);
+	private boolean isMapMoveByUserEnable = true;
+	private final MouseAdapter mapMoveMouseListener;
+
 	final TickTask.Manager tickTaskManager = new TickTask.Manager();
-
-	private boolean isMapMoveByKeyEnable = true;
-	private final KeyListener keyListener;
-
 	final Animation.Task animationTask = new Animation.Task();
 	private final AtomicInteger animationsActive = new AtomicInteger();
 
@@ -80,35 +77,50 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		});
 		onResize();
 
-		entityLayer.addKeyListener(keyListener = new KeyAdapter() {
+		mapMoveMouseListener = new MouseAdapter() {
 			@Override
-			public void keyPressed(KeyEvent e) {
-				if (!isMapMoveByKeyEnable)
+			public void mouseMoved(MouseEvent e) {
+				if (!isMapMoveByUserEnable)
 					return;
-				Direction dir = keyToDir(e.getKeyCode());
-				if (dir != null)
-					mapMove.userMapMove(dir);
-			}
+				double x = displayedXInv(e.getX()) / (double) TILE_SIZE_PIXEL;
+				double y = displayedYInv(e.getY()) / (double) TILE_SIZE_PIXEL;
+				MapPosRange displayedRange = mapMove.getDisplayedRange();
+				double width = displayedRange.xmax - displayedRange.xmin;
+				double height = displayedRange.ymax - displayedRange.ymin;
 
-			private static Direction keyToDir(int keyCode) {
-				switch (keyCode) {
-				case KeyEvent.VK_LEFT:
-				case KeyEvent.VK_A:
-					return Direction.XNeg;
-				case KeyEvent.VK_RIGHT:
-				case KeyEvent.VK_D:
-					return Direction.XPos;
-				case KeyEvent.VK_UP:
-				case KeyEvent.VK_W:
-					return Direction.YNeg;
-				case KeyEvent.VK_DOWN:
-				case KeyEvent.VK_S:
-					return Direction.YPos;
-				default:
-					return null;
+				final double nearThreshold = 0.15;
+				double nearXmin = Math.abs(x - displayedRange.xmin);
+				double nearXmax = Math.abs(x - displayedRange.xmax);
+				double nearX = Math.min(nearXmin, nearXmax) / (width * nearThreshold);
+				boolean isNearX = nearX <= 1;
+				double nearYmin = Math.abs(y - displayedRange.ymin);
+				double nearYmax = Math.abs(y - displayedRange.ymax);
+				double nearY = Math.min(nearYmin, nearYmax) / (height * nearThreshold);
+				boolean isNearY = nearY <= 1;
+
+				if (isNearX || isNearY) {
+					final double MaxSpeed = 2;
+					double speed = (1 - Math.min(nearX, nearY)) * MaxSpeed;
+
+					double nx = x - width / 2, ny = y - height / 2;
+					Position c = mapMove.getCurrent();
+					double dx = (nx - c.x), dy = (ny - c.y);
+					double l = (dx != 0 || dy != 0) ? Math.sqrt(dx * dx + dy * dy) : 1;
+					dx /= l;
+					dy /= l;
+					mapMove.userMapMove(dx * speed, dy * speed);
+				} else {
+					mapMove.userMapMoveCancel();
 				}
 			}
-		});
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				mapMove.userMapMoveCancel();
+			}
+		};
+		entityLayer.addMouseListener(mapMoveMouseListener);
+		entityLayer.addMouseMotionListener(mapMoveMouseListener);
 
 		tickTaskManager.addTask(1000, new TickTask() {
 
@@ -175,8 +187,8 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		return Cell.isInRect(p, arenaWidth - 1, arenaHeight - 1);
 	}
 
-	void setMapMoveByKeyEnable(boolean enable) {
-		isMapMoveByKeyEnable = enable;
+	void setMapMoveByUserEnable(boolean enable) {
+		isMapMoveByUserEnable = enable;
 	}
 
 	int displayedX(double x) {
@@ -210,7 +222,10 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	@Override
 	public void clear() {
 		tickTaskManager.stop();
-		entityLayer.removeKeyListener(keyListener);
+		mapMove.clear();
+		animationTask.clear();
+		removeMouseMotionListener(mapMoveMouseListener);
+		removeMouseListener(mapMoveMouseListener);
 		entityLayer.clear();
 	}
 
