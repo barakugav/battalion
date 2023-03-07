@@ -10,6 +10,9 @@ class Debug {
 	boolean showGrid;
 	boolean showUnitID;
 	boolean playAllTeams;
+	boolean logGameActions;
+	boolean logComputerStats;
+	boolean logAnimations;
 
 	private int unitIDCounter;
 	private final Map<IUnit, Integer> unitsIDs = new IdentityWeakHashMap<>();

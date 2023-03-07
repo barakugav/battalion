@@ -18,6 +18,7 @@ import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
 import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.ListInt;
+import com.ugav.battalion.util.Logger;
 
 @FunctionalInterface
 interface Animation {
@@ -563,13 +564,14 @@ interface Animation {
 	static class Task implements TickTask {
 
 		private final Collection<AnimationEntry> queue = new ConcurrentLinkedQueue<>();
-
 		private boolean isAnimationRunning = false;
 
 		final Event.Notifier<Event> onAnimationBegin = new Event.Notifier<>();
 		final Event.Notifier<Event> onAnimationEnd = new Event.Notifier<>();
+		private final Logger logger;
 
-		Task() {
+		Task(Logger logger) {
+			this.logger = Objects.requireNonNull(logger);
 		}
 
 		@Override
@@ -579,11 +581,14 @@ interface Animation {
 			for (Iterator<AnimationEntry> it = queue.iterator(); it.hasNext();) {
 				AnimationEntry entry = it.next();
 				animated = true;
-				if (++entry.animationCount == 1)
+				if (++entry.animationCount == 1) {
+					logger.dbgln("animation begin ", entry.animation);
 					entry.animation.beforeFirst();
+				}
 				if (!entry.animation.advanceAnimationStep()) {
 					it.remove();
 					endAnimation(entry);
+					logger.dbgln("animation end ", entry.animation);
 				}
 			}
 			setAnimationRunning(animated);

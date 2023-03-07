@@ -19,9 +19,14 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 	private final MiniMaxAlphaBeta<Action, Node, GameImpl> algo;
 
 	private final int DepthLimit = 1;
-	private final Logger logger = new Logger(true); // TODO
+	private final Logger logger;
 
 	public PlayerMiniMaxAlphaBeta() {
+		this(new Logger.Null());
+	}
+
+	public PlayerMiniMaxAlphaBeta(Logger logger) {
+		this.logger = Objects.requireNonNull(logger);
 		algo = new MiniMaxAlphaBeta<>(new GameImpl(), DepthLimit);
 	}
 

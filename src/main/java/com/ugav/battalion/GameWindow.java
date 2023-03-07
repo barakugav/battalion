@@ -29,8 +29,7 @@ class GameWindow extends JPanel implements Clearable {
 
 	final Game game;
 	private final GameStats stats;
-	private final Player computer = new PlayerMiniMaxAlphaBeta();
-	private final Logger logger = new Logger(true); // TODO
+	private final Player computer;
 	private final Event.Register register = new Event.Register();
 
 	private final AtomicInteger actionsSuspended = new AtomicInteger();
@@ -45,6 +44,9 @@ class GameWindow extends JPanel implements Clearable {
 		stats = new GameStats(game);
 		arenaPanel = new ArenaPanelGame(this);
 		menu = new GameSideMenu(this);
+
+		Logger computerLogger = new Logger.Enabled(globals.logger, () -> globals.debug.logComputerStats);
+		computer = new PlayerMiniMaxAlphaBeta(computerLogger);
 
 		setLayout(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
@@ -80,7 +82,9 @@ class GameWindow extends JPanel implements Clearable {
 		}));
 		register.register(game.onGameEnd,
 				Utils.swingListener(e -> arenaPanel.showPopup(new GameMenu.GameEndPopup(this, e.winner, stats), 50)));
-		register.register(game.onAction, e -> logger.dbgln(e.action));
+
+		Logger gameActionlogger = new Logger.Enabled(globals.logger, () -> globals.debug.logGameActions);
+		register.register(game.onAction, e -> gameActionlogger.dbgln(e.action));
 
 		(gameActionsThread = new GameActionsThread()).start();
 

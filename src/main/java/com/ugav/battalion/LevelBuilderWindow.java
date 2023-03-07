@@ -43,7 +43,6 @@ import com.ugav.battalion.core.Unit.Category;
 import com.ugav.battalion.core.Unit.Type;
 import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
-import com.ugav.battalion.util.Logger;
 import com.ugav.battalion.util.Utils;
 
 class LevelBuilderWindow extends JPanel implements Clearable {
@@ -54,11 +53,9 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 	private final Globals globals;
 	private final SideMenu menu;
 	private final ArenaPanel arenaPanel;
-	private final Logger logger;
 
 	LevelBuilderWindow(Globals globals) {
 		this.globals = Objects.requireNonNull(globals);
-		logger = new Logger(true); // TODO
 		builder = new LevelBuilder(10, 10);
 		menu = new SideMenu();
 		arenaPanel = new ArenaPanel(globals);
@@ -327,7 +324,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 						Level level = globals.levelSerializer.levelRead(selectedFile);
 						builder.reset(level);
 					} catch (RuntimeException ex) {
-						logger.dbgln("failed to load file from: ", selectedFile);
+						globals.logger.dbgln("failed to load file from: ", selectedFile);
 						ex.printStackTrace();
 					}
 				}
@@ -344,7 +341,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					try {
 						globals.levelSerializer.levelWrite(builder.buildLevel(), selectedFile);
 					} catch (RuntimeException ex) {
-						logger.dbgln("failed to save level to file: ", selectedFile);
+						globals.logger.dbgln("failed to save level to file: ", selectedFile);
 						ex.printStackTrace();
 					}
 				}

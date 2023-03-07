@@ -34,6 +34,7 @@ import com.ugav.battalion.core.IUnit;
 import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
+import com.ugav.battalion.util.Logger;
 import com.ugav.battalion.util.Pair;
 import com.ugav.battalion.util.Utils;
 
@@ -50,7 +51,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	private final MouseAdapter mapMoveMouseListener;
 
 	final TickTask.Manager tickTaskManager = new TickTask.Manager();
-	final Animation.Task animationTask = new Animation.Task();
+	final Animation.Task animationTask;
 	private final AtomicInteger animationsActive = new AtomicInteger();
 
 	final Globals globals;
@@ -61,6 +62,9 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	ArenaPanelAbstract(Globals globals) {
 		this.globals = Objects.requireNonNull(globals);
+
+		Logger animationTaskLogger = new Logger.Enabled(globals.logger, () -> globals.debug.logAnimations);
+		animationTask = new Animation.Task(animationTaskLogger);
 
 		entityLayer = createEntityLayer();
 
