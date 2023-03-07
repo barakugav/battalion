@@ -36,6 +36,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 	private final Tab mainTab;
 	private final Tab campaignTab;
 	private final Tab optionsTab;
+	private final Tab aboutTab;
 
 	private final ArenaPanelAnimated animatedArena;
 
@@ -47,6 +48,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 		mainTab = new MainTab();
 		campaignTab = new CampaignTab();
 		optionsTab = new OptionTab();
+		aboutTab = new AboutTab();
 		tabsPanel = createTabsPanel();
 		add(tabsPanel, JLayeredPane.PALETTE_LAYER);
 
@@ -83,7 +85,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 	private JPanel createTabsPanel() {
 		JPanel tabsPanel = new JPanel();
 		tabsPanel.setLayout(new CardLayout());
-		for (Tab tab : List.of(mainTab, campaignTab, optionsTab)) {
+		for (Tab tab : List.of(mainTab, campaignTab, optionsTab, aboutTab)) {
 			JPanel tabPanel = new JPanel(new GridBagLayout());
 			tabPanel.add(tab, Utils.gbConstraints(0, 0, 1, 1, GridBagConstraints.NONE, 1, 1));
 			tabPanel.setOpaque(false);
@@ -109,7 +111,8 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 
 		MainTab() {
 			super("Main");
-			addTitle("Main Menu");
+			Menus.ColumnWithMargins column = new Menus.ColumnWithMargins();
+			column.addComp(new Menus.Title("Main Menu"));
 
 			Menus.ButtonColumn buttonSet = new Menus.ButtonColumn();
 			buttonSet.addButton("Campaign", e -> showTab(campaignTab));
@@ -136,11 +139,14 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 			});
 			buttonSet.addButton("Level Builder", e -> globals.frame.openLevelBuilder());
 			buttonSet.addButton("Options", e -> showTab(optionsTab));
-			addComp(buttonSet);
+			buttonSet.addButton("About", e -> showTab(aboutTab));
+			column.addComp(buttonSet);
 
 			Menus.ButtonColumn additionalButtonSet = new Menus.ButtonColumn();
 			additionalButtonSet.addButton("Exit", e -> globals.frame.exitGame()).setBackground(ExitColor);
-			addComp(additionalButtonSet);
+			column.addComp(additionalButtonSet);
+
+			add(column);
 		}
 
 	}
@@ -151,16 +157,19 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 
 		CampaignTab() {
 			super("Campaign");
-			addTitle("Campaign");
+			Menus.ColumnWithMargins column = new Menus.ColumnWithMargins();
+			column.addComp(new Menus.Title("Campaign"));
 
 			Menus.ButtonColumn levelsButtonSet = new Menus.ButtonColumn();
 			for (LevelHandle lvl : globals.levels.getCampaign())
 				levelsButtonSet.addButton(lvl.name, e -> globals.frame.openLevelGame(lvl));
-			addComp(levelsButtonSet);
+			column.addComp(levelsButtonSet);
 
 			Menus.ButtonColumn additionalButtonSet = new Menus.ButtonColumn();
 			additionalButtonSet.addButton("Back", e -> showTab(mainTab));
-			addComp(additionalButtonSet);
+			column.addComp(additionalButtonSet);
+
+			add(column);
 		}
 
 	}
@@ -171,7 +180,8 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 
 		OptionTab() {
 			super("Options");
-			addTitle("Options");
+			Menus.ColumnWithMargins column = new Menus.ColumnWithMargins();
+			column.addComp(new Menus.Title("Options"));
 
 			Menus.CheckboxColumn debugOptions = new Menus.CheckboxColumn();
 			debugOptions.addCheckbox("showGrid", globals.debug.showGrid,
@@ -180,11 +190,31 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 					selected -> globals.debug.showUnitID = selected.booleanValue());
 			debugOptions.addCheckbox("playAllTeams", globals.debug.playAllTeams,
 					selected -> globals.debug.playAllTeams = selected.booleanValue());
-			addComp(debugOptions);
+			column.addComp(debugOptions);
 
 			Menus.ButtonColumn additionalButtonSet = new Menus.ButtonColumn();
 			additionalButtonSet.addButton("Back", e -> showTab(mainTab));
-			addComp(additionalButtonSet);
+			column.addComp(additionalButtonSet);
+
+			add(column);
+		}
+
+	}
+
+	private class AboutTab extends Tab {
+
+		private static final long serialVersionUID = 1L;
+
+		AboutTab() {
+			super("About");
+			Menus.ColumnWithMargins column = new Menus.ColumnWithMargins();
+			column.addComp(new Menus.Title("About"));
+
+			Menus.ButtonColumn additionalButtonSet = new Menus.ButtonColumn();
+			additionalButtonSet.addButton("Back", e -> showTab(mainTab));
+			column.addComp(additionalButtonSet);
+
+			add(column);
 		}
 
 	}

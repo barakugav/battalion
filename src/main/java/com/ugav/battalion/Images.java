@@ -210,15 +210,23 @@ class Images {
 		}
 
 		static BufferedImage standImg(IUnit unit, Direction orientation, int gesture) {
-			if (gesture >= standGestureNum(unit.getType()))
+			return standImg(unit.getType(), unit.getTeam(), orientation, gesture);
+		}
+
+		static BufferedImage standImg(Unit.Type type, Team team, Direction orientation, int gesture) {
+			if (gesture >= standGestureNum(type))
 				throw new IllegalArgumentException();
-			return checkExists(imgs, Desc.ofStand(unit, orientation, gesture));
+			return checkExists(imgs, Desc.ofStand(type, team, orientation, gesture));
 		}
 
 		static BufferedImage moveImg(IUnit unit, Direction orientation, int gesture) {
-			if (gesture >= moveGestureNum(unit.getType()))
+			return moveImg(unit.getType(), unit.getTeam(), orientation, gesture);
+		}
+
+		static BufferedImage moveImg(Unit.Type type, Team team, Direction orientation, int gesture) {
+			if (gesture >= moveGestureNum(type))
 				throw new IllegalArgumentException();
-			return checkExists(imgs, Desc.ofMove(unit, orientation, gesture));
+			return checkExists(imgs, Desc.ofMove(type, team, orientation, gesture));
 		}
 
 		static int standGestureNum(Unit.Type type) {
@@ -281,17 +289,9 @@ class Images {
 				return new Desc(type, team, orientation, StandTag, gesture);
 			}
 
-			static Desc ofStand(IUnit unit, Direction orientation, int gesture) {
-				return ofStand(unit.getType(), unit.getTeam(), orientation, gesture);
-			}
-
 			static Desc ofMove(Unit.Type type, Team team, Direction orientation, int gesture) {
 				orientation = orientation != null ? orientation : Direction.XPos;
 				return new Desc(type, team, orientation, MoveTag, gesture);
-			}
-
-			static Desc ofMove(IUnit unit, Direction orientation, int gesture) {
-				return ofMove(unit.getType(), unit.getTeam(), orientation, gesture);
 			}
 
 		}

@@ -227,7 +227,6 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		setSelection(Selection.FactoryBuild, factory);
 		GameMenu.FactoryMenu factoryMenu = new GameMenu.FactoryMenu(window, factory);
 
-		factoryMenu.setPreferredSize(getSize());
 		Dimension factoryMenuSize = factoryMenu.getPreferredSize();
 		int x = (getWidth() - factoryMenuSize.width) / 2;
 		int y = (getHeight() - factoryMenuSize.height) / 2;

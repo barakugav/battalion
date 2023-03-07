@@ -7,6 +7,7 @@ import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +31,7 @@ import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Utils;
 
-class GameSideMenu extends Menus.ColumnWithMargins implements GameMenu {
+class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 
 	private final GameWindow window;
 	private final DescriptionPanel descriptionPanel;
@@ -41,7 +42,6 @@ class GameSideMenu extends Menus.ColumnWithMargins implements GameMenu {
 	private static final long serialVersionUID = 1L;
 
 	GameSideMenu(GameWindow window) {
-		setMargin(6);
 		this.window = Objects.requireNonNull(window);
 
 		labelMoney = new HashMap<>();
@@ -81,11 +81,7 @@ class GameSideMenu extends Menus.ColumnWithMargins implements GameMenu {
 	}
 
 	private JPanel createTeamsPanel() {
-		Menus.ColumnWithMargins panel = new Menus.ColumnWithMargins();
-		final int margin = 3;
-		panel.setMarginx(0);
-		panel.setMarginy(margin);
-		panel.setMarginOnlyBetween(true);
+		Menus.ColumnWithMargins panel = new Menus.ColumnWithMargins(3);
 		panel.setBackground(new Color(80, 79, 80));
 		panel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
 
@@ -186,13 +182,16 @@ class GameSideMenu extends Menus.ColumnWithMargins implements GameMenu {
 		private static final long serialVersionUID = 1L;
 
 		ExitPopup() {
-			addTitle("Settings");
+			Menus.ColumnWithMargins column = new Menus.ColumnWithMargins();
+			column.addComp(new Menus.Title("Settings"));
 
 			Menus.ButtonColumn buttonSet = new Menus.ButtonColumn();
 			buttonSet.addButton("Resume", e -> window.arenaPanel.closePopup(ExitPopup.this));
 			buttonSet.addButton("Options", e -> System.out.println("Options")); // TODO
 			buttonSet.addButton("Quit", e -> window.globals.frame.openMainMenu());
-			addComp(buttonSet);
+			column.addComp(buttonSet);
+
+			add(column);
 		}
 
 		@Override
@@ -220,13 +219,11 @@ class GameSideMenu extends Menus.ColumnWithMargins implements GameMenu {
 		labelMoney.get(team).setText("$" + money);
 	}
 
-	@Override
-	public GameWindow window() {
-		return window;
-	}
-
-	@Override
-	public void beforeClose() {
+	private ActionListener ifActionEnabled(ActionListener l) {
+		return e -> {
+			if (window.isActionEnabled())
+				l.actionPerformed(e);
+		};
 	}
 
 	private class MiniMap extends JPanel {

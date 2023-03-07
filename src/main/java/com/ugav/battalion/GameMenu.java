@@ -17,8 +17,10 @@ import java.util.Objects;
 import java.util.function.ObjIntConsumer;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
@@ -34,67 +36,35 @@ import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Pair;
 import com.ugav.battalion.util.Utils;
+import com.ugav.battalion.util.Utils.RoundedPanel;
 
 interface GameMenu extends Clearable {
 
-	GameWindow window();
-
 	void beforeClose();
 
-	default ActionListener ifActionEnabled(ActionListener l) {
-		return e -> {
-			if (window().isActionEnabled())
-				l.actionPerformed(e);
-		};
-	}
+	static class FactoryMenu extends Menus.Window implements GameMenu {
 
-	abstract class Abstract extends JPanel implements GameMenu {
-
-		final GameWindow window;
-		private static final long serialVersionUID = 1L;
-
-		Abstract(GameWindow window) {
-			this.window = Objects.requireNonNull(window);
-		}
-
-		@Override
-		public GameWindow window() {
-			return window;
-		}
-
-	}
-
-	static class FactoryMenu extends GameMenu.Abstract {
-
-		private final DescriptionPanel.UnitPanel unitDesc = new DescriptionPanel.UnitPanel();
+		private final DescriptionPanel.UnitsPanel unitDesc = new DescriptionPanel.UnitsPanel();
 		final Building factory;
 		private final List<Pair<JButton, ActionListener>> listeners = new ArrayList<>();
 		private MouseListener mouseListener;
+		private final GameWindow window;
 
 		private static final long serialVersionUID = 1L;
 
 		FactoryMenu(GameWindow window, Building factory) {
-			super(window);
+			super(10);
+			this.window = Objects.requireNonNull(window);
 			if (!factory.type.canBuildUnits)
 				throw new IllegalArgumentException(factory.type.toString());
 			this.factory = factory;
 
-			initUI();
-		}
+			Menus.ColumnWithMargins column = new Menus.ColumnWithMargins();
+			column.addComp(createDisplayPanel());
+			column.addComp(createUnitsPanel());
 
-		private void initUI() {
 			setLayout(new GridBagLayout());
-
-			GridBagConstraints c = new GridBagConstraints();
-			c.fill = GridBagConstraints.BOTH;
-			c.gridx = 0;
-			c.weightx = 1;
-			c.gridy = 0;
-			c.weighty = 1;
-			add(createDisplayPanel(), c);
-			c.gridy = 1;
-			c.weighty = 1;
-			add(createUnitsPanel(), c);
+			add(column, Utils.gbConstraints(0, 0, 0, 0, GridBagConstraints.BOTH, 1, 1));
 
 			/* Dummy listener to block the mouse events reaching the arena layer */
 			addMouseListener(mouseListener = new MouseAdapter() {
@@ -102,19 +72,19 @@ interface GameMenu extends Clearable {
 		}
 
 		private JPanel createDisplayPanel() {
-			JPanel panel = new JPanel();
+			Menus.RowWithMargins panel = new Menus.RowWithMargins();
 
 			unitDesc.showUnit(UnitDesc.of(Unit.Type.Soldier, Team.Red));
-			panel.add(unitDesc);
+			panel.addComp(unitDesc);
 
 			JLabel img = new JLabel(new ImageIcon(Images.FactoryMenuImg));
-			panel.add(img);
+			panel.addComp(img);
 
 			return panel;
 		}
 
 		private JPanel createUnitsPanel() {
-			JPanel mainPanel = new JPanel(new GridLayout(-1, 1));
+			Menus.ColumnWithMargins mainPanel = new Menus.ColumnWithMargins();
 
 			Map<Unit.Type, Building.UnitSale> sales = factory.getAvailableUnits();
 
@@ -124,52 +94,30 @@ interface GameMenu extends Clearable {
 					Unit.Type.ShipArtillery, Unit.Type.Submarine);
 			List<Unit.Type> airUnits = List.of(Unit.Type.Airplane, Unit.Type.Zeppelin);
 
-			JButton close = new JButton("Close");
-			ActionListener closeListener = e -> window.arenaPanel.closeOpenMenu();
-			close.addActionListener(closeListener);
-			listeners.add(Pair.of(close, closeListener));
-
-			mainPanel.add(createUnitsPanelSingleCategory("Ground Units", landUnits, sales, null));
-			mainPanel.add(createUnitsPanelSingleCategory("Air Units", airUnits, sales, null));
-			mainPanel.add(createUnitsPanelSingleCategory("Sea Units", waterUnits, sales, close));
+			mainPanel.addComp(createUnitsPanelSingleCategory("Ground Units", landUnits, sales));
+			mainPanel.addComp(createUnitsPanelSingleCategory("Air Units", airUnits, sales));
+			mainPanel.addComp(createUnitsPanelSingleCategory("Sea Units", waterUnits, sales));
+			mainPanel.addComp(createAdditionalButtonsPanel());
 
 			return mainPanel;
 		}
 
 		private JPanel createUnitsPanelSingleCategory(String title, List<Unit.Type> units,
-				Map<Unit.Type, Building.UnitSale> sales, JButton additionalButton) {
-			JPanel panel = new JPanel(new GridBagLayout());
-			JLabel titleLabel = new JLabel(title);
-			panel.add(titleLabel, Utils.gbConstraints(0, 0, 1, 1, GridBagConstraints.HORIZONTAL, 1, 1));
+				Map<Unit.Type, Building.UnitSale> sales) {
+			Menus.ColumnWithMargins panel = new Menus.ColumnWithMargins();
+			panel.addComp(new Menus.Title(title));
 
-			JPanel salesPanel = new JPanel(new GridBagLayout());
-			GridBagConstraints c = new GridBagConstraints();
-			c.gridy = 0;
-			c.gridheight = 1;
-			c.weighty = 1;
-			c.gridwidth = 1;
-			c.fill = GridBagConstraints.VERTICAL;
-
+			Menus.RowWithMargins salesPanel = new Menus.RowWithMargins();
 			for (Iter.Indexed<Unit.Type> unit : Iter.of(units).enumerate().forEach()) {
 				JPanel unitComp = createUnitPanel(unit.elm, sales);
-				c.gridx = unit.idx;
-				salesPanel.add(unitComp, c);
+				salesPanel.addComp(unitComp);
 			}
-
 			JPanel dummyFillUnit = new JPanel();
-			c.gridx = units.size();
-			c.weightx = 1;
-			c.fill = GridBagConstraints.BOTH;
-			salesPanel.add(dummyFillUnit, c);
+			dummyFillUnit.setPreferredSize(new Dimension(0, 0));
+			dummyFillUnit.setOpaque(false);
+			salesPanel.addComp(dummyFillUnit, 1);
 
-			if (additionalButton != null) {
-				c.gridx = units.size() + 1;
-				c.weightx = 0;
-				c.fill = GridBagConstraints.NONE;
-				salesPanel.add(additionalButton, c);
-
-			}
-			panel.add(salesPanel, Utils.gbConstraints(0, 1, 1, 1, GridBagConstraints.BOTH, 1, 1));
+			panel.addComp(salesPanel);
 			return panel;
 		}
 
@@ -177,13 +125,25 @@ interface GameMenu extends Clearable {
 		private static final Color UnitPriceBackground = new Color(150, 150, 150);
 
 		private JPanel createUnitPanel(Unit.Type unit, Map<Unit.Type, Building.UnitSale> sales) {
-			JPanel saleComp = new JPanel(new GridBagLayout());
-			JButton button;
-			JLabel price;
+			JPanel panel = new JPanel(new GridBagLayout());
+			panel.setOpaque(false);
+			JComponent buttonPanel;
+			JComponent price;
 
 			Building.UnitSale unitSale = sales.get(unit);
 			if (unitSale != null) {
-				button = new JButton(new ImageIcon(Images.Units.getDefault(UnitDesc.of(unit, factory.getTeam()))));
+				BufferedImage unitImg = Images.Units.getDefault(UnitDesc.of(unit, factory.getTeam()));
+				unitImg = Utils.imgSubCircle(unitImg, (unitImg.getWidth() - 56) / 2, (unitImg.getHeight() - 56) / 2, 56,
+						56);
+
+				buttonPanel = new RoundedPanel();
+				buttonPanel.setLayout(new GridBagLayout());
+				JButton button = new JButton(new ImageIcon(unitImg));
+				button.setContentAreaFilled(false);
+				button.setBorder(BorderFactory.createEmptyBorder());
+				buttonPanel.add(button, Utils.gbConstraints(0, 0, 1, 1, GridBagConstraints.BOTH, 1, 1));
+
+				buttonPanel.setBackground(Color.red);
 				price = new JLabel(Integer.toString(unitSale.price), SwingConstants.CENTER);
 				boolean canBuy = unitSale.price <= window.game.getMoney(factory.getTeam());
 				price.setForeground(canBuy ? Color.BLACK : Color.RED);
@@ -197,29 +157,38 @@ interface GameMenu extends Clearable {
 				};
 				button.addActionListener(listener);
 				listeners.add(Pair.of(button, listener));
+
+				button.addMouseMotionListener(new MouseAdapter() {
+					@Override
+					public void mouseMoved(MouseEvent e) {
+						unitDesc.showUnit(UnitDesc.of(unit, Team.Red));
+					}
+				});
 			} else {
-				button = new JButton(new ImageIcon(Images.UnitLocked));
+				buttonPanel = new JButton(new ImageIcon(Images.UnitLocked));
 				price = new JLabel("", SwingConstants.CENTER);
 			}
 
-			button.setPreferredSize(new Dimension(56, 56));
-			button.setBackground(UnitBackground);
+			buttonPanel.setPreferredSize(new Dimension(56, 56));
+			buttonPanel.setBackground(UnitBackground);
 			price.setPreferredSize(new Dimension(56, 28));
 			price.setOpaque(true);
 			price.setBackground(UnitPriceBackground);
 
-			saleComp.add(button, Utils.gbConstraints(0, 0, 1, 3));
-			saleComp.add(price, Utils.gbConstraints(0, 3, 1, 1));
-			saleComp.setPreferredSize(new Dimension(64, 80));
+			panel.add(buttonPanel, Utils.gbConstraints(0, 0, 1, 1, GridBagConstraints.NONE, 0, 0));
+			panel.add(price, Utils.gbConstraints(0, 1, 1, 1, GridBagConstraints.NONE, 0, 0));
 
-			saleComp.addMouseMotionListener(new MouseAdapter() {
-				@Override
-				public void mouseMoved(MouseEvent e) {
-					unitDesc.showUnit(UnitDesc.of(unit, Team.Red));
-				}
-			});
+			return panel;
+		}
 
-			return saleComp;
+		private JPanel createAdditionalButtonsPanel() {
+			JPanel panel = new JPanel();
+			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+			panel.setOpaque(false);
+			Menus.Button close = new Menus.Button("Close", e -> window.arenaPanel.closeOpenMenu());
+			close.setAlignmentX(JLabel.RIGHT_ALIGNMENT);
+			panel.add(close);
+			return panel;
 		}
 
 		@Override
@@ -239,15 +208,16 @@ interface GameMenu extends Clearable {
 
 	}
 
-	static class UnitMenu extends GameMenu.Abstract {
+	static class UnitMenu extends JPanel implements GameMenu {
 
 		private static final long serialVersionUID = 1L;
 
 		final Unit unit;
 		private final List<Pair<JButton, ActionListener>> listeners = new ArrayList<>();
+		private final GameWindow window;
 
 		UnitMenu(GameWindow window, Unit unit) {
-			super(window);
+			this.window = Objects.requireNonNull(window);
 			this.unit = Objects.requireNonNull(unit);
 
 			initUI();
@@ -329,9 +299,12 @@ interface GameMenu extends Clearable {
 		private static final Color QuitColor = new Color(254, 106, 106);
 
 		GameEndPopup(GameWindow window, Team winner, GameStats stats) {
+			Menus.ColumnWithMargins column = new Menus.ColumnWithMargins();
 			final Team player = Team.Red;
+
 			boolean victory = player == winner;
-			addTitle("Game Finished: " + (victory ? "Victory!" : "You lost..."));
+			String title = "Game Finished: " + (victory ? "Victory!" : "You lost...");
+			column.addComp(new Menus.Title(title));
 
 			Menus.Table statsTable = new Menus.Table();
 			Menus.Table.Column statsColumn = statsTable.addColumn();
@@ -349,7 +322,7 @@ interface GameMenu extends Clearable {
 			addRow.accept("Buildings Conquered", stats.getBuildingsConquered());
 			addRow.accept("Money Gained", stats.getMoneyGained());
 			addRow.accept("Money Spent", stats.getMoneySpent());
-			addComp(statsTable);
+			column.addComp(statsTable);
 
 			Menus.ButtonColumn buttonSet = new Menus.ButtonColumn();
 
@@ -360,7 +333,9 @@ interface GameMenu extends Clearable {
 						.setBackground(NextLevelColor);
 			}
 			buttonSet.addButton("Quit", e -> window.globals.frame.openMainMenu()).setBackground(QuitColor);
-			addComp(buttonSet);
+			column.addComp(buttonSet);
+
+			add(column);
 		}
 
 		@Override

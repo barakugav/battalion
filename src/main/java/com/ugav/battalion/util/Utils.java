@@ -1,13 +1,17 @@
 package com.ugav.battalion.util;
 
 import java.awt.AlphaComposite;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
@@ -29,6 +33,7 @@ import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 import javax.swing.JButton;
+import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
@@ -192,6 +197,16 @@ public class Utils {
 		return sub;
 	}
 
+	public static BufferedImage imgSubCircle(BufferedImage img, int x, int y, int width, int height) {
+		BufferedImage sub = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2 = sub.createGraphics();
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g2.setClip(new Ellipse2D.Double(0, 0, width, height));
+		g2.drawImage(img, 0, 0, width, height, x, y, x + width, y + height, null);
+		g2.dispose();
+		return sub;
+	}
+
 	public static Dimension max(Dimension d1, Dimension d2) {
 		return new Dimension(Math.max(d1.width, d2.width), Math.max(d1.height, d2.height));
 	}
@@ -331,6 +346,40 @@ public class Utils {
 		JButton button = new JButton(label);
 		button.addActionListener(action);
 		return button;
+	}
+
+	public static class RoundedPanel extends JPanel {
+
+		private static final long serialVersionUID = 1L;
+
+		private Color backgroundColor;
+
+		public RoundedPanel() {
+			setOpaque(false);
+		}
+
+		@Override
+		public void setBackground(Color color) {
+			backgroundColor = color;
+		}
+
+		@Override
+		public Color getBackground() {
+			return backgroundColor != null ? backgroundColor : super.getBackground();
+		}
+
+		@Override
+		protected void paintComponent(Graphics g) {
+			super.paintComponent(g);
+
+			int width = getWidth();
+			int height = getHeight();
+			Graphics2D graphics = (Graphics2D) g;
+			graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+			graphics.setColor(getBackground());
+			graphics.fillOval(0, 0, width, height);
+		}
 	}
 
 }

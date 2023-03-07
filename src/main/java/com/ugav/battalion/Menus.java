@@ -28,16 +28,29 @@ class Menus {
 
 	private static final Color TitleColor = new Color(255, 234, 201);
 
+	static class Button extends JButton {
+		private static final Color ButtonColor = new Color(156, 156, 156);
+		private static final long serialVersionUID = 1L;
+
+		Button(String label, ActionListener action) {
+			super(label);
+			addActionListener(action);
+			setBackground(ButtonColor);
+			setOpaque(true);
+			setFocusable(false);
+		}
+	}
+
 	static class ButtonColumn extends ColumnWithMargins {
 
 		private Dimension buttonSize;
 
-		private static final Color BackgroundColor = new Color(49, 42, 41);
-		private static final Color ButtonColor = new Color(156, 156, 156);
+		private static final Color BackgroundColor = new Color(35, 35, 35);
 		private static final long serialVersionUID = 1L;
 
 		ButtonColumn() {
-			setMargin(3);
+			super(3);
+			setBorder(BorderFactory.createEmptyBorder(margin, margin, margin, margin));
 			setBackground(BackgroundColor);
 			buttonSize = new Dimension(200, 30);
 		}
@@ -47,11 +60,8 @@ class Menus {
 		}
 
 		JButton addButton(String label, ActionListener action) {
-			JButton button = Utils.newButton(label, action);
+			JButton button = new Button(label, action);
 			button.setPreferredSize(new Dimension(buttonSize));
-			button.setBackground(ButtonColor);
-			button.setOpaque(true);
-			button.setFocusable(false);
 			return addComp(button);
 		}
 
@@ -59,12 +69,14 @@ class Menus {
 
 	static class CheckboxColumn extends ColumnWithMargins {
 
-		private static final Color BackgroundColor = new Color(80, 79, 80);
+		private static final Color BackgroundColor = new Color(35, 35, 35);
+		private static final Color CheckboxBackgroundColor = new Color(80, 80, 80);
 		private static final Color CheckboxTextColor = new Color(245, 245, 245);
 		private static final long serialVersionUID = 1L;
 
 		CheckboxColumn() {
-			setMargin(3);
+			super(3);
+			setBorder(BorderFactory.createEmptyBorder(margin, margin, margin, margin));
 			setBackground(BackgroundColor);
 		}
 
@@ -72,7 +84,7 @@ class Menus {
 			JCheckBox checkbox = new JCheckBox(text, selected);
 			checkbox.addActionListener(e -> onSelectedChange.accept(Boolean.valueOf(checkbox.isSelected())));
 			checkbox.setPreferredSize(new Dimension(200, 30));
-			checkbox.setBackground(BackgroundColor);
+			checkbox.setBackground(CheckboxBackgroundColor);
 			checkbox.setForeground(CheckboxTextColor);
 			checkbox.setFocusPainted(false);
 			checkbox.setOpaque(true);
@@ -98,35 +110,17 @@ class Menus {
 	static class ColumnWithMargins extends JPanel {
 
 		private int compCount;
-		private int marginx;
-		private int marginy;
-		private boolean marginOnlyBetween = false;
+		final int margin;
 		private static final long serialVersionUID = 1L;
 
 		ColumnWithMargins() {
+			this(6);
+		}
+
+		ColumnWithMargins(int margin) {
 			super(new GridBagLayout());
-		}
-
-		void setMargin(int margin) {
-			if (margin < 0)
-				throw new IllegalArgumentException();
-			marginx = marginy = margin;
-		}
-
-		void setMarginx(int margin) {
-			if (margin < 0)
-				throw new IllegalArgumentException();
-			marginx = margin;
-		}
-
-		void setMarginy(int margin) {
-			if (margin < 0)
-				throw new IllegalArgumentException();
-			marginy = margin;
-		}
-
-		void setMarginOnlyBetween(boolean marginOnlyBetween) {
-			this.marginOnlyBetween = marginOnlyBetween;
+			this.margin = margin;
+			setBackground(new Color(64, 62, 64));
 		}
 
 		<Comp extends JComponent> Comp addComp(Comp comp) {
@@ -136,33 +130,69 @@ class Menus {
 		<Comp extends JComponent> Comp addComp(Comp comp, int weighty) {
 			final int y = compCount++;
 			GridBagConstraints c = Utils.gbConstraints(0, y, 1, 1, GridBagConstraints.BOTH, 1, weighty);
-			if (marginOnlyBetween) {
-				c.insets = new Insets(y == 0 ? 0 : marginy, marginx, 0, marginx);
-			} else {
-				c.insets = new Insets(y > 0 ? 0 : marginy, marginx, marginy, marginx);
-			}
+			c.insets = new Insets(y == 0 ? 0 : margin, 0, 0, 0);
 			add(comp, c);
 			return comp;
 		}
 	}
 
-	static class Window extends Menus.ColumnWithMargins {
+	static class RowWithMargins extends JPanel {
+
+		private int compCount;
+		final int margin;
+		private static final long serialVersionUID = 1L;
+
+		RowWithMargins() {
+			this(6);
+		}
+
+		RowWithMargins(int margin) {
+			super(new GridBagLayout());
+			this.margin = margin;
+			setBackground(new Color(64, 62, 64));
+		}
+
+		<Comp extends JComponent> Comp addComp(Comp comp) {
+			return addComp(comp, 0);
+		}
+
+		<Comp extends JComponent> Comp addComp(Comp comp, int weightx) {
+			final int x = compCount++;
+			GridBagConstraints c = Utils.gbConstraints(x, 0, 1, 1, GridBagConstraints.BOTH, weightx, 1);
+			c.insets = new Insets(0, x == 0 ? 0 : margin, 0, 0);
+			add(comp, c);
+			return comp;
+		}
+	}
+
+	static class Window extends JPanel {
 
 		private static final Color BackgroundColor = new Color(64, 62, 64);
 		private static final long serialVersionUID = 1L;
 
 		Window() {
-			setMargin(6);
-			setBorder(BorderFactory.createRaisedBevelBorder());
+			this(3);
+		}
+
+		Window(int margin) {
+			Border border = BorderFactory.createRaisedBevelBorder();
+			border = BorderFactory.createCompoundBorder(border,
+					BorderFactory.createEmptyBorder(margin, margin, margin, margin));
+			setBorder(border);
 			setBackground(BackgroundColor);
 		}
 
-		JLabel addTitle(String title) {
-			JLabel label = new JLabel(title);
-			label.setForeground(TitleColor);
-			return addComp(label);
-		}
+	}
 
+	static class Title extends JLabel {
+		private static final long serialVersionUID = 1L;
+
+		Title(String text) {
+			super(text);
+			setForeground(TitleColor);
+			setBackground(Color.red);
+			setOpaque(false);
+		}
 	}
 
 	static class Table extends JPanel {
