@@ -30,14 +30,6 @@ class ArenaPanelGameAbstract extends
 		super(globals);
 		this.game = game;
 
-		register.register(game.beforeUnitMove, e -> {
-			ListInt animationPath = new ListInt.Array(e.path.size() + 1);
-			animationPath.add(e.unit.getPos());
-			animationPath.addAll(e.path);
-			animateUnitMove(e.unit, animationPath);
-		});
-		register.register(game.beforeUnitAttack, e -> animateUnitAttack(e.attacker, e.target.getPos()));
-
 		updateArenaSize(game.width(), game.height());
 	}
 
@@ -62,84 +54,6 @@ class ArenaPanelGameAbstract extends
 		super.clear();
 	}
 
-	private void animateUnitAdd(Unit unit) {
-		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
-		Animation animation;
-		if (!unit.type.invisible) {
-			animation = new Animation.UnitAppear(comp);
-		} else {
-			animation = new Animation.UnitAppearDisappear(comp);
-		}
-		animation = centerMapBeforeAnimation(unit, animation);
-		runAnimationAndWait(animation);
-	}
-
-	private void animateUnitMove(Unit unit, ListInt path) {
-		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
-		Animation animation = new Animation.UnitMove(comp, path);
-		animation = appearDisappearAnimationWrap(comp, animation);
-		animation = centerMapBeforeAnimation(unit, animation);
-		runAnimationAndWait(animation);
-	}
-
-	private void animateUnitAttack(Unit unit, int target) {
-		EntityLayer.UnitComp comp = (EntityLayer.UnitComp) entityLayer().comps.get(unit);
-		Animation animation = new Animation.Attack(this, comp, target);
-		animation = appearDisappearAnimationWrap(comp, animation);
-		animation = makeSureAnimationIsVisible(animation, ListInt.of(unit.getPos(), target));
-		runAnimationAndWait(animation);
-	}
-
-	private static Animation appearDisappearAnimationWrap(EntityLayer.UnitComp unitComp, Animation animation) {
-		if (unitComp.unit().type.invisible)
-			animation = Animation.of(new Animation.UnitAppearDisappear(unitComp), animation);
-		return animation;
-	}
-
-	private Animation centerMapBeforeAnimation(Unit unit, Animation animation) {
-		Position mapMovePos = mapMove.calcMapPosCentered(Position.fromCell(unit.getPos()));
-		Animation mapMoveAnimation = new Animation.MapMove(this, mapMovePos);
-		return Animation.of(mapMoveAnimation, animation);
-	}
-
-	private Animation makeSureAnimationIsVisible(Animation animation, ListInt cells) {
-		if (cells.isEmpty())
-			throw new IllegalArgumentException();
-		int p0 = cells.get(0);
-		int xmin = Cell.x(p0), xmax = Cell.x(p0);
-		int ymin = Cell.y(p0), ymax = Cell.y(p0);
-		for (Iter.Int it = cells.iterator(); it.hasNext();) {
-			int cell = it.next();
-			xmin = Math.min(xmin, Cell.x(cell));
-			xmax = Math.max(xmax, Cell.x(cell));
-			ymin = Math.min(ymin, Cell.y(cell));
-			ymax = Math.max(ymax, Cell.y(cell));
-		}
-		int topLeft = Cell.of(xmin, ymin);
-		int bottomRight = Cell.of(xmax, ymax);
-		MapPosRange displayedRange = mapMove.getDisplayedRangeFully();
-		boolean topLeftVisible = displayedRange.contains(Position.fromCell(topLeft));
-		boolean bottomRightVisible = displayedRange.contains(Position.fromCell(bottomRight));
-		if (topLeftVisible && bottomRightVisible)
-			return animation; /* already visible */
-
-		if (xmin > xmax + displayedArenaWidth() || ymin > ymax + displayedArenaHeight())
-			throw new IllegalArgumentException("can't display rect [" + topLeft + ", " + bottomRight + "]");
-		int x = (int) (xmin + (xmax - xmin) / 2 - displayedArenaWidth() / 2);
-		int y = (int) (ymin + (ymax - ymin) / 2 - displayedArenaHeight() / 2);
-		Position pos = mapMove.getDisplayedRange().closestContainedPoint(Position.of(x, y));
-
-		for (Iter.Int it = cells.iterator(); it.hasNext();) {
-			int cell = it.next();
-			if (!Cell.isInRect(cell, pos.x, pos.y, pos.x + displayedArenaWidth() - 1,
-					pos.y + displayedArenaHeight() - 1))
-				throw new IllegalStateException();
-		}
-
-		Animation mapMoveAnimation = new Animation.MapMove(this, pos);
-		return Animation.of(mapMoveAnimation, animation);
-	}
-
 	class EntityLayer extends
 			ArenaPanelAbstract.EntityLayer<EntityLayer.TerrainComp, EntityLayer.BuildingComp, EntityLayer.UnitComp> {
 
@@ -155,12 +69,16 @@ class ArenaPanelGameAbstract extends
 
 		void initUI() {
 			register.register(game.onUnitAdd, e -> {
-				Utils.swingRun(() -> comps.put(e.unit, new UnitComp(e.unit)));
-				animateUnitAdd(e.unit);
-			});
-			register.register(game.onUnitDeath, e -> {
-				UnitComp unitComp = (UnitComp) comps.get(e.unit);
-				Animation animation = new Animation.UnitDeath(ArenaPanelGameAbstract.this, unitComp);
+				runAnimationAndWait(createMapCenterAnimation(e.unit));
+				UnitComp comp = new UnitComp(e.unit);
+				comp.baseAlphaMax = 0;
+				Utils.swingRun(() -> comps.put(e.unit, comp));
+				Animation animation;
+				if (!e.unit.type.invisible) {
+					animation = new Animation.UnitAppear(comp);
+				} else {
+					animation = new Animation.UnitAppearDisappear(comp);
+				}
 				runAnimationAndWait(animation);
 			});
 			register.register(game.onUnitRemove, Utils.swingListener(e -> {
@@ -168,6 +86,30 @@ class ArenaPanelGameAbstract extends
 				if (unitComp != null)
 					unitComp.clear();
 			}));
+			register.register(game.onUnitDeath, e -> {
+				UnitComp unitComp = (UnitComp) comps.get(e.unit);
+				Animation animation = new Animation.UnitDeath(ArenaPanelGameAbstract.this, unitComp);
+				runAnimationAndWait(animation);
+			});
+			register.register(game.beforeUnitMove, e -> {
+				ListInt animationPath = new ListInt.Array(e.path.size() + 1);
+				animationPath.add(e.unit.getPos());
+				animationPath.addAll(e.path);
+
+				UnitComp comp = (UnitComp) comps.get(e.unit);
+				Animation animation = new Animation.UnitMove(comp, animationPath);
+				animation = appearDisappearAnimationWrap(comp, animation);
+				animation = Animation.of(createMapCenterAnimation(e.unit), animation);
+				runAnimationAndWait(animation);
+			});
+			register.register(game.beforeUnitAttack, e -> {
+				int target = e.target.getPos();
+				UnitComp comp = (UnitComp) comps.get(e.attacker);
+				Animation animation = new Animation.Attack(ArenaPanelGameAbstract.this, comp, target);
+				animation = appearDisappearAnimationWrap(comp, animation);
+				animation = makeSureAnimationIsVisible(animation, ListInt.of(e.attacker.getPos(), target));
+				runAnimationAndWait(animation);
+			});
 			register.register(game.onEntityChange, e -> {
 				if (e.source instanceof Unit unit) {
 					UnitComp comp = (UnitComp) comps.get(unit);
@@ -178,7 +120,7 @@ class ArenaPanelGameAbstract extends
 			register.register(game.onConquer, e -> {
 				UnitComp unitComp = (UnitComp) comps.get(e.conquerer);
 				Animation animation = new Animation.Conquer(unitComp);
-				animation = centerMapBeforeAnimation(e.conquerer, animation);
+				animation = Animation.of(createMapCenterAnimation(e.conquerer), animation);
 				runAnimationAndWait(animation);
 			});
 
@@ -209,6 +151,55 @@ class ArenaPanelGameAbstract extends
 					comps.put(building, new BuildingComp(cell, building));
 
 			}
+		}
+
+		private static Animation appearDisappearAnimationWrap(EntityLayer.UnitComp unitComp, Animation animation) {
+			if (unitComp.unit().type.invisible)
+				animation = Animation.of(new Animation.UnitAppearDisappear(unitComp), animation);
+			return animation;
+		}
+
+		private Animation createMapCenterAnimation(Unit unit) {
+			Position mapMovePos = mapMove.calcMapPosCentered(Position.fromCell(unit.getPos()));
+			return new Animation.MapMove(ArenaPanelGameAbstract.this, mapMovePos);
+		}
+
+		private Animation makeSureAnimationIsVisible(Animation animation, ListInt cells) {
+			if (cells.isEmpty())
+				throw new IllegalArgumentException();
+			int p0 = cells.get(0);
+			int xmin = Cell.x(p0), xmax = Cell.x(p0);
+			int ymin = Cell.y(p0), ymax = Cell.y(p0);
+			for (Iter.Int it = cells.iterator(); it.hasNext();) {
+				int cell = it.next();
+				xmin = Math.min(xmin, Cell.x(cell));
+				xmax = Math.max(xmax, Cell.x(cell));
+				ymin = Math.min(ymin, Cell.y(cell));
+				ymax = Math.max(ymax, Cell.y(cell));
+			}
+			int topLeft = Cell.of(xmin, ymin);
+			int bottomRight = Cell.of(xmax, ymax);
+			MapPosRange displayedRange = mapMove.getDisplayedRangeFully();
+			boolean topLeftVisible = displayedRange.contains(Position.fromCell(topLeft));
+			boolean bottomRightVisible = displayedRange.contains(Position.fromCell(bottomRight));
+			if (topLeftVisible && bottomRightVisible)
+				return animation; /* already visible */
+
+			if (xmin > xmax + displayedArenaWidth() || ymin > ymax + displayedArenaHeight())
+				throw new IllegalArgumentException("can't display rect [" + topLeft + ", " + bottomRight + "]");
+			int x = (int) (xmin + (xmax - xmin) / 2 - displayedArenaWidth() / 2);
+			int y = (int) (ymin + (ymax - ymin) / 2 - displayedArenaHeight() / 2);
+			Position pos = mapMove.getDisplayedRange().closestContainedPoint(Position.of(x, y));
+
+			for (Iter.Int it = cells.iterator(); it.hasNext();) {
+				int cell = it.next();
+				if (!Cell.isInRect(cell, pos.x, pos.y, pos.x + displayedArenaWidth() - 1,
+						pos.y + displayedArenaHeight() - 1))
+					throw new IllegalStateException();
+			}
+
+			Animation mapMoveAnimation = new Animation.MapMove(ArenaPanelGameAbstract.this, pos);
+			return Animation.of(mapMoveAnimation, animation);
 		}
 
 		class TerrainComp extends ArenaPanelAbstract.TerrainComp {
