@@ -38,9 +38,11 @@ public class Game {
 	public final Event.Notifier<UnitDeath> onUnitDeath = new Event.Notifier<>();
 	public final Event.Notifier<UnitMove> beforeUnitMove = new Event.Notifier<>();
 	public final Event.Notifier<UnitAttack> beforeUnitAttack = new Event.Notifier<>();
-	public final Event.Notifier<ConquerEvent> onConquer = new Event.Notifier<>();
+	public final Event.Notifier<ConquerEvent> onConquerProgress = new Event.Notifier<>();
+	public final Event.Notifier<ConquerEvent> onConquerFinish = new Event.Notifier<>();
 	public final Event.Notifier<MoneyChange> onMoneyChange = new Event.Notifier<>();
 	public final Event.Notifier<Event> beforeTurnEnd = new Event.Notifier<>();
+	public final Event.Notifier<Event> onTurnBegin = new Event.Notifier<>();
 	public final Event.Notifier<TurnEnd> onTurnEnd = new Event.Notifier<>();
 	public final Event.Notifier<GameEnd> onGameEnd = new Event.Notifier<>();
 	public final Event.Notifier<ActionEvent> onAction = new Event.Notifier<>();
@@ -244,6 +246,8 @@ public class Game {
 
 		for (Unit unit : units().forEach())
 			unit.setActive(unit.getTeam() == turn);
+
+		onTurnBegin.notify(new Event(this));
 	}
 
 	private void turnEnd() {
@@ -269,9 +273,9 @@ public class Game {
 			}
 		}
 
-		turnBegin();
-
 		onTurnEnd.notify(new TurnEnd(this, prevTurn, turn));
+
+		turnBegin();
 	}
 
 	private Set<Team> getAliveTeams() {

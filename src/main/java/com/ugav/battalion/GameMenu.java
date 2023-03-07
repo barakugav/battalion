@@ -342,12 +342,13 @@ interface GameMenu extends Clearable {
 			valsColumn.setHorizontalAlignment(SwingConstants.RIGHT);
 
 			ObjIntConsumer<String> addRow = (stat, val) -> statsTable.addRow(stat, Integer.toString(val));
-			addRow.accept("turnsPlayed", stats.getTurnsPlayed());
-			addRow.accept("unitsBuilt", stats.getUnitsBuilt());
-			addRow.accept("enemiesTerminated", stats.getEnemiesTerminated());
-			addRow.accept("unitsCasualties", stats.getUnitsCasualties());
-			addRow.accept("moneyGained", stats.getMoneyGained());
-			addRow.accept("moneySpent", stats.getMoneySpent());
+			addRow.accept("Turns Played", stats.getTurnsPlayed());
+			addRow.accept("Units Built", stats.getUnitsBuilt());
+			addRow.accept("Enemies Terminated", stats.getEnemiesTerminated());
+			addRow.accept("Units Casualties", stats.getUnitsCasualties());
+			addRow.accept("Buildings Conquered", stats.getBuildingsConquered());
+			addRow.accept("Money Gained", stats.getMoneyGained());
+			addRow.accept("Money Spent", stats.getMoneySpent());
 			addComp(statsTable);
 
 			Menus.ButtonColumn buttonSet = new Menus.ButtonColumn();

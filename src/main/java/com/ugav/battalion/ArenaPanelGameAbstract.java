@@ -117,7 +117,7 @@ class ArenaPanelGameAbstract extends
 						comp.pos = Position.fromCell(unit.getPos());
 				}
 			});
-			register.register(game.onConquer, e -> {
+			register.register(game.onConquerProgress, e -> {
 				UnitComp unitComp = (UnitComp) comps.get(e.conquerer);
 				Animation animation = new Animation.Conquer(unitComp);
 				animation = Animation.of(createMapCenterAnimation(e.conquerer), animation);

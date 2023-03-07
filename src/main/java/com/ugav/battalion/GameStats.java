@@ -10,7 +10,7 @@ class GameStats implements Clearable {
 	private int unitsBuilt;
 	private int enemiesTerminated;
 	private int unitsCasualties;
-//	private int buildingsConquered;
+	private int buildingsConquered;
 	private int moneyGained;
 	private int moneySpent;
 
@@ -18,8 +18,8 @@ class GameStats implements Clearable {
 
 	GameStats(Game game) {
 		final Team player = Team.Red;
-		register.register(game.onTurnEnd, e -> {
-			if (e.prevTurn == player)
+		register.register(game.onTurnBegin, e -> {
+			if (game.getTurn() == player)
 				turnsPlayed++;
 		});
 		register.register(game.onUnitBuy, e -> {
@@ -32,6 +32,10 @@ class GameStats implements Clearable {
 			} else {
 				enemiesTerminated++;
 			}
+		});
+		register.register(game.onConquerFinish, e -> {
+			if (e.conquerer.getTeam() == player)
+				buildingsConquered++;
 		});
 		register.register(game.onMoneyChange, e -> {
 			if (e.team == player) {
@@ -63,6 +67,10 @@ class GameStats implements Clearable {
 
 	int getUnitsCasualties() {
 		return unitsCasualties;
+	}
+
+	int getBuildingsConquered() {
+		return buildingsConquered;
 	}
 
 	int getMoneyGained() {
