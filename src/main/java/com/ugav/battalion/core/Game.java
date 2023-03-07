@@ -408,6 +408,8 @@ public class Game {
 		int pos = factory.getPos();
 		if (!factory.type.canBuildUnits || !factory.isActive() || unit(pos) != null)
 			throw new IllegalStateException();
+		if (!unitType.canStandOn(terrain(factory.getPos())))
+			throw new IllegalStateException();
 
 		Map<Unit.Type, Building.UnitSale> sales = factory.getAvailableUnits();
 		Building.UnitSale sale = sales.get(unitType);

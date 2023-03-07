@@ -1,5 +1,6 @@
 package com.ugav.battalion.core;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -192,32 +193,35 @@ public class Building extends Entity implements IBuilding {
 	public Map<Unit.Type, UnitSale> getAvailableUnits() {
 		if (!type.canBuildUnits)
 			throw new IllegalStateException();
-		Map<Unit.Type, UnitSale> sales = new HashMap<>();
-		Consumer<UnitSale> addSale = sale -> sales.put(sale.type, sale);
-
 		Team team = getTeam();
+		List<UnitSale> sales = new ArrayList<>();
 		if (game.canBuildLandUnits(team)) {
-			addSale.accept(UnitSale.of(Unit.Type.Soldier, 75));
-			addSale.accept(UnitSale.of(Unit.Type.Bazooka, 100));
-			addSale.accept(UnitSale.of(Unit.Type.TankAntiAir, 230));
-			addSale.accept(UnitSale.of(Unit.Type.Tank, 270));
-			addSale.accept(UnitSale.of(Unit.Type.Mortar, 300));
-			addSale.accept(UnitSale.of(Unit.Type.Artillery, 470));
-			addSale.accept(UnitSale.of(Unit.Type.TankBig, 470));
+			sales.add(UnitSale.of(Unit.Type.Soldier, 75));
+			sales.add(UnitSale.of(Unit.Type.Bazooka, 100));
+			sales.add(UnitSale.of(Unit.Type.TankAntiAir, 230));
+			sales.add(UnitSale.of(Unit.Type.Tank, 270));
+			sales.add(UnitSale.of(Unit.Type.Mortar, 300));
+			sales.add(UnitSale.of(Unit.Type.Artillery, 470));
+			sales.add(UnitSale.of(Unit.Type.TankBig, 470));
 		}
 		if (game.canBuildWaterUnits(team)) {
-			addSale.accept(UnitSale.of(Unit.Type.SpeedBoat, 200));
-			addSale.accept(UnitSale.of(Unit.Type.ShipAntiAir, 450));
-			addSale.accept(UnitSale.of(Unit.Type.Ship, 500));
-			addSale.accept(UnitSale.of(Unit.Type.ShipArtillery, 800));
-			addSale.accept(UnitSale.of(Unit.Type.Submarine, 475));
+			sales.add(UnitSale.of(Unit.Type.SpeedBoat, 200));
+			sales.add(UnitSale.of(Unit.Type.ShipAntiAir, 450));
+			sales.add(UnitSale.of(Unit.Type.Ship, 500));
+			sales.add(UnitSale.of(Unit.Type.ShipArtillery, 800));
+			sales.add(UnitSale.of(Unit.Type.Submarine, 475));
 		}
 		if (game.canBuildAirUnits(team)) {
-			addSale.accept(UnitSale.of(Unit.Type.Airplane, 340));
-			addSale.accept(UnitSale.of(Unit.Type.Zeppelin, 650));
+			sales.add(UnitSale.of(Unit.Type.Airplane, 340));
+			sales.add(UnitSale.of(Unit.Type.Zeppelin, 650));
 		}
 
-		return sales;
+		Terrain terrain = game.terrain(getPos());
+		Map<Unit.Type, UnitSale> salesMap = new HashMap<>();
+		for (UnitSale sale : sales)
+			if (sale.type.canStandOn(terrain))
+				salesMap.put(sale.type, sale);
+		return salesMap;
 	}
 
 	public static class UnitSale {
