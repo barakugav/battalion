@@ -197,8 +197,8 @@ public class Unit extends Entity implements IUnit {
 				Terrain.Category.Hiils, Terrain.Category.Mountain, Terrain.Category.Shore, Terrain.Category.Road,
 				Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh),
 
-		StandOnWater(TypeBuilder::canStand, Terrain.Category.Water, Terrain.Category.BridgeHigh,
-				Terrain.Category.Shore),
+		StandOnWater(TypeBuilder::canStand, Terrain.Category.Water, Terrain.Category.WaterShallow,
+				Terrain.Category.BridgeHigh, Terrain.Category.Shore),
 
 		StandOnWaterDeep(TypeBuilder::canStand, Terrain.Category.Water, Terrain.Category.BridgeLow,
 				Terrain.Category.BridgeHigh),

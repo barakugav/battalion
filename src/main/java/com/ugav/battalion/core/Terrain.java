@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
+import java.util.function.Predicate;
 
 public enum Terrain {
 
@@ -26,7 +27,12 @@ public enum Terrain {
 
 	Shore(Category.Shore),
 
-	ClearWater(Category.Water);
+	ClearWater(Category.Water),
+
+	WaterShallow1(Category.WaterShallow), WaterShallow2(Category.WaterShallow), WaterShallow3(Category.WaterShallow),
+	WaterShallow4(Category.WaterShallow), WaterShallow5(Category.WaterShallow), WaterShallow6(Category.WaterShallow),
+	WaterShallow7(Category.WaterShallow), WaterShallow8(Category.WaterShallow), WaterShallow9(Category.WaterShallow),
+	WaterShallow10(Category.WaterShallow), WaterShallow11(Category.WaterShallow), WaterShallow12(Category.WaterShallow);
 
 	public final Category category;
 
@@ -34,8 +40,42 @@ public enum Terrain {
 		this.category = category;
 	}
 
+	public boolean hasWater() {
+		switch (category) {
+		case Water:
+		case WaterShallow:
+		case Shore:
+		case BridgeLow:
+		case BridgeHigh:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	public boolean isBridge() {
+		switch (category) {
+		case BridgeLow:
+		case BridgeHigh:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	public boolean isRoad() {
+		switch (category) {
+		case Road:
+		case BridgeLow:
+		case BridgeHigh:
+			return true;
+		default:
+			return false;
+		}
+	}
+
 	public enum Category {
-		FlatLand, Forest, Hiils, Mountain, Road, BridgeLow, BridgeHigh, Shore, Water;
+		FlatLand, Forest, Hiils, Mountain, Road, BridgeLow, BridgeHigh, Shore, Water, WaterShallow;
 
 		public List<Terrain> getTerrains() {
 			List<Terrain> terrains = new ArrayList<>();
@@ -47,9 +87,9 @@ public enum Terrain {
 	}
 
 	public static Set<Direction> getBridgeConnection(int cell, IntFunction<Terrain> terrain, int width, int high) {
-		Set<Terrain.Category> connectCategoties = EnumSet.of(Terrain.Category.Road, Terrain.Category.BridgeLow,
-				Terrain.Category.BridgeHigh);
-		Set<Terrain.Category> unconnectCategoties = EnumSet.of(Terrain.Category.Water);
+		Predicate<Terrain> isConnect = Terrain::isRoad;
+		Predicate<Terrain> isUnconnect = t -> EnumSet.of(Terrain.Category.Water, Terrain.Category.WaterShallow)
+				.contains(t.category);
 		IntPredicate isInRange = p -> Cell.isInRect(p, width - 1, high - 1);
 
 		if (!EnumSet.of(Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh).contains(terrain.apply(cell).category))
@@ -60,10 +100,10 @@ public enum Terrain {
 			int p = Cell.add(cell, dir);
 			if (!isInRange.test(p))
 				continue;
-			Terrain.Category c = terrain.apply(p).category;
-			if (connectCategoties.contains(c))
+			Terrain t = terrain.apply(p);
+			if (isConnect.test(t))
 				connections.add(dir);
-			else if (unconnectCategoties.contains(c))
+			else if (isUnconnect.test(t))
 				connections.addAll(dir.orthogonal());
 		}
 

@@ -45,18 +45,15 @@ class Images {
 
 		private static final Map<Desc, BufferedImage> imgs = new HashMap<>();
 		static {
-			for (int type = 1; type <= 7; type++)
-				loadTerrain(Terrain.valueOf("FlatLand" + type), "img/terrain/flat_land_0" + type + ".png");
-			for (int type = 1; type <= 2; type++)
-				loadTerrain(Terrain.valueOf("Forest" + type), "img/terrain/forest_0" + type + ".png");
-			for (int type = 1; type <= 4; type++)
-				loadTerrain(Terrain.valueOf("Hills" + type), "img/terrain/hills_0" + type + ".png");
-			for (int type = 1; type <= 4; type++)
-				loadTerrain(Terrain.valueOf("Mountain" + type), "img/terrain/mountain_0" + type + ".png");
+			loadTerrainRepeat("FlatLand", "img/terrain/flat_land_%02d.png", 7);
+			loadTerrainRepeat("Forest", "img/terrain/forest_%02d.png", 2);
+			loadTerrainRepeat("Hills", "img/terrain/hills_%02d.png", 4);
+			loadTerrainRepeat("Mountain", "img/terrain/mountain_%02d.png", 4);
 			loadTerrain(Terrain.Road, "img/terrain/road_vxvx.png");
 			loadTerrain(Terrain.BridgeLow, "img/terrain/bridge_low.png");
 			loadTerrain(Terrain.BridgeHigh, "img/terrain/bridge_high.png");
 			loadTerrain(Terrain.ClearWater, "img/terrain/water_clear.png");
+			loadTerrainRepeat("WaterShallow", "img/terrain/water_obstacle_%02d.png", 12);
 		}
 
 		private static void loadTerrain(Terrain terrain, String path) {
@@ -65,6 +62,11 @@ class Images {
 			int width = img.getWidth() / gestureNum;
 			for (int gesture = 0; gesture < gestureNum; gesture++)
 				imgs.put(new Desc(terrain, gesture), Utils.imgSub(img, gesture * width, 0, width, img.getHeight()));
+		}
+
+		private static void loadTerrainRepeat(String terrain, String path, int variantNum) {
+			for (int variant = 1; variant <= variantNum; variant++)
+				loadTerrain(Terrain.valueOf(terrain + variant), String.format(path, Integer.valueOf(variant)));
 		}
 
 		static BufferedImage getDefault(Terrain terrain) {
@@ -99,6 +101,18 @@ class Images {
 			case BridgeHigh:
 				return 1;
 			case ClearWater:
+			case WaterShallow1:
+			case WaterShallow2:
+			case WaterShallow3:
+			case WaterShallow4:
+			case WaterShallow5:
+			case WaterShallow6:
+			case WaterShallow7:
+			case WaterShallow8:
+			case WaterShallow9:
+			case WaterShallow10:
+			case WaterShallow11:
+			case WaterShallow12:
 			case Shore:
 				return 4;
 			default:

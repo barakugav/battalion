@@ -411,9 +411,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					Pair<Direction, Direction> dirs = quadrantToDirs(quadrant);
 					int p1 = Cell.add(pos, dirs.e1), p2 = Cell.add(pos, dirs.e2),
 							p3 = Cell.add(Cell.add(pos, dirs.e1), dirs.e2);
-					Set<Terrain.Category> waters = EnumSet.of(Terrain.Category.Water, Terrain.Category.BridgeLow,
-							Terrain.Category.BridgeHigh, Terrain.Category.Shore);
-					IntPredicate isWater = p -> !arena.isInArena(p) || waters.contains(arena.getTerrain(p).category);
+					IntPredicate isWater = p -> !arena.isInArena(p) || arena.getTerrain(p).hasWater();
 					boolean c1 = !isWater.test(p1), c2 = !isWater.test(p2), c3 = !isWater.test(p3);
 
 					if (c1 || c2 || c3)
@@ -460,9 +458,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 					Pair<Direction, Direction> dirs = quadrantToDirs(quadrant);
 					int p1 = Cell.add(pos, dirs.e1), p2 = Cell.add(pos, dirs.e2),
 							p3 = Cell.add(Cell.add(pos, dirs.e1), dirs.e2);
-					IntPredicate isWater = p -> (!arena.isInArena(p)
-							|| EnumSet.of(Terrain.Category.Water, Terrain.Category.Shore, Terrain.Category.BridgeLow,
-									Terrain.Category.BridgeHigh).contains(arena.getTerrain(p).category));
+					IntPredicate isWater = p -> !arena.isInArena(p) || arena.getTerrain(p).hasWater();
 					Predicate<Direction> isBridge = dir -> {
 						int p = Cell.add(pos, dir);
 						if (!arena.isInArena(p) || !EnumSet.of(Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh)
