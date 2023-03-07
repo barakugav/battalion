@@ -35,7 +35,13 @@ class ArenaPanelAnimated extends ArenaPanelGameAbstract {
 
 	private class GameActionsThread extends Thread {
 
-		private volatile boolean running = true;
+		private volatile boolean running;
+
+		@Override
+		public void start() {
+			running = true;
+			super.start();
+		}
 
 		@Override
 		public void run() {

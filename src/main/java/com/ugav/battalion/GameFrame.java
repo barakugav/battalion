@@ -30,6 +30,7 @@ class GameFrame extends JFrame {
 		setLocationByPlatform(true);
 		setResizable(false);
 		setPreferredSize(new Dimension(FRAME_WIDTH, FRAME_HEIGHT));
+		pack();
 		setIconImage(Images.FrameIcon);
 
 		/* By default display main menu */

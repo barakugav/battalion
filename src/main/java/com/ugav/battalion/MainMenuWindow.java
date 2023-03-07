@@ -16,7 +16,6 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
-import javax.swing.Timer;
 
 import com.ugav.battalion.Levels.LevelHandle;
 import com.ugav.battalion.core.Action;
@@ -78,9 +77,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 		showTab(mainTab);
 
 		/* start animation after delay of 0.1sec */
-		Timer timer = new Timer(100, e -> animatedArena.runAnimation());
-		timer.setRepeats(false);
-		timer.start();
+		Utils.swingRunLater(100, () -> animatedArena.runAnimation());
 	}
 
 	private JPanel createTabsPanel() {
