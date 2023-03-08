@@ -71,7 +71,7 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 		lvlNameLabel.setOpaque(true);
 		panel.add(lvlNameLabel, Utils.gbConstraints(0, 1, 1, 1, GridBagConstraints.HORIZONTAL, 1, 0));
 
-		Dimension size = new Dimension(170, 150);
+		Dimension size = new Dimension(170, 170);
 		panel.setPreferredSize(size);
 		Dimension miniMapSize = miniMap.getPreferredSize();
 		if (miniMapSize.width > size.width || miniMapSize.height > size.width)

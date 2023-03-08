@@ -12,10 +12,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.border.Border;
 
 import com.ugav.battalion.Levels.LevelHandle;
 import com.ugav.battalion.core.Action;
@@ -204,11 +207,36 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 	private class AboutTab extends Tab {
 
 		private static final long serialVersionUID = 1L;
+		private static final String Text;
+		static {
+			List<String> lines = new ArrayList<>();
+			lines.add("Inspired by 'Battalion: Nemesis'");
+			lines.add("Check me out at https://github.com/barakugav");
+
+			StringBuilder b = new StringBuilder();
+			for (int i = 0; i < lines.size(); i++) {
+				b.append(lines.get(i));
+				if (i < lines.size() - 1)
+					b.append(System.lineSeparator());
+			}
+			Text = b.toString();
+		}
 
 		AboutTab() {
 			super("About");
 			Menus.ColumnWithMargins column = new Menus.ColumnWithMargins();
 			column.addComp(new Menus.Title("About"));
+
+			JTextArea text = new JTextArea();
+			text.setEditable(false);
+//			text.setWrapStyleWord(true);
+//			text.setLineWrap(true);
+			text.setText(Text);
+			text.setBackground(new Color(150, 150, 150));
+			Border border = BorderFactory.createLineBorder(new Color(40, 40, 40), 3);
+			Border margin = BorderFactory.createEmptyBorder(3, 3, 3, 3);
+			text.setBorder(BorderFactory.createCompoundBorder(border, margin));
+			column.addComp(text);
 
 			Menus.ButtonColumn additionalButtonSet = new Menus.ButtonColumn();
 			additionalButtonSet.addButton("Back", e -> showTab(mainTab));
