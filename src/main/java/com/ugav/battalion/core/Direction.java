@@ -29,8 +29,16 @@ public enum Direction {
 		}
 	}
 
+	public static Set<Direction> xDirs() {
+		return EnumSet.of(XPos, XNeg);
+	}
+
+	public static Set<Direction> yDirs() {
+		return EnumSet.of(YPos, YNeg);
+	}
+
 	public Set<Direction> orthogonal() {
-		return isXDir() ? EnumSet.of(YPos, YNeg) : EnumSet.of(XPos, XNeg);
+		return isXDir() ? yDirs() : xDirs();
 	}
 
 	public boolean isXDir() {

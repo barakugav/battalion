@@ -404,53 +404,42 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		@Override
 		public void paintComponent(Graphics g) {
-			IntPredicate isBridgeHorizontal = bridgePos -> Objects.requireNonNull(
-					Terrain.isBridgeVertical(bridgePos, p -> arena.getTerrain(p), arena.arenaWidth, arena.arenaHeight),
-					"Can't determine bridge orientation").booleanValue();
-
 			Terrain terrain = arena.getTerrain(pos);
 			if (terrain == Terrain.ClearWater) {
 				arena.drawRelativeToMap(g, Images.Terrains.get(terrain, getGasture()), pos);
 				for (int quadrant = 0; quadrant < 4; quadrant++) {
 					Pair<Direction, Direction> dirs = quadrantToDirs(quadrant);
-					int p1 = Cell.add(pos, dirs.e1), p2 = Cell.add(pos, dirs.e2),
-							p3 = Cell.add(Cell.add(pos, dirs.e1), dirs.e2);
+					Direction d1 = dirs.e1, d2 = dirs.e2;
+					int p1 = Cell.add(pos, d1), p2 = Cell.add(pos, d2), p3 = Cell.add(pos, d1, d2);
 					IntPredicate isWater = p -> !arena.isInArena(p) || arena.getTerrain(p).hasWater();
 					boolean c1 = !isWater.test(p1), c2 = !isWater.test(p2), c3 = !isWater.test(p3);
-
 					if (c1 || c2 || c3)
 						arena.drawRelativeToMap(g, Images.WaterEdges.get(quadrant, c1, c2, getGasture()), pos);
 				}
 
 			} else if (terrain == Terrain.Road) {
-				Predicate<Direction> checkDir = dir -> {
+				Predicate<Direction> isConnect = dir -> {
 					int p = Cell.add(pos, dir);
-					Set<Terrain.Category> roads = EnumSet.of(Terrain.Category.Road, Terrain.Category.BridgeLow,
-							Terrain.Category.BridgeHigh);
-					return arena.isInArena(p) && roads.contains(arena.getTerrain(p).category);
+					return arena.isInArena(p) && arena.getTerrain(p).isRoad();
 				};
-				boolean xpos = checkDir.test(Direction.XPos);
-				boolean yneg = checkDir.test(Direction.YNeg);
-				boolean xneg = checkDir.test(Direction.XNeg);
-				boolean ypos = checkDir.test(Direction.YPos);
+				boolean xpos = isConnect.test(Direction.XPos);
+				boolean yneg = isConnect.test(Direction.YNeg);
+				boolean xneg = isConnect.test(Direction.XNeg);
+				boolean ypos = isConnect.test(Direction.YPos);
 				BufferedImage img = Images.Roads.get(xpos, yneg, xneg, ypos);
 				arena.drawRelativeToMap(g, img, pos);
 
-			} else if (EnumSet.of(Terrain.BridgeLow, Terrain.BridgeHigh).contains(terrain)) {
-				Set<Direction> ends = EnumSet.noneOf(Direction.class);
-				for (Direction dir : EnumSet.of(Direction.XPos, Direction.YNeg, Direction.XNeg, Direction.YPos)) {
+			} else if (terrain.isBridge()) {
+				Set<Direction> landConnections = EnumSet.noneOf(Direction.class);
+				for (Direction dir : Direction.values()) {
 					int p = Cell.add(pos, dir);
-					Set<Terrain.Category> endCategoties = EnumSet.of(Terrain.Category.Road, Terrain.Category.FlatLand,
-							Terrain.Category.Forest, Terrain.Category.Hiils, Terrain.Category.Mountain,
-							Terrain.Category.Shore);
-					if (arena.isInArena(p) && endCategoties.contains(arena.getTerrain(p).category))
-						ends.add(dir);
+					if (arena.isInArena(p) && !arena.getTerrain(p).isWater() && !arena.getTerrain(p).isBridge())
+						landConnections.add(dir);
 				}
 
-				Set<Direction> orientation = isBridgeHorizontal.test(pos) ? EnumSet.of(Direction.XPos, Direction.XNeg)
-						: EnumSet.of(Direction.YPos, Direction.YNeg);
+				Set<Direction> orientation = isBridgeHorizontal(pos) ? Direction.xDirs() : Direction.yDirs();
 				for (Direction dir : orientation) {
-					BufferedImage img = Images.Bridges.get(terrain, dir, ends.contains(dir));
+					BufferedImage img = Images.Bridges.get(terrain, dir, landConnections.contains(dir));
 					arena.drawRelativeToMap(g, img, pos);
 				}
 
@@ -460,16 +449,13 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 				for (int quadrant = 0; quadrant < 4; quadrant++) {
 					Pair<Direction, Direction> dirs = quadrantToDirs(quadrant);
-					int p1 = Cell.add(pos, dirs.e1), p2 = Cell.add(pos, dirs.e2),
-							p3 = Cell.add(Cell.add(pos, dirs.e1), dirs.e2);
+					int p1 = Cell.add(pos, dirs.e1), p2 = Cell.add(pos, dirs.e2), p3 = Cell.add(pos, dirs.e1, dirs.e2);
 					IntPredicate isWater = p -> !arena.isInArena(p) || arena.getTerrain(p).hasWater();
 					Predicate<Direction> isBridge = dir -> {
 						int p = Cell.add(pos, dir);
-						if (!arena.isInArena(p) || !EnumSet.of(Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh)
-								.contains(arena.getTerrain(p).category))
+						if (!arena.isInArena(p) || !arena.getTerrain(p).isBridge())
 							return false;
-						boolean bridgeHorizonal = isBridgeHorizontal.test(p);
-						return bridgeHorizonal ^ EnumSet.of(Direction.YPos, Direction.YNeg).contains(dir);
+						return isBridgeHorizontal(p) ^ !dir.isXDir();
 					};
 					boolean c1 = !isWater.test(p1), c2 = !isWater.test(p2), c3 = !isWater.test(p3);
 					c1 = c1 || isBridge.test(dirs.e1);
@@ -491,6 +477,14 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			} else {
 				arena.drawRelativeToMap(g, Images.Terrains.get(terrain, getGasture()), pos);
 			}
+		}
+
+		private boolean isBridgeHorizontal(int bridgePos) {
+			Boolean r = Terrain.isBridgeVertical(bridgePos, p -> arena.getTerrain(p), arena.arenaWidth,
+					arena.arenaHeight);
+			if (r == null)
+				throw new IllegalStateException("Can't determine bridge orientation");
+			return r.booleanValue();
 		}
 
 		private static Pair<Direction, Direction> quadrantToDirs(int quadrant) {

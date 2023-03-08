@@ -1,6 +1,5 @@
 package com.ugav.battalion.core;
 
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -108,8 +107,7 @@ public class LevelBuilder {
 
 		for (Iter.Int it = checkBridge.iterator(); it.hasNext();) {
 			int bridgePos = it.next();
-			if (EnumSet.of(Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh)
-					.contains(terrain.apply(bridgePos).category))
+			if (terrain.apply(bridgePos).isBridge())
 				if (Terrain.isBridgeVertical(bridgePos, terrain, width(), height()) == null)
 					return "illegal bridge, can't determine orientation";
 		}

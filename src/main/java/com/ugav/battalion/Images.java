@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -413,31 +412,32 @@ class Images {
 		private final static Map<Desc, BufferedImage> imgs = new HashMap<>();
 		static {
 			boolean[] bs = new boolean[] { false, true };
-			for (boolean xpos : bs) {
-				for (boolean yneg : bs) {
-					for (boolean xneg : bs) {
-						for (boolean ypos : bs) {
+			for (boolean connectXpos : bs) {
+				for (boolean connectYneg : bs) {
+					for (boolean connectXneg : bs) {
+						for (boolean connectYpos : bs) {
 							String suffix = "";
-							suffix += xpos ? "v" : "x";
-							suffix += yneg ? "v" : "x";
-							suffix += xneg ? "v" : "x";
-							suffix += ypos ? "v" : "x";
-							imgs.put(new Desc(xpos, yneg, xneg, ypos), loadImg("img/terrain/road_" + suffix + ".png"));
+							suffix += connectXpos ? "v" : "x";
+							suffix += connectYneg ? "v" : "x";
+							suffix += connectXneg ? "v" : "x";
+							suffix += connectYpos ? "v" : "x";
+							imgs.put(new Desc(connectXpos, connectYneg, connectXneg, connectYpos),
+									loadImg("img/terrain/road_" + suffix + ".png"));
 						}
 					}
 				}
 			}
 		}
 
-		static BufferedImage get(boolean xpos, boolean yneg, boolean xneg, boolean ypos) {
-			return checkExists(imgs, new Desc(xpos, yneg, xneg, ypos));
+		static BufferedImage get(boolean connectXpos, boolean connectYneg, boolean connectXneg, boolean connectYpos) {
+			return checkExists(imgs, new Desc(connectXpos, connectYneg, connectXneg, connectYpos));
 		}
 
 		private static class Desc extends ImgDesc {
 
 			@SuppressWarnings("boxing")
-			Desc(boolean xpos, boolean yneg, boolean xneg, boolean ypos) {
-				super(xpos, yneg, xneg, ypos);
+			Desc(boolean connectXpos, boolean connectYneg, boolean connectXneg, boolean connectYpos) {
+				super(connectXpos, connectYneg, connectXneg, connectYpos);
 			}
 		}
 
@@ -463,7 +463,7 @@ class Images {
 		}
 
 		static BufferedImage get(Terrain bridge, Direction dir, boolean isConnectedToLand) {
-			if (!EnumSet.of(Terrain.BridgeLow, Terrain.BridgeHigh).contains(bridge))
+			if (!bridge.isBridge())
 				throw new IllegalArgumentException(Objects.toString(bridge));
 			boolean isHigh = bridge == Terrain.BridgeHigh;
 			return checkExists(imgs, new Desc(isHigh, dir, isConnectedToLand));

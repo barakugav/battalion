@@ -5,8 +5,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.IntFunction;
-import java.util.function.IntPredicate;
-import java.util.function.Predicate;
 
 public enum Terrain {
 
@@ -53,6 +51,16 @@ public enum Terrain {
 		}
 	}
 
+	public boolean isWater() {
+		switch (category) {
+		case Water:
+		case WaterShallow:
+			return true;
+		default:
+			return false;
+		}
+	}
+
 	public boolean isBridge() {
 		switch (category) {
 		case BridgeLow:
@@ -87,23 +95,18 @@ public enum Terrain {
 	}
 
 	public static Set<Direction> getBridgeConnection(int cell, IntFunction<Terrain> terrain, int width, int high) {
-		Predicate<Terrain> isConnect = Terrain::isRoad;
-		Predicate<Terrain> isUnconnect = t -> EnumSet.of(Terrain.Category.Water, Terrain.Category.WaterShallow)
-				.contains(t.category);
-		IntPredicate isInRange = p -> Cell.isInRect(p, width - 1, high - 1);
-
-		if (!EnumSet.of(Terrain.Category.BridgeLow, Terrain.Category.BridgeHigh).contains(terrain.apply(cell).category))
-			throw new IllegalArgumentException("terrain is not a bridge at: " + cell);
+		if (!terrain.apply(cell).isBridge())
+			throw new IllegalArgumentException("terrain is not a bridge at: " + Cell.toString(cell));
 
 		Set<Direction> connections = EnumSet.noneOf(Direction.class);
-		for (Direction dir : EnumSet.of(Direction.XPos, Direction.YNeg, Direction.XNeg, Direction.YPos)) {
+		for (Direction dir : Direction.values()) {
 			int p = Cell.add(cell, dir);
-			if (!isInRange.test(p))
+			if (!Cell.isInRect(p, width - 1, high - 1))
 				continue;
 			Terrain t = terrain.apply(p);
-			if (isConnect.test(t))
+			if (t.isRoad())
 				connections.add(dir);
-			else if (isUnconnect.test(t))
+			else if (t.isWater())
 				connections.addAll(dir.orthogonal());
 		}
 
@@ -111,19 +114,19 @@ public enum Terrain {
 	}
 
 	public static Boolean isBridgeVertical(int cell, IntFunction<Terrain> terrain, int width, int high) {
-		if (!EnumSet.of(Terrain.BridgeLow, Terrain.BridgeHigh).contains(terrain.apply(cell)))
-			throw new IllegalArgumentException("terrain is not a bridge at: " + cell);
+		if (!terrain.apply(cell).isBridge())
+			throw new IllegalArgumentException("terrain is not a bridge at: " + Cell.toString(cell));
 
 		Set<Direction> connections = getBridgeConnection(cell, terrain, width, high);
 		switch (connections.size()) {
 		case 0:
 			return Boolean.TRUE;
 		case 1:
-			return Boolean.valueOf(EnumSet.of(Direction.XPos, Direction.XNeg).contains(connections.iterator().next()));
+			return Boolean.valueOf(connections.iterator().next().isXDir());
 		case 2:
-			if (connections.equals(Set.of(Direction.XPos, Direction.XNeg)))
+			if (connections.equals(Direction.xDirs()))
 				return Boolean.TRUE;
-			if (connections.equals(Set.of(Direction.YPos, Direction.YNeg)))
+			if (connections.equals(Direction.yDirs()))
 				return Boolean.FALSE;
 		default:
 			return null;

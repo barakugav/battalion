@@ -33,6 +33,15 @@ public class Cell {
 		return of(x(cell) + dir.dx, y(cell) + dir.dy);
 	}
 
+	public static int add(int cell, Direction dir, Direction... dirs) {
+		int x = x(cell) + dir.dx, y = y(cell) + dir.dy;
+		for (Direction d : dirs) {
+			x += d.dx;
+			y += d.dy;
+		}
+		return of(x, y);
+	}
+
 	public static double dist(int cell1, int cell2) {
 		int x1 = x(cell1), x2 = x(cell2);
 		int y1 = y(cell1), y2 = y(cell2);
