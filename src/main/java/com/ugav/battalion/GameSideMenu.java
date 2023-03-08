@@ -271,12 +271,16 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 			}
 
 			Position currentMapPos = window.arenaPanel.getCurrentMapOrigin();
-			int x = (int) (currentMapPos.x * TileSize);
-			int y = (int) (currentMapPos.y * TileSize);
-			int width = (int) Math.ceil(TileSize * window.arenaPanel.displayedArenaWidth()) - 1;
-			int height = (int) Math.ceil(TileSize * window.arenaPanel.displayedArenaHeight()) - 1;
+			int arenaWidth = window.arenaPanel.arenaWidth();
+			int arenaHeight = window.arenaPanel.arenaHeight();
+			int xmin = (int) (Math.max(0, currentMapPos.x) * TileSize);
+			int xmax = (int) (Math.min(arenaWidth, (currentMapPos.x + window.arenaPanel.displayedArenaWidth()))
+					* TileSize);
+			int ymin = (int) (Math.max(0, currentMapPos.y) * TileSize);
+			int ymax = (int) (Math.min(arenaHeight, (currentMapPos.y + window.arenaPanel.displayedArenaHeight()))
+					* TileSize);
 			g.setColor(CurrentMapColor);
-			g.drawRect(x, y, width, height);
+			g.drawRect(xmin, ymin, (xmax - xmin) - 1, (ymax - ymin) - 1);
 		}
 
 	}
