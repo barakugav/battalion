@@ -39,7 +39,7 @@ class GestureTask implements TickTask {
 	}
 
 	@Override
-	public void run() {
+	public void onTick() {
 		final int cycleLength = GestureNum * GestureDuration;
 		counter = (counter + 1) % cycleLength;
 	}

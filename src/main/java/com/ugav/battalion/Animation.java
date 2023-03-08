@@ -521,7 +521,7 @@ interface Animation {
 			}
 
 			@Override
-			public synchronized void run() {
+			public synchronized void onTick() {
 				if (!userChosenDirValid)
 					return;
 				double x = currentPos.x + userChosenDx * StepSize;
@@ -568,6 +568,7 @@ interface Animation {
 
 	static class Task implements TickTask {
 
+		private volatile boolean isTaskRunning;
 		private final Collection<AnimationEntry> queue = new ConcurrentLinkedQueue<>();
 		private boolean isAnimationRunning = false;
 
@@ -580,7 +581,9 @@ interface Animation {
 		}
 
 		@Override
-		public void run() {
+		public void onTick() {
+			if (!isTaskRunning)
+				return;
 			boolean animated = false;
 
 			for (Iterator<AnimationEntry> it = queue.iterator(); it.hasNext();) {
@@ -600,26 +603,19 @@ interface Animation {
 		}
 
 		void animateAndWait(Animation animation) {
-			animate(animation, true);
-		}
-
-		private void animate(Animation animation, boolean wait) {
+			if (!isTaskRunning)
+				return;
 			AnimationEntry entry = new AnimationEntry(animation);
-			if (wait) {
-				if (SwingUtilities.isEventDispatchThread())
-					throw new IllegalStateException("Can't wait for animation from GUI thread");
+			if (SwingUtilities.isEventDispatchThread())
+				throw new IllegalStateException("Can't wait for animation from GUI thread");
 
-				try {
-					synchronized (entry) {
-						queue.add(entry);
-						entry.wait();
-					}
-				} catch (InterruptedException e) {
-					throw new RuntimeException("Thread interrupted while waiting for animation", e);
+			try {
+				synchronized (entry) {
+					queue.add(entry);
+					entry.wait();
 				}
-			} else {
-
-				queue.add(entry);
+			} catch (InterruptedException e) {
+				throw new RuntimeException("Thread interrupted while waiting for animation", e);
 			}
 		}
 
@@ -632,8 +628,13 @@ interface Animation {
 			}
 		}
 
+		void setRunning(boolean running) {
+			isTaskRunning = running;
+		}
+
 		@Override
 		public void clear() {
+			isTaskRunning = false;
 			while (!queue.isEmpty()) {
 				for (Iterator<AnimationEntry> it = queue.iterator(); it.hasNext();) {
 					AnimationEntry entry = it.next();

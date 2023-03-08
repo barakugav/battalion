@@ -65,6 +65,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		Logger animationTaskLogger = new Logger.Enabled(globals.logger, () -> globals.debug.logAnimations);
 		animationTask = new Animation.Task(animationTaskLogger);
+		animationTask.setRunning(true);
 
 		entityLayer = createEntityLayer();
 
@@ -132,7 +133,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 			}
 
 			@Override
-			public void run() {
+			public void onTick() {
 				repaint();
 			}
 		});

@@ -10,7 +10,7 @@ import com.ugav.battalion.util.Pair;
 
 interface TickTask extends Clearable {
 
-	void run();
+	void onTick();
 
 	static class Manager {
 
@@ -21,7 +21,7 @@ interface TickTask extends Clearable {
 		Manager() {
 			tickTimer = new Timer(1000 / TickFPS, e -> {
 				for (Pair<TickTask, Integer> task : tasks)
-					task.e1.run();
+					task.e1.onTick();
 			});
 			tickTimer.setRepeats(true);
 		}

@@ -244,7 +244,7 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 				}
 
 				@Override
-				public void run() {
+				public void onTick() {
 					repaint();
 				}
 			});
