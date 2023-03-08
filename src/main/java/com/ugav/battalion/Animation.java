@@ -444,6 +444,11 @@ interface Animation {
 					return Position.of(x, y);
 				}
 
+				@Override
+				public String toString() {
+					return "(" + xmin + " <= x <= " + xmax + ", " + ymin + " <= x <= " + ymax + ")";
+				}
+
 			}
 
 			MapPosRange getMapPosRange() {

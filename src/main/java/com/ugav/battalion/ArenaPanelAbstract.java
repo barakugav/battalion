@@ -161,11 +161,11 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	}
 
 	double displayedArenaWidth() {
-		return (double) entityLayer.getWidth() / TILE_SIZE_PIXEL;
+		return Math.min(arenaWidth, (double) entityLayer.getWidth() / TILE_SIZE_PIXEL);
 	}
 
 	double displayedArenaHeight() {
-		return (double) entityLayer.getHeight() / TILE_SIZE_PIXEL;
+		return Math.min(arenaHeight, (double) entityLayer.getHeight() / TILE_SIZE_PIXEL);
 	}
 
 	private void onResize() {

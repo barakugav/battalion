@@ -189,7 +189,7 @@ class ArenaPanelGameAbstract extends
 				throw new IllegalArgumentException("can't display rect [" + topLeft + ", " + bottomRight + "]");
 			int x = (int) (xmin + (xmax - xmin) / 2 - displayedArenaWidth() / 2);
 			int y = (int) (ymin + (ymax - ymin) / 2 - displayedArenaHeight() / 2);
-			Position pos = mapMove.getDisplayedRange().closestContainedPoint(Position.of(x, y));
+			Position pos = mapMove.getMapPosRange().closestContainedPoint(Position.of(x, y));
 
 			for (Iter.Int it = cells.iterator(); it.hasNext();) {
 				int cell = it.next();
