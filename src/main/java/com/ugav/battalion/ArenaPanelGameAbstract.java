@@ -160,23 +160,17 @@ class ArenaPanelGameAbstract extends
 		}
 
 		private Animation createMapCenterAnimation(Unit unit) {
-			Position mapMovePos = mapMove.calcMapPosCentered(Position.fromCell(unit.getPos()));
-			return new Animation.MapMove(ArenaPanelGameAbstract.this, mapMovePos);
+			return new Animation.MapMove(ArenaPanelGameAbstract.this,
+					() -> mapMove.calcMapPosCentered(Position.fromCell(unit.getPos())));
 		}
 
 		private Animation makeSureAnimationIsVisible(Animation animation, ListInt cells) {
 			if (cells.isEmpty())
 				throw new IllegalArgumentException();
-			int p0 = cells.get(0);
-			int xmin = Cell.x(p0), xmax = Cell.x(p0);
-			int ymin = Cell.y(p0), ymax = Cell.y(p0);
-			for (Iter.Int it = cells.iterator(); it.hasNext();) {
-				int cell = it.next();
-				xmin = Math.min(xmin, Cell.x(cell));
-				xmax = Math.max(xmax, Cell.x(cell));
-				ymin = Math.min(ymin, Cell.y(cell));
-				ymax = Math.max(ymax, Cell.y(cell));
-			}
+			int xmin = cells.iterator().mapInt(Cell::x).min();
+			int xmax = cells.iterator().mapInt(Cell::x).max();
+			int ymin = cells.iterator().mapInt(Cell::y).min();
+			int ymax = cells.iterator().mapInt(Cell::y).max();
 			int topLeft = Cell.of(xmin, ymin);
 			int bottomRight = Cell.of(xmax, ymax);
 			MapPosRange displayedRange = mapMove.getDisplayedRangeFully();
@@ -185,20 +179,30 @@ class ArenaPanelGameAbstract extends
 			if (topLeftVisible && bottomRightVisible)
 				return animation; /* already visible */
 
-			if (xmin > xmax + displayedArenaWidth() || ymin > ymax + displayedArenaHeight())
-				throw new IllegalArgumentException("can't display rect [" + topLeft + ", " + bottomRight + "]");
-			int x = (int) (xmin + (xmax - xmin) / 2 - displayedArenaWidth() / 2);
-			int y = (int) (ymin + (ymax - ymin) / 2 - displayedArenaHeight() / 2);
-			Position pos = mapMove.getMapPosRange().closestContainedPoint(Position.of(x, y));
+			Animation mapMoveAnimation = new Animation.MapMove(ArenaPanelGameAbstract.this, () -> {
+				boolean canShowAll = xmin <= xmax + displayedArenaWidth() && ymin <= ymax + displayedArenaHeight();
+				if (!canShowAll)
+					globals.logger.dbgln("can't display rect [", Cell.toString(topLeft), ", ",
+							Cell.toString(bottomRight), "]");
 
-			for (Iter.Int it = cells.iterator(); it.hasNext();) {
-				int cell = it.next();
-				if (!Cell.isInRect(cell, pos.x, pos.y, pos.x + displayedArenaWidth() - 1,
-						pos.y + displayedArenaHeight() - 1))
-					throw new IllegalStateException();
-			}
+				int x = (int) (xmin + (xmax - xmin) / 2 - displayedArenaWidth() / 2);
+				int y = (int) (ymin + (ymax - ymin) / 2 - displayedArenaHeight() / 2);
+				Position pos = mapMove.getMapPosRange().closestContainedPoint(Position.of(x, y));
 
-			Animation mapMoveAnimation = new Animation.MapMove(ArenaPanelGameAbstract.this, pos);
+				Utils.assertBlk(() -> {
+					if (!canShowAll)
+						return true;
+					for (Iter.Int it = cells.iterator(); it.hasNext();) {
+						int cell = it.next();
+						if (!Cell.isInRect(cell, pos.x, pos.y, pos.x + displayedArenaWidth() - 1,
+								pos.y + displayedArenaHeight() - 1))
+							return false;
+					}
+					return true;
+				});
+
+				return pos;
+			});
 			return Animation.of(mapMoveAnimation, animation);
 		}
 

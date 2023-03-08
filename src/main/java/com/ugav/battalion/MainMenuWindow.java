@@ -81,8 +81,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 
 		showTab(mainTab);
 
-		/* start animation after delay of 0.1sec */
-		Utils.swingRunLater(100, () -> animatedArena.runAnimation());
+		animatedArena.runAnimation();
 	}
 
 	private JPanel createTabsPanel() {

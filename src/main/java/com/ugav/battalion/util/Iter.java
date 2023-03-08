@@ -275,6 +275,31 @@ public interface Iter<E> extends Iterator<E> {
 			return new Map<>(this, map);
 		}
 
+		public static class MapInt implements Iter.Int {
+			private final Iter.Int it;
+			private final Func.IntToInt map;
+
+			MapInt(Iter.Int it, Func.IntToInt map) {
+				this.it = Objects.requireNonNull(it);
+				this.map = Objects.requireNonNull(map);
+			}
+
+			@Override
+			public boolean hasNext() {
+				return it.hasNext();
+			}
+
+			@Override
+			public int next() {
+				return map.apply(it.next());
+			}
+
+		}
+
+		default Iter.Int mapInt(Func.IntToInt map) {
+			return new MapInt(this, map);
+		}
+
 		public static class Filter implements Iter.Int {
 
 			private final Iter.Int it;
@@ -341,6 +366,28 @@ public interface Iter<E> extends Iterator<E> {
 			while (hasNext())
 				s += next();
 			return s;
+		}
+
+		default int max() {
+			return max(next());
+		}
+
+		default int max(int defaultVal) {
+			int m = next();
+			while (hasNext())
+				m = Math.max(m, next());
+			return m;
+		}
+
+		default int min() {
+			return min(next());
+		}
+
+		default int min(int defaultVal) {
+			int m = next();
+			while (hasNext())
+				m = Math.min(m, next());
+			return m;
 		}
 
 		static class Empty implements Iter.Int {

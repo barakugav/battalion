@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import javax.swing.JButton;
@@ -380,6 +381,10 @@ public class Utils {
 			graphics.setColor(getBackground());
 			graphics.fillOval(0, 0, width, height);
 		}
+	}
+
+	public static void assertBlk(BooleanSupplier a) {
+		assert a.getAsBoolean();
 	}
 
 }

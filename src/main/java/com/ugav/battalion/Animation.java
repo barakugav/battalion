@@ -9,6 +9,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import javax.swing.SwingUtilities;
 
@@ -351,16 +352,16 @@ interface Animation {
 	static class MapMove implements Animation {
 
 		private final ArenaPanelGameAbstract arena;
-		private final Position target0;
+		private final Supplier<Position> target0;
 		private static final double StepSize = 0.1;
 
-		MapMove(ArenaPanelGameAbstract arena, Position target) {
+		MapMove(ArenaPanelGameAbstract arena, Supplier<Position> target) {
 			this.arena = arena;
 			this.target0 = target;
 		}
 
 		private Position target() {
-			return arena.mapMove.getMapPosRange().closestContainedPoint(target0);
+			return arena.mapMove.getMapPosRange().closestContainedPoint(target0.get());
 		}
 
 		@Override
