@@ -34,6 +34,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
@@ -347,6 +348,13 @@ public class Utils {
 		JButton button = new JButton(label);
 		button.addActionListener(action);
 		return button;
+	}
+
+	public static JComponent fillerComp() {
+		JPanel comp = new JPanel();
+		comp.setPreferredSize(new Dimension(0, 0));
+		comp.setOpaque(false);
+		return comp;
 	}
 
 	public static class RoundedPanel extends JPanel {

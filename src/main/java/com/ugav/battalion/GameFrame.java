@@ -28,8 +28,9 @@ class GameFrame extends JFrame {
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationByPlatform(true);
-		setResizable(false);
-		setPreferredSize(new Dimension(FRAME_WIDTH, FRAME_HEIGHT));
+//		setResizable(false);
+//		setPreferredSize(new Dimension(FRAME_WIDTH, FRAME_HEIGHT));
+		setMinimumSize(new Dimension(FRAME_WIDTH, FRAME_HEIGHT));
 		pack();
 		setIconImage(Images.FrameIcon);
 

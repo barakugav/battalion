@@ -49,7 +49,8 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 		setBackground(BackgroundColor);
 		addComp(createMinimapPanel());
 		addComp(createTeamsPanel());
-		addComp(descriptionPanel = new DescriptionPanel(window), 1);
+		addComp(descriptionPanel = new DescriptionPanel(window));
+		addComp(Utils.fillerComp(), 1);
 		addComp(createButtonsPannel());
 
 		for (Team team : Team.realTeams)
@@ -137,10 +138,7 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 			panel.addComp(teamPanel);
 		}
 
-		JPanel filler = new JPanel();
-		filler.setPreferredSize(new Dimension(0, 0));
-		filler.setOpaque(false);
-		panel.addComp(filler, 1);
+		panel.addComp(Utils.fillerComp(), 1);
 
 		panel.setPreferredSize(new Dimension(panel.getPreferredSize().width, 130));
 

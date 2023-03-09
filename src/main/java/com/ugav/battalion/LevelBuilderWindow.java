@@ -274,9 +274,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
 				/* dummy panel to fill extra space */
-				JPanel filler = new JPanel();
-				filler.setPreferredSize(new Dimension(0, 0));
-				panel.add(filler, Utils.gbConstraints(0, 100, 2, 1, GridBagConstraints.BOTH, 1, 1));
+				panel.add(Utils.fillerComp(), Utils.gbConstraints(0, 100, 2, 1, GridBagConstraints.BOTH, 1, 1));
 			}
 
 			void addEntityButton(Object entity) {
