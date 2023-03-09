@@ -61,7 +61,7 @@ public class Building extends Entity implements IBuilding {
 	public enum Type {
 		OilRefinery(20, Tech.BuildOnLandFlat),
 
-		OilRefineryBig(35, Tech.BuildOnLandFlat),
+		OilProcessingPlant(35, Tech.BuildOnLandFlat),
 
 		OilRig(50, Tech.BuildOnWater),
 
@@ -69,9 +69,9 @@ public class Building extends Entity implements IBuilding {
 
 		Capital(0, Tech.BuildOnLandFlat, Tech.Capital),
 
-		ControllerLand(0, Tech.BuildOnLandFlat, Tech.AllowUnitBuildLand),
-		ControllerWater(0, Tech.BuildOnLandFlat, Tech.AllowUnitBuildWater),
-		ControllerAir(0, Tech.BuildOnLandFlat, Tech.AllowUnitBuildAir);
+		LandResearchFacility(0, Tech.BuildOnLandFlat, Tech.AllowUnitBuildLand),
+		NavalControlCenter(0, Tech.BuildOnLandFlat, Tech.AllowUnitBuildWater),
+		SkyOperationsHub(0, Tech.BuildOnLandFlat, Tech.AllowUnitBuildAir);
 
 		private final Set<Terrain.Category> canBuildOn;
 		public final int moneyGain;

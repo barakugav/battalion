@@ -317,11 +317,11 @@ class Images {
 		static {
 			loadBuilding(Building.Type.Capital, "img/building/capital.png");
 			loadBuilding(Building.Type.Factory, "img/building/facotry.png");
-			loadBuilding(Building.Type.ControllerLand, "img/building/controller_land.png");
-			loadBuilding(Building.Type.ControllerWater, "img/building/controller_water.png");
-			loadBuilding(Building.Type.ControllerAir, "img/building/controller_air.png");
+			loadBuilding(Building.Type.LandResearchFacility, "img/building/controller_land.png");
+			loadBuilding(Building.Type.NavalControlCenter, "img/building/controller_water.png");
+			loadBuilding(Building.Type.SkyOperationsHub, "img/building/controller_air.png");
 			loadBuilding(Building.Type.OilRefinery, "img/building/oil_refinery.png");
-			loadBuilding(Building.Type.OilRefineryBig, "img/building/oil_refinery_big.png");
+			loadBuilding(Building.Type.OilProcessingPlant, "img/building/oil_refinery_big.png");
 			loadBuilding(Building.Type.OilRig, "img/building/oil_rig.png");
 		}
 
@@ -350,15 +350,15 @@ class Images {
 		static int gestureNum(Building.Type type) {
 			switch (type) {
 			case OilRefinery:
-			case OilRefineryBig:
+			case OilProcessingPlant:
 				return 7;
 			case OilRig:
 				return 4;
 			case Factory:
 			case Capital:
-			case ControllerLand:
-			case ControllerWater:
-			case ControllerAir:
+			case LandResearchFacility:
+			case NavalControlCenter:
+			case SkyOperationsHub:
 				return 1;
 			default:
 				throw new IllegalArgumentException("Unexpected value: " + type);
