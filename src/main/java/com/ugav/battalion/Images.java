@@ -323,13 +323,26 @@ class Images {
 		static private void loadBuilding(Building.Type type, String path) {
 			int gestureNum = gestureNum(type);
 			BufferedImage img = loadImg(path);
-			int width = img.getWidth() / gestureNum;
+
+			Team[] teams = new Team[] { Team.Red, Team.Blue, null, null };
+			for (int teamIdx = 0; teamIdx < teams.length; teamIdx++) {
+				Team team = teams[teamIdx];
+				if (team == null)
+					continue;
+
+				for (int gesture = 0; gesture < gestureNum; gesture++) {
+					int perTeamWidth = img.getWidth() / teams.length;
+					int perGestureWidth = perTeamWidth / gestureNum;
+					int x = perTeamWidth * teamIdx + perGestureWidth * gesture;
+					int width = perGestureWidth;
+
+					BufferedImage subImg = Utils.imgSub(img, x, 0, width, img.getHeight());
+					imgs.put(new Desc(type, team, gesture), subImg);
+				}
+			}
 			for (int gesture = 0; gesture < gestureNum; gesture++) {
-				BufferedImage redImg = Utils.imgSub(img, gesture * width, 0, width, img.getHeight());
-				BufferedImage blueImg = toBlue(redImg);
+				BufferedImage redImg = imgs.get(new Desc(type, Team.Red, gesture));
 				BufferedImage whiteImg = toWhite(redImg);
-				imgs.put(new Desc(type, Team.Red, gesture), redImg);
-				imgs.put(new Desc(type, Team.Blue, gesture), blueImg);
 				imgs.put(new Desc(type, Team.None, gesture), whiteImg);
 			}
 		}
@@ -545,11 +558,13 @@ class Images {
 			terrains.put(Terrain.Category.Road, loadImg("img/gui/minimap_road.png"));
 			terrains.put(Terrain.Category.BridgeLow, loadImg("img/gui/minimap_road.png"));
 			terrains.put(Terrain.Category.BridgeHigh, loadImg("img/gui/minimap_road.png"));
-			unit.put(Team.Red, loadImg("img/gui/minimap_unit.png"));
-			unit.put(Team.Blue, toBlue(loadImg("img/gui/minimap_unit.png")));
-			building.put(Team.Red, loadImg("img/gui/minimap_building.png"));
-			building.put(Team.Blue, toBlue(loadImg("img/gui/minimap_building.png")));
-			building.put(Team.None, toWhite(loadImg("img/gui/minimap_building.png")));
+			BufferedImage unitImg = loadImg("img/gui/minimap_unit.png");
+			unit.put(Team.Red, unitImg);
+			unit.put(Team.Blue, toBlue(unitImg));
+			BufferedImage buildingImg = loadImg("img/gui/minimap_building.png");
+			building.put(Team.Red, buildingImg);
+			building.put(Team.Blue, toBlue(buildingImg));
+			building.put(Team.None, toWhite(buildingImg));
 		}
 
 		static BufferedImage terrain(Terrain.Category t) {
@@ -703,13 +718,23 @@ class Images {
 		private static void loadFlagImages(String path) {
 			int gestureNum = FlagGestureNum;
 			BufferedImage img = loadImg(path);
-			int width = img.getWidth() / gestureNum;
+
+			Team[] teams = new Team[] { Team.Red, Team.Blue, null, null };
+			for (int teamIdx = 0; teamIdx < teams.length; teamIdx++) {
+				Team team = teams[teamIdx];
+				if (team == null)
+					continue;
+				for (int gesture = 0; gesture < gestureNum; gesture++) {
+					int perTeamWidth = img.getWidth() / teams.length;
+					int perGestureWidth = perTeamWidth / gestureNum;
+					int x = perTeamWidth * teamIdx + perGestureWidth * gesture;
+					int width = perGestureWidth;
+					BufferedImage subImg = Utils.imgSub(img, x, 0, width, img.getHeight());
+					flag[team.ordinal()][gesture] = subImg;
+				}
+			}
 			for (int gesture = 0; gesture < gestureNum; gesture++) {
-				BufferedImage redImg = Utils.imgSub(img, gesture * width, 0, width, img.getHeight());
-				BufferedImage blueImg = toBlue(redImg);
-				BufferedImage whiteImg = toWhite(redImg);
-				flag[Team.Red.ordinal()][gesture] = redImg;
-				flag[Team.Blue.ordinal()][gesture] = blueImg;
+				BufferedImage whiteImg = toWhite(flag[Team.Red.ordinal()][gesture]);
 				flag[Team.None.ordinal()][gesture] = whiteImg;
 			}
 		}
@@ -717,13 +742,23 @@ class Images {
 		private static void loadFlagGlowImages(String path) {
 			int gestureNum = FlagGestureNum;
 			BufferedImage img = loadImg(path);
-			int width = img.getWidth() / gestureNum;
+
+			Team[] teams = new Team[] { Team.Red, Team.Blue, null, null };
+			for (int teamIdx = 0; teamIdx < teams.length; teamIdx++) {
+				Team team = teams[teamIdx];
+				if (team == null)
+					continue;
+				for (int gesture = 0; gesture < gestureNum; gesture++) {
+					int perTeamWidth = img.getWidth() / teams.length;
+					int perGestureWidth = perTeamWidth / gestureNum;
+					int x = perTeamWidth * teamIdx + perGestureWidth * gesture;
+					int width = perGestureWidth;
+					BufferedImage subImg = Utils.imgSub(img, x, 0, width, img.getHeight());
+					flagGlow[team.ordinal()][gesture] = subImg;
+				}
+			}
 			for (int gesture = 0; gesture < gestureNum; gesture++) {
-				BufferedImage redImg = Utils.imgSub(img, gesture * width, 0, width, img.getHeight());
-				BufferedImage blueImg = toBlue(redImg);
-				BufferedImage whiteImg = toWhite(redImg);
-				flagGlow[Team.Red.ordinal()][gesture] = redImg;
-				flagGlow[Team.Blue.ordinal()][gesture] = blueImg;
+				BufferedImage whiteImg = toWhite(flag[Team.Red.ordinal()][gesture]);
 				flagGlow[Team.None.ordinal()][gesture] = whiteImg;
 			}
 		}
