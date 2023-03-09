@@ -210,6 +210,9 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 		static {
 			List<String> lines = new ArrayList<>();
 			lines.add("Inspired by 'Battalion: Nemesis'");
+			lines.add("All units and building descriptions were generated using ChatGPT.");
+			lines.add("I tried generating more units images using DALL·E 2, but the");
+			lines.add("results were not really of the same theme.");
 			lines.add("Check me out at https://github.com/barakugav");
 
 			StringBuilder b = new StringBuilder();
