@@ -202,6 +202,9 @@ class DescriptionPanel extends JPanel implements Clearable {
 			text.setLineWrap(true);
 			text.setOpaque(false);
 			text.setForeground(TextColor);
+			Font textFont = text.getFont();
+			textFont = new Font(textFont.getName(), textFont.getStyle(), 9);
+			text.setFont(textFont);
 			image = new JLabel();
 			JLabel techs = new JLabel();
 
@@ -240,8 +243,72 @@ class DescriptionPanel extends JPanel implements Clearable {
 
 		private void showBuilding(Building building) {
 			title.setText(building.type.toString());
-			text.setText("description about " + building.type.toString());
+			text.setText(getDescriptionText(building.type));
 			image.setIcon(new ImageIcon(Images.Buildings.get(building, 0)));
+		}
+
+		/**
+		 * ### Input for ChatGPT:
+		 *
+		 * I wrote a 2d strategy turn based grid game, in which the player control an
+		 * army and try to destroy the enemy units. There are many types of units, such
+		 * as tanks, soldiers, airplanes and ships. There are also buildings which allow
+		 * the player and the enemy to gain money and build more units. Also, buildings
+		 * can be conquered from one side to another. During the game, i present a side
+		 * bar including additional information for the building currently selected. Can
+		 * you provide a three sentences description for each of the following building?
+		 *
+		 * OilRefinery - produce money each turn by extracting oil from the ground.
+		 *
+		 * OilProcessingPlant - a bigger version of 'OilRefinery', producing more money.
+		 *
+		 * OilRig - offshore building producing money each turn by extracting oil from
+		 * the sea bottom.
+		 *
+		 * Factory - building allowing you to produce new units for the cost of dollars.
+		 *
+		 * Capital - a building you must protect. If the building is captured, you lose.
+		 * But you can win by conquering the enemy Capital building.
+		 *
+		 * LandResearchFacility - building giving you the technologics to build land
+		 * units in the factory.
+		 *
+		 * NavalControlCenter - building giving you the technologics to build water
+		 * units in the factory.
+		 *
+		 * SkyOperationsHub - building giving you the technologics to build air units in
+		 * the factory.
+		 */
+
+		private static String getDescriptionText(Building.Type type) {
+			switch (type) {
+			case OilRefinery:
+				return "A crucial building that generates money each turn by extracting oil from the ground."
+						+ " This building provides a steady source of income that allows buildings and maintaining an army.";
+			case OilProcessingPlant:
+				return "A larger and more advanced version of the " + Building.Type.OilRefinery
+						+ ", producing even more money each turn. Controlling it allows building a larger and more diverse army.";
+			case OilRig:
+				return "An offshore building that produces money each turn by extracting oil from the sea bottom."
+						+ " It provides the highest income building, conquer and defend it to maximize income.";
+			case Factory:
+				return "A building that allows producing new units using money."
+						+ " This building is essential for maintaining and growing an army throughout wars.";
+			case Capital:
+				return "A critical building that must be protected at all cost."
+						+ " If the building is captured by the enemy, the army will disassemble and lose.";
+			case LandResearchFacility:
+				return "A building that provides an army with the technology to build land units in factories."
+						+ " By conquring this building, one can unlock new and more advanced units to use in their army.";
+			case NavalControlCenter:
+				return "A building that provides an army with the technology to build water units in factories."
+						+ " This building is crucial for commanders who want to dominate the seas and launch amphibious assaults on their enemies.";
+			case SkyOperationsHub:
+				return "A building that provides an army with the technology to build air units in factories."
+						+ " This building allows a commander to take to the skies and launch devastating air strikes on the enemies";
+			default:
+				throw new IllegalArgumentException("Unexpected value: " + type);
+			}
 		}
 
 	}
