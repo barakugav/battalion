@@ -134,24 +134,24 @@ class Images {
 
 		private static final Map<Desc, BufferedImage> imgs = new HashMap<>();
 		static {
-			loadUnit(Unit.Type.Soldier, "img/unit/soldier.png");
-			loadUnit(Unit.Type.Bazooka, "img/unit/bazooka.png");
-			loadUnit(Unit.Type.Tank, "img/unit/tank.png");
-			loadUnit(Unit.Type.TankBig, "img/unit/tank_big.png");
-			loadUnit(Unit.Type.TankInvisible, "img/unit/tank_invisible.png");
-			loadUnit(Unit.Type.TankAntiAir, "img/unit/tank_anti_air.png");
+			loadUnit(Unit.Type.Rifleman, "img/unit/rifleman.png");
+			loadUnit(Unit.Type.RocketSpecialist, "img/unit/rocket_specialist.png");
+			loadUnit(Unit.Type.BattleTank, "img/unit/battle_tank.png");
+			loadUnit(Unit.Type.TitanTank, "img/unit/titan_tank.png");
+			loadUnit(Unit.Type.StealthTank, "img/unit/stealth_tank.png");
+			loadUnit(Unit.Type.AATank, "img/unit/aa_tank.png");
 			loadUnit(Unit.Type.Artillery, "img/unit/artillery.png");
 			loadUnit(Unit.Type.Mortar, "img/unit/mortar.png");
 			loadUnit(Unit.Type.Turrent, "img/unit/turrent.png");
 			loadUnit(Unit.Type.SpeedBoat, "img/unit/speed_boat.png");
-			loadUnit(Unit.Type.Ship, "img/unit/ship_close_range.png");
-			loadUnit(Unit.Type.ShipAntiAir, "img/unit/ship_anti_air.png");
-			loadUnit(Unit.Type.ShipArtillery, "img/unit/ship_artillery.png");
+			loadUnit(Unit.Type.Corvette, "img/unit/corvette.png");
+			loadUnit(Unit.Type.AACruiser, "img/unit/aa_cruiser.png");
+			loadUnit(Unit.Type.Battleship, "img/unit/battleship.png");
 			loadUnit(Unit.Type.Submarine, "img/unit/submarine.png");
-			loadUnit(Unit.Type.ShipTransporter, "img/unit/unit_ship_water.png");
-			loadUnit(Unit.Type.Airplane, "img/unit/airplane.png");
-			loadUnit(Unit.Type.Zeppelin, "img/unit/zeppelin.png");
-			loadUnit(Unit.Type.AirTransporter, "img/unit/unit_ship_air.png");
+			loadUnit(Unit.Type.LandingCraft, "img/unit/landing_craft.png");
+			loadUnit(Unit.Type.FighterPlane, "img/unit/fighter_plane.png");
+			loadUnit(Unit.Type.ZeppelinBomber, "img/unit/zeppelin_bomber.png");
+			loadUnit(Unit.Type.TransportPlane, "img/unit/transport_plane.png");
 		}
 
 		private static void loadUnit(Unit.Type type, String path) {
@@ -230,24 +230,24 @@ class Images {
 
 		static int standGestureNum(Unit.Type type) {
 			switch (type) {
-			case Soldier:
-			case Bazooka:
+			case Rifleman:
+			case RocketSpecialist:
 				return 1;
-			case Tank:
-			case TankBig:
-			case TankInvisible:
-			case TankAntiAir:
+			case BattleTank:
+			case TitanTank:
+			case StealthTank:
+			case AATank:
 			case Artillery:
 			case Mortar:
 			case SpeedBoat:
-			case Ship:
-			case ShipAntiAir:
-			case ShipArtillery:
+			case Corvette:
+			case AACruiser:
+			case Battleship:
 			case Submarine:
-			case ShipTransporter:
-			case Airplane:
-			case Zeppelin:
-			case AirTransporter:
+			case LandingCraft:
+			case FighterPlane:
+			case ZeppelinBomber:
+			case TransportPlane:
 				return 4;
 			case Turrent:
 				return 1;
@@ -266,8 +266,8 @@ class Images {
 
 		private static int moveGestureNum0(Unit.Type type) {
 			switch (type) {
-			case Soldier:
-			case Bazooka:
+			case Rifleman:
+			case RocketSpecialist:
 				return 4;
 			default:
 				return 0;

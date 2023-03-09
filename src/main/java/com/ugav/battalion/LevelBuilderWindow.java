@@ -138,7 +138,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 					if (!type.transportUnits) {
 						tab.addEntityButton(UnitDesc.of(type, team));
 					} else {
-						tab.addEntityButton(UnitDesc.transporter(type, UnitDesc.of(Type.Soldier, team)));
+						tab.addEntityButton(UnitDesc.transporter(type, UnitDesc.of(Type.Rifleman, team)));
 					}
 				}
 				tab.addEntityButton(new EntityButton(removeUnitObj, Images.Delete));
@@ -204,7 +204,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 			}
 
 			for (Team team : Team.realTeams) {
-				BufferedImage icon = Images.Units.getDefault(UnitDesc.of(Unit.Type.Soldier, team));
+				BufferedImage icon = Images.Units.getDefault(UnitDesc.of(Unit.Type.Rifleman, team));
 				panel.add(createEntityTabButton(icon, e -> selectEntitiesTab(unitsTabs.get(team))));
 			}
 

@@ -74,7 +74,7 @@ interface GameMenu extends Clearable {
 		private JPanel createDisplayPanel() {
 			Menus.RowWithMargins panel = new Menus.RowWithMargins();
 
-			unitDesc.showUnit(UnitDesc.of(Unit.Type.Soldier, Team.Red));
+			unitDesc.showUnit(UnitDesc.of(Unit.Type.Rifleman, Team.Red));
 			panel.addComp(unitDesc);
 
 			JLabel img = new JLabel(new ImageIcon(Images.FactoryMenuImg));
@@ -88,11 +88,11 @@ interface GameMenu extends Clearable {
 
 			Map<Unit.Type, Building.UnitSale> sales = factory.getAvailableUnits();
 
-			List<Unit.Type> landUnits = List.of(Unit.Type.Soldier, Unit.Type.Bazooka, Unit.Type.TankAntiAir,
-					Unit.Type.Tank, Unit.Type.Mortar, Unit.Type.Artillery, Unit.Type.TankBig);
-			List<Unit.Type> waterUnits = List.of(Unit.Type.SpeedBoat, Unit.Type.ShipAntiAir, Unit.Type.Ship,
-					Unit.Type.ShipArtillery, Unit.Type.Submarine);
-			List<Unit.Type> airUnits = List.of(Unit.Type.Airplane, Unit.Type.Zeppelin);
+			List<Unit.Type> landUnits = List.of(Unit.Type.Rifleman, Unit.Type.RocketSpecialist, Unit.Type.AATank,
+					Unit.Type.BattleTank, Unit.Type.Mortar, Unit.Type.Artillery, Unit.Type.TitanTank);
+			List<Unit.Type> waterUnits = List.of(Unit.Type.SpeedBoat, Unit.Type.AACruiser, Unit.Type.Corvette,
+					Unit.Type.Battleship, Unit.Type.Submarine);
+			List<Unit.Type> airUnits = List.of(Unit.Type.FighterPlane, Unit.Type.ZeppelinBomber);
 
 			mainPanel.addComp(createUnitsPanelSingleCategory("Ground Units", landUnits, sales));
 			mainPanel.addComp(createUnitsPanelSingleCategory("Air Units", airUnits, sales));
@@ -232,15 +232,14 @@ interface GameMenu extends Clearable {
 			Terrain terrain = window.game.terrain(unit.getPos());
 			if (!unit.type.transportUnits) {
 				boolean transportAirEn = unit.type.category == Unit.Category.Land
-						&& Unit.Type.AirTransporter.canStandOn(terrain) && window.game.canBuildAirUnits(unit.getTeam());
+						&& Unit.Type.TransportPlane.canStandOn(terrain) && window.game.canBuildAirUnits(unit.getTeam());
 				createUnitMenuButton(Images.UnitMenuTransportAir, transportAirEn,
-						e -> window.gameAction(new Action.UnitTransport(unit.getPos(), Unit.Type.AirTransporter)));
+						e -> window.gameAction(new Action.UnitTransport(unit.getPos(), Unit.Type.TransportPlane)));
 
 				boolean transportWaterEn = unit.type.category == Unit.Category.Land
-						&& Unit.Type.ShipTransporter.canStandOn(terrain)
-						&& window.game.canBuildWaterUnits(unit.getTeam());
+						&& Unit.Type.LandingCraft.canStandOn(terrain) && window.game.canBuildWaterUnits(unit.getTeam());
 				createUnitMenuButton(Images.UnitMenuTransportWater, transportWaterEn,
-						e -> window.gameAction(new Action.UnitTransport(unit.getPos(), Unit.Type.ShipTransporter)));
+						e -> window.gameAction(new Action.UnitTransport(unit.getPos(), Unit.Type.LandingCraft)));
 
 			} else {
 				Unit transportedUnit = unit.getTransportedUnit();

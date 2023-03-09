@@ -274,19 +274,19 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 		actions.add(new Action.TurnEnd());
 		actions.add(
 				new Action.UnitMoveAndAttack(Cell.of(5, 6), ListInt.of(Cell.of(5, 7), Cell.of(5, 8)), Cell.of(6, 8)));
-		actions.add(new Action.UnitBuild(Cell.of(2, 1), Unit.Type.Bazooka));
+		actions.add(new Action.UnitBuild(Cell.of(2, 1), Unit.Type.RocketSpecialist));
 		actions.add(new Action.UnitAttackLongRange(Cell.of(2, 9), Cell.of(6, 8)));
 		actions.add(new Action.UnitMove(Cell.of(6, 7),
 				ListInt.of(Cell.of(7, 7), Cell.of(7, 6), Cell.of(8, 6), Cell.of(8, 5))));
 		actions.add(new Action.TurnEnd());
-		actions.add(new Action.UnitBuild(Cell.of(13, 6), Unit.Type.TankAntiAir));
+		actions.add(new Action.UnitBuild(Cell.of(13, 6), Unit.Type.AATank));
 		actions.add(new Action.UnitAttackLongRange(Cell.of(11, 6), Cell.of(8, 5)));
 		actions.add(new Action.UnitMove(Cell.of(7, 1),
 				ListInt.of(Cell.of(8, 1), Cell.of(9, 1), Cell.of(10, 1), Cell.of(11, 1))));
 		actions.add(new Action.UnitRepair(Cell.of(10, 1)));
 		actions.add(new Action.TurnEnd());
 		actions.add(new Action.UnitMove(Cell.of(2, 1), ListInt.of(Cell.of(3, 1), Cell.of(4, 1), Cell.of(5, 1))));
-		actions.add(new Action.UnitBuild(Cell.of(2, 1), Unit.Type.Airplane));
+		actions.add(new Action.UnitBuild(Cell.of(2, 1), Unit.Type.FighterPlane));
 		actions.add(new Action.UnitMove(Cell.of(5, 8),
 				ListInt.of(Cell.of(5, 7), Cell.of(5, 6), Cell.of(5, 5), Cell.of(5, 4), Cell.of(5, 3), Cell.of(4, 3))));
 		actions.add(new Action.TurnEnd());

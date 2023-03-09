@@ -197,24 +197,24 @@ public class Building extends Entity implements IBuilding {
 		Team team = getTeam();
 		List<UnitSale> sales = new ArrayList<>();
 		if (game.canBuildLandUnits(team)) {
-			sales.add(UnitSale.of(Unit.Type.Soldier, 75));
-			sales.add(UnitSale.of(Unit.Type.Bazooka, 100));
-			sales.add(UnitSale.of(Unit.Type.TankAntiAir, 230));
-			sales.add(UnitSale.of(Unit.Type.Tank, 270));
+			sales.add(UnitSale.of(Unit.Type.Rifleman, 75));
+			sales.add(UnitSale.of(Unit.Type.RocketSpecialist, 100));
+			sales.add(UnitSale.of(Unit.Type.AATank, 230));
+			sales.add(UnitSale.of(Unit.Type.BattleTank, 270));
 			sales.add(UnitSale.of(Unit.Type.Mortar, 300));
 			sales.add(UnitSale.of(Unit.Type.Artillery, 470));
-			sales.add(UnitSale.of(Unit.Type.TankBig, 470));
+			sales.add(UnitSale.of(Unit.Type.TitanTank, 470));
 		}
 		if (game.canBuildWaterUnits(team)) {
 			sales.add(UnitSale.of(Unit.Type.SpeedBoat, 200));
-			sales.add(UnitSale.of(Unit.Type.ShipAntiAir, 450));
-			sales.add(UnitSale.of(Unit.Type.Ship, 500));
-			sales.add(UnitSale.of(Unit.Type.ShipArtillery, 800));
+			sales.add(UnitSale.of(Unit.Type.AACruiser, 450));
+			sales.add(UnitSale.of(Unit.Type.Corvette, 500));
+			sales.add(UnitSale.of(Unit.Type.Battleship, 800));
 			sales.add(UnitSale.of(Unit.Type.Submarine, 475));
 		}
 		if (game.canBuildAirUnits(team)) {
-			sales.add(UnitSale.of(Unit.Type.Airplane, 340));
-			sales.add(UnitSale.of(Unit.Type.Zeppelin, 650));
+			sales.add(UnitSale.of(Unit.Type.FighterPlane, 340));
+			sales.add(UnitSale.of(Unit.Type.ZeppelinBomber, 650));
 		}
 
 		Terrain terrain = game.terrain(getPos());

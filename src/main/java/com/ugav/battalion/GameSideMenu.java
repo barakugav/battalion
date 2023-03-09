@@ -103,7 +103,7 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 			teamPanel.add(colorBox, c);
 
 			// TODO images
-			Image img = Images.Units.standImg(UnitDesc.of(Unit.Type.Soldier, team), Direction.XPos, 0);
+			Image img = Images.Units.standImg(UnitDesc.of(Unit.Type.Rifleman, team), Direction.XPos, 0);
 			img = img.getScaledInstance(28, 28, Image.SCALE_SMOOTH);
 			JLabel icon = new JLabel(new ImageIcon(img));
 			c.gridx = 1;
