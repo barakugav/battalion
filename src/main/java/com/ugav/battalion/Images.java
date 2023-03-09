@@ -171,48 +171,42 @@ class Images {
 			int gestureNumStand = standGestureNum(type);
 			int gestureNum = gestureNumStand + moveGestureNum0(type);
 			BufferedImage img = loadImg(path);
-			int width = img.getWidth() / 4;
-			int height = img.getHeight() / gestureNum;
 
-			for (int gesture = 0; gesture < gestureNum; gesture++) {
-				for (int orientatoinIdx = 0; orientatoinIdx < 4; orientatoinIdx++) {
-					BufferedImage redImg = Utils.imgSub(img, orientatoinIdx * width, gesture * height, width, height);
-					BufferedImage blueImg = toBlue(redImg);
-					Direction orientatoin = orientationIdxToObj(orientatoinIdx);
+			Team[] teams = new Team[] { Team.Red, Team.Blue, null, null };
+			for (int teamIdx = 0; teamIdx < teams.length; teamIdx++) {
+				Team team = teams[teamIdx];
+				if (team == null)
+					continue;
+				int perTeamWidth = img.getWidth() / teams.length;
 
-					int standGesture = -1, moveGesture = -1;
-					if (differentGestures && gesture < gestureNumStand) {
-						standGesture = gesture;
-					} else if (differentGestures && gesture >= gestureNumStand) {
-						moveGesture = gesture - gestureNumStand;
-					} else {
-						standGesture = moveGesture = gesture;
-					}
+				for (int orientatoinIdx = 0; orientatoinIdx < Direction.values().length; orientatoinIdx++) {
+					Direction orientatoin = Direction.values()[orientatoinIdx];
+					int perOrientationWidth = perTeamWidth / Direction.values().length;
 
-					if (standGesture >= 0) {
-						imgs.put(Desc.ofStand(type, Team.Red, orientatoin, standGesture), redImg);
-						imgs.put(Desc.ofStand(type, Team.Blue, orientatoin, standGesture), blueImg);
-					}
-					if (moveGesture >= 0) {
-						imgs.put(Desc.ofMove(type, Team.Red, orientatoin, moveGesture), redImg);
-						imgs.put(Desc.ofMove(type, Team.Blue, orientatoin, moveGesture), blueImg);
+					for (int gesture = 0; gesture < gestureNum; gesture++) {
+						int perGestureHeight = img.getHeight() / gestureNum;
+
+						int x = perTeamWidth * teamIdx + perOrientationWidth * orientatoinIdx;
+						int y = perGestureHeight * gesture;
+						int width = perOrientationWidth;
+						int height = perGestureHeight;
+						BufferedImage subImg = Utils.imgSub(img, x, y, width, height);
+
+						int standGesture = -1, moveGesture = -1;
+						if (differentGestures && gesture < gestureNumStand) {
+							standGesture = gesture;
+						} else if (differentGestures && gesture >= gestureNumStand) {
+							moveGesture = gesture - gestureNumStand;
+						} else {
+							standGesture = moveGesture = gesture;
+						}
+
+						if (standGesture >= 0)
+							imgs.put(Desc.ofStand(type, team, orientatoin, standGesture), subImg);
+						if (moveGesture >= 0)
+							imgs.put(Desc.ofMove(type, team, orientatoin, moveGesture), subImg);
 					}
 				}
-			}
-		}
-
-		private static Direction orientationIdxToObj(int index) {
-			switch (index) {
-			case 0:
-				return Direction.XPos;
-			case 1:
-				return Direction.YPos;
-			case 2:
-				return Direction.XNeg;
-			case 3:
-				return Direction.YNeg;
-			default:
-				throw new IllegalArgumentException();
 			}
 		}
 
@@ -292,7 +286,8 @@ class Images {
 			private static final Object MoveTag = new Object();
 
 			private Desc(Unit.Type type, Team team, Direction orientation, Object gestureTag, int gesture) {
-				super(type, team, orientation, gestureTag, Integer.valueOf(gesture));
+				super(Objects.requireNonNull(type), Objects.requireNonNull(team), Objects.requireNonNull(orientation),
+						Objects.requireNonNull(gestureTag), Integer.valueOf(gesture));
 			}
 
 			static Desc ofStand(Unit.Type type, Team team, Direction orientation, int gesture) {
