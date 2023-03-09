@@ -237,31 +237,34 @@ public class Unit extends Entity implements IUnit {
 	}
 
 	public enum Type {
-		Rifleman(Category.Land, Weapon.closeRange(), 50, 22, 3, Tech.StandOnLandExtreme, Tech.AttLand, Tech.AttWater,
-				Tech.Conquerer),
-		RocketSpecialist(Category.Land, Weapon.closeRange(), 50, 30, 3, Tech.StandOnLandExtreme, Tech.AttLand,
+		Rifleman(Category.Land, Weapon.closeRange(), 50, 22, 3, 75, Tech.StandOnLandExtreme, Tech.AttLand,
 				Tech.AttWater, Tech.Conquerer),
-		BattleTank(Category.Land, Weapon.closeRange(), 70, 35, 6, Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater),
-		TitanTank(Category.Land, Weapon.closeRange(), 140, 70, 4, Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater),
-		StealthTank(Category.Land, Weapon.closeRange(), 40, 30, 5, Tech.StandOnLandRough, Tech.AttLand, Tech.AttWater,
-				Tech.Invisible),
-		AATank(Category.Land, Weapon.closeRange(), 70, 17, 5, Tech.StandOnLandRough, Tech.AttAny),
-		Artillery(Category.Land, Weapon.longRange(3, 5), 40, 40, 4, Tech.StandOnLandRough, Tech.AttAny),
-		Mortar(Category.Land, Weapon.longRange(2, 3), 50, 40, 5, Tech.StandOnLandFlat, Tech.AttAny),
+		RocketSpecialist(Category.Land, Weapon.closeRange(), 50, 30, 3, 100, Tech.StandOnLandExtreme, Tech.AttLand,
+				Tech.AttWater, Tech.Conquerer),
+		BattleTank(Category.Land, Weapon.closeRange(), 70, 35, 6, 270, Tech.StandOnLandRough, Tech.AttLand,
+				Tech.AttWater),
+		TitanTank(Category.Land, Weapon.closeRange(), 140, 70, 4, 470, Tech.StandOnLandRough, Tech.AttLand,
+				Tech.AttWater),
+		StealthTank(Category.Land, Weapon.closeRange(), 40, 30, 5, 450, Tech.StandOnLandRough, Tech.AttLand,
+				Tech.AttWater, Tech.Invisible),
+		AATank(Category.Land, Weapon.closeRange(), 70, 17, 5, 230, Tech.StandOnLandRough, Tech.AttAny),
+		Artillery(Category.Land, Weapon.longRange(3, 5), 40, 40, 4, 470, Tech.StandOnLandRough, Tech.AttAny),
+		Mortar(Category.Land, Weapon.longRange(2, 3), 50, 40, 5, 300, Tech.StandOnLandFlat, Tech.AttAny),
 
-		Turrent(Category.Land, Weapon.longRange(2, 5), 100, 40, 0, Tech.StandOnLandFlat, Tech.AttAny),
+		Turrent(Category.Land, Weapon.longRange(2, 5), 100, 40, 0, 500, Tech.StandOnLandFlat, Tech.AttAny),
 
-		SpeedBoat(Category.Water, Weapon.closeRange(), 50, 15, 5, Tech.StandOnWater, Tech.Conquerer),
-		Corvette(Category.Water, Weapon.closeRange(), 90, 45, 5, Tech.StandOnWater, Tech.AttLand, Tech.AttWater),
-		AACruiser(Category.Water, Weapon.closeRange(), 90, 17, 5, Tech.StandOnWater, Tech.AttAny),
-		Battleship(Category.Water, Weapon.longRange(3, 6), 140, 50, 4, Tech.StandOnWater, Tech.AttLand, Tech.AttWater),
-		Submarine(Category.DeepWater, Weapon.closeRange(), 25, 35, 4, Tech.StandOnWaterDeep, Tech.AttWater,
+		SpeedBoat(Category.Water, Weapon.closeRange(), 50, 15, 5, 200, Tech.StandOnWater, Tech.Conquerer),
+		Corvette(Category.Water, Weapon.closeRange(), 90, 45, 5, 500, Tech.StandOnWater, Tech.AttLand, Tech.AttWater),
+		AACruiser(Category.Water, Weapon.closeRange(), 90, 17, 5, 450, Tech.StandOnWater, Tech.AttAny),
+		Battleship(Category.Water, Weapon.longRange(3, 6), 140, 50, 4, 800, Tech.StandOnWater, Tech.AttLand,
+				Tech.AttWater),
+		Submarine(Category.DeepWater, Weapon.closeRange(), 25, 35, 4, 475, Tech.StandOnWaterDeep, Tech.AttWater,
 				Tech.Invisible, Tech.AttDeepWater),
-		LandingCraft(Category.Water, Weapon.none(), 90, 0, 5, Tech.StandOnWater, Tech.UnitTransporter),
+		LandingCraft(Category.Water, Weapon.none(), 90, 0, 5, 25, Tech.StandOnWater, Tech.UnitTransporter),
 
-		FighterPlane(Category.Air, Weapon.closeRange(), 50, 30, 7, Tech.StandOnAny, Tech.AttAny),
-		ZeppelinBomber(Category.Air, Weapon.closeRange(), 110, 80, 4, Tech.StandOnAny, Tech.AttAny),
-		TransportPlane(Category.Air, Weapon.none(), 50, 0, 6, Tech.StandOnAny, Tech.UnitTransporter);
+		FighterPlane(Category.Air, Weapon.closeRange(), 50, 30, 7, 340, Tech.StandOnAny, Tech.AttAny),
+		ZeppelinBomber(Category.Air, Weapon.closeRange(), 110, 80, 4, 650, Tech.StandOnAny, Tech.AttAny),
+		TransportPlane(Category.Air, Weapon.none(), 50, 0, 6, 30, Tech.StandOnAny, Tech.UnitTransporter);
 
 		public final Category category;
 		public final Weapon weapon;
@@ -273,8 +276,9 @@ public class Unit extends Entity implements IUnit {
 		public final boolean canConquer;
 		public final boolean invisible;
 		public final boolean transportUnits;
+		public final int price;
 
-		Type(Category category, Weapon weapon, int health, int damage, int moveLimit, Tech... techs) {
+		Type(Category category, Weapon weapon, int health, int damage, int moveLimit, int price, Tech... techs) {
 			TypeBuilder builder = new TypeBuilder(techs);
 
 			this.category = Objects.requireNonNull(category);
@@ -287,6 +291,7 @@ public class Unit extends Entity implements IUnit {
 			this.canConquer = builder.tech.contains(Tech.Conquerer);
 			this.invisible = builder.tech.contains(Tech.Invisible);
 			this.transportUnits = builder.tech.contains(Tech.UnitTransporter);
+			this.price = price;
 		}
 
 		public boolean canStandOn(Terrain terrain) {

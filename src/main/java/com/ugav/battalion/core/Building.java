@@ -197,24 +197,24 @@ public class Building extends Entity implements IBuilding {
 		Team team = getTeam();
 		List<UnitSale> sales = new ArrayList<>();
 		if (game.canBuildLandUnits(team)) {
-			sales.add(UnitSale.of(Unit.Type.Rifleman, 75));
-			sales.add(UnitSale.of(Unit.Type.RocketSpecialist, 100));
-			sales.add(UnitSale.of(Unit.Type.AATank, 230));
-			sales.add(UnitSale.of(Unit.Type.BattleTank, 270));
-			sales.add(UnitSale.of(Unit.Type.Mortar, 300));
-			sales.add(UnitSale.of(Unit.Type.Artillery, 470));
-			sales.add(UnitSale.of(Unit.Type.TitanTank, 470));
+			sales.add(UnitSale.of(Unit.Type.Rifleman));
+			sales.add(UnitSale.of(Unit.Type.RocketSpecialist));
+			sales.add(UnitSale.of(Unit.Type.AATank));
+			sales.add(UnitSale.of(Unit.Type.BattleTank));
+			sales.add(UnitSale.of(Unit.Type.Mortar));
+			sales.add(UnitSale.of(Unit.Type.Artillery));
+			sales.add(UnitSale.of(Unit.Type.TitanTank));
 		}
 		if (game.canBuildWaterUnits(team)) {
-			sales.add(UnitSale.of(Unit.Type.SpeedBoat, 200));
-			sales.add(UnitSale.of(Unit.Type.AACruiser, 450));
-			sales.add(UnitSale.of(Unit.Type.Corvette, 500));
-			sales.add(UnitSale.of(Unit.Type.Battleship, 800));
-			sales.add(UnitSale.of(Unit.Type.Submarine, 475));
+			sales.add(UnitSale.of(Unit.Type.SpeedBoat));
+			sales.add(UnitSale.of(Unit.Type.AACruiser));
+			sales.add(UnitSale.of(Unit.Type.Corvette));
+			sales.add(UnitSale.of(Unit.Type.Battleship));
+			sales.add(UnitSale.of(Unit.Type.Submarine));
 		}
 		if (game.canBuildAirUnits(team)) {
-			sales.add(UnitSale.of(Unit.Type.FighterPlane, 340));
-			sales.add(UnitSale.of(Unit.Type.ZeppelinBomber, 650));
+			sales.add(UnitSale.of(Unit.Type.FighterPlane));
+			sales.add(UnitSale.of(Unit.Type.ZeppelinBomber));
 		}
 
 		Terrain terrain = game.terrain(getPos());
@@ -239,8 +239,8 @@ public class Building extends Entity implements IBuilding {
 			return "<" + type + ", " + price + ">";
 		}
 
-		private static UnitSale of(Unit.Type type, int price) {
-			return new UnitSale(type, price);
+		private static UnitSale of(Unit.Type type) {
+			return new UnitSale(type, type.price);
 		}
 	}
 
