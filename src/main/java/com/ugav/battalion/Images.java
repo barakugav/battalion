@@ -1,5 +1,6 @@
 package com.ugav.battalion;
 
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -53,6 +54,7 @@ class Images {
 			loadTerrain(Terrain.BridgeHigh, "img/terrain/bridge_high.png");
 			loadTerrain(Terrain.ClearWater, "img/terrain/water_clear.png");
 			loadTerrainRepeat("WaterShallow", "img/terrain/water_obstacle_%02d.png", 12);
+			imgs.put(new Desc(Terrain.Shore, 0), createShoreDefaultImg());
 		}
 
 		private static void loadTerrain(Terrain terrain, String path) {
@@ -66,6 +68,16 @@ class Images {
 		private static void loadTerrainRepeat(String terrain, String path, int variantNum) {
 			for (int variant = 1; variant <= variantNum; variant++)
 				loadTerrain(Terrain.valueOf(terrain + variant), String.format(path, Integer.valueOf(variant)));
+		}
+
+		private static BufferedImage createShoreDefaultImg() {
+			BufferedImage img = new BufferedImage(56, 56, BufferedImage.TYPE_INT_ARGB);
+			Graphics2D g = img.createGraphics();
+			g.drawImage(Images.Terrains.getDefault(Terrain.ClearWater), 0, 0, null);
+			g.drawImage(Images.Shores.get(0, false, true, 0), 0, 0, null);
+			g.drawImage(Images.Shores.get(1, true, true, 0), 0, 0, null);
+			g.drawImage(Images.Shores.get(2, true, false, 0), 0, 0, null);
+			return img;
 		}
 
 		static BufferedImage getDefault(Terrain terrain) {

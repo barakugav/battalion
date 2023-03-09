@@ -4,7 +4,6 @@ import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -107,18 +106,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 			terrainTab = new EntityTab("terrains");
 			for (Terrain.Category terrain : Terrain.Category.values()) {
-				Object terrainIcon;
-				if (terrain != Terrain.Category.Shore) {
-					terrainIcon = terrain.getTerrains().get(0);
-				} else {
-					BufferedImage icon = new BufferedImage(56, 56, BufferedImage.TYPE_INT_ARGB);
-					Graphics2D g = icon.createGraphics();
-					g.drawImage(Images.Terrains.getDefault(Terrain.ClearWater), 0, 0, null);
-					g.drawImage(Images.Shores.get(0, false, true, 0), 0, 0, null);
-					g.drawImage(Images.Shores.get(1, true, true, 0), 0, 0, null);
-					g.drawImage(Images.Shores.get(2, true, false, 0), 0, 0, null);
-					terrainIcon = icon;
-				}
+				Object terrainIcon = terrain.getTerrains().get(0);
 				terrainTab.addEntityButton(new EntityButton(terrain, terrainIcon));
 			}
 
