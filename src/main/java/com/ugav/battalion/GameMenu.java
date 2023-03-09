@@ -231,15 +231,27 @@ interface GameMenu extends Clearable {
 
 			Terrain terrain = window.game.terrain(unit.getPos());
 			if (!unit.type.transportUnits) {
-				boolean transportAirEn = unit.type.category == Unit.Category.Land
-						&& Unit.Type.TransportPlane.canStandOn(terrain) && window.game.canBuildAirUnits(unit.getTeam());
-				createUnitMenuButton(Images.UnitMenuTransportAir, transportAirEn,
-						e -> window.gameAction(new Action.UnitTransport(unit.getPos(), Unit.Type.TransportPlane)));
+				Team team = unit.getTeam();
 
-				boolean transportWaterEn = unit.type.category == Unit.Category.Land
-						&& Unit.Type.LandingCraft.canStandOn(terrain) && window.game.canBuildWaterUnits(unit.getTeam());
-				createUnitMenuButton(Images.UnitMenuTransportWater, transportWaterEn,
-						e -> window.gameAction(new Action.UnitTransport(unit.getPos(), Unit.Type.LandingCraft)));
+				Unit.Type transportAirType = Unit.Type.TransportPlane;
+				boolean transportAirEn = true;
+				transportAirEn = transportAirEn && unit.type.category == Unit.Category.Land;
+				transportAirEn = transportAirEn && window.game.canBuildAirUnits(team);
+				transportAirEn = transportAirEn && window.game.getMoney(team) >= transportAirType.price;
+				transportAirEn = transportAirEn && transportAirType.canStandOn(terrain);
+				JButton transportAirButton = createUnitMenuButton(Images.UnitMenuTransportAir, transportAirEn,
+						e -> window.gameAction(new Action.UnitTransport(unit.getPos(), transportAirType)));
+				transportAirButton.setToolTipText("" + transportAirType.price + "$");
+
+				Unit.Type transportWaterType = Unit.Type.LandingCraft;
+				boolean transportWaterEn = true;
+				transportWaterEn = transportWaterEn && unit.type.category == Unit.Category.Land;
+				transportWaterEn = transportWaterEn && window.game.canBuildWaterUnits(team);
+				transportWaterEn = transportWaterEn && window.game.getMoney(team) >= transportWaterType.price;
+				transportWaterEn = transportWaterEn && transportWaterType.canStandOn(terrain);
+				JButton transportWaterButton = createUnitMenuButton(Images.UnitMenuTransportWater, transportWaterEn,
+						e -> window.gameAction(new Action.UnitTransport(unit.getPos(), transportWaterType)));
+				transportWaterButton.setToolTipText("" + transportWaterType.price + "$");
 
 			} else {
 				Unit transportedUnit = unit.getTransportedUnit();
@@ -257,7 +269,7 @@ interface GameMenu extends Clearable {
 			});
 		}
 
-		private void createUnitMenuButton(BufferedImage img, boolean enable, ActionListener l) {
+		private JButton createUnitMenuButton(BufferedImage img, boolean enable, ActionListener l) {
 			if (!enable)
 				img = Utils.imgTransparent(img, .5f);
 			JButton button = new JButton(new ImageIcon(img));
@@ -273,6 +285,7 @@ interface GameMenu extends Clearable {
 				listeners.add(Pair.of(button, listener));
 			}
 			add(button);
+			return button;
 		}
 
 		@Override

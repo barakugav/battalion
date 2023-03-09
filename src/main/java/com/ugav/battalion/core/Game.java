@@ -439,13 +439,12 @@ public class Game {
 		if (transportType.category == Unit.Category.Land && !canBuildLandUnits(team))
 			throw new IllegalArgumentException();
 		if (EnumSet.of(Unit.Category.Water, Unit.Category.DeepWater).contains(transportType.category)
-				&& !canBuildLandUnits(team))
+				&& !canBuildWaterUnits(team))
 			throw new IllegalArgumentException();
-		if (transportType.category == Unit.Category.Air && !canBuildLandUnits(team))
+		if (transportType.category == Unit.Category.Air && !canBuildAirUnits(team))
 			throw new IllegalArgumentException();
 
-		final int cost = 0; // TODO
-		moneyChange(team, -cost);
+		moneyChange(team, -transportType.price);
 
 		transportedUnit.setActive(false);
 		removeUnit(transportedUnit);
