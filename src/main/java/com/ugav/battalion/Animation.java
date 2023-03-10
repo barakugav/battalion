@@ -696,20 +696,32 @@ interface Animation {
 			setAnimationRunning(animated);
 		}
 
-		void animateAndWait(Animation animation) {
+		void runAndWait(Animation animation) {
+			animate(animation, false);
+		}
+
+		void runAsync(Animation animation) {
+			animate(animation, true);
+		}
+
+		private void animate(Animation animation, boolean async) {
 			if (!isTaskRunning)
 				return;
 			AnimationEntry entry = new AnimationEntry(animation);
-			if (SwingUtilities.isEventDispatchThread())
-				throw new IllegalStateException("Can't wait for animation from GUI thread");
+			if (async) {
+				queue.add(entry);
+			} else {
+				if (SwingUtilities.isEventDispatchThread())
+					throw new IllegalStateException("Can't wait for animation from GUI thread");
 
-			try {
-				synchronized (entry) {
-					queue.add(entry);
-					entry.wait();
+				try {
+					synchronized (entry) {
+						queue.add(entry);
+						entry.wait();
+					}
+				} catch (InterruptedException e) {
+					throw new RuntimeException("Thread interrupted while waiting for animation", e);
 				}
-			} catch (InterruptedException e) {
-				throw new RuntimeException("Thread interrupted while waiting for animation", e);
 			}
 		}
 

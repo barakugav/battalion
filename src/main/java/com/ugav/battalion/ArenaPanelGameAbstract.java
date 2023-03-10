@@ -63,7 +63,7 @@ abstract class ArenaPanelGameAbstract extends
 
 		void initUI() {
 			register.register(game.onUnitAdd, e -> {
-				runAnimationAndWait(createMapCenterAnimation(e.unit));
+				animationTask.runAndWait(createMapCenterAnimation(e.unit));
 				UnitComp comp = new UnitComp(e.unit);
 				comp.baseAlphaMax = 0;
 				Utils.swingRun(() -> comps.put(e.unit, comp));
@@ -73,7 +73,7 @@ abstract class ArenaPanelGameAbstract extends
 				} else {
 					animation = new Animation.UnitAppearDisappear(comp);
 				}
-				runAnimationAndWait(animation);
+				animationTask.runAndWait(animation);
 			});
 			register.register(game.onUnitRemove, Utils.swingListener(e -> {
 				UnitComp unitComp = (UnitComp) comps.remove(e.unit);
@@ -83,7 +83,7 @@ abstract class ArenaPanelGameAbstract extends
 			register.register(game.onUnitDeath, e -> {
 				UnitComp unitComp = (UnitComp) comps.get(e.unit);
 				Animation animation = new Animation.UnitDeath(ArenaPanelGameAbstract.this, unitComp);
-				runAnimationAndWait(animation);
+				animationTask.runAndWait(animation);
 			});
 			register.register(game.beforeUnitMove, e -> {
 				ListInt animationPath = new ListInt.Array(e.path.size() + 1);
@@ -94,7 +94,7 @@ abstract class ArenaPanelGameAbstract extends
 				Animation animation = new Animation.UnitMove(comp, animationPath);
 				animation = appearDisappearAnimationWrap(comp, animation);
 				animation = Animation.sequence(createMapCenterAnimation(e.unit), animation);
-				runAnimationAndWait(animation);
+				animationTask.runAndWait(animation);
 			});
 			register.register(game.beforeUnitAttack, e -> {
 				int target = e.target.getPos();
@@ -102,7 +102,7 @@ abstract class ArenaPanelGameAbstract extends
 				Animation animation = new Animation.Attack(ArenaPanelGameAbstract.this, comp, target);
 				animation = appearDisappearAnimationWrap(comp, animation);
 				animation = makeSureAnimationIsVisible(animation, ListInt.of(e.attacker.getPos(), target));
-				runAnimationAndWait(animation);
+				animationTask.runAndWait(animation);
 			});
 			register.register(game.onEntityChange, e -> {
 				if (e.source instanceof Unit unit) {
@@ -115,7 +115,7 @@ abstract class ArenaPanelGameAbstract extends
 				UnitComp unitComp = (UnitComp) comps.get(e.conquerer);
 				Animation animation = new Animation.Conquer(unitComp);
 				animation = Animation.sequence(createMapCenterAnimation(e.conquerer), animation);
-				runAnimationAndWait(animation);
+				animationTask.runAndWait(animation);
 			});
 			register.register(game.onTeamElimination, e -> {
 				List<Animation> animations = new ArrayList<>();
@@ -127,7 +127,7 @@ abstract class ArenaPanelGameAbstract extends
 					BuildingComp comp = (BuildingComp) comps.get(building);
 					animations.add(new Animation.BuildingExplosion(ArenaPanelGameAbstract.this, comp));
 				}
-				runAnimationAndWait(Animation.parallel(animations.toArray(n -> new Animation[n])));
+				animationTask.runAndWait(Animation.parallel(animations.toArray(n -> new Animation[n])));
 			});
 
 			tickTaskManager.addTask(100, gestureTask);

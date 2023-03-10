@@ -37,6 +37,9 @@ class GameWindow extends JPanel implements Clearable {
 	private static final long serialVersionUID = 1L;
 
 	GameWindow(Globals globals, LevelHandle level) {
+		/* start in a suspended state */
+		suspendActions();
+
 		this.globals = Objects.requireNonNull(globals);
 		this.level = Objects.requireNonNull(level);
 
@@ -89,6 +92,10 @@ class GameWindow extends JPanel implements Clearable {
 		(gameActionsThread = new GameActionsThread()).start();
 
 		gameAction(new Action.Start());
+
+		arenaPanel.runMapOverviewAnimation();
+
+		resumeActions();
 	}
 
 	private final GameActionsThread gameActionsThread;

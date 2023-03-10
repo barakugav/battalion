@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
@@ -55,7 +54,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	final TickTask.Manager tickTaskManager = new TickTask.Manager();
 	final Animation.Task animationTask;
-	private final AtomicInteger animationsActive = new AtomicInteger();
 
 	final Globals globals;
 	final Event.Register register = new Event.Register();
@@ -157,16 +155,6 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	@Override
 	public Dimension getPreferredSize() {
 		return entityLayer.getPreferredSize();
-	}
-
-	synchronized void runAnimationAndWait(Animation animation) {
-		animationsActive.incrementAndGet();
-		animationTask.animateAndWait(animation);
-		animationsActive.decrementAndGet();
-	}
-
-	boolean isAnimationActive() {
-		return animationsActive.get() > 0;
 	}
 
 	double displayedArenaWidth() {

@@ -75,7 +75,7 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 			final Team player = Team.Red;
 			if (e.nextTurn == player) {
 				Position p = Position.fromCell(playerLastPos.val.intValue());
-				runAnimationAndWait(new Animation.MapMove(this, () -> p));
+				animationTask.runAndWait(new Animation.MapMove(this, () -> p));
 			}
 		});
 	}
@@ -352,6 +352,50 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		closePopupAll();
 		closeOpenMenu();
 		super.clear();
+	}
+
+	void runMapOverviewAnimation() {
+		final Team player = Team.Red;
+		Position startingMapPos;
+		Iter<Building> capitals = game.buildings(player).filter(b -> b.getType() == Building.Type.Capital);
+		Iter<Building> factories = game.buildings(player).filter(b -> b.getType() == Building.Type.Factory);
+		if (capitals.hasNext()) {
+			/* start at capital */
+			startingMapPos = Position.fromCell(capitals.next().getPos());
+		} else if (factories.hasNext()) {
+			/* start at factory */
+			startingMapPos = Position.fromCell(factories.next().getPos());
+		} else {
+			/* start near a lot of units */
+			int bestPos = 0, unitsInBestArena = -1;
+			for (Iter.Int it = game.cells(); it.hasNext();) {
+				int pos = it.next();
+
+				int unitsInArena = 0;
+				final int near = 2;
+				for (int dx = -near; dx <= near; dx++) {
+					for (int dy = -near; dy <= near; dy++) {
+						int n = Cell.of(Cell.x(pos) + dx, Cell.y(pos) + dy);
+						if (!game.isValidCell(n))
+							continue;
+						Unit u = game.unit(n);
+						if (u != null && u.getTeam() == player)
+							unitsInArena++;
+					}
+				}
+				if (unitsInArena > unitsInBestArena) {
+					bestPos = pos;
+					unitsInBestArena = unitsInArena;
+				}
+			}
+			if (unitsInBestArena > 0) {
+				startingMapPos = Position.fromCell(bestPos);
+			} else {
+				globals.logger.dbgln("no units, can't determine starting position");
+				startingMapPos = Position.of(0, 0);
+			}
+		}
+		animationTask.runAsync(new Animation.MapMove(this, () -> mapMove.calcMapPosCentered(startingMapPos)));
 	}
 
 	static class SelectionChange extends Event {
