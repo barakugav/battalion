@@ -14,6 +14,7 @@ import java.util.function.Supplier;
 import javax.swing.SwingUtilities;
 
 import com.ugav.battalion.ArenaPanelAbstract.ArenaComp;
+import com.ugav.battalion.ArenaPanelGameAbstract.EntityLayer.BuildingComp;
 import com.ugav.battalion.ArenaPanelGameAbstract.EntityLayer.UnitComp;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
@@ -24,7 +25,7 @@ import com.ugav.battalion.util.Logger;
 @FunctionalInterface
 interface Animation {
 
-	boolean advanceAnimationStep();
+	boolean animationStep();
 
 	default void beforeFirst() {
 	};
@@ -53,7 +54,7 @@ interface Animation {
 		}
 
 		@Override
-		public boolean advanceAnimationStep() {
+		public boolean animationStep() {
 			int length = path.size() - 1;
 			if (length == 0)
 				return false;
@@ -129,7 +130,7 @@ interface Animation {
 		}
 
 		@Override
-		public boolean advanceAnimationStep() {
+		public boolean animationStep() {
 			if (cursor >= Duration)
 				throw new NoSuchElementException();
 			double yOffset = (Math.abs(Duration / 2 - cursor) - Duration / 2) / 30.0;
@@ -192,7 +193,7 @@ interface Animation {
 		}
 
 		@Override
-		public boolean advanceAnimationStep() {
+		public boolean animationStep() {
 			if (cursor >= Duration)
 				throw new NoSuchElementException();
 			double yOffset = (Math.abs(Duration / 2 - cursor) - Duration / 2) / 30.0;
@@ -228,7 +229,7 @@ interface Animation {
 		}
 
 		@Override
-		public boolean advanceAnimationStep() {
+		public boolean animationStep() {
 			if (cursor >= Duration)
 				throw new NoSuchElementException();
 			comp.alpha = (float) (cursor + 1) / Duration;
@@ -263,7 +264,7 @@ interface Animation {
 		}
 
 		@Override
-		public boolean advanceAnimationStep() {
+		public boolean animationStep() {
 			if (cursor >= Duration)
 				throw new NoSuchElementException();
 			if (cursor < Duration / 2)
@@ -303,7 +304,7 @@ interface Animation {
 		}
 
 		@Override
-		public boolean advanceAnimationStep() {
+		public boolean animationStep() {
 			if (cursor >= Duration)
 				throw new NoSuchElementException();
 			comp.alpha = (float) (Duration - cursor - 1) / Duration;
@@ -349,6 +350,66 @@ interface Animation {
 		}
 	}
 
+	static class BuildingExplosion implements Animation, ArenaComp {
+		private final ArenaPanelGameAbstract arena;
+		private final BuildingComp comp;
+		private int cursor = 0;
+		private static final int Duration = 90;
+
+		BuildingExplosion(ArenaPanelGameAbstract arena, BuildingComp comp) {
+			this.arena = arena;
+			this.comp = comp;
+		}
+
+		@Override
+		public void beforeFirst() {
+			arena.entityLayer.comps.put(this, this);
+		}
+
+		@Override
+		public boolean animationStep() {
+			if (cursor >= Duration)
+				throw new NoSuchElementException();
+			return ++cursor < Duration;
+		}
+
+		@Override
+		public void afterLast() {
+			arena.entityLayer.comps.remove(this);
+		}
+
+		@Override
+		public void clear() {
+		}
+
+		@Override
+		public void paintComponent(Graphics g) {
+			Position pos = comp.pos();
+			int gestureNum = Images.Ect.ExplosionGestureNum;
+			int gestureIdx = (int) (cursor / ((double) Duration / gestureNum));
+			BufferedImage img = Images.Ect.explosion(gestureIdx);
+
+			int x = arena.displayedXCell(pos.x);
+			int y = arena.displayedYCell(pos.y);
+			g.drawImage(img, x, y, null);
+		}
+
+		@Override
+		public int getZOrder() {
+			return ZOrderAnimation;
+		}
+
+		@Override
+		public Position pos() {
+			return comp.pos();
+		}
+
+		@Override
+		public String toString() {
+			return "BuildingExplosion(" + comp.pos() + ")";
+		}
+	}
+
 	static class MapMove implements Animation {
 
 		private final ArenaPanelGameAbstract arena;
@@ -370,7 +431,7 @@ interface Animation {
 		}
 
 		@Override
-		public boolean advanceAnimationStep() {
+		public boolean animationStep() {
 			Position current = arena.mapMove.currentPos;
 			Position target = target();
 			if (current.equals(target))
@@ -537,26 +598,58 @@ interface Animation {
 
 	}
 
-	static Animation of(Animation... animations) {
-		if (animations.length < 2)
-			throw new IllegalArgumentException();
+	static Animation sequence(Animation... animations) {
 		return new Animation() {
 
 			int index = 0;
 			int currentAnimationStepCount;
 
 			@Override
-			public boolean advanceAnimationStep() {
+			public boolean animationStep() {
 				if (index >= animations.length)
 					throw new NoSuchElementException();
 				if (++currentAnimationStepCount == 1)
 					animations[index].beforeFirst();
-				if (!animations[index].advanceAnimationStep()) {
+				if (!animations[index].animationStep()) {
 					animations[index].afterLast();
 					index++;
 					currentAnimationStepCount = 0;
 				}
 				return index < animations.length;
+			}
+
+			@Override
+			public String toString() {
+				return Arrays.toString(animations);
+			}
+		};
+	}
+
+	static Animation parallel(Animation... animations) {
+		return new Animation() {
+
+			boolean[] done = new boolean[animations.length];
+
+			@Override
+			public void beforeFirst() {
+				for (Animation animation : animations)
+					animation.beforeFirst();
+			}
+
+			@Override
+			public boolean animationStep() {
+				boolean needMore = false;
+				for (int i = 0; i < animations.length; i++) {
+					if (done[i])
+						continue;
+					if (animations[i].animationStep()) {
+						needMore = true;
+					} else {
+						done[i] = true;
+						animations[i].afterLast();
+					}
+				}
+				return needMore;
 			}
 
 			@Override
@@ -589,11 +682,12 @@ interface Animation {
 			for (Iterator<AnimationEntry> it = queue.iterator(); it.hasNext();) {
 				AnimationEntry entry = it.next();
 				animated = true;
-				if (++entry.animationCount == 1) {
+				if (entry.isFirstRunStep) {
+					entry.isFirstRunStep = false;
 					logger.dbgln("animation begin ", entry.animation);
 					entry.animation.beforeFirst();
 				}
-				if (!entry.animation.advanceAnimationStep()) {
+				if (!entry.animation.animationStep()) {
 					it.remove();
 					endAnimation(entry);
 					logger.dbgln("animation end ", entry.animation);
@@ -621,7 +715,7 @@ interface Animation {
 
 		private static class AnimationEntry {
 			final Animation animation;
-			int animationCount;
+			boolean isFirstRunStep = true;
 
 			AnimationEntry(Animation animation) {
 				this.animation = Objects.requireNonNull(animation);

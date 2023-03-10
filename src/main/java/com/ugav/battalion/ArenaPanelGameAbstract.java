@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.ugav.battalion.Animation.MapMove.Manager.MapPosRange;
 import com.ugav.battalion.core.Building;
@@ -91,7 +93,7 @@ abstract class ArenaPanelGameAbstract extends
 				UnitComp comp = (UnitComp) comps.get(e.unit);
 				Animation animation = new Animation.UnitMove(comp, animationPath);
 				animation = appearDisappearAnimationWrap(comp, animation);
-				animation = Animation.of(createMapCenterAnimation(e.unit), animation);
+				animation = Animation.sequence(createMapCenterAnimation(e.unit), animation);
 				runAnimationAndWait(animation);
 			});
 			register.register(game.beforeUnitAttack, e -> {
@@ -112,8 +114,20 @@ abstract class ArenaPanelGameAbstract extends
 			register.register(game.onConquerProgress, e -> {
 				UnitComp unitComp = (UnitComp) comps.get(e.conquerer);
 				Animation animation = new Animation.Conquer(unitComp);
-				animation = Animation.of(createMapCenterAnimation(e.conquerer), animation);
+				animation = Animation.sequence(createMapCenterAnimation(e.conquerer), animation);
 				runAnimationAndWait(animation);
+			});
+			register.register(game.onTeamElimination, e -> {
+				List<Animation> animations = new ArrayList<>();
+				for (Unit unit : game.units(e.team).forEach()) {
+					UnitComp comp = (UnitComp) comps.get(unit);
+					animations.add(new Animation.UnitDeath(ArenaPanelGameAbstract.this, comp));
+				}
+				for (Building building : game.buildings(e.team).forEach()) {
+					BuildingComp comp = (BuildingComp) comps.get(building);
+					animations.add(new Animation.BuildingExplosion(ArenaPanelGameAbstract.this, comp));
+				}
+				runAnimationAndWait(Animation.parallel(animations.toArray(n -> new Animation[n])));
 			});
 
 			tickTaskManager.addTask(100, gestureTask);
@@ -147,7 +161,7 @@ abstract class ArenaPanelGameAbstract extends
 
 		private static Animation appearDisappearAnimationWrap(EntityLayer.UnitComp unitComp, Animation animation) {
 			if (unitComp.unit().type.invisible)
-				animation = Animation.of(new Animation.UnitAppearDisappear(unitComp), animation);
+				animation = Animation.sequence(new Animation.UnitAppearDisappear(unitComp), animation);
 			return animation;
 		}
 
@@ -195,7 +209,7 @@ abstract class ArenaPanelGameAbstract extends
 
 				return pos;
 			});
-			return Animation.of(mapMoveAnimation, animation);
+			return Animation.sequence(mapMoveAnimation, animation);
 		}
 
 		class TerrainComp extends ArenaPanelAbstract.TerrainComp {

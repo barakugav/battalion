@@ -45,6 +45,7 @@ public class Game {
 	public final Event.Notifier<Event> beforeTurnEnd = new Event.Notifier<>();
 	public final Event.Notifier<Event> onTurnBegin = new Event.Notifier<>();
 	public final Event.Notifier<TurnEnd> onTurnEnd = new Event.Notifier<>();
+	public final Event.Notifier<TeamEliminateEvent> onTeamElimination = new Event.Notifier<>();
 	public final Event.Notifier<GameEnd> onGameEnd = new Event.Notifier<>();
 	public final Event.Notifier<ActionEvent> onAction = new Event.Notifier<>();
 
@@ -83,10 +84,9 @@ public class Game {
 
 		teamData = new HashMap<>();
 		turnIterator = Utils.iteratorRepeatInfty(Team.realTeams);
-		for (;;)
-			if ((turn = turnIterator.next()).equals(game.getTurn()))
-				break;
-		winner = game.getWinner();
+		while (!(turn = turnIterator.next()).equals(game.getTurn()))
+			;
+		winner = game.winner;
 
 		for (Team team : Team.realTeams)
 			teamData.put(team, new TeamData(game.getMoney(team)));
@@ -145,12 +145,16 @@ public class Game {
 		return cells().map(this::building).filter(Objects::nonNull);
 	}
 
-	public Iter<Unit> units(Team team) {
-		return units().filter(u -> team == u.getTeam());
+	public Iter<Building> buildings(Team team) {
+		return buildings().filter(b -> team == b.getTeam());
 	}
 
 	public Iter<Unit> units() {
 		return cells().map(this::unit).filter(Objects::nonNull);
+	}
+
+	public Iter<Unit> units(Team team) {
+		return units().filter(u -> team == u.getTeam());
 	}
 
 	public Iter<Unit> enemiesSeenBy(Team viewer) {
@@ -214,26 +218,30 @@ public class Game {
 	public void performAction(Action action0) {
 		onAction.notify(new ActionEvent(this, action0));
 
-		if (action0 instanceof Action.Start action) {
-			start();
-		} else if (action0 instanceof Action.TurnEnd action) {
-			turnEnd();
-		} else if (action0 instanceof Action.UnitMove action) {
-			move(unit(action.source), action.path);
-		} else if (action0 instanceof Action.UnitMoveAndAttack action) {
-			moveAndAttack(unit(action.attacker), action.path, unit(action.target));
-		} else if (action0 instanceof Action.UnitAttackLongRange action) {
-			attackRange(unit(action.attacker), unit(action.target));
-		} else if (action0 instanceof Action.UnitBuild action) {
-			buildUnit(building(action.factory), action.unit);
-		} else if (action0 instanceof Action.UnitTransport action) {
-			unitTransport(unit(action.unit), action.transport);
-		} else if (action0 instanceof Action.UnitTransportFinish action) {
-			transportFinish(unit(action.unit));
-		} else if (action0 instanceof Action.UnitRepair action) {
-			unitRepair(unit(action.unit));
-		} else {
-			throw new IllegalArgumentException(Objects.toString(action0));
+		try {
+			if (action0 instanceof Action.Start action) {
+				start();
+			} else if (action0 instanceof Action.TurnEnd action) {
+				turnEnd();
+			} else if (action0 instanceof Action.UnitMove action) {
+				move(unit(action.source), action.path);
+			} else if (action0 instanceof Action.UnitMoveAndAttack action) {
+				moveAndAttack(unit(action.attacker), action.path, unit(action.target));
+			} else if (action0 instanceof Action.UnitAttackLongRange action) {
+				attackRange(unit(action.attacker), unit(action.target));
+			} else if (action0 instanceof Action.UnitBuild action) {
+				buildUnit(building(action.factory), action.unit);
+			} else if (action0 instanceof Action.UnitTransport action) {
+				unitTransport(unit(action.unit), action.transport);
+			} else if (action0 instanceof Action.UnitTransportFinish action) {
+				transportFinish(unit(action.unit));
+			} else if (action0 instanceof Action.UnitRepair action) {
+				unitRepair(unit(action.unit));
+			} else {
+				throw new IllegalArgumentException(Objects.toString(action0));
+			}
+		} catch (GameEndException e) {
+			onGameEnd.notify(new GameEnd(this, getWinner()));
 		}
 	}
 
@@ -286,22 +294,45 @@ public class Game {
 		onTurnEnd.notify(new TurnEnd(this, prevTurn, turn));
 	}
 
-	private Set<Team> getAliveTeams() {
-		Set<Team> alive = EnumSet.noneOf(Team.class);
-		for (Team team : Team.realTeams)
-			if (units(team).hasNext())
-				alive.add(team);
-		return alive;
+	private final BooleanSupplier[] isTeamAlive = new BooleanSupplier[Team.values().length];
+	{
+		for (Team team : Team.values())
+			isTeamAlive[team.ordinal()] = valuesCache.newValBool(() -> units(team).hasNext());
+	}
+
+	private boolean isTeamAlive(Team team) {
+		return isTeamAlive[team.ordinal()].getAsBoolean();
 	}
 
 	public boolean isFinished() {
-		Set<Team> alive = getAliveTeams();
+		Set<Team> alive = EnumSet.noneOf(Team.class);
+		for (Team team : Team.realTeams)
+			if (isTeamAlive(team))
+				alive.add(team);
+		assert !alive.isEmpty();
 		winner = alive.size() > 1 ? null : alive.iterator().next();
 		return winner != null;
 	}
 
 	public Team getWinner() {
+		if (!isFinished())
+			throw new IllegalStateException();
 		return winner;
+	}
+
+	void eliminateTeam(Team team) {
+		onTeamElimination.notify(new TeamEliminateEvent(this, team));
+
+		for (Unit unit : units(team).forEach()) {
+			unit.setHealth(0);
+			removeUnit(unit);
+			onUnitRemove.notify(new UnitRemove(this, unit));
+		}
+		for (Building building : buildings(team).forEach())
+			building.setTeam(Team.None);
+
+		if (isFinished())
+			throw new GameEndException();
 	}
 
 	private void move(Unit unit, ListInt path) {
@@ -407,14 +438,13 @@ public class Game {
 		beforeUnitAttack.notify(new UnitAttack(this, attacker, target));
 		target.setHealth(newHealth);
 		target.setRepairing(false);
-
 		if (target.isDead()) {
-			removeUnit(target);
 			onUnitDeath.notify(new UnitDeath(this, target));
+			removeUnit(target);
 			onUnitRemove.notify(new UnitRemove(this, target));
 
-			if (isFinished())
-				onGameEnd.notify(new GameEnd(this, getWinner()));
+			if (!isTeamAlive(target.getTeam()))
+				eliminateTeam(target.getTeam());
 		}
 	}
 
@@ -503,13 +533,10 @@ public class Game {
 		unit.setActive(false);
 	}
 
-	private final BooleanSupplier[] canBuildLandUnits;
-	private final BooleanSupplier[] canBuildWaterUnits;
-	private final BooleanSupplier[] canBuildAirUnits;
+	private final BooleanSupplier[] canBuildLandUnits = new BooleanSupplier[Team.values().length];
+	private final BooleanSupplier[] canBuildWaterUnits = new BooleanSupplier[Team.values().length];
+	private final BooleanSupplier[] canBuildAirUnits = new BooleanSupplier[Team.values().length];
 	{
-		canBuildLandUnits = new BooleanSupplier[Team.values().length];
-		canBuildWaterUnits = new BooleanSupplier[Team.values().length];
-		canBuildAirUnits = new BooleanSupplier[Team.values().length];
 		for (Team team : Team.values()) {
 			canBuildLandUnits[team.ordinal()] = valuesCache.newValBool(
 					() -> (buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildLand).hasNext()));
@@ -650,6 +677,24 @@ public class Game {
 			this.nextTurn = Objects.requireNonNull(nextTurn);
 		}
 
+	}
+
+	public static class TeamEliminateEvent extends Event {
+		public final Team team;
+
+		public TeamEliminateEvent(Game source, Team team) {
+			super(source);
+			this.team = Objects.requireNonNull(team);
+		}
+
+	}
+
+	private static class GameEndException extends RuntimeException {
+		private static final long serialVersionUID = 1L;
+		/**
+		 * The exception is used in the valid flow to 'exit' from the current stack
+		 * execution in case of a game end. A bit ugly but greatly simplify the code.
+		 */
 	}
 
 	public static class GameEnd extends Event {

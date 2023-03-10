@@ -155,11 +155,16 @@ public class Building extends Entity implements IBuilding {
 			conquerTeam = conquererTeam;
 			conquerProgress++;
 			game.onConquerProgress.notify(new ConquerEvent(game, this, conquerer));
+
 			if (conquerProgress >= getConquerDuration()) {
+				Team conqueredTeam = getTeam();
 				setTeam(conquererTeam);
 				conquerTeam = null;
 				conquerProgress = 0;
 				game.onConquerFinish.notify(new ConquerEvent(game, this, conquerer));
+
+				if (type == Type.Capital)
+					game.eliminateTeam(conqueredTeam);
 			}
 		}
 	}
