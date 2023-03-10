@@ -11,8 +11,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JPanel;
 
 import com.ugav.battalion.Levels.LevelHandle;
+import com.ugav.battalion.computer.Greedy;
 import com.ugav.battalion.computer.Player;
-import com.ugav.battalion.computer.PlayerMiniMaxAlphaBeta;
 import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
@@ -30,6 +30,7 @@ class GameWindow extends JPanel implements Clearable {
 	final Game game;
 	private final GameStats stats;
 	private final Player computer;
+	private final Logger computerLogger;
 	private final Event.Register register = new Event.Register();
 
 	private final AtomicInteger actionsSuspended = new AtomicInteger();
@@ -48,8 +49,8 @@ class GameWindow extends JPanel implements Clearable {
 		arenaPanel = new ArenaPanelGame(this);
 		menu = new GameSideMenu(this);
 
-		Logger computerLogger = new Logger.Enabled(globals.logger, () -> globals.debug.logComputerStats);
-		computer = new PlayerMiniMaxAlphaBeta(computerLogger);
+		computer = new Greedy.Player();
+		computerLogger = new Logger.Enabled(globals.logger, () -> globals.debug.logComputerStats);
 
 		setLayout(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
@@ -91,7 +92,7 @@ class GameWindow extends JPanel implements Clearable {
 
 		(gameActionsThread = new GameActionsThread()).start();
 
-		gameAction(new Action.Start());
+		gameAction(Action.Start);
 
 		arenaPanel.runMapOverviewAnimation();
 
@@ -122,8 +123,25 @@ class GameWindow extends JPanel implements Clearable {
 
 				if (playComputerTurn) {
 					playComputerTurn = false;
-					computer.playTurn(game);
+					computerTurn();
+
 				}
+			}
+		}
+
+		private void computerTurn() {
+			final Team us = game.getTurn();
+			for (;;) {
+				long t0 = System.currentTimeMillis();
+				Action action = computer.chooseAction(Game.copyOf(game));
+				long t1 = System.currentTimeMillis();
+				computerLogger.dbgln("Engine action computed in " + (t1 - t0) + "ms");
+				if (action == null || action == Action.TurnEnd) {
+					game.performAction(Action.TurnEnd);
+					return;
+				}
+				game.performAction(action);
+				assert game.getTurn() == us;
 			}
 		}
 
@@ -156,7 +174,7 @@ class GameWindow extends JPanel implements Clearable {
 	}
 
 	void endTurn() {
-		gameAction(new Action.TurnEnd());
+		gameAction(Action.TurnEnd);
 		if (!globals.debug.playAllTeams)
 			gameActionsThread.playComputerTurn();
 	}

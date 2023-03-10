@@ -45,7 +45,7 @@ class ArenaPanelAnimated extends ArenaPanelGameAbstract {
 
 		@Override
 		public void run() {
-			game.performAction(new Action.Start());
+			game.performAction(Action.Start);
 			while (running && actions.hasNext())
 				game.performAction(actions.next());
 			running = false;

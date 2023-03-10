@@ -6,7 +6,11 @@ import com.ugav.battalion.util.ListInt;
 
 public abstract class Action {
 
+	public static final Start Start = new Start();
+
 	public static class Start extends Action {
+		private Start() {
+		}
 
 		@Override
 		public String toString() {
@@ -15,7 +19,11 @@ public abstract class Action {
 
 	}
 
+	public static final TurnEnd TurnEnd = new TurnEnd();
+
 	public static class TurnEnd extends Action {
+		private TurnEnd() {
+		}
 
 		@Override
 		public String toString() {

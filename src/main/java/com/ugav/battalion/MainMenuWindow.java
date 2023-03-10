@@ -266,7 +266,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 		actions.add(new Action.UnitMove(Cell.of(2, 3),
 				ListInt.of(Cell.of(3, 3), Cell.of(4, 3), Cell.of(5, 3), Cell.of(5, 4), Cell.of(5, 5), Cell.of(5, 6))));
 		actions.add(new Action.UnitMoveAndAttack(Cell.of(5, 1), ListInt.of(Cell.of(6, 1)), Cell.of(7, 1)));
-		actions.add(new Action.TurnEnd());
+		actions.add(Action.TurnEnd);
 		actions.add(new Action.UnitMove(Cell.of(14, 8),
 				ListInt.of(Cell.of(14, 7), Cell.of(14, 6), Cell.of(14, 5), Cell.of(13, 5))));
 		actions.add(new Action.UnitMove(Cell.of(7, 1), ListInt.of(Cell.of(8, 1), Cell.of(9, 1), Cell.of(10, 1))));
@@ -274,42 +274,42 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 				ListInt.of(Cell.of(10, 1), Cell.of(9, 1), Cell.of(8, 1), Cell.of(7, 1)), Cell.of(6, 1)));
 		actions.add(new Action.UnitMoveAndAttack(Cell.of(9, 8), ListInt.of(Cell.of(8, 8), Cell.of(7, 8), Cell.of(6, 8)),
 				Cell.of(6, 7)));
-		actions.add(new Action.TurnEnd());
+		actions.add(Action.TurnEnd);
 		actions.add(
 				new Action.UnitMoveAndAttack(Cell.of(5, 6), ListInt.of(Cell.of(5, 7), Cell.of(5, 8)), Cell.of(6, 8)));
 		actions.add(new Action.UnitBuild(Cell.of(2, 1), Unit.Type.RocketSpecialist));
 		actions.add(new Action.UnitAttackLongRange(Cell.of(2, 9), Cell.of(6, 8)));
 		actions.add(new Action.UnitMove(Cell.of(6, 7),
 				ListInt.of(Cell.of(7, 7), Cell.of(7, 6), Cell.of(8, 6), Cell.of(8, 5))));
-		actions.add(new Action.TurnEnd());
+		actions.add(Action.TurnEnd);
 		actions.add(new Action.UnitBuild(Cell.of(13, 6), Unit.Type.AATank));
 		actions.add(new Action.UnitAttackLongRange(Cell.of(11, 6), Cell.of(8, 5)));
 		actions.add(new Action.UnitMove(Cell.of(7, 1),
 				ListInt.of(Cell.of(8, 1), Cell.of(9, 1), Cell.of(10, 1), Cell.of(11, 1))));
 		actions.add(new Action.UnitRepair(Cell.of(10, 1)));
-		actions.add(new Action.TurnEnd());
+		actions.add(Action.TurnEnd);
 		actions.add(new Action.UnitMove(Cell.of(2, 1), ListInt.of(Cell.of(3, 1), Cell.of(4, 1), Cell.of(5, 1))));
 		actions.add(new Action.UnitBuild(Cell.of(2, 1), Unit.Type.FighterPlane));
 		actions.add(new Action.UnitMove(Cell.of(5, 8),
 				ListInt.of(Cell.of(5, 7), Cell.of(5, 6), Cell.of(5, 5), Cell.of(5, 4), Cell.of(5, 3), Cell.of(4, 3))));
-		actions.add(new Action.TurnEnd());
+		actions.add(Action.TurnEnd);
 		actions.add(new Action.UnitMove(Cell.of(13, 5),
 				ListInt.of(Cell.of(13, 6), Cell.of(13, 7), Cell.of(13, 8), Cell.of(14, 8))));
 		actions.add(new Action.UnitMove(Cell.of(13, 6),
 				ListInt.of(Cell.of(12, 6), Cell.of(11, 6), Cell.of(11, 7), Cell.of(11, 8), Cell.of(10, 8))));
 		actions.add(new Action.UnitRepair(Cell.of(10, 1)));
-		actions.add(new Action.TurnEnd());
+		actions.add(Action.TurnEnd);
 		actions.add(new Action.UnitMove(Cell.of(2, 1), ListInt.of(Cell.of(3, 1), Cell.of(4, 1), Cell.of(5, 1),
 				Cell.of(5, 2), Cell.of(5, 3), Cell.of(5, 4), Cell.of(5, 5))));
 		actions.add(new Action.UnitMove(Cell.of(4, 3), ListInt.of(Cell.of(3, 3), Cell.of(2, 3))));
-		actions.add(new Action.TurnEnd());
+		actions.add(Action.TurnEnd);
 		actions.add(new Action.UnitMove(Cell.of(10, 8), ListInt.of(Cell.of(9, 8))));
-		actions.add(new Action.TurnEnd());
+		actions.add(Action.TurnEnd);
 		actions.add(new Action.UnitRepair(Cell.of(2, 3)));
 		actions.add(new Action.UnitMove(Cell.of(5, 5), ListInt.of(Cell.of(5, 6), Cell.of(5, 7), Cell.of(6, 7))));
-		actions.add(new Action.TurnEnd());
+		actions.add(Action.TurnEnd);
 		actions.add(new Action.UnitMove(Cell.of(10, 1), ListInt.of(Cell.of(9, 1), Cell.of(8, 1), Cell.of(7, 1))));
-		actions.add(new Action.TurnEnd());
+		actions.add(Action.TurnEnd);
 		return Pair.of(level, Utils.iteratorRepeatInfty(actions));
 	}
 

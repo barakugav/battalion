@@ -2,18 +2,21 @@ package com.ugav.battalion.computer;
 
 import java.util.Objects;
 
-import com.ugav.battalion.computer.MiniMaxAlphaBeta.IGame;
-import com.ugav.battalion.computer.MiniMaxAlphaBeta.IPosition;
-import com.ugav.battalion.util.Iter;
+import com.ugav.battalion.computer.GameImpl.Node;
+import com.ugav.battalion.computer.GameTreeAlg.IGame;
+import com.ugav.battalion.computer.GameTreeAlg.IGame.IPosition;
+import com.ugav.battalion.computer.GameTreeAlg.ValueFunction;
 
-class MiniMaxAlphaBeta<Action, Position extends IPosition<Action>, Game extends IGame<Action, Position>> {
+public class MiniMaxAlphaBeta<Action, Position extends IPosition<Action>, Game extends IGame<Action, Position>> {
 
 	private final Game game;
 	private final int maxDepth;
+	private final ValueFunction<Action, Position, Game> valueFunc;
 
-	MiniMaxAlphaBeta(Game game, int maxDepth) {
+	MiniMaxAlphaBeta(Game game, int maxDepth, ValueFunction<Action, Position, Game> valueFunc) {
 		this.game = Objects.requireNonNull(game);
 		this.maxDepth = maxDepth;
+		this.valueFunc = Objects.requireNonNull(valueFunc);
 	}
 
 	Action chooseAction(Position position) {
@@ -21,7 +24,7 @@ class MiniMaxAlphaBeta<Action, Position extends IPosition<Action>, Game extends 
 		double alpha = Double.MAX_VALUE, beta = Double.MAX_VALUE;
 
 		Action bestAction = null;
-		double bestEval = game.evaluate(position, us);
+		double bestEval = valueFunc.evaluate(position, us);
 		alpha = Math.max(alpha, bestEval);
 
 		for (Action action : position.availableActions().forEach()) {
@@ -38,7 +41,7 @@ class MiniMaxAlphaBeta<Action, Position extends IPosition<Action>, Game extends 
 
 	private double evaluate(Position position, int depth, double alpha, double beta, final int us) {
 		if (depth == maxDepth || position.isTerminated())
-			return game.evaluate(position, us);
+			return valueFunc.evaluate(position, us);
 		if (position.getTurn() == us) {
 			double val = -Double.MAX_VALUE;
 			for (Action action : position.availableActions().forEach()) {
@@ -62,23 +65,20 @@ class MiniMaxAlphaBeta<Action, Position extends IPosition<Action>, Game extends 
 		}
 	}
 
-	static interface IGame<Action, Position extends IPosition<Action>> {
+	public static class Player implements com.ugav.battalion.computer.Player {
 
-		int getNumberOfPlayers();
+		private final MiniMaxAlphaBeta<com.ugav.battalion.core.Action, GameImpl.Node, GameImpl> algo;
 
-		Position getModifiedPosition(Position position, Action action);
+		private final int DepthLimit = 2;
 
-		double evaluate(Position position, int us);
+		public Player() {
+			algo = new MiniMaxAlphaBeta<>(new GameImpl(), DepthLimit, new ValueFunctionImpl());
+		}
 
-	}
-
-	static interface IPosition<Action> {
-
-		boolean isTerminated();
-
-		int getTurn();
-
-		Iter<Action> availableActions();
+		@Override
+		public com.ugav.battalion.core.Action chooseAction(com.ugav.battalion.core.Game game) {
+			return algo.chooseAction(new Node(game));
+		}
 
 	}
 
