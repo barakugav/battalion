@@ -343,7 +343,7 @@ class Images {
 			for (int gesture = 0; gesture < gestureNum; gesture++) {
 				BufferedImage redImg = imgs.get(new Desc(type, Team.Red, gesture));
 				BufferedImage whiteImg = toWhite(redImg);
-				imgs.put(new Desc(type, Team.None, gesture), whiteImg);
+				imgs.put(new Desc(type, null, gesture), whiteImg);
 			}
 		}
 
@@ -376,7 +376,7 @@ class Images {
 		private static class Desc extends ImgDesc {
 
 			private Desc(Building.Type type, Team team, int gesture) {
-				super(type, team, Integer.valueOf(gesture));
+				super(Objects.requireNonNull(type), team, Integer.valueOf(gesture));
 			}
 
 			static Desc of(IBuilding building, int gesture) {
@@ -564,7 +564,7 @@ class Images {
 			BufferedImage buildingImg = loadImg("img/gui/minimap_building.png");
 			building.put(Team.Red, buildingImg);
 			building.put(Team.Blue, toBlue(buildingImg));
-			building.put(Team.None, toWhite(buildingImg));
+			building.put(null, toWhite(buildingImg));
 		}
 
 		static BufferedImage terrain(Terrain.Category t) {
@@ -690,7 +690,7 @@ class Images {
 		static final int AttackGestureNum = 3;
 		static final int ExplosionGestureNum = 15;
 
-		private static final BufferedImage[][] flag = new BufferedImage[Team.values().length][FlagGestureNum];
+		private static final Map<Team, BufferedImage[]> flag = new HashMap<>();
 		private static final BufferedImage[][] flagGlow = new BufferedImage[Team.values().length][FlagGestureNum];
 		private static final BufferedImage[] attack = new BufferedImage[ExplosionGestureNum];
 		private static final BufferedImage[] explosion = new BufferedImage[ExplosionGestureNum];
@@ -702,7 +702,7 @@ class Images {
 		}
 
 		static BufferedImage flag(Team team, int gesture) {
-			return flag[team.ordinal()][gesture];
+			return flag.get(team)[gesture];
 		}
 
 		static BufferedImage flagGlow(Team team, int gesture) {
@@ -732,12 +732,12 @@ class Images {
 					int x = perTeamWidth * teamIdx + perGestureWidth * gesture;
 					int width = perGestureWidth;
 					BufferedImage subImg = Utils.imgSub(img, x, 0, width, img.getHeight());
-					flag[team.ordinal()][gesture] = subImg;
+					flag.computeIfAbsent(team, k -> new BufferedImage[FlagGestureNum])[gesture] = subImg;
 				}
 			}
 			for (int gesture = 0; gesture < gestureNum; gesture++) {
-				BufferedImage whiteImg = toWhite(flag[Team.Red.ordinal()][gesture]);
-				flag[Team.None.ordinal()][gesture] = whiteImg;
+				BufferedImage whiteImg = toWhite(flag.get(Team.Red)[gesture]);
+				flag.computeIfAbsent(null, k -> new BufferedImage[FlagGestureNum])[gesture] = whiteImg;
 			}
 		}
 
@@ -758,10 +758,6 @@ class Images {
 					BufferedImage subImg = Utils.imgSub(img, x, 0, width, img.getHeight());
 					flagGlow[team.ordinal()][gesture] = subImg;
 				}
-			}
-			for (int gesture = 0; gesture < gestureNum; gesture++) {
-				BufferedImage whiteImg = toWhite(flag[Team.Red.ordinal()][gesture]);
-				flagGlow[Team.None.ordinal()][gesture] = whiteImg;
 			}
 		}
 

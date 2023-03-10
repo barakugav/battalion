@@ -13,7 +13,7 @@ public abstract class Entity {
 
 	Entity(Game game, Team team) {
 		this.game = Objects.requireNonNull(game);
-		this.team = Objects.requireNonNull(team);
+		this.team = team;
 		active = false;
 	}
 
@@ -24,7 +24,7 @@ public abstract class Entity {
 	void setTeam(Team team) {
 		if (Objects.equals(this.team, team))
 			return;
-		this.team = Objects.requireNonNull(team);
+		this.team = team;
 		onChange().notify(new EntityChange(this));
 	}
 

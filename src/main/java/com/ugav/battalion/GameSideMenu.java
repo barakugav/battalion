@@ -54,7 +54,7 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 		addComp(createButtonsPannel());
 		setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
 
-		for (Team team : Team.realTeams)
+		for (Team team : Team.values())
 			updateMoneyLabel(team, window.game.getMoney(team));
 	}
 
@@ -87,7 +87,7 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 		panel.setBackground(new Color(80, 79, 80));
 		panel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
 
-		for (Team team : Team.realTeams) {
+		for (Team team : Team.values()) {
 			JPanel teamPanel = new JPanel(new GridBagLayout());
 			teamPanel.setBackground(new Color(156, 156, 156));
 			int topBorder = panel.getComponentCount() == 0 ? 0 : 2;

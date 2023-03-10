@@ -62,10 +62,10 @@ class LevelSerializerXML implements LevelSerializer {
 			levelElm.appendChild(shapeElm);
 
 			Element teamsElm = dom.createElement("teams");
-			for (Team team : Team.realTeams) {
+			for (Team team : Team.values()) {
 				Element teamElm = dom.createElement("team");
 
-				addValueChild(dom, teamElm, "color", team);
+				addValueChild(dom, teamElm, "color", teamWrite(team));
 				int startingMoney = level.getStartingMoney(team);
 				addValueChild(dom, teamElm, "startingMoney", Integer.toString(startingMoney));
 
@@ -86,7 +86,7 @@ class LevelSerializerXML implements LevelSerializer {
 				if (tile.building != null) {
 					Element buildingElm = dom.createElement("building");
 					addValueChild(dom, buildingElm, "type", tile.building.type);
-					addValueChild(dom, buildingElm, "team", tile.building.team);
+					addValueChild(dom, buildingElm, "team", teamWrite(tile.building.team));
 					tileElm.appendChild(buildingElm);
 				}
 
@@ -94,12 +94,12 @@ class LevelSerializerXML implements LevelSerializer {
 					UnitDesc unit = tile.unit;
 					Element unitElm = dom.createElement("unit");
 					addValueChild(dom, unitElm, "type", unit.type);
-					addValueChild(dom, unitElm, "team", unit.team);
+					addValueChild(dom, unitElm, "team", teamWrite(unit.team));
 					if (unit.type.transportUnits) {
 						UnitDesc transportedUnit = unit.getTransportedUnit();
 						Element transportedUnitElm = dom.createElement("transportedUnit");
 						addValueChild(dom, transportedUnitElm, "type", transportedUnit.type);
-						addValueChild(dom, transportedUnitElm, "team", transportedUnit.team);
+						addValueChild(dom, transportedUnitElm, "team", teamWrite(transportedUnit.team));
 						if (transportedUnit.type.transportUnits)
 							throw new IllegalArgumentException();
 						unitElm.appendChild(transportedUnitElm);
@@ -186,7 +186,7 @@ class LevelSerializerXML implements LevelSerializer {
 			LevelBuilder builder = new LevelBuilder(width, height);
 
 			for (Element teamElm : childElms(childElm(levelElm, "teams")).forEach()) {
-				Team team = Team.valueOf(childData(teamElm, "color"));
+				Team team = teamRead(childData(teamElm, "color"));
 				int startingMoney = Integer.parseInt(childData(teamElm, "startingMoney"));
 				builder.setStartingMoney(team, startingMoney);
 			}
@@ -201,20 +201,20 @@ class LevelSerializerXML implements LevelSerializer {
 				if (buildingElm != null) {
 					String type = childData(buildingElm, "type");
 					String team = childData(buildingElm, "team");
-					building = BuildingDesc.of(Building.Type.valueOf(type), Team.valueOf(team));
+					building = BuildingDesc.of(Building.Type.valueOf(type), teamRead(team));
 				}
 
 				UnitDesc unit = null;
 				Element unitElm = childElmMaybeNull(tileElm, "unit");
 				if (unitElm != null) {
 					Unit.Type type = Unit.Type.valueOf(childData(unitElm, "type"));
-					Team team = Team.valueOf(childData(unitElm, "team"));
+					Team team = teamRead(childData(unitElm, "team"));
 					if (!type.transportUnits) {
 						unit = UnitDesc.of(type, team);
 					} else {
 						Element transportedUnitElm = childElm(unitElm, "transportedUnit");
 						Unit.Type transportedUnitType = Unit.Type.valueOf(childData(transportedUnitElm, "type"));
-						Team transportedUnitTeam = Team.valueOf(childData(transportedUnitElm, "team"));
+						Team transportedUnitTeam = teamRead(childData(transportedUnitElm, "team"));
 						if (transportedUnitType.transportUnits)
 							throw new IllegalArgumentException();
 						UnitDesc transportedUnit = UnitDesc.of(transportedUnitType, transportedUnitTeam);
@@ -231,6 +231,14 @@ class LevelSerializerXML implements LevelSerializer {
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private static Team teamRead(String s) {
+		return s.equals("None") ? null : Team.valueOf(s);
+	}
+
+	private static String teamWrite(Team t) {
+		return t == null ? "None" : t.toString();
 	}
 
 	@Override

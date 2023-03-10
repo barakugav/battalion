@@ -170,7 +170,7 @@ public class Building extends Entity implements IBuilding {
 	}
 
 	private int getConquerDuration() {
-		return getTeam() == Team.None ? CONQUER_DURATION_FROM_NONE : CONQUER_DURATION_FROM_OTHER;
+		return getTeam() == null ? CONQUER_DURATION_FROM_NONE : CONQUER_DURATION_FROM_OTHER;
 	}
 
 	public Team getConquerTeam() {

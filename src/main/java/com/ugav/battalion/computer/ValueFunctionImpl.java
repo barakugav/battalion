@@ -44,6 +44,8 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 				evals[unit.getTeam().ordinal()] += evalUnit(unit);
 
 			for (Building building : game.buildings().forEach()) {
+				if (building.getTeam() == null)
+					continue;
 				double buildingEval = evalBuilding(building);
 				evals[building.getTeam().ordinal()] += buildingEval;
 				Team conquerTeam = building.getConquerTeam();
@@ -51,14 +53,14 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 					evals[conquerTeam.ordinal()] += buildingEval * building.getConquerProgress();
 			}
 
-			for (Team team : Team.realTeams) {
+			for (Team team : Team.values()) {
 				final double MoneyWeight = 0.2;
 				int money = game.getMoney(team);
 				evals[team.ordinal()] += MoneyWeight * Math.pow(money, 4.0 / 5.0);
 			}
 
 			double maxEnemyEval = 0;
-			for (Team team : Team.realTeams)
+			for (Team team : Team.values())
 				if (team != us)
 					maxEnemyEval = Math.max(maxEnemyEval, evals[team.ordinal()]);
 			double eval = (1 - Aggression) * evals[us.ordinal()] - Aggression * maxEnemyEval;

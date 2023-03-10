@@ -3,6 +3,7 @@ package com.ugav.battalion.core;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -62,11 +63,11 @@ public class Game {
 		});
 
 		teamData = new HashMap<>();
-		turnIterator = Utils.iteratorRepeatInfty(Team.realTeams);
+		turnIterator = Utils.iteratorRepeatInfty(List.of(Team.values()));
 		turn = turnIterator.next();
 		winner = null;
 
-		for (Team team : Team.realTeams)
+		for (Team team : Team.values())
 			teamData.put(team, new TeamData(level.getStartingMoney(team)));
 	}
 
@@ -83,12 +84,12 @@ public class Game {
 		});
 
 		teamData = new HashMap<>();
-		turnIterator = Utils.iteratorRepeatInfty(Team.realTeams);
+		turnIterator = Utils.iteratorRepeatInfty(List.of(Team.values()));
 		while (!(turn = turnIterator.next()).equals(game.getTurn()))
 			;
 		winner = game.winner;
 
-		for (Team team : Team.realTeams)
+		for (Team team : Team.values())
 			teamData.put(team, new TeamData(game.getMoney(team)));
 	}
 
@@ -306,7 +307,7 @@ public class Game {
 
 	public boolean isFinished() {
 		Set<Team> alive = EnumSet.noneOf(Team.class);
-		for (Team team : Team.realTeams)
+		for (Team team : Team.values())
 			if (isTeamAlive(team))
 				alive.add(team);
 		assert !alive.isEmpty();
@@ -329,7 +330,7 @@ public class Game {
 			onUnitRemove.notify(new UnitRemove(this, unit));
 		}
 		for (Building building : buildings(team).forEach())
-			building.setTeam(Team.None);
+			building.setTeam(null);
 
 		if (isFinished())
 			throw new GameEndException();

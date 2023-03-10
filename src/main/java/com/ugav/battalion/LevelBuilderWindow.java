@@ -119,8 +119,8 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				buildlingsTabs.put(team, tab);
 			}
 
-			unitsTabs = new HashMap<>(Team.realTeams.size());
-			for (Team team : Team.realTeams) {
+			unitsTabs = new HashMap<>(Team.values().length);
+			for (Team team : Team.values()) {
 				EntityTab tab = new EntityTab("Units" + team);
 				for (Unit.Type type : Unit.Type.values()) {
 					if (!type.transportUnits) {
@@ -191,7 +191,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				panel.add(createEntityTabButton(icon, e -> selectEntitiesTab(buildlingsTabs.get(team))));
 			}
 
-			for (Team team : Team.realTeams) {
+			for (Team team : Team.values()) {
 				BufferedImage icon = Images.Units.getDefault(UnitDesc.of(Unit.Type.Rifleman, team));
 				panel.add(createEntityTabButton(icon, e -> selectEntitiesTab(unitsTabs.get(team))));
 			}

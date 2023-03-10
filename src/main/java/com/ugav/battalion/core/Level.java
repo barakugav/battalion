@@ -123,7 +123,7 @@ public class Level {
 
 		BuildingDesc(Building.Type type, Team team) {
 			this.type = Objects.requireNonNull(type);
-			this.team = Objects.requireNonNull(team);
+			this.team = team;
 		}
 
 		public static BuildingDesc of(Building.Type type, Team team) {

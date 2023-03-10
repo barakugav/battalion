@@ -17,7 +17,7 @@ class GameImpl implements IGame<Action, GameImpl.Node> {
 
 	@Override
 	public int getNumberOfPlayers() {
-		return Team.realTeams.size();
+		return Team.values().length;
 	}
 
 	@Override
