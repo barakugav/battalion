@@ -20,6 +20,7 @@ public class Unit extends Entity implements IUnit {
 	private int pos;
 	private int health;
 	private final Unit transportedUnit; /* valid only if type.canTransportUnits */
+	private boolean repairing;
 
 	private Unit(Game game, Type type, Team team, Unit transportedUnit) {
 		super(game, team);
@@ -78,6 +79,8 @@ public class Unit extends Entity implements IUnit {
 	}
 
 	void setHealth(int health) {
+		if (!(0 <= health && health <= type.health))
+			throw new IllegalArgumentException();
 		if (this.health == health)
 			return;
 		this.health = health;
@@ -100,10 +103,30 @@ public class Unit extends Entity implements IUnit {
 		return pos;
 	}
 
+	void setRepairing(boolean repairing) {
+		if (this.repairing == repairing)
+			return;
+		this.repairing = repairing;
+		onChange().notify(new EntityChange(this));
+	}
+
+	public boolean isRepairing() {
+		return repairing;
+	}
+
+	int repairAmount() {
+		return Math.min(type.health - health, type.health / 3);
+	}
+
+	public int getRepairCost() {
+		double h = (double) repairAmount() / type.health;
+		return (int) (h * type.price * 0.75);
+	}
+
 	public int getDamge(Unit target) {
 		// health 100% => damage 100%
 		// health 0% => damage 50%
-		double h = (double) getHealth() / type.health;
+		double h = (double) health / type.health;
 		double d = type.damage * (h / 2 + 0.5);
 		return Math.max(1, (int) d);
 	}

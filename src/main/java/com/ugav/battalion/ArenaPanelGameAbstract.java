@@ -309,6 +309,13 @@ abstract class ArenaPanelGameAbstract extends
 					int y = arena.displayedYCell(pos.y) + 42;
 					g.drawImage(healthBar, x, y, null);
 				}
+
+				/* Draw repair wrench */
+				if (unit().isRepairing()) {
+					int x = arena.displayedXCell(pos.x);
+					int y = arena.displayedYCell(pos.y) + 39;
+					g.drawImage(Images.Repair, x, y, null);
+				}
 			}
 
 			@Override

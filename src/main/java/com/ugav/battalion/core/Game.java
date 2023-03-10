@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import com.ugav.battalion.core.Building.ConquerEvent;
@@ -273,6 +274,12 @@ public class Game {
 			}
 		}
 
+		/* Repair units */
+		for (Unit unit : units(turn).filter(Unit::isRepairing).forEach()) {
+			unit.setHealth(unit.getHealth() + unit.repairAmount());
+			unit.setRepairing(false);
+		}
+
 		onTurnEnd.notify(new TurnEnd(this, prevTurn, turn));
 
 		turnBegin();
@@ -366,19 +373,20 @@ public class Game {
 	}
 
 	private void attack(Unit attacker, Unit target) {
+		boolean attackBack = !target.isRepairing();
 		doDamage(attacker, target);
 
 		if (target.isDead() || !target.canAttack(attacker))
 			return;
-		boolean attackBack = false;
 		switch (target.type.weapon.type) {
 		case CloseRange:
-			attackBack = ListInt.of(Cell.neighbors(target.getPos())).contains(attacker.getPos());
+			attackBack = attackBack && ListInt.of(Cell.neighbors(target.getPos())).contains(attacker.getPos());
 			break;
 		case LongRange:
-			attackBack = target.getAttackableMap().contains(attacker.getPos());
+			attackBack = attackBack && target.getAttackableMap().contains(attacker.getPos());
 			break;
 		case None:
+			attackBack = false;
 			break;
 		default:
 			throw new IllegalArgumentException("Unexpected value: " + target.type.weapon.type);
@@ -397,6 +405,7 @@ public class Game {
 
 		beforeUnitAttack.notify(new UnitAttack(this, attacker, target));
 		target.setHealth(newHealth);
+		target.setRepairing(false);
 
 		if (target.isDead()) {
 			removeUnit(target);
@@ -486,46 +495,40 @@ public class Game {
 		if (!unit.isActive() || unit.getHealth() == unit.type.health)
 			throw new IllegalArgumentException();
 
-		final int cost = 0; // TODO
+		final int cost = unit.getRepairCost();
 		moneyChange(unit.getTeam(), -cost);
 
-		unit.setHealth(unit.type.health);
+		unit.setRepairing(true);
 		unit.setActive(false);
 	}
 
-	private final Supplier<Boolean>[] canBuildLandUnits;
-	private final Supplier<Boolean>[] canBuildWaterUnits;
-	private final Supplier<Boolean>[] canBuildAirUnits;
+	private final BooleanSupplier[] canBuildLandUnits;
+	private final BooleanSupplier[] canBuildWaterUnits;
+	private final BooleanSupplier[] canBuildAirUnits;
 	{
-		@SuppressWarnings("unchecked")
-		Supplier<Boolean>[] canBuildLandUnits0 = new Supplier[Team.values().length];
-		@SuppressWarnings("unchecked")
-		Supplier<Boolean>[] canBuildWaterUnits0 = new Supplier[Team.values().length];
-		@SuppressWarnings("unchecked")
-		Supplier<Boolean>[] canBuildAirUnits0 = new Supplier[Team.values().length];
-		canBuildLandUnits = canBuildLandUnits0;
-		canBuildWaterUnits = canBuildWaterUnits0;
-		canBuildAirUnits = canBuildAirUnits0;
+		canBuildLandUnits = new BooleanSupplier[Team.values().length];
+		canBuildWaterUnits = new BooleanSupplier[Team.values().length];
+		canBuildAirUnits = new BooleanSupplier[Team.values().length];
 		for (Team team : Team.values()) {
-			canBuildLandUnits[team.ordinal()] = valuesCache.newVal(() -> Boolean
-					.valueOf(buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildLand).hasNext()));
-			canBuildWaterUnits[team.ordinal()] = valuesCache.newVal(() -> Boolean
-					.valueOf(buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildWater).hasNext()));
-			canBuildAirUnits[team.ordinal()] = valuesCache.newVal(() -> Boolean
-					.valueOf(buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildAir).hasNext()));
+			canBuildLandUnits[team.ordinal()] = valuesCache.newValBool(
+					() -> (buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildLand).hasNext()));
+			canBuildWaterUnits[team.ordinal()] = valuesCache.newValBool(
+					() -> (buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildWater).hasNext()));
+			canBuildAirUnits[team.ordinal()] = valuesCache.newValBool(
+					() -> (buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildAir).hasNext()));
 		}
 	}
 
 	public boolean canBuildLandUnits(Team team) {
-		return canBuildLandUnits[team.ordinal()].get().booleanValue();
+		return canBuildLandUnits[team.ordinal()].getAsBoolean();
 	}
 
 	public boolean canBuildWaterUnits(Team team) {
-		return canBuildWaterUnits[team.ordinal()].get().booleanValue();
+		return canBuildWaterUnits[team.ordinal()].getAsBoolean();
 	}
 
 	public boolean canBuildAirUnits(Team team) {
-		return canBuildAirUnits[team.ordinal()].get().booleanValue();
+		return canBuildAirUnits[team.ordinal()].getAsBoolean();
 	}
 
 	private static class TeamData {

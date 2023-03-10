@@ -223,9 +223,8 @@ class GameMenu {
 			setOpaque(false);
 
 			Terrain terrain = window.game.terrain(unit.getPos());
+			Team team = unit.getTeam();
 			if (!unit.type.transportUnits) {
-				Team team = unit.getTeam();
-
 				Unit.Type transportAirType = Unit.Type.TransportPlane;
 				boolean transportAirEn = true;
 				transportAirEn = transportAirEn && unit.type.category == Unit.Category.Land;
@@ -254,9 +253,12 @@ class GameMenu {
 						e -> window.gameAction(new Action.UnitTransportFinish(unit.getPos())));
 			}
 
-			boolean repairEn = unit.getHealth() < unit.type.health; // TODO and has enough money
-			createUnitMenuButton(Images.UnitMenuRepair, repairEn,
+			boolean repairEn = true;
+			repairEn = repairEn && unit.getHealth() < unit.type.health; // TODO and has enough money
+			repairEn = repairEn && window.game.getMoney(team) >= unit.getRepairCost();
+			JButton repairButton = createUnitMenuButton(Images.UnitMenuRepair, repairEn,
 					e -> window.gameAction(new Action.UnitRepair(unit.getPos())));
+			repairButton.setToolTipText("" + unit.getRepairCost() + "$");
 
 			createUnitMenuButton(Images.UnitMenuCancel, true, e -> {
 			});

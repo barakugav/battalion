@@ -297,6 +297,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 				ListInt.of(Cell.of(13, 6), Cell.of(13, 7), Cell.of(13, 8), Cell.of(14, 8))));
 		actions.add(new Action.UnitMove(Cell.of(13, 6),
 				ListInt.of(Cell.of(12, 6), Cell.of(11, 6), Cell.of(11, 7), Cell.of(11, 8), Cell.of(10, 8))));
+		actions.add(new Action.UnitRepair(Cell.of(10, 1)));
 		actions.add(new Action.TurnEnd());
 		actions.add(new Action.UnitMove(Cell.of(2, 1), ListInt.of(Cell.of(3, 1), Cell.of(4, 1), Cell.of(5, 1),
 				Cell.of(5, 2), Cell.of(5, 3), Cell.of(5, 4), Cell.of(5, 5))));

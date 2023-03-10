@@ -587,6 +587,7 @@ class Images {
 	static final BufferedImage PotentiallyAttackable;
 	static final BufferedImage UnitLocked;
 	static final BufferedImage Delete;
+	static final BufferedImage Repair;
 	static final BufferedImage UnitMenuTransportAir;
 	static final BufferedImage UnitMenuTransportWater;
 	static final BufferedImage UnitMenuTransportFinish;
@@ -606,6 +607,7 @@ class Images {
 		PotentiallyAttackable = loadImg("img/gui/potentially_attackable.png");
 		UnitLocked = loadImg("img/gui/unit_locked.png");
 		Delete = loadImg("img/gui/delete.png");
+		Repair = loadImg("img/gui/repair.png");
 		FactoryMenuImg = loadImg("img/gui/factory_menu_img.png");
 		CheckboxUnselected = loadImg("img/gui/checkbox_unselected.png");
 		CheckboxUnselectedHovered = loadImg("img/gui/checkbox_unselected_hovered.png");

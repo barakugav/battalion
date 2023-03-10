@@ -1,6 +1,7 @@
 package com.ugav.battalion.util;
 
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 public class ValuesCache {
@@ -13,6 +14,11 @@ public class ValuesCache {
 
 	public <T> Supplier<T> newVal(Supplier<? extends T> calc) {
 		return new Value<>(calc);
+	}
+
+	public BooleanSupplier newValBool(BooleanSupplier calc) {
+		Value<Boolean> v = new Value<>(() -> Boolean.valueOf(calc.getAsBoolean()));
+		return () -> v.get().booleanValue();
 	}
 
 	private class Value<T> implements Supplier<T> {
