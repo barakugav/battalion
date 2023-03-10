@@ -161,7 +161,7 @@ interface Animation {
 
 		@Override
 		public int getZOrder() {
-			return 200;
+			return ZOrderAnimation;
 		}
 
 		@Override
@@ -335,7 +335,7 @@ interface Animation {
 
 		@Override
 		public int getZOrder() {
-			return 200;
+			return ZOrderAnimation;
 		}
 
 		@Override

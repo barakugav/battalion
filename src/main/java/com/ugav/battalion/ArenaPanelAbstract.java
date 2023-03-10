@@ -370,6 +370,10 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 	static interface ArenaComp extends Clearable {
 
+		static final int ZOrderDefault = 0;
+		static final int ZOrderAnimated = 100;
+		static final int ZOrderAnimation = 200;
+
 		void paintComponent(Graphics g);
 
 		int getZOrder();
@@ -387,7 +391,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 
 		@Override
 		public int getZOrder() {
-			return 0;
+			return ZOrderDefault;
 		}
 
 		@Override

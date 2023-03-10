@@ -350,7 +350,7 @@ class ArenaPanelGameAbstract extends
 
 			@Override
 			public int getZOrder() {
-				return isAnimated ? 100 : 0;
+				return isAnimated ? ZOrderAnimated : ZOrderDefault;
 			}
 
 		}
