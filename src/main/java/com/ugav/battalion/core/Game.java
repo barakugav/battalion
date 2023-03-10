@@ -238,15 +238,15 @@ public class Game {
 	}
 
 	private void start() {
-		turnBegin();
+		turnBegin(turn);
 	}
 
-	private void turnBegin() {
+	private void turnBegin(Team newTurn) {
 		for (Building building : buildings().forEach())
-			building.setActive(building.canBeActive() && building.getTeam() == turn);
+			building.setActive(building.canBeActive() && building.getTeam() == newTurn);
 
 		for (Unit unit : units().forEach())
-			unit.setActive(unit.getTeam() == turn);
+			unit.setActive(unit.getTeam() == newTurn);
 
 		onTurnBegin.notify(new Event(this));
 	}
@@ -261,13 +261,13 @@ public class Game {
 		}
 
 		Team prevTurn = turn;
-		turn = turnIterator.next();
+		Team nextTurn = turnIterator.next();
 
 		/* Conquer buildings */
 		for (Building building : buildings().forEach()) {
 			Unit unit = unit(building.getPos());
 			if (unit != null && unit.type.canConquer) {
-				if (unit.getTeam() == turn)
+				if (unit.getTeam() == nextTurn)
 					building.tryConquer(unit);
 			} else {
 				building.tryConquer(null);
@@ -275,14 +275,15 @@ public class Game {
 		}
 
 		/* Repair units */
-		for (Unit unit : units(turn).filter(Unit::isRepairing).forEach()) {
+		for (Unit unit : units(nextTurn).filter(Unit::isRepairing).forEach()) {
 			unit.setHealth(unit.getHealth() + unit.repairAmount());
 			unit.setRepairing(false);
 		}
 
-		onTurnEnd.notify(new TurnEnd(this, prevTurn, turn));
+		turnBegin(nextTurn);
 
-		turnBegin();
+		turn = nextTurn;
+		onTurnEnd.notify(new TurnEnd(this, prevTurn, turn));
 	}
 
 	private Set<Team> getAliveTeams() {
