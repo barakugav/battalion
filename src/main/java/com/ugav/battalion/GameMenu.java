@@ -30,7 +30,6 @@ import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.Team;
-import com.ugav.battalion.core.Terrain;
 import com.ugav.battalion.core.Unit;
 import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.Pair;
@@ -222,41 +221,25 @@ class GameMenu {
 			/* Transparent background, draw only buttons */
 			setOpaque(false);
 
-			Terrain terrain = window.game.terrain(unit.getPos());
-			Team team = unit.getTeam();
 			if (!unit.type.transportUnits) {
 				Unit.Type transportAirType = Unit.Type.TransportPlane;
-				boolean transportAirEn = true;
-				transportAirEn = transportAirEn && unit.type.category == Unit.Category.Land;
-				transportAirEn = transportAirEn && window.game.canBuildAirUnits(team);
-				transportAirEn = transportAirEn && window.game.getMoney(team) >= transportAirType.price;
-				transportAirEn = transportAirEn && transportAirType.canStandOn(terrain);
+				boolean transportAirEn = unit.canTransport(transportAirType);
 				JButton transportAirButton = createUnitMenuButton(Images.UnitMenuTransportAir, transportAirEn,
 						e -> window.gameAction(new Action.UnitTransport(unit.getPos(), transportAirType)));
 				transportAirButton.setToolTipText("" + transportAirType.price + "$");
 
 				Unit.Type transportWaterType = Unit.Type.LandingCraft;
-				boolean transportWaterEn = true;
-				transportWaterEn = transportWaterEn && unit.type.category == Unit.Category.Land;
-				transportWaterEn = transportWaterEn && window.game.canBuildWaterUnits(team);
-				transportWaterEn = transportWaterEn && window.game.getMoney(team) >= transportWaterType.price;
-				transportWaterEn = transportWaterEn && transportWaterType.canStandOn(terrain);
+				boolean transportWaterEn = unit.canTransport(transportWaterType);
 				JButton transportWaterButton = createUnitMenuButton(Images.UnitMenuTransportWater, transportWaterEn,
 						e -> window.gameAction(new Action.UnitTransport(unit.getPos(), transportWaterType)));
 				transportWaterButton.setToolTipText("" + transportWaterType.price + "$");
 
 			} else {
-				Unit transportedUnit = unit.getTransportedUnit();
-
-				boolean transportFinishEn = transportedUnit.type.canStandOn(terrain);
-				createUnitMenuButton(Images.UnitMenuTransportFinish, transportFinishEn,
+				createUnitMenuButton(Images.UnitMenuTransportFinish, unit.canFinishTransport(),
 						e -> window.gameAction(new Action.UnitTransportFinish(unit.getPos())));
 			}
 
-			boolean repairEn = true;
-			repairEn = repairEn && unit.getHealth() < unit.type.health; // TODO and has enough money
-			repairEn = repairEn && window.game.getMoney(team) >= unit.getRepairCost();
-			JButton repairButton = createUnitMenuButton(Images.UnitMenuRepair, repairEn,
+			JButton repairButton = createUnitMenuButton(Images.UnitMenuRepair, unit.canRepair(),
 					e -> window.gameAction(new Action.UnitRepair(unit.getPos())));
 			repairButton.setToolTipText("" + unit.getRepairCost() + "$");
 

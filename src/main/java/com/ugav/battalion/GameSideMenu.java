@@ -52,6 +52,7 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 		addComp(descriptionPanel = new DescriptionPanel(window));
 		addComp(Utils.fillerComp(), 1);
 		addComp(createButtonsPannel());
+		setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
 
 		for (Team team : Team.realTeams)
 			updateMoneyLabel(team, window.game.getMoney(team));

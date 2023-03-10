@@ -585,6 +585,24 @@ public class Unit extends Entity implements IUnit {
 		});
 	}
 
+	public boolean canTransport(Unit.Type trasportType) {
+		boolean enable = isActive();
+		enable = enable && !type.transportUnits;
+		enable = enable && type.category == Unit.Category.Land;
+		enable = enable && game.canBuildUnitType(getTeam(), trasportType);
+		enable = enable && game.getMoney(getTeam()) >= trasportType.price;
+		enable = enable && trasportType.canStandOn(game.terrain(getPos()));
+		return enable;
+	}
+
+	public boolean canFinishTransport() {
+		return isActive() && type.transportUnits && transportedUnit.type.canStandOn(game.terrain(getPos()));
+	}
+
+	public boolean canRepair() {
+		return isActive() && getHealth() < type.health && game.getMoney(getTeam()) >= getRepairCost();
+	}
+
 	@Override
 	public String toString() {
 		return "" + getTeam().toString().charAt(0) + type + Cell.toString(getPos());

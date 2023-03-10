@@ -449,10 +449,7 @@ public class Game {
 	}
 
 	private Unit buildUnit(Building factory, Unit.Type unitType) {
-		int pos = factory.getPos();
-		if (!factory.type.canBuildUnits || !factory.isActive() || unit(pos) != null)
-			throw new IllegalStateException();
-		if (!unitType.canStandOn(terrain(factory.getPos())))
+		if (!factory.canBuildUnit(unitType))
 			throw new IllegalStateException();
 
 		Map<Unit.Type, Building.UnitSale> sales = factory.getAvailableUnits();
@@ -460,6 +457,7 @@ public class Game {
 		Team team = factory.getTeam();
 		moneyChange(team, -sale.price);
 
+		int pos = factory.getPos();
 		Unit unit = Unit.valueOf(this, UnitDesc.of(unitType, team), pos);
 		setUnit(pos, unit);
 		onUnitAdd.notify(new UnitAdd(this, unit));
@@ -469,21 +467,10 @@ public class Game {
 	}
 
 	private Unit unitTransport(Unit transportedUnit, Unit.Type transportType) {
-		int pos = transportedUnit.getPos();
+		if (!transportedUnit.canTransport(transportType))
+			throw new IllegalArgumentException();
+
 		Team team = transportedUnit.getTeam();
-
-		if (!transportedUnit.isActive() || transportedUnit.type.category != Unit.Category.Land)
-			throw new IllegalArgumentException();
-		if (!transportType.transportUnits || !transportType.canStandOn(terrain(pos)))
-			throw new IllegalArgumentException();
-		if (transportType.category == Unit.Category.Land && !canBuildLandUnits(team))
-			throw new IllegalArgumentException();
-		if (EnumSet.of(Unit.Category.Water, Unit.Category.DeepWater).contains(transportType.category)
-				&& !canBuildWaterUnits(team))
-			throw new IllegalArgumentException();
-		if (transportType.category == Unit.Category.Air && !canBuildAirUnits(team))
-			throw new IllegalArgumentException();
-
 		moneyChange(team, -transportType.price);
 
 		transportedUnit.setActive(false);
@@ -491,6 +478,7 @@ public class Game {
 		onUnitRemove.notify(new UnitRemove(this, transportedUnit));
 
 		Unit newUnit = Unit.newTrasportUnit(this, transportType, transportedUnit);
+		int pos = transportedUnit.getPos();
 		setUnit(pos, newUnit);
 		newUnit.setPos(pos);
 		newUnit.setActive(false);
@@ -501,18 +489,15 @@ public class Game {
 	}
 
 	private Unit transportFinish(Unit trasportUnit) {
-		int pos = trasportUnit.getPos();
-
-		if (!trasportUnit.isActive() || !trasportUnit.type.transportUnits)
-			throw new IllegalArgumentException();
-		Unit transportedUnit = trasportUnit.getTransportedUnit();
-		if (!transportedUnit.type.canStandOn(terrain(pos)))
+		if (!trasportUnit.canFinishTransport())
 			throw new IllegalArgumentException();
 
 		trasportUnit.setActive(false);
 		removeUnit(trasportUnit);
 		onUnitRemove.notify(new UnitRemove(this, trasportUnit));
 
+		Unit transportedUnit = trasportUnit.getTransportedUnit();
+		int pos = trasportUnit.getPos();
 		setUnit(pos, transportedUnit);
 		transportedUnit.setPos(pos);
 		transportedUnit.setActive(true);
@@ -523,7 +508,7 @@ public class Game {
 	}
 
 	private void unitRepair(Unit unit) {
-		if (!unit.isActive() || unit.getHealth() == unit.type.health)
+		if (!unit.canRepair())
 			throw new IllegalArgumentException();
 
 		final int cost = unit.getRepairCost();
@@ -557,6 +542,20 @@ public class Game {
 
 	public boolean canBuildAirUnits(Team team) {
 		return canBuildAirUnits[team.ordinal()].getAsBoolean();
+	}
+
+	public boolean canBuildUnitType(Team team, Unit.Type type) {
+		switch (type.category) {
+		case Land:
+			return canBuildLandUnits(team);
+		case Water:
+		case DeepWater:
+			return canBuildWaterUnits(team);
+		case Air:
+			return canBuildAirUnits(team);
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + type);
+		}
 	}
 
 	private static class TeamData {

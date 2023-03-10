@@ -6,7 +6,6 @@ import java.util.Objects;
 
 import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Building;
-import com.ugav.battalion.core.Building.UnitSale;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
@@ -216,27 +215,22 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			if (unit.getTeam() != game.getTurn() || !unit.isActive())
 				return;
 
-			Cell.Bitmap attackable = unit.getAttackableMap();
-			Cell.Bitmap reachable = unit.getReachableMap();
-
-			unitAvailableActionsAttack(unit, reachable, attackable, actions);
-			unitAvailableActionsMove(unit, reachable, actions);
-
-			// TODO transport unit actions
+			unitAvailableActionsAttack(unit, actions);
+			unitAvailableActionsMove(unit, actions);
+			unitAvailableActionsTransport(unit, actions);
+			if (unit.canRepair())
+				actions.add(new Action.UnitRepair(unit.getPos()));
 		}
 
-		private void factoryAvailableActions(Building factory, List<Action> actions) {
-			if (factory.getTeam() != game.getTurn() || !factory.isActive() || game.unit(factory.getPos()) != null)
-				return;
-			final int money = game.getMoney(factory.getTeam());
-
-			for (UnitSale sale : factory.getAvailableUnits().values())
-				if (sale != null && sale.price <= money)
-					actions.add(new Action.UnitBuild(factory.getPos(), sale.type));
+		private static void factoryAvailableActions(Building factory, List<Action> actions) {
+			for (Unit.Type type : Unit.Type.values())
+				if (factory.canBuildUnit(type))
+					actions.add(new Action.UnitBuild(factory.getPos(), type));
 		}
 
-		private static void unitAvailableActionsMove(Unit unit, Cell.Bitmap reachable, List<Action> actions) {
+		private static void unitAvailableActionsMove(Unit unit, List<Action> actions) {
 			int unitPos = unit.getPos();
+			Cell.Bitmap reachable = unit.getReachableMap();
 
 			for (Iter.Int it = reachable.cells(); it.hasNext();) {
 				int destination = it.next();
@@ -245,14 +239,13 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			}
 		}
 
-		private static void unitAvailableActionsAttack(Unit unit, Cell.Bitmap reachable, Cell.Bitmap attackable,
-				List<Action> actions) {
+		private static void unitAvailableActionsAttack(Unit unit, List<Action> actions) {
 			switch (unit.type.weapon.type) {
 			case CloseRange:
-				unitAvailableActionsAttackAndMove(unit, reachable, attackable, actions);
+				unitAvailableActionsAttackAndMove(unit, actions);
 				break;
 			case LongRange:
-				unitAvailableActionsAttackRange(unit, attackable, actions);
+				unitAvailableActionsAttackRange(unit, actions);
 				break;
 			case None:
 				break;
@@ -261,9 +254,18 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			}
 		}
 
-		private static void unitAvailableActionsAttackAndMove(Unit unit, Cell.Bitmap reachable, Cell.Bitmap attackable,
-				List<Action> actions) {
+		private static void unitAvailableActionsTransport(Unit unit, List<Action> actions) {
+			for (Unit.Type transport : List.of(Unit.Type.LandingCraft, Unit.Type.TransportPlane))
+				if (unit.canTransport(transport))
+					actions.add(new Action.UnitTransport(unit.getPos(), transport));
+			if (unit.canFinishTransport())
+				actions.add(new Action.UnitTransportFinish(unit.getPos()));
+		}
+
+		private static void unitAvailableActionsAttackAndMove(Unit unit, List<Action> actions) {
 			int attackerPos = unit.getPos();
+			Cell.Bitmap attackable = unit.getAttackableMap();
+			Cell.Bitmap reachable = unit.getReachableMap();
 			for (Iter.Int it = attackable.cells(); it.hasNext();) {
 				int target = it.next();
 				for (int destination : Cell.neighbors(target))
@@ -272,8 +274,9 @@ public class PlayerMiniMaxAlphaBeta implements Player {
 			}
 		}
 
-		private static void unitAvailableActionsAttackRange(Unit unit, Cell.Bitmap attackable, List<Action> actions) {
+		private static void unitAvailableActionsAttackRange(Unit unit, List<Action> actions) {
 			int attackerPos = unit.getPos();
+			Cell.Bitmap attackable = unit.getAttackableMap();
 			for (Iter.Int it = attackable.cells(); it.hasNext();) {
 				int target = it.next();
 				actions.add(new Action.UnitAttackLongRange(attackerPos, target));

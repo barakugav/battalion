@@ -196,6 +196,17 @@ public class Building extends Entity implements IBuilding {
 		super.setActive(active);
 	}
 
+	public boolean canBuildUnit(Unit.Type unitType) {
+		boolean enable = isActive();
+		enable = enable && type.canBuildUnits;
+		enable = enable && game.unit(getPos()) == null;
+		enable = enable && unitType.canStandOn(game.terrain(getPos()));
+		if (!enable)
+			return false;
+		UnitSale sale = getAvailableUnits().get(unitType);
+		return sale != null && game.getMoney(getTeam()) >= sale.price;
+	}
+
 	public Map<Unit.Type, UnitSale> getAvailableUnits() {
 		if (!type.canBuildUnits)
 			throw new IllegalStateException();
