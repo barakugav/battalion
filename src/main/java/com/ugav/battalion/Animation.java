@@ -423,6 +423,7 @@ interface Animation {
 
 			void setPos(Position pos) {
 				currentPos = getMapPosRange().closestContainedPoint(pos);
+				onMapMove.notify(new Event(this));
 			}
 
 			static class MapPosRange {
@@ -492,7 +493,6 @@ interface Animation {
 				userChosenDx = dx;
 				userChosenDy = dy;
 				userChosenDirValid = true;
-				onMapMove.notify(new Event(this));
 			}
 
 			synchronized void userMapMoveCancel() {
@@ -505,7 +505,6 @@ interface Animation {
 						throw new IllegalStateException();
 					userChosenDirValid = false;
 				}
-				onMapMove.notify(new Event(this));
 			}
 
 			private void mapMoveEnd() {

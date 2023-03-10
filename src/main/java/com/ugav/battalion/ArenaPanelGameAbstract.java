@@ -17,12 +17,10 @@ import com.ugav.battalion.util.Iter;
 import com.ugav.battalion.util.ListInt;
 import com.ugav.battalion.util.Utils;
 
-class ArenaPanelGameAbstract extends
-		ArenaPanelAbstract<ArenaPanelGameAbstract.EntityLayer.TerrainComp, ArenaPanelGameAbstract.EntityLayer.BuildingComp, ArenaPanelGameAbstract.EntityLayer.UnitComp>
-		implements Clearable {
+abstract class ArenaPanelGameAbstract extends
+		ArenaPanelAbstract<ArenaPanelGameAbstract.EntityLayer.TerrainComp, ArenaPanelGameAbstract.EntityLayer.BuildingComp, ArenaPanelGameAbstract.EntityLayer.UnitComp> {
 
 	final Game game;
-	final Event.Register register = new Event.Register();
 
 	private static final long serialVersionUID = 1L;
 
@@ -46,12 +44,6 @@ class ArenaPanelGameAbstract extends
 		tickTaskManager.start();
 		entityLayer().reset();
 		mapMove.setPos(Position.of(0, 0));
-	}
-
-	@Override
-	public void clear() {
-		register.unregisterAll();
-		super.clear();
 	}
 
 	class EntityLayer extends

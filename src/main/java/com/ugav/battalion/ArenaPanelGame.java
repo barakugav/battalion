@@ -1,6 +1,5 @@
 package com.ugav.battalion;
 
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
@@ -35,14 +34,14 @@ import com.ugav.battalion.util.Utils.Holder;
 class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 	private final GameWindow window;
-	private GameMenu openMenu;
+	private MenuHandle openMenu;
 	private final List<Popup> openPopups = new ArrayList<>();
 
-	Selection selection = Selection.None;
-	Entity selectedEntity;
+	private Selection selection = Selection.None;
+	private Entity selectedEntity;
 	private final ListInt movePath = new ListInt.Array();
 
-	static enum Selection {
+	private static enum Selection {
 		None, UnitMoveOrAttack, UnitEctActions, UnitObserve, FactoryBuild
 	}
 
@@ -201,56 +200,81 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		closeOpenMenu();
 
 		setSelection(Selection.UnitEctActions, unit);
-		GameMenu.UnitMenu unitMenu = new GameMenu.UnitMenu(window, unit);
+		GameMenu.UnitMenu menu = new GameMenu.UnitMenu(window, unit);
 
-		Dimension unitMenuSize = unitMenu.getPreferredSize();
+		Dimension menuSize = menu.getPreferredSize();
 
 		int unitX = displayedXCell(Cell.x(unit.getPos()));
 		int unitY = displayedYCell(Cell.y(unit.getPos()));
 
 		int unitXMiddle = unitX + TILE_SIZE_PIXEL / 2;
-		int x = unitXMiddle - unitMenuSize.width / 2;
-		x = Math.max(0, Math.min(x, getWidth() - unitMenuSize.width));
+		double x = unitXMiddle - menuSize.width / 2;
+		x = Math.max(0, Math.min(x, getWidth() - menuSize.width));
 
 		int yOverlap = (int) (TILE_SIZE_PIXEL * 0.25);
-		int y = unitY - unitMenuSize.height + yOverlap;
-		y = Math.max(0, Math.min(y, getHeight() - unitMenuSize.height));
-		if (y + unitMenuSize.height > unitY + yOverlap)
+		double y = unitY - menuSize.height + yOverlap;
+		y = Math.max(0, Math.min(y, getHeight() - menuSize.height));
+		if (y + menuSize.height > unitY + yOverlap)
 			y = unitY + TILE_SIZE_PIXEL - yOverlap;
 
-		showMenu(unitMenu, x, y, unitMenuSize.width, unitMenuSize.height);
+		Position mapPos = mapMove.getCurrent();
+		x = x / TILE_SIZE_PIXEL + mapPos.x;
+		y = y / TILE_SIZE_PIXEL + mapPos.y;
+		Position menuPos = Position.of(x, y);
+
+		add(menu, JLayeredPane.PALETTE_LAYER);
+		revalidate();
+		addMapPinnedComp(menu, menuPos);
+
+		addOpenMenu(() -> {
+			rempveMapPinnedComp(menu);
+			menu.clear();
+			remove(menu);
+			revalidate();
+			if (selection == Selection.UnitEctActions && selectedEntity == unit)
+				clearSelection();
+		});
 	}
 
 	private void openFactoryMenu(Building factory) {
 		closeOpenMenu();
 
 		setSelection(Selection.FactoryBuild, factory);
-		GameMenu.FactoryMenu factoryMenu = new GameMenu.FactoryMenu(window, factory);
+		GameMenu.FactoryMenu menu = new GameMenu.FactoryMenu(window, factory);
 
-		Dimension factoryMenuSize = factoryMenu.getPreferredSize();
-		int x = (getWidth() - factoryMenuSize.width) / 2;
-		int y = (getHeight() - factoryMenuSize.height) / 2;
-		showMenu(factoryMenu, x, y, factoryMenuSize.width, factoryMenuSize.height);
+		Dimension menuSize = menu.getPreferredSize();
+		int x = (getWidth() - menuSize.width) / 2;
+		int y = (getHeight() - menuSize.height) / 2;
+
+		add(menu, JLayeredPane.PALETTE_LAYER);
+		menu.setBounds(x, y, menuSize.width, menuSize.height);
+		revalidate();
+
+		addOpenMenu(() -> {
+			menu.clear();
+			remove(menu);
+			revalidate();
+			if (selection == Selection.FactoryBuild && selectedEntity == factory)
+				clearSelection();
+		});
 	}
 
-	private void showMenu(GameMenu menu, int x, int y, int width, int height) {
+	private void addOpenMenu(MenuHandle menu) {
 		closeOpenMenu();
 		openMenu = menu;
-		Component m = (Component) menu;
-		add(m, JLayeredPane.PALETTE_LAYER);
-		m.setBounds(x, y, width, height);
-		revalidate();
 	}
 
 	void closeOpenMenu() {
-		GameMenu m = openMenu;
-		if (m != null) {
-			openMenu = null;
-			m.beforeClose();
-			m.clear();
-			remove((Component) m);
-			revalidate();
-		}
+		if (openMenu == null)
+			return;
+		MenuHandle m = openMenu;
+		openMenu = null;
+		m.close();
+	}
+
+	@FunctionalInterface
+	private static interface MenuHandle {
+		void close();
 	}
 
 	private static class Popup extends JPanel {

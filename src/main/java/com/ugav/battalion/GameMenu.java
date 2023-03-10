@@ -25,7 +25,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-import com.ugav.battalion.ArenaPanelGame.Selection;
 import com.ugav.battalion.Levels.LevelHandle;
 import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Building;
@@ -38,11 +37,12 @@ import com.ugav.battalion.util.Pair;
 import com.ugav.battalion.util.Utils;
 import com.ugav.battalion.util.Utils.RoundedPanel;
 
-interface GameMenu extends Clearable {
+class GameMenu {
 
-	void beforeClose();
+	private GameMenu() {
+	}
 
-	static class FactoryMenu extends Menus.Window implements GameMenu {
+	static class FactoryMenu extends Menus.Window implements Clearable {
 
 		private final DescriptionPanel.UnitsPanel unitDesc = new DescriptionPanel.UnitsPanel();
 		final Building factory;
@@ -199,16 +199,9 @@ interface GameMenu extends Clearable {
 			removeMouseListener(mouseListener);
 		}
 
-		@Override
-		public void beforeClose() {
-			ArenaPanelGame arena = window.arenaPanel;
-			if (arena.selection == Selection.FactoryBuild && arena.selectedEntity == factory)
-				arena.clearSelection();
-		}
-
 	}
 
-	static class UnitMenu extends JPanel implements GameMenu {
+	static class UnitMenu extends JPanel implements Clearable {
 
 		private static final long serialVersionUID = 1L;
 
@@ -293,13 +286,6 @@ interface GameMenu extends Clearable {
 			for (Pair<JButton, ActionListener> l : listeners)
 				l.e1.removeActionListener(l.e2);
 			listeners.clear();
-		}
-
-		@Override
-		public void beforeClose() {
-			ArenaPanelGame arena = window.arenaPanel;
-			if (arena.selection == Selection.UnitEctActions && arena.selectedEntity == unit)
-				arena.clearSelection();
 		}
 
 	}

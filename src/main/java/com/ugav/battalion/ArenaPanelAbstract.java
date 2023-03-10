@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -23,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
+import javax.swing.JComponent;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 
@@ -49,12 +51,14 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 	final Animation.MapMove.Manager mapMove = new Animation.MapMove.Manager(this);
 	private boolean isMapMoveByUserEnable = true;
 	private final MouseAdapter mapMoveMouseListener;
+	private final List<Pair<JComponent, Position>> mapPinnedComps = new ArrayList<>();
 
 	final TickTask.Manager tickTaskManager = new TickTask.Manager();
 	final Animation.Task animationTask;
 	private final AtomicInteger animationsActive = new AtomicInteger();
 
 	final Globals globals;
+	final Event.Register register = new Event.Register();
 
 	static final int TILE_SIZE_PIXEL = 56;
 
@@ -125,6 +129,10 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		};
 		entityLayer.addMouseListener(mapMoveMouseListener);
 		entityLayer.addMouseMotionListener(mapMoveMouseListener);
+		register.register(mapMove.onMapMove, e -> {
+			for (Pair<JComponent, Position> c : mapPinnedComps)
+				updateBoundsRelativeToMapPos(c.e1, c.e2);
+		});
 
 		tickTaskManager.addTask(1000, new TickTask() {
 
@@ -223,8 +231,30 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		return mapMove.getCurrent();
 	}
 
+	void addMapPinnedComp(JComponent c, Position pos) {
+		updateBoundsRelativeToMapPos(c, pos);
+		mapPinnedComps.add(Pair.of(c, pos));
+	}
+
+	void rempveMapPinnedComp(JComponent c) {
+		for (Iterator<Pair<JComponent, Position>> it = mapPinnedComps.iterator(); it.hasNext();) {
+			Pair<JComponent, Position> p = it.next();
+			if (c.equals(p.e1)) {
+				it.remove();
+				return;
+			}
+		}
+	}
+
+	private void updateBoundsRelativeToMapPos(JComponent c, Position pos) {
+		Dimension size = c.getPreferredSize();
+		int x0 = displayedXCell(pos.x), y0 = displayedYCell(pos.y);
+		c.setBounds(x0, y0, size.width, size.height);
+	}
+
 	@Override
 	public void clear() {
+		register.unregisterAll();
 		tickTaskManager.stop();
 		mapMove.clear();
 		animationTask.clear();
