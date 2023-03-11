@@ -45,35 +45,35 @@ public class Utils {
 		throw new RuntimeException();
 	}
 
-	public static <E> Iter<E> iteratorRepeat(Iterable<E> iterable, int repeat) {
+	public static <E> Iter<E> iteratorRepeat(java.lang.Iterable<E> iterable, int repeat) {
 		return IteratorRepeat.create(iterable, repeat);
 	}
 
-	public static <E> Iter<E> iteratorRepeatInfty(Iterable<E> iterable) {
+	public static <E> Iter<E> iteratorRepeatInfty(java.lang.Iterable<E> iterable) {
 		return IteratorRepeat.infty(iterable);
 	}
 
 	private static class IteratorRepeat<E> implements Iter<E> {
 
-		private final Iterable<E> iterable;
+		private final java.lang.Iterable<E> iterable;
 		private Iterator<E> it;
 		private int repeat;
 
 		private static final int RepeatInfty = -1;
 
-		private IteratorRepeat(Iterable<E> iterable, int repeat) {
+		private IteratorRepeat(java.lang.Iterable<E> iterable, int repeat) {
 			this.iterable = iterable;
 			this.repeat = repeat;
 			it = iterable.iterator();
 		}
 
-		static <E> IteratorRepeat<E> create(Iterable<E> iterable, int repeat) {
+		static <E> IteratorRepeat<E> create(java.lang.Iterable<E> iterable, int repeat) {
 			if (repeat < 0)
 				throw new IllegalArgumentException();
 			return new IteratorRepeat<>(iterable, RepeatInfty);
 		}
 
-		static <E> IteratorRepeat<E> infty(Iterable<E> iterable) {
+		static <E> IteratorRepeat<E> infty(java.lang.Iterable<E> iterable) {
 			return new IteratorRepeat<>(iterable, RepeatInfty);
 		}
 

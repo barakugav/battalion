@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
-public interface ListInt {
+public interface ListInt extends Iter.Iterable.Int {
 
 	public int size();
 
@@ -59,6 +59,7 @@ public interface ListInt {
 			set(i, set(j, get(i)));
 	}
 
+	@Override
 	default Iter.Int iterator() {
 		return iterator(0);
 	}

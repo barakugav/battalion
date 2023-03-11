@@ -127,9 +127,11 @@ class GameImpl implements IGame<Action, GameImpl.Node> {
 			Cell.Bitmap reachable = unit.getReachableMap();
 			for (Iter.Int it = attackable.cells(); it.hasNext();) {
 				int target = it.next();
-				for (int destination : Cell.neighbors(target))
+				for (Iter.Int nit = Cell.neighbors(target); nit.hasNext();) {
+					int destination = nit.next();
 					if (reachable.contains(destination))
 						actions.add(new Action.UnitMoveAndAttack(attackerPos, unit.calcPath(destination), target));
+				}
 			}
 		}
 

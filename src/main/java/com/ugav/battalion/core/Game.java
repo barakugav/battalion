@@ -176,7 +176,8 @@ public class Game {
 
 						if (!unit.type.invisible || unit.getTeam() == viewer)
 							return true;
-						for (int n : Cell.neighbors(pos)) {
+						for (Iter.Int nit = Cell.neighbors(pos); nit.hasNext();) {
+							int n = nit.next();
 							if (!isValidCell(n))
 								continue;
 							Unit neighbor = unit(n);
@@ -409,11 +410,11 @@ public class Game {
 		boolean attackBack = !target.isRepairing();
 		doDamage(attacker, target);
 
-		if (target.isDead() || !target.canAttack(attacker))
+		if (target.isDead() || !target.canAttack(attacker.type))
 			return;
 		switch (target.type.weapon.type) {
 		case CloseRange:
-			attackBack = attackBack && ListInt.of(Cell.neighbors(target.getPos())).contains(attacker.getPos());
+			attackBack = attackBack && Cell.neighbors(target.getPos()).contains(attacker.getPos());
 			break;
 		case LongRange:
 			attackBack = attackBack && target.getAttackableMap().contains(attacker.getPos());
@@ -524,6 +525,7 @@ public class Game {
 	private final BooleanSupplier[] canBuildAirUnits = new BooleanSupplier[Team.values().length];
 	{
 		for (Team team : Team.values()) {
+			// TODO bug, valuesCache is invalidated only on unit move
 			canBuildLandUnits[team.ordinal()] = valuesCache.newValBool(
 					() -> (buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildLand).hasNext()));
 			canBuildWaterUnits[team.ordinal()] = valuesCache.newValBool(

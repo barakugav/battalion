@@ -114,7 +114,7 @@ public class Unit extends Entity implements IUnit {
 		return repairing;
 	}
 
-	int repairAmount() {
+	public int repairAmount() {
 		return Math.min(type.health - health, type.health / 3);
 	}
 
@@ -151,7 +151,7 @@ public class Unit extends Entity implements IUnit {
 	}
 
 	boolean isAttackValid(Unit target) {
-		return target.getTeam() != getTeam() && getAttackableMap().contains(target.getPos()) && canAttack(target);
+		return target.getTeam() != getTeam() && getAttackableMap().contains(target.getPos()) && canAttack(target.type);
 	}
 
 	public enum Category {
@@ -322,8 +322,8 @@ public class Unit extends Entity implements IUnit {
 		}
 	}
 
-	public boolean canAttack(Unit other) {
-		return type.canAttack.contains(other.type.category);
+	public boolean canAttack(Unit.Type other) {
+		return type.canAttack.contains(other.category);
 	}
 
 	public Cell.Bitmap getReachableMap() {
@@ -493,7 +493,8 @@ public class Unit extends Entity implements IUnit {
 		final int NoValue = Cell.of(-1, -1);
 		int destination = NoValue;
 		int length = Integer.MAX_VALUE;
-		for (int dest : Cell.neighbors(targetPos)) {
+		for (Iter.Int nit = Cell.neighbors(targetPos); nit.hasNext();) {
+			int dest = nit.next();
 			if (dest == getPos()) {
 				destination = dest;
 				break;
@@ -535,7 +536,7 @@ public class Unit extends Entity implements IUnit {
 			Unit target = game.unit(p);
 			if (target == null || (invisiableEnable && !game.isUnitVisible(p, getTeam())))
 				return false;
-			return target.getTeam() != getTeam() && canAttack(target);
+			return target.getTeam() != getTeam() && canAttack(target.type);
 		});
 	}
 
@@ -572,9 +573,11 @@ public class Unit extends Entity implements IUnit {
 		Cell.Bitmap reachableMap = getReachableMap(invisiableEnable);
 		Cell.Bitmap attackableMap = Cell.Bitmap.ofFalse(game.width(), game.height());
 		for (Iter.Int it = reachableMap.cells(); it.hasNext();)
-			for (int n : Cell.neighbors(it.next()))
+			for (Iter.Int nit = Cell.neighbors(it.next()); nit.hasNext();) {
+				int n = nit.next();
 				if (game.isValidCell(n))
 					attackableMap.set(n, true);
+			}
 		return attackableMap;
 	}
 

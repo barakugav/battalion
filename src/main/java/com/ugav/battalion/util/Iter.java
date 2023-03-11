@@ -14,7 +14,21 @@ import java.util.function.ToIntFunction;
 
 public interface Iter<E> extends Iterator<E> {
 
-	public static <E> Iterable<E> iterable(Iterator<E> it) {
+	public static <E> java.lang.Iterable<E> iterable(Iterator<E> it) {
+		/*
+		 * java lack nice for loop syntax using iterators, hopefully this code will be
+		 * inlined by the compiler and no object will be created here
+		 */
+		return new java.lang.Iterable<>() {
+
+			@Override
+			public Iterator<E> iterator() {
+				return it;
+			}
+		};
+	}
+
+	public static <E> Iterable<E> iterable(Iter<E> it) {
 		/*
 		 * java lack nice for loop syntax using iterators, hopefully this code will be
 		 * inlined by the compiler and no object will be created here
@@ -22,7 +36,7 @@ public interface Iter<E> extends Iterator<E> {
 		return new Iterable<>() {
 
 			@Override
-			public Iterator<E> iterator() {
+			public Iter<E> iterator() {
 				return it;
 			}
 		};
@@ -191,6 +205,19 @@ public interface Iter<E> extends Iterator<E> {
 		return iterable(this);
 	}
 
+	default boolean contains(E e) {
+		if (e != null) {
+			while (hasNext())
+				if (e.equals(next()))
+					return true;
+		} else {
+			while (hasNext())
+				if (null == next())
+					return true;
+		}
+		return false;
+	}
+
 	static class Empty<E> implements Iter<E> {
 
 		@SuppressWarnings("rawtypes")
@@ -240,7 +267,7 @@ public interface Iter<E> extends Iterator<E> {
 		return (it instanceof Iter<E>) ? (Iter<E>) it : new IterWrapper<>(it);
 	}
 
-	static <E> Iter<E> of(Iterable<E> it) {
+	static <E> Iter<E> of(java.lang.Iterable<E> it) {
 		return of(it.iterator());
 	}
 
@@ -339,6 +366,13 @@ public interface Iter<E> extends Iterator<E> {
 
 		default Iter.Int filter(IntPredicate filter) {
 			return new Filter(this, filter);
+		}
+
+		default boolean contains(int e) {
+			while (hasNext())
+				if (e == next())
+					return true;
+			return false;
 		}
 
 		default ListInt collectList() {
@@ -499,6 +533,17 @@ public interface Iter<E> extends Iterator<E> {
 
 		static Iter.Bool empty() {
 			return Empty.INSTANCE;
+		}
+
+	}
+
+	public static interface Iterable<E> extends java.lang.Iterable<E> {
+
+		@Override
+		Iter<E> iterator();
+
+		public static interface Int {
+			Iter.Int iterator();
 		}
 
 	}

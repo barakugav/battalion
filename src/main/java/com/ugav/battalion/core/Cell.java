@@ -74,15 +74,25 @@ public class Cell {
 		throw new IllegalArgumentException();
 	}
 
-	public static int[] neighbors(int cell) {
-		int x = x(cell), y = y(cell);
-		int[] neighbors = new int[Direction.values().length];
-		for (int i = 0; i < Direction.values().length; i++) {
-			Direction dir = Direction.values()[i];
-			int nx = x + dir.dx, ny = y + dir.dy;
-			neighbors[i] = of(nx, ny);
-		}
-		return neighbors;
+	public static Iter.Int neighbors(int cell) {
+		return new Iter.Int() {
+
+			int idx;
+
+			@Override
+			public boolean hasNext() {
+				return idx < Direction.values().length;
+			}
+
+			@Override
+			public int next() {
+				if (!hasNext())
+					throw new NoSuchElementException();
+				Direction dir = Direction.values()[idx++];
+				return of(Cell.x(cell) + dir.dx, Cell.y(cell) + dir.dy);
+			}
+
+		};
 	}
 
 	public static boolean areNeighbors(int cell1, int cell2) {

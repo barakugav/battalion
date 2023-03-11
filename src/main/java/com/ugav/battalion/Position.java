@@ -1,8 +1,6 @@
 package com.ugav.battalion;
 
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Direction;
@@ -86,14 +84,6 @@ class Position implements Comparable<Position> {
 		default:
 			throw new IllegalStateException();
 		}
-	}
-
-	public List<Position> neighbors() {
-		/* TODO return view instead of actually creating an array list each time */
-		List<Position> neighbors = new ArrayList<>(Direction.values().length);
-		for (Direction dir : Direction.values())
-			neighbors.add(add(dir));
-		return neighbors;
 	}
 
 	public boolean isInRect(double width, double height) {

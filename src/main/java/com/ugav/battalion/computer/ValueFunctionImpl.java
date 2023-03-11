@@ -7,6 +7,7 @@ import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Unit;
+import com.ugav.battalion.util.Iter;
 
 class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.Node, GameImpl> {
 
@@ -41,12 +42,12 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 			double[] evals = new double[Team.values().length];
 
 			for (Unit unit : game.units().forEach())
-				evals[unit.getTeam().ordinal()] += evalUnit(unit);
+				evals[unit.getTeam().ordinal()] += Units.eval(unit);
 
 			for (Building building : game.buildings().forEach()) {
 				if (building.getTeam() == null)
 					continue;
-				double buildingEval = evalBuilding(building);
+				double buildingEval = Buildings.eval(building);
 				evals[building.getTeam().ordinal()] += buildingEval;
 				Team conquerTeam = building.getConquerTeam();
 				if (conquerTeam != null)
@@ -54,67 +55,100 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 			}
 
 			for (Team team : Team.values()) {
-				final double MoneyWeight = 0.2;
 				int money = game.getMoney(team);
-				evals[team.ordinal()] += MoneyWeight * Math.pow(money, 4.0 / 5.0);
+				evals[team.ordinal()] += 0.2 * Math.pow(money, 4.0 / 5.0);
 			}
+
+			for (Team team : Team.values())
+				assert evals[team.ordinal()] >= 0;
 
 			double maxEnemyEval = 0;
 			for (Team team : Team.values())
 				if (team != us)
 					maxEnemyEval = Math.max(maxEnemyEval, evals[team.ordinal()]);
-			double eval = (1 - Aggression) * evals[us.ordinal()] - Aggression * maxEnemyEval;
-
+			double eval = (1 - Aggression) * evals[us.ordinal()];
+			for (Team team : Team.values())
+				if (team != us)
+					eval -= Aggression * Math.pow(evals[team.ordinal()], 2) / maxEnemyEval;
 			return eval;
 		}
 
-		private double evalUnit(Unit unit) {
-			double eval = 0;
+		private final Units Units = new Units();
 
-			eval += unit.getHealth();
+		private class Units {
 
-			double attackingEval;
-			if (unit.isEnemyInRange()) {
-				attackingEval = 1;
-			} else {
-				final Team us = unit.getTeam();
-				int minDist = Integer.MAX_VALUE;
-				for (Unit enemy : game.enemiesSeenBy(us).forEach()) {
-					if (!unit.canAttack(enemy))
-						continue;
-					for (int neighbor : Cell.neighbors(enemy.getPos())) {
-						if (!game.isValidCell(neighbor))
+			private static class Weight {
+				private static final double Health = 0.8;
+				private static final double Damage = 0.5;
+			}
+
+			double eval(Unit unit) {
+				double eval = 0;
+
+				double health = unit.getHealth() + (unit.isRepairing() ? unit.repairAmount() / 2 : 0);
+				eval += health * Weight.Health;
+				eval += evalAttack(unit);
+
+				return eval;
+			}
+
+			double evalAttack(Unit unit) {
+				double attackingEval;
+				if (unit.isEnemyInRange()) {
+					attackingEval = 1;
+				} else {
+					final Team us = unit.getTeam();
+					int minDist = Integer.MAX_VALUE;
+					// TODO switch weapon type
+					for (Unit enemy : game.enemiesSeenBy(us).forEach()) {
+						if (!unit.canAttack(enemy.type))
 							continue;
-						int d = unit.getDistanceTo(neighbor);
-						if (d < 0)
-							continue; /* unreachable */
-						if (d < minDist)
-							minDist = d;
+						for (Iter.Int nit = Cell.neighbors(enemy.getPos()); nit.hasNext();) {
+							int neighbor = nit.next();
+							if (!game.isValidCell(neighbor))
+								continue;
+							int d = unit.getDistanceTo(neighbor);
+							if (d < 0)
+								continue; /* unreachable */
+							if (d < minDist)
+								minDist = d;
+						}
 					}
+
+					attackingEval = Math.min((double) unit.type.moveLimit / minDist, 0.9);
 				}
-
-				attackingEval = Math.min((double) unit.type.moveLimit / minDist, 0.9);
+				return attackingEval * unit.type.damage * Weight.Damage;
 			}
-			eval += attackingEval * 20;
 
-			return eval;
 		}
 
-		private double evalBuilding(Building building) {
-			double eval = 0;
-			eval += building.getMoneyGain();
-			if (building.type.canBuildUnits) {
-				eval += 50;
-				if (game.unit(building.getPos()) != null)
-					eval -= 25; /* Factory is blocked */
+		private final Buildings Buildings = new Buildings();
+
+		private class Buildings {
+
+			private static class Weight {
+				static final double Factory = 50;
+				static final double FactoryBlocked = 25;
+				static final double AllowUnitBuildLand = 20;
+				static final double AllowUnitBuildWater = 20;
+				static final double AllowUnitBuildAir = 20;
 			}
-			if (building.type.allowUnitBuildLand)
-				eval += 20;
-			if (building.type.allowUnitBuildWater)
-				eval += 20;
-			if (building.type.allowUnitBuildAir)
-				eval += 20;
-			return eval;
+
+			double eval(Building building) {
+				double eval = 0;
+				eval += building.getMoneyGain();
+				if (building.type.canBuildUnits) {
+					boolean isBlocked = game.unit(building.getPos()) != null;
+					eval += isBlocked ? Weight.FactoryBlocked : Weight.Factory;
+				}
+				if (building.type.allowUnitBuildLand)
+					eval += Weight.AllowUnitBuildLand;
+				if (building.type.allowUnitBuildWater)
+					eval += Weight.AllowUnitBuildWater;
+				if (building.type.allowUnitBuildAir)
+					eval += Weight.AllowUnitBuildAir;
+				return eval;
+			}
 		}
 
 	}
