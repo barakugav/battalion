@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -638,10 +639,10 @@ class Images {
 		static final BufferedImage None;
 		static final BufferedImage Vertical;
 		static final BufferedImage Horizontal;
-		private static final BufferedImage[] source = new BufferedImage[Direction.values().length];
-		private static final BufferedImage[] destination = new BufferedImage[Direction.values().length];
-		private static final BufferedImage[] destinationNoStand = new BufferedImage[Direction.values().length];
-		private static final BufferedImage[] turn = new BufferedImage[Direction.values().length];
+		private static final Map<Direction, BufferedImage> source = new EnumMap<>(Direction.class);
+		private static final Map<Direction, BufferedImage> destination = new EnumMap<>(Direction.class);
+		private static final Map<Direction, BufferedImage> destinationNoStand = new EnumMap<>(Direction.class);
+		private static final Map<Direction, BufferedImage> turn = new EnumMap<>(Direction.class);
 		static {
 			None = loadImg("img/gui/move_path_source_none.png");
 			BufferedImage straight = loadImg("img/gui/move_path_straight.png");
@@ -655,29 +656,29 @@ class Images {
 			for (Direction dir : Direction.values()) {
 				int dirIdx = dir.ordinal();
 				double rotateAngle = (dirIdx - 1) * Math.PI / 2;
-				source[dirIdx] = Utils.imgRotate(sourceImg, rotateAngle);
-				destination[dirIdx] = Utils.imgRotate(destImg, rotateAngle);
-				destinationNoStand[dirIdx] = Utils.imgRotate(destNoStandImg, rotateAngle);
-				turn[dirIdx] = Utils.imgRotate(turnImg, (3 - dirIdx) * Math.PI / 2);
+				source.put(dir, Utils.imgRotate(sourceImg, rotateAngle));
+				destination.put(dir, Utils.imgRotate(destImg, rotateAngle));
+				destinationNoStand.put(dir, Utils.imgRotate(destNoStandImg, rotateAngle));
+				turn.put(dir, Utils.imgRotate(turnImg, (3 - dirIdx) * Math.PI / 2));
 			}
 		}
 
 		static BufferedImage source(Direction dir) {
-			return source[dir.ordinal()];
+			return source.get(dir);
 		}
 
 		static BufferedImage destination(Direction dir) {
-			return destination[dir.ordinal()];
+			return destination.get(dir);
 		}
 
 		static BufferedImage destinationNoStand(Direction dir) {
-			return destinationNoStand[dir.ordinal()];
+			return destinationNoStand.get(dir);
 		}
 
 		static BufferedImage turn(Direction d1, Direction d2) {
 			final int dirs = Direction.values().length;
 			int i1 = dirs - 1 - d1.ordinal(), i2 = dirs - 1 - d2.ordinal();
-			return ((i1 + 1) % dirs == i2) ? turn[i2] : turn[i1];
+			return ((i1 + 1) % dirs == i2) ? turn.get(Direction.values()[i2]) : turn.get(Direction.values()[i1]); // TODO ugly
 		}
 
 	}
@@ -691,7 +692,7 @@ class Images {
 		static final int ExplosionGestureNum = 15;
 
 		private static final Map<Team, BufferedImage[]> flag = new HashMap<>();
-		private static final BufferedImage[][] flagGlow = new BufferedImage[Team.values().length][FlagGestureNum];
+		private static final Map<Team, BufferedImage[]> flagGlow = new EnumMap<>(Team.class);
 		private static final BufferedImage[] attack = new BufferedImage[ExplosionGestureNum];
 		private static final BufferedImage[] explosion = new BufferedImage[ExplosionGestureNum];
 		static {
@@ -706,7 +707,7 @@ class Images {
 		}
 
 		static BufferedImage flagGlow(Team team, int gesture) {
-			return flagGlow[team.ordinal()][gesture];
+			return flagGlow.get(team)[gesture];
 		}
 
 		static BufferedImage attack(int gesture) {
@@ -756,7 +757,7 @@ class Images {
 					int x = perTeamWidth * teamIdx + perGestureWidth * gesture;
 					int width = perGestureWidth;
 					BufferedImage subImg = Utils.imgSub(img, x, 0, width, img.getHeight());
-					flagGlow[team.ordinal()][gesture] = subImg;
+					flagGlow.computeIfAbsent(team, t -> new BufferedImage[FlagGestureNum])[gesture] = subImg;
 				}
 			}
 		}

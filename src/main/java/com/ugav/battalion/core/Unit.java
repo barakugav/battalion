@@ -427,8 +427,6 @@ public class Unit extends Entity implements IUnit {
 			map[Cell.x(cell)][Cell.y(cell)] = val;
 			assert getDistanceTo(cell) == dist;
 			assert getDirToSource(cell) == dir;
-			// String.format("val=0x%04x dir=%d getDir=%d", val, dir.ordinal(),
-			// getDirToSource(cell).ordinal())
 		}
 	}
 
