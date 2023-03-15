@@ -146,7 +146,7 @@ abstract class ArenaPanelGameAbstract extends
 			for (Iter.Int it = game.cells(); it.hasNext();) {
 				int cell = it.next();
 				TerrainComp terrainComp = new TerrainComp(cell);
-				comps.put("Terrain " + cell, terrainComp); // TODO bug, comps is identity map
+				comps.put(terrainComp, terrainComp);
 
 				Unit unit = game.unit(cell);
 				if (unit != null)
