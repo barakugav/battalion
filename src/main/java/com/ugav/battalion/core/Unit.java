@@ -338,8 +338,8 @@ public class Unit extends Entity implements IUnit {
 	private final Supplier<Cell.Bitmap> reachableMapInvisiableEnable;
 	private final Supplier<Cell.Bitmap> reachableMapInvisiableDisable;
 	{
-		reachableMapInvisiableEnable = game.valuesCache.newVal(() -> getReachableMap0(true));
-		reachableMapInvisiableDisable = game.valuesCache.newVal(() -> getReachableMap0(false));
+		reachableMapInvisiableEnable = game.unitsCache.newVal(() -> getReachableMap0(true));
+		reachableMapInvisiableDisable = game.unitsCache.newVal(() -> getReachableMap0(false));
 	}
 
 	Cell.Bitmap getReachableMap(boolean invisiableEnable) {
@@ -360,8 +360,8 @@ public class Unit extends Entity implements IUnit {
 	private final Supplier<Cell.Bitmap> passableMapInvisiableEnable;
 	private final Supplier<Cell.Bitmap> passableMapInvisiableDisable;
 	{
-		passableMapInvisiableEnable = game.valuesCache.newVal(() -> getPassableMap0(true));
-		passableMapInvisiableDisable = game.valuesCache.newVal(() -> getPassableMap0(false));
+		passableMapInvisiableEnable = game.unitsCache.newVal(() -> getPassableMap0(true));
+		passableMapInvisiableDisable = game.unitsCache.newVal(() -> getPassableMap0(false));
 	}
 
 	Cell.Bitmap getPassableMap(boolean invisiableEnable) {
@@ -377,8 +377,8 @@ public class Unit extends Entity implements IUnit {
 	private final Supplier<MovementMap> movementMapInvisiableEnable;
 	private final Supplier<MovementMap> movementMapInvisiableDisable;
 	{
-		movementMapInvisiableEnable = game.valuesCache.newVal(() -> calcMovementMap0(true));
-		movementMapInvisiableDisable = game.valuesCache.newVal(() -> calcMovementMap0(false));
+		movementMapInvisiableEnable = game.unitsCache.newVal(() -> calcMovementMap0(true));
+		movementMapInvisiableDisable = game.unitsCache.newVal(() -> calcMovementMap0(false));
 	}
 
 	private MovementMap getMovementMap(boolean invisiableEnable) {
@@ -520,8 +520,8 @@ public class Unit extends Entity implements IUnit {
 	private final Supplier<Cell.Bitmap> attackableMapInvisiableEnable;
 //	private final Supplier<Cell.Bitmap> attackableMapInvisiableDisable;
 	{
-		attackableMapInvisiableEnable = game.valuesCache.newVal(() -> getAttackableMap0(true));
-//		attackableMapInvisiableDisable = game.valuesCache.newVal(() -> getAttackableMap0(false));
+		attackableMapInvisiableEnable = game.unitsCache.newVal(() -> getAttackableMap0(true));
+//		attackableMapInvisiableDisable = game.unitsCache.newVal(() -> getAttackableMap0(false));
 	}
 
 //	private Cell.Bitmap getAttackableMap(boolean invisiableEnable) {
@@ -544,8 +544,8 @@ public class Unit extends Entity implements IUnit {
 	private final Supplier<Cell.Bitmap> potentiallyAttackableMapInvisiableEnable;
 	private final Supplier<Cell.Bitmap> potentiallyAttackableMapInvisiableDisable;
 	{
-		potentiallyAttackableMapInvisiableEnable = game.valuesCache.newVal(() -> getPotentiallyAttackableMap0(true));
-		potentiallyAttackableMapInvisiableDisable = game.valuesCache.newVal(() -> getPotentiallyAttackableMap0(false));
+		potentiallyAttackableMapInvisiableEnable = game.unitsCache.newVal(() -> getPotentiallyAttackableMap0(true));
+		potentiallyAttackableMapInvisiableDisable = game.unitsCache.newVal(() -> getPotentiallyAttackableMap0(false));
 	}
 
 	private Cell.Bitmap getPotentiallyAttackableMap(boolean invisiableEnable) {

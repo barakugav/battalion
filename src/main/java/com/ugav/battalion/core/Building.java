@@ -161,6 +161,8 @@ public class Building extends Entity implements IBuilding {
 				setTeam(conquererTeam);
 				conquerTeam = null;
 				conquerProgress = 0;
+
+				game.buildingsCache.invalidate();
 				game.onConquerFinish.notify(new ConquerEvent(game, this, conquerer));
 
 				if (type == Type.Capital)

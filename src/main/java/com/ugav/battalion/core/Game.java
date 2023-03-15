@@ -27,7 +27,8 @@ public class Game {
 	private final Cell.Array<Unit> units;
 	private final Cell.Array<Building> buildings;
 
-	final ValuesCache valuesCache = new ValuesCache();
+	final ValuesCache unitsCache = new ValuesCache();
+	final ValuesCache buildingsCache = new ValuesCache();
 
 	private final Map<Team, TeamData> teamData;
 	private final Iterator<Team> turnIterator;
@@ -128,14 +129,14 @@ public class Game {
 		unit.setPos(cell);
 		if (unit.type.transportUnits)
 			unit.getTransportedUnit().setPos(cell);
-		valuesCache.invalidate();
+		unitsCache.invalidate();
 	}
 
 	private void removeUnit(Unit unit) {
 		int pos = unit.getPos();
 		assert unit == this.unit(pos);
 		units.set(pos, null);
-		valuesCache.invalidate();
+		unitsCache.invalidate();
 	}
 
 	public boolean isValidCell(int cell) {
@@ -173,7 +174,7 @@ public class Game {
 	private final Map<Team, Supplier<Cell.Bitmap>> visibleUnitBitmap = new EnumMap<>(Team.class);
 	{
 		for (Team viewer : Team.values()) {
-			visibleUnitBitmap.put(viewer, valuesCache.newVal(() -> Cell.Bitmap.fromPredicate(width(), height(), pos -> {
+			visibleUnitBitmap.put(viewer, unitsCache.newVal(() -> Cell.Bitmap.fromPredicate(width(), height(), pos -> {
 				Unit unit = unit(pos);
 				if (unit == null)
 					return false;
@@ -301,7 +302,7 @@ public class Game {
 	private final Map<Team, BooleanSupplier> isTeamAlive = new EnumMap<>(Team.class);
 	{
 		for (Team team : Team.values())
-			isTeamAlive.put(team, valuesCache.newValBool(() -> units(team).hasNext()));
+			isTeamAlive.put(team, unitsCache.newValBool(() -> units(team).hasNext()));
 	}
 
 	private boolean isTeamAlive(Team team) {
@@ -524,12 +525,11 @@ public class Game {
 	private final Map<Team, BooleanSupplier> canBuildAirUnits = new EnumMap<>(Team.class);
 	{
 		for (Team team : Team.values()) {
-			// TODO bug, valuesCache is invalidated only on unit move
-			canBuildLandUnits.put(team, valuesCache.newValBool(
+			canBuildLandUnits.put(team, buildingsCache.newValBool(
 					() -> (buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildLand).hasNext())));
-			canBuildWaterUnits.put(team, valuesCache.newValBool(
+			canBuildWaterUnits.put(team, buildingsCache.newValBool(
 					() -> (buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildWater).hasNext())));
-			canBuildAirUnits.put(team, valuesCache.newValBool(
+			canBuildAirUnits.put(team, buildingsCache.newValBool(
 					() -> (buildings().filter(b -> team == b.getTeam() && b.type.allowUnitBuildAir).hasNext())));
 		}
 	}

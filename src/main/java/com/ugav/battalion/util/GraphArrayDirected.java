@@ -167,7 +167,7 @@ public class GraphArrayDirected<E> extends GraphArrayAbstract<E> implements Grap
 
 		@Override
 		void removeEdge(Edge<E> e, int edgeIdx) {
-			GraphArrayDirected.this.removeEdge(e); // TODO efficient
+			GraphArrayDirected.this.removeEdge(e);
 		}
 
 	}
