@@ -66,7 +66,7 @@ abstract class ArenaPanelAbstract<TerrainCompImpl extends ArenaPanelAbstract.Ter
 		this.globals = Objects.requireNonNull(globals);
 
 		Logger animationTaskLogger = new Logger.Enabled(globals.logger, () -> globals.debug.logAnimations);
-		animationTask = new Animation.Task(animationTaskLogger);
+		animationTask = new Animation.Task(globals, animationTaskLogger);
 		animationTask.setRunning(true);
 
 		entityLayer = createEntityLayer();

@@ -13,6 +13,7 @@ class Debug {
 	boolean logGameActions;
 	boolean logComputerStats;
 	boolean logAnimations;
+	boolean skipAnimations;
 
 	private int unitIDCounter;
 	private final Map<IUnit, Integer> unitsIDs = new IdentityWeakHashMap<>();

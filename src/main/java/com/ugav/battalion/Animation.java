@@ -667,9 +667,11 @@ interface Animation {
 
 		final Event.Notifier<Event> onAnimationBegin = new Event.Notifier<>();
 		final Event.Notifier<Event> onAnimationEnd = new Event.Notifier<>();
+		private final Globals globals;
 		private final Logger logger;
 
-		Task(Logger logger) {
+		Task(Globals globals, Logger logger) {
+			this.globals = Objects.requireNonNull(globals);
 			this.logger = Objects.requireNonNull(logger);
 		}
 
@@ -687,7 +689,11 @@ interface Animation {
 					logger.dbgln("animation begin ", entry.animation);
 					entry.animation.beforeFirst();
 				}
-				if (!entry.animation.animationStep()) {
+				boolean done = !entry.animation.animationStep();
+				if (!done && globals.debug.skipAnimations)
+					while (!done)
+						done = !entry.animation.animationStep();
+				if (done) {
 					it.remove();
 					endAnimation(entry);
 					logger.dbgln("animation end ", entry.animation);
