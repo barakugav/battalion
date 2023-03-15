@@ -113,8 +113,8 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 		private class Units {
 
 			private static class Weight {
+				private static final double Alive = 10;
 				private static final double Health = 0.8;
-//				private static final double Damage = 0.5;
 				private static final double VulnerablePenalty = 5;
 				private static final double VulnerableRepairPenalty = 10;
 			}
@@ -130,11 +130,10 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 			}
 
 			double eval(Unit unit) {
-				double eval = 0;
+				double eval = Weight.Alive;
 
 				double health = unit.getHealth() + (unit.isRepairing() ? unit.repairAmount() / 2 : 0);
 				eval += health * Weight.Health;
-//				eval += evalAttack(unit);
 
 				if (isVulnerable(unit)) {
 					eval -= Weight.VulnerablePenalty;
@@ -142,7 +141,7 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 						eval -= Weight.VulnerableRepairPenalty;
 				}
 
-				return eval + 10;
+				return eval;
 			}
 
 			private boolean isVulnerable(Unit unit) {
@@ -229,32 +228,23 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 		private final Map<PlanKey, Plan> plans = new HashMap<>();
 		private final SSSP sssp = new SSSPDial1969();
 
-//		private int vIdxToX(int u) {
-//			return u / game.height();
-//		}
-//
-//		private int vIdxToY(int u) {
-//			return u % game.height();
-//		}
-
-//		private int vIdx(int x, int y) {
-//			return x * game.height() + y;
-//		}
-
-//		private int vIdxToCell(int u) {
-//			return Cell.of(vIdxToX(u), vIdxToY(u));
-//		}
-
 		private int cellToVIdx(int cell, Unit.Type transportType) {
 			Plan.Layer layer;
-			if (transportType == null)
+			if (transportType == null) {
 				layer = Plan.Layer.Regular;
-			else if (transportType == Unit.Type.LandingCraft)
-				layer = Plan.Layer.Water;
-			else if (transportType == Unit.Type.TransportPlane)
-				layer = Plan.Layer.Air;
-			else
-				throw new IllegalArgumentException();
+
+			} else {
+				switch (transportType) {
+				case LandingCraft:
+					layer = Plan.Layer.Water;
+					break;
+				case TransportPlane:
+					layer = Plan.Layer.Air;
+					break;
+				default:
+					throw new IllegalArgumentException("Unexpected value: " + transportType);
+				}
+			}
 
 			int layerSize = game.width() * game.height();
 			return layer.ordinal() * layerSize + Cell.x(cell) * game.height() + Cell.y(cell);
@@ -279,7 +269,6 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 			PlanKey key = new PlanKey(attacker0, target, useTransportWater, useTransportAir);
 			Plan plan = plans.computeIfAbsent(key, k -> new Plan(k.attackerCanStandOn, k.attackerTeam, k.target,
 					k.useTransportWater, k.useTransportAir));
-//			plan.debug();
 			return plan.getAttackDistance(attacker0.getPos(), transportType);
 		}
 
@@ -303,12 +292,28 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 				this.attackerCanStandOn = attackerCanStandOn;
 				this.attackerTeam = attackerTeam;
 
+				/**
+				 * We want to create a graph that will represent all move path of a unit. We
+				 * create a graph with (layerNum * width * height) vertices, were Layer.Regular
+				 * is the layer containing vertices and edges the unit can stand on by itself.
+				 * Layer.Water and Layer.Air are containing the vertices and edges the unit can
+				 * move while transported by either LandingCraft or TransportPlane respectively.
+				 * In addition, there are edges connecting the layers representing the action of
+				 * wrapping a unit by a transporter or finishing a transportation extracting the
+				 * original unit from a wrapper transported unit. Within each layer all the
+				 * edges have a weight of 1. Edges between layers have different weights as
+				 * penalty for the action and cost.
+				 */
 				Graph<Integer> graph = new GraphArrayDirected<>(Layer.values().length * game.width() * game.height());
+
+				/* Add vertices and edges of Layer.Regular */
 				for (Iter.Int it = game.cells(); it.hasNext();) {
 					int cell = it.next();
 					if (!canStandOn(cell))
 						continue;
 					int u = cellToVIdx(cell, null);
+
+					/* Add edges to 4 neighbors */
 					for (Iter.Int nit = Cell.neighbors(cell); nit.hasNext();) {
 						int neighbor = nit.next();
 						if (!game.isValidCell(neighbor) || !canStandOn(neighbor))
@@ -318,6 +323,7 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 					}
 				}
 
+				/* Add vertices and edges of Layer.Water */
 				if (useTransportWater) {
 					for (Iter.Int it = game.cells(); it.hasNext();) {
 						int cell = it.next();
@@ -325,6 +331,7 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 							continue;
 						int u = cellToVIdx(cell, Unit.Type.LandingCraft);
 
+						/* Add edges to 4 neighbors */
 						for (Iter.Int nit = Cell.neighbors(cell); nit.hasNext();) {
 							int neighbor = nit.next();
 							if (!game.isValidCell(neighbor) || !canTransportOnWater(neighbor))
@@ -333,6 +340,7 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 							graph.addEdge(u, v).setData(MoveWeight);
 						}
 
+						/* Add edges to Layer.Regular */
 						if (canStandOn(cell)) {
 							int v = cellToVIdx(cell, null);
 							graph.addEdge(u, v).setData(TransportWaterWeight);
@@ -341,6 +349,7 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 					}
 				}
 
+				/* Add vertices and edges of Layer.Air */
 				if (useTransportAir) {
 					for (Iter.Int it = game.cells(); it.hasNext();) {
 						int cell = it.next();
@@ -348,6 +357,7 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 							continue;
 						int u = cellToVIdx(cell, Unit.Type.TransportPlane);
 
+						/* Add edges to 4 neighbors */
 						for (Iter.Int nit = Cell.neighbors(cell); nit.hasNext();) {
 							int neighbor = nit.next();
 							if (!game.isValidCell(neighbor) || !canTransportOnAir(neighbor))
@@ -356,6 +366,7 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 							graph.addEdge(u, v).setData(MoveWeight);
 						}
 
+						/* Add edges to Layer.Regular */
 						if (canStandOn(cell)) {
 							int v = cellToVIdx(cell, null);
 							graph.addEdge(u, v).setData(TransportAirhWeight);
@@ -364,6 +375,10 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 					}
 				}
 
+				/*
+				 * Add artificial edges from target from the SSSP to find a path to it, as the
+				 * unit can't stand on it
+				 */
 				for (Iter.Int nit = Cell.neighbors(target); nit.hasNext();) {
 					int neighbor = nit.next();
 					if (!game.isValidCell(neighbor) || !canStandOn(neighbor))
@@ -372,10 +387,12 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 					graph.addEdge(cellToVIdx(target, null), v).setData(MoveWeight);
 				}
 
+				/* Calculate all distances to the target using SSSP */
 				Graph.WeightFunctionInt<Integer> w = e -> e.data().intValue();
 				distances = sssp.calcDistances(graph, w, cellToVIdx(target, null));
 			}
 
+			@SuppressWarnings("unused")
 			void debug() {
 				System.out.println();
 				for (int y = 0; y < game.height(); y++) {
@@ -463,8 +480,8 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 
 			@Override
 			public String toString() {
-				// TODO
-				return "[" + attackerCanStandOn + ", " + attackerTeam + ", " + Cell.toString(target) + "]";
+				return "[" + attackerCanStandOn + ", " + attackerTeam + ", " + Cell.toString(target)
+						+ ", useTransportWater=" + useTransportWater + ", useTransportAir=" + useTransportAir + "]";
 			}
 		}
 	}
