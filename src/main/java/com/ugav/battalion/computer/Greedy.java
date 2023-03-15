@@ -25,7 +25,7 @@ public class Greedy<Action, Position extends IPosition<Action>, Game extends IGa
 
 		for (Action action : position.availableActions().forEach()) {
 			Position child = game.getModifiedPosition(position, action);
-			double val = valueFunc.evaluate(child, us);
+			double val = valueFunc.evaluate(position, action, child, us);
 			if (val > bestEval) {
 				bestEval = val;
 				bestAction = action;

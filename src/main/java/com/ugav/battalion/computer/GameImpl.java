@@ -115,7 +115,7 @@ class GameImpl implements IGame<Action, GameImpl.Node> {
 
 		private static void unitAvailableActionsTransport(Unit unit, List<Action> actions) {
 			for (Unit.Type transport : List.of(Unit.Type.LandingCraft, Unit.Type.TransportPlane))
-				if (unit.canTransport(transport))
+				if (unit.canTransported(transport))
 					actions.add(new Action.UnitTransport(unit.getPos(), transport));
 			if (unit.canFinishTransport())
 				actions.add(new Action.UnitTransportFinish(unit.getPos()));

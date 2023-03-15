@@ -20,11 +20,11 @@ public interface Player {
 		public Action chooseAction(Game game) {
 			Team me = game.getTurn();
 
-			List<Unit> units = game.units(me).filter(Unit::isActive).collectList();
+			List<Unit> units = game.units(me).filter(Unit::isActive).toList();
 			while (!units.isEmpty()) {
 				int idx = rand.nextInt(units.size());
 				Unit unit = units.get(idx);
-				ListInt reachable = unit.getReachableMap().cells().collectList();
+				ListInt reachable = unit.getReachableMap().cells().toList();
 				reachable.remove(unit.getPos());
 				if (reachable.isEmpty()) {
 					units.remove(idx);

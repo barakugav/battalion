@@ -159,7 +159,7 @@ public interface Iter<E> extends Iterator<E> {
 		return new Filter<>(this, filter);
 	}
 
-	default List<E> collectList() {
+	default List<E> toList() {
 		List<E> l = new ArrayList<>();
 		while (hasNext())
 			l.add(next());
@@ -375,14 +375,14 @@ public interface Iter<E> extends Iterator<E> {
 			return false;
 		}
 
-		default ListInt collectList() {
+		default ListInt toList() {
 			ListInt l = new ListInt.Array();
 			while (hasNext())
 				l.add(next());
 			return l;
 		}
 
-		default int[] collectArray() {
+		default int[] toArray() {
 			int[] arr = new int[16];
 			int size = 0;
 			while (hasNext()) {
@@ -455,7 +455,7 @@ public interface Iter<E> extends Iterator<E> {
 
 		boolean next();
 
-		default boolean[] collectArray() {
+		default boolean[] toArray() {
 			boolean[] arr = new boolean[16];
 			int size = 0;
 			while (hasNext()) {

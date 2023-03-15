@@ -22,10 +22,11 @@ class GameTreeAlg {
 
 	}
 
-	@FunctionalInterface
-	interface ValueFunction<Actions, Position extends IGame.IPosition<Actions>, Games extends IGame<Actions, Position>> {
+	interface ValueFunction<Action_, Position extends IGame.IPosition<Action_>, Game_ extends IGame<Action_, Position>> {
 
 		double evaluate(Position position, int us);
+
+		double evaluate(Position history, Action_ action, Position position, int us);
 
 	}
 

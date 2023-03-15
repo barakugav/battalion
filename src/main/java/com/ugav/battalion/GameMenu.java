@@ -223,13 +223,13 @@ class GameMenu {
 
 			if (!unit.type.transportUnits) {
 				Unit.Type transportAirType = Unit.Type.TransportPlane;
-				boolean transportAirEn = unit.canTransport(transportAirType);
+				boolean transportAirEn = unit.canTransported(transportAirType);
 				JButton transportAirButton = createUnitMenuButton(Images.UnitMenuTransportAir, transportAirEn,
 						e -> window.gameAction(new Action.UnitTransport(unit.getPos(), transportAirType)));
 				transportAirButton.setToolTipText("" + transportAirType.price + "$");
 
 				Unit.Type transportWaterType = Unit.Type.LandingCraft;
-				boolean transportWaterEn = unit.canTransport(transportWaterType);
+				boolean transportWaterEn = unit.canTransported(transportWaterType);
 				JButton transportWaterButton = createUnitMenuButton(Images.UnitMenuTransportWater, transportWaterEn,
 						e -> window.gameAction(new Action.UnitTransport(unit.getPos(), transportWaterType)));
 				transportWaterButton.setToolTipText("" + transportWaterType.price + "$");

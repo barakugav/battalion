@@ -187,6 +187,11 @@ public class Unit extends Entity implements IUnit {
 			return new Weapon(Type.None, 0, 0);
 		}
 
+		public boolean isAttackRangeValid(int attackerPos, int targetPos) {
+			int distance = Cell.distNorm1(attackerPos, targetPos);
+			return minRange <= distance && distance <= maxRange;
+		}
+
 	}
 
 	private static class TypeBuilder {
@@ -291,7 +296,7 @@ public class Unit extends Entity implements IUnit {
 
 		public final Category category;
 		public final Weapon weapon;
-		private final Set<Terrain.Category> canStandOn;
+		public final Set<Terrain.Category> canStandOn;
 		private final Set<Category> canAttack;
 		public final int health;
 		public final int damage;
@@ -468,12 +473,6 @@ public class Unit extends Entity implements IUnit {
 		return d != MovementMap.DistanceUnreachable ? d : -1;
 	}
 
-	public boolean isEnemyInRange() {
-		final Team us = getTeam();
-		Cell.Bitmap attackableMap = getAttackableMap();
-		return game.enemiesSeenBy(us).mapBool(u -> attackableMap.contains(u.getPos())).any();
-	}
-
 	public ListInt calcPath(int destination) {
 		MovementMap movementMap = getMovementMap(true);
 		if (movementMap.getDistanceTo(destination) > type.moveLimit)
@@ -580,13 +579,10 @@ public class Unit extends Entity implements IUnit {
 	}
 
 	private Cell.Bitmap getPotentiallyAttackableMapLongRange() {
-		return Cell.Bitmap.fromPredicate(game.width(), game.height(), p -> {
-			int distance = Cell.distNorm1(getPos(), p);
-			return type.weapon.minRange <= distance && distance <= type.weapon.maxRange;
-		});
+		return Cell.Bitmap.fromPredicate(game.width(), game.height(), p -> type.weapon.isAttackRangeValid(getPos(), p));
 	}
 
-	public boolean canTransport(Unit.Type trasportType) {
+	public boolean canTransported(Unit.Type trasportType) {
 		boolean enable = isActive();
 		enable = enable && !type.transportUnits;
 		enable = enable && type.category == Unit.Category.Land;

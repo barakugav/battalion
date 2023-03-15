@@ -125,6 +125,9 @@ public class Game {
 	private void setUnit(int cell, Unit unit) {
 		assert units.at(cell) == null;
 		units.set(cell, Objects.requireNonNull(unit));
+		unit.setPos(cell);
+		if (unit.type.transportUnits)
+			unit.getTransportedUnit().setPos(cell);
 		valuesCache.invalidate();
 	}
 
@@ -159,6 +162,10 @@ public class Game {
 		return units().filter(u -> team == u.getTeam());
 	}
 
+	public Iter<Unit> unitsSeenBy(Team viewer) {
+		return units().filter(u -> isUnitVisible(u.getPos(), viewer));
+	}
+
 	public Iter<Unit> enemiesSeenBy(Team viewer) {
 		return units().filter(u -> u.getTeam() != viewer && isUnitVisible(u.getPos(), viewer));
 	}
@@ -191,8 +198,6 @@ public class Game {
 	}
 
 	public boolean isUnitVisible(int cell, Team viewer) {
-		if (!isValidCell(cell))
-			throw new IllegalArgumentException();
 		return getVisibleUnitBitmap(viewer).contains(cell);
 	}
 
@@ -348,7 +353,6 @@ public class Game {
 		int destination = path.last();
 		removeUnit(unit);
 		setUnit(destination, unit);
-		unit.setPos(destination);
 
 		Building oldBuilding = building(source);
 		if (oldBuilding != null)
@@ -466,7 +470,7 @@ public class Game {
 	}
 
 	private Unit unitTransport(Unit transportedUnit, Unit.Type transportType) {
-		if (!transportedUnit.canTransport(transportType))
+		if (!transportedUnit.canTransported(transportType))
 			throw new IllegalArgumentException();
 
 		Team team = transportedUnit.getTeam();
@@ -479,7 +483,6 @@ public class Game {
 		Unit newUnit = Unit.newTrasportUnit(this, transportType, transportedUnit);
 		int pos = transportedUnit.getPos();
 		setUnit(pos, newUnit);
-		newUnit.setPos(pos);
 		newUnit.setActive(false);
 
 		onUnitAdd.notify(new UnitAdd(this, newUnit));
@@ -498,7 +501,6 @@ public class Game {
 		Unit transportedUnit = trasportUnit.getTransportedUnit();
 		int pos = trasportUnit.getPos();
 		setUnit(pos, transportedUnit);
-		transportedUnit.setPos(pos);
 		transportedUnit.setActive(true);
 
 		onUnitAdd.notify(new UnitAdd(this, transportedUnit));
