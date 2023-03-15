@@ -133,7 +133,8 @@ class GameWindow extends JPanel implements Clearable {
 			final Team us = game.getTurn();
 			for (;;) {
 				long t0 = System.currentTimeMillis();
-				Action action = computer.chooseAction(Game.copyOf(game));
+				Game visibleGame = Game.modificationOf(game, u -> game.isUnitVisible(u.getPos(), us));
+				Action action = computer.chooseAction(visibleGame);
 				long t1 = System.currentTimeMillis();
 				computerLogger.dbgln("Engine action computed in " + (t1 - t0) + "ms");
 				if (action == null || action == Action.TurnEnd) {

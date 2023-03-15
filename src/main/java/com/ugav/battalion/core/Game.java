@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import com.ugav.battalion.core.Building.ConquerEvent;
@@ -101,6 +102,14 @@ public class Game {
 
 	public static Game copyOf(Game game) {
 		return new Game(game);
+	}
+
+	public static Game modificationOf(Game game, Predicate<Unit> unitsFilter) {
+		Game ngame = copyOf(game);
+		for (Unit unit : ngame.units().toList())
+			if (!unitsFilter.test(unit))
+				ngame.removeUnit(unit);
+		return ngame;
 	}
 
 	public int width() {
