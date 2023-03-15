@@ -594,6 +594,9 @@ class Images {
 	static final BufferedImage UnitMenuTransportFinish;
 	static final BufferedImage UnitMenuRepair;
 	static final BufferedImage UnitMenuCancel;
+	static final BufferedImage CursorMove;
+	static final BufferedImage CursorCancel;
+	static final BufferedImage CursorAttack;
 	static final BufferedImage FactoryMenuImg;
 	static final BufferedImage CheckboxUnselected;
 	static final BufferedImage CheckboxUnselectedHovered;
@@ -609,6 +612,9 @@ class Images {
 		UnitLocked = loadImg("img/gui/unit_locked.png");
 		Delete = loadImg("img/gui/delete.png");
 		Repair = loadImg("img/gui/repair.png");
+		CursorMove = loadImg("img/gui/cursor_move.png");
+		CursorAttack = loadImg("img/gui/cursor_attack.png");
+		CursorCancel = loadImg("img/gui/cursor_cancel.png");
 		FactoryMenuImg = loadImg("img/gui/factory_menu_img.png");
 		CheckboxUnselected = loadImg("img/gui/checkbox_unselected.png");
 		CheckboxUnselectedHovered = loadImg("img/gui/checkbox_unselected_hovered.png");

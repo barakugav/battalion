@@ -1,9 +1,12 @@
 package com.ugav.battalion;
 
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Point;
+import java.awt.Toolkit;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
@@ -97,6 +100,7 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 	private void setSelection(Selection selectionType, Entity entity) {
 //		window.logger.dbgln("setSelection(" + selectionType + ", " + entity + ")");
+		entityLayer().clearCursor();
 		selection = selectionType;
 		selectedEntity = entity;
 		onSelectionChange.notify(new SelectionChange(this, selectionType, entity));
@@ -434,16 +438,20 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 		EntityLayer() {
 			addMouseMotionListener(mouseMotionListener = new MouseAdapter() {
 
-				int hovered = Cell.of(-1, -1);
+				int hovered = Cell.of(-1000, -1000);
 
 				@Override
 				public void mouseMoved(MouseEvent e) {
-					int x = displayedXInv(e.getX()) / TILE_SIZE_PIXEL;
-					int y = displayedYInv(e.getY()) / TILE_SIZE_PIXEL;
+					int x = (int) Math.floor((double) displayedXInv(e.getX()) / TILE_SIZE_PIXEL);
+					int y = (int) Math.floor((double) displayedYInv(e.getY()) / TILE_SIZE_PIXEL);
 					int newHovered = Cell.of(x, y);
-					if (isInArena(newHovered) && hovered != newHovered) {
-						hovered = newHovered;
+					if (hovered == newHovered)
+						return;
+					hovered = newHovered;
+					if (isInArena(newHovered)) {
 						onHoverChange.notify(new HoverChangeEvent(ArenaPanelGame.this, hovered));
+					} else {
+						clearCursor();
 					}
 				}
 			});
@@ -462,6 +470,29 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 			super.clear();
 		}
 
+		private static final Cursor CursorDefault = new Cursor(Cursor.DEFAULT_CURSOR);
+		private static final Cursor CursorMove;
+		private static final Cursor CursorAttack;
+		private static final Cursor CursorCancel;
+		static {
+			Toolkit tkit = Toolkit.getDefaultToolkit();
+
+			CursorAttack = tkit.createCustomCursor(Images.CursorAttack, new Point(16, 16), "CursorAttack");
+			CursorMove = tkit.createCustomCursor(Images.CursorMove, new Point(16, 16), "CursorMove");
+			CursorCancel = tkit.createCustomCursor(Images.CursorCancel, new Point(16, 16), "CursorCancel");
+		}
+		private Cursor currentCursor = CursorDefault;
+
+		private void setCursor0(Cursor cursor) {
+			if (currentCursor != cursor)
+				setCursor(currentCursor = cursor);
+		}
+
+		private void clearCursor() {
+			setCursor0(CursorDefault);
+
+		}
+
 		void hoveredUpdated(int hovered) {
 			if (!window.isActionEnabled() || selection != Selection.UnitMoveOrAttack)
 				return;
@@ -469,9 +500,14 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 			if (unit.getAttackableMap().contains(hovered)) {
 				updateAttackMovePath(unit, hovered);
+				setCursor0(CursorAttack);
 
 			} else if (unit.getPassableMap().contains(hovered)) {
 				updateMovePath(unit, hovered);
+				setCursor0(CursorMove);
+
+			} else {
+				setCursor0(CursorCancel);
 			}
 		}
 
