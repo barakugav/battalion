@@ -75,13 +75,11 @@ class GameWindow extends JPanel implements Clearable {
 		register.register(arenaPanel.animationTask.onAnimationBegin, e -> suspendActions());
 		register.register(arenaPanel.animationTask.onAnimationEnd, e -> resumeActions());
 		register.register(game.beforeTurnEnd, Utils.swingListener(e -> {
-			final Team player = Team.Red;
-			if (game.getTurn() == player && !globals.debug.playAllTeams)
+			if (game.getTurn() == ArenaPanelGame.player && !globals.debug.playAllTeams)
 				suspendActions();
 		}));
 		register.register(game.onTurnEnd, Utils.swingListener(e -> {
-			final Team player = Team.Red;
-			if (e.nextTurn == player && !globals.debug.playAllTeams)
+			if (e.nextTurn == ArenaPanelGame.player && !globals.debug.playAllTeams)
 				resumeActions();
 		}));
 		register.register(game.onGameEnd,

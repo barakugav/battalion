@@ -452,7 +452,7 @@ public class Game {
 		target.setHealth(newHealth);
 		target.setRepairing(false);
 		if (target.isDead()) {
-			onUnitDeath.notify(new UnitDeath(this, target));
+			onUnitDeath.notify(new UnitDeath(this, attacker, target));
 			removeUnit(target);
 			onUnitRemove.notify(new UnitRemove(this, target));
 
@@ -615,10 +615,12 @@ public class Game {
 
 	public static class UnitDeath extends Event {
 
+		public final Unit attacker;
 		public final Unit unit;
 
-		public UnitDeath(Game source, Unit unit) {
+		public UnitDeath(Game source, Unit attacker, Unit unit) {
 			super(Objects.requireNonNull(source));
+			this.attacker = Objects.requireNonNull(attacker);
 			this.unit = Objects.requireNonNull(unit);
 		}
 

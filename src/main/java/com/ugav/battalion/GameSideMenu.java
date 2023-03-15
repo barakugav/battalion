@@ -264,8 +264,7 @@ class GameSideMenu extends Menus.ColumnWithMargins implements Clearable {
 				if (building != null)
 					drawImg(g, cell, Images.MiniMap.building(building.getTeam()));
 
-				final Team player = Team.Red;
-				if (game.isUnitVisible(cell, player))
+				if (game.isUnitVisible(cell, ArenaPanelGame.player))
 					drawImg(g, cell, Images.MiniMap.unit(game.unit(cell).getTeam()));
 			}
 

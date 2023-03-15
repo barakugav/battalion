@@ -48,6 +48,8 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 	final Event.Notifier<EntityClick> onEntityClick = new Event.Notifier<>();
 	final Event.Notifier<SelectionChange> onSelectionChange = new Event.Notifier<>();
 
+	static final Team player = Team.Red;
+
 	private static final long serialVersionUID = 1L;
 
 	ArenaPanelGame(GameWindow window) {
@@ -65,14 +67,12 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 
 		Holder<Integer> playerLastPos = new Holder<>();
 		register.register(game.beforeTurnEnd, Utils.swingListener(e -> {
-			final Team player = Team.Red;
 			if (game.getTurn() == player) {
 				Position mapPos = mapMove.getCurrent();
 				playerLastPos.val = Integer.valueOf(Cell.of((int) mapPos.x, (int) mapPos.y));
 			}
 		}));
 		register.register(game.onTurnEnd, e -> {
-			final Team player = Team.Red;
 			if (e.nextTurn == player) {
 				Position p = Position.fromCell(playerLastPos.val.intValue());
 				animationTask.runAndWait(new Animation.MapMove(this, () -> p));
@@ -355,7 +355,6 @@ class ArenaPanelGame extends ArenaPanelGameAbstract {
 	}
 
 	void runMapOverviewAnimation() {
-		final Team player = Team.Red;
 		Position startingMapPos;
 		Iter<Building> capitals = game.buildings(player).filter(b -> b.getType() == Building.Type.Capital);
 		Iter<Building> factories = game.buildings(player).filter(b -> b.getType() == Building.Type.Factory);

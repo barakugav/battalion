@@ -283,9 +283,8 @@ class GameMenu {
 
 		GameEndPopup(GameWindow window, Team winner, GameStats stats) {
 			Menus.ColumnWithMargins column = new Menus.ColumnWithMargins();
-			final Team player = Team.Red;
 
-			boolean victory = player == winner;
+			boolean victory = ArenaPanelGame.player == winner;
 			String title = "Game Finished: " + (victory ? "Victory!" : "You lost...");
 			column.addComp(new Menus.Title(title));
 
@@ -298,13 +297,13 @@ class GameMenu {
 			valsColumn.setHorizontalAlignment(SwingConstants.RIGHT);
 
 			ObjIntConsumer<String> addRow = (stat, val) -> statsTable.addRow(stat, Integer.toString(val));
-			addRow.accept("Turns Played", stats.getTurnsPlayed());
-			addRow.accept("Units Built", stats.getUnitsBuilt());
-			addRow.accept("Enemies Terminated", stats.getEnemiesTerminated());
-			addRow.accept("Units Casualties", stats.getUnitsCasualties());
-			addRow.accept("Buildings Conquered", stats.getBuildingsConquered());
-			addRow.accept("Money Gained", stats.getMoneyGained());
-			addRow.accept("Money Spent", stats.getMoneySpent());
+			addRow.accept("Turns Played", stats.getTurnsPlayed(ArenaPanelGame.player));
+			addRow.accept("Units Built", stats.getUnitsBuilt(ArenaPanelGame.player));
+			addRow.accept("Enemies Terminated", stats.getEnemiesTerminated(ArenaPanelGame.player));
+			addRow.accept("Units Casualties", stats.getUnitsCasualties(ArenaPanelGame.player));
+			addRow.accept("Buildings Conquered", stats.getBuildingsConquered(ArenaPanelGame.player));
+			addRow.accept("Money Gained", stats.getMoneyGained(ArenaPanelGame.player));
+			addRow.accept("Money Spent", stats.getMoneySpent(ArenaPanelGame.player));
 			column.addComp(statsTable);
 
 			Menus.ButtonColumn buttonSet = new Menus.ButtonColumn();

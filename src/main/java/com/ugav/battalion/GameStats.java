@@ -1,51 +1,47 @@
 package com.ugav.battalion;
 
+import java.util.EnumMap;
+import java.util.Map;
+
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.util.Event;
 
 class GameStats implements Clearable {
 
-	private int turnsPlayed;
-	private int unitsBuilt;
-	private int enemiesTerminated;
-	private int unitsCasualties;
-	private int buildingsConquered;
-	private int moneyGained;
-	private int moneySpent;
+	private static class PerTeam {
+		private int turnsPlayed;
+		private int unitsBuilt;
+		private int enemiesTerminated;
+		private int unitsCasualties;
+		private int buildingsConquered;
+		private int moneyGained;
+		private int moneySpent;
+	}
+
+	private final Map<Team, PerTeam> stats = new EnumMap<>(Team.class);
 
 	private final Event.Register register = new Event.Register();
 
 	GameStats(Game game) {
-		final Team player = Team.Red;
-		register.register(game.onTurnBegin, e -> {
-			if (game.getTurn() == player)
-				turnsPlayed++;
-		});
-		register.register(game.onUnitBuy, e -> {
-			if (e.unit.getTeam() == player)
-				unitsBuilt++;
-		});
+		register.register(game.onTurnBegin, e -> perTeam(game.getTurn()).turnsPlayed++);
+		register.register(game.onUnitBuy, e -> perTeam(e.unit.getTeam()).unitsBuilt++);
 		register.register(game.onUnitDeath, e -> {
-			if (e.unit.getTeam() == player) {
-				unitsCasualties++;
-			} else {
-				enemiesTerminated++;
-			}
+			perTeam(e.attacker.getTeam()).enemiesTerminated++;
+			perTeam(e.unit.getTeam()).unitsCasualties++;
 		});
-		register.register(game.onConquerFinish, e -> {
-			if (e.conquerer.getTeam() == player)
-				buildingsConquered++;
-		});
+		register.register(game.onConquerFinish, e -> perTeam(e.conquerer.getTeam()).buildingsConquered++);
 		register.register(game.onMoneyChange, e -> {
-			if (e.team == player) {
-				if (e.delta >= 0) {
-					moneyGained += e.delta;
-				} else {
-					moneySpent += -e.delta;
-				}
+			if (e.delta >= 0) {
+				perTeam(e.team).moneyGained += e.delta;
+			} else {
+				perTeam(e.team).moneySpent += -e.delta;
 			}
 		});
+	}
+
+	private PerTeam perTeam(Team team) {
+		return stats.computeIfAbsent(team, t -> new PerTeam());
 	}
 
 	@Override
@@ -53,32 +49,32 @@ class GameStats implements Clearable {
 		register.unregisterAll();
 	}
 
-	int getTurnsPlayed() {
-		return turnsPlayed;
+	int getTurnsPlayed(Team team) {
+		return perTeam(team).turnsPlayed;
 	}
 
-	int getUnitsBuilt() {
-		return unitsBuilt;
+	int getUnitsBuilt(Team team) {
+		return perTeam(team).unitsBuilt;
 	}
 
-	int getEnemiesTerminated() {
-		return enemiesTerminated;
+	int getEnemiesTerminated(Team team) {
+		return perTeam(team).enemiesTerminated;
 	}
 
-	int getUnitsCasualties() {
-		return unitsCasualties;
+	int getUnitsCasualties(Team team) {
+		return perTeam(team).unitsCasualties;
 	}
 
-	int getBuildingsConquered() {
-		return buildingsConquered;
+	int getBuildingsConquered(Team team) {
+		return perTeam(team).buildingsConquered;
 	}
 
-	int getMoneyGained() {
-		return moneyGained;
+	int getMoneyGained(Team team) {
+		return perTeam(team).moneyGained;
 	}
 
-	int getMoneySpent() {
-		return moneySpent;
+	int getMoneySpent(Team team) {
+		return perTeam(team).moneySpent;
 	}
 
 }
