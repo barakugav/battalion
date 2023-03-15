@@ -407,7 +407,7 @@ public interface Iter<E> extends Iterator<E> {
 		}
 
 		default int max(int defaultVal) {
-			int m = next();
+			int m = defaultVal;
 			while (hasNext())
 				m = Math.max(m, next());
 			return m;
@@ -418,7 +418,7 @@ public interface Iter<E> extends Iterator<E> {
 		}
 
 		default int min(int defaultVal) {
-			int m = next();
+			int m = defaultVal;
 			while (hasNext())
 				m = Math.min(m, next());
 			return m;
