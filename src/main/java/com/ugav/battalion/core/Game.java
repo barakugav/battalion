@@ -473,6 +473,7 @@ public class Game {
 		int pos = factory.getPos();
 		Unit unit = Unit.valueOf(this, UnitDesc.of(unitType, team), pos);
 		setUnit(pos, unit);
+		unit.setActive(false);
 		onUnitAdd.notify(new UnitAdd(this, unit));
 		onUnitBuy.notify(new UnitBuy(this, unit));
 
