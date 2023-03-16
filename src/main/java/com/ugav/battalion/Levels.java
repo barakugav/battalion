@@ -41,6 +41,15 @@ class Levels {
 		loadCampaign.accept("Level 09", "level/level09.xml");
 		loadCampaign.accept("Level 10", "level/level10.xml");
 		loadNonCampaign.accept("Bonus Level", "level/bonus_level.xml");
+
+//		List<String> p = List.of("animated01.xml", "bonus_level.xml", "level01.xml", "level02.xml", "level03.xml",
+//				"level04.xml", "level05.xml", "level06.xml", "level07.xml", "level08.xml", "level09.xml", "level10.xml",
+//				"test_conquer.xml", "test_game_end.xml", "test_unit_menu.xml", "test_units.xml");
+//		for (String name : p) {
+//			String path = "level/" + name;
+//			new LevelSerializerXML().levelWrite(new LevelSerializerXML2().levelRead(path), path);
+//		}
+//		System.out.println("done");
 	}
 
 	LevelHandle getLevel(String name) {

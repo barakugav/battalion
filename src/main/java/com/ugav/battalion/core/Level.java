@@ -70,18 +70,24 @@ public class Level {
 	public static class BuildingDesc implements IBuilding {
 		public final Building.Type type;
 		public final Team team;
+		public final boolean active;
 
-		BuildingDesc(Building.Type type, Team team) {
+		private BuildingDesc(Building.Type type, Team team, boolean active) {
 			this.type = Objects.requireNonNull(type);
 			this.team = team;
+			this.active = active;
 		}
 
 		public static BuildingDesc of(Building.Type type, Team team) {
-			return new BuildingDesc(type, team);
+			return of(type, team, false);
+		}
+
+		public static BuildingDesc of(Building.Type type, Team team, boolean active) {
+			return new BuildingDesc(type, team, active);
 		}
 
 		public static BuildingDesc copyOf(BuildingDesc desc) {
-			return new BuildingDesc(desc.type, desc.team);
+			return new BuildingDesc(desc.type, desc.team, desc.active);
 		}
 
 		@Override
@@ -120,11 +126,20 @@ public class Level {
 	public static class UnitDesc implements IUnit {
 		public final Unit.Type type;
 		public final Team team;
+		public final int health;
+		public final boolean active;
+		public final boolean repairing;
 		private final UnitDesc transportedUnit;
 
-		private UnitDesc(Unit.Type type, Team team, UnitDesc transportedUnit) {
+		private UnitDesc(Unit.Type type, Team team, UnitDesc transportedUnit, int health, boolean active,
+				boolean repairing) {
 			this.type = Objects.requireNonNull(type);
 			this.team = Objects.requireNonNull(team);
+			if (!(0 < health && health <= type.health))
+				throw new IllegalArgumentException();
+			this.health = health;
+			this.active = active;
+			this.repairing = repairing;
 
 			if (type.transportUnits ^ (transportedUnit != null && transportedUnit.type.category == Unit.Category.Land))
 				throw new IllegalArgumentException();
@@ -132,19 +147,28 @@ public class Level {
 		}
 
 		public static UnitDesc of(Unit.Type type, Team team) {
+			return of(type, team, type.health, true, false);
+		}
+
+		public static UnitDesc of(Unit.Type type, Team team, int health, boolean active, boolean repairing) {
 			if (type.transportUnits)
 				throw new IllegalArgumentException();
-			return new UnitDesc(type, team, null);
+			return new UnitDesc(type, team, null, health, active, repairing);
 		}
 
 		public static UnitDesc transporter(Unit.Type type, UnitDesc unit) {
+			return transporter(type, unit, type.health, true, false);
+		}
+
+		public static UnitDesc transporter(Unit.Type type, UnitDesc unit, int health, boolean active,
+				boolean repairing) {
 			if (!type.transportUnits || unit.type.category != Unit.Category.Land)
 				throw new IllegalArgumentException();
-			return new UnitDesc(type, unit.team, unit);
+			return new UnitDesc(type, unit.team, unit, health, active, repairing);
 		}
 
 		public static UnitDesc copyOf(UnitDesc desc) {
-			return new UnitDesc(desc.type, desc.team, desc.transportedUnit);
+			return new UnitDesc(desc.type, desc.team, desc.transportedUnit, desc.health, desc.active, desc.repairing);
 		}
 
 		@Override
@@ -181,6 +205,11 @@ public class Level {
 		@Override
 		public Team getTeam() {
 			return team;
+		}
+
+		@Override
+		public int getHealth() {
+			return health;
 		}
 
 	}

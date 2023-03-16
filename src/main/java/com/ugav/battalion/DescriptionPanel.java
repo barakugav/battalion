@@ -425,8 +425,7 @@ class DescriptionPanel extends JPanel implements Clearable {
 			void showUnit(IUnit unit) {
 				if (unit.getType() != type)
 					throw new IllegalArgumentException();
-				int health0 = unit instanceof Unit u ? u.getHealth() : unit.getType().health;
-				health.setText("" + health0 + "/" + unit.getType().health);
+				health.setText("" + unit.getHealth() + "/" + unit.getType().health);
 				image.setIcon(unitIcon(type, unit.getTeam()));
 			}
 

@@ -6,6 +6,8 @@ public interface IUnit {
 
 	Team getTeam();
 
+	int getHealth();
+
 	IUnit getTransportedUnit();
 
 }

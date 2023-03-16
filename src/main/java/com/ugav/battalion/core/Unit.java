@@ -74,6 +74,7 @@ public class Unit extends Entity implements IUnit {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public int getHealth() {
 		return health;
 	}
