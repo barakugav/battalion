@@ -166,7 +166,14 @@ class GameWindow extends JPanel implements Clearable {
 		arenaPanel.clear();
 		stats.clear();
 		try {
-			gameActionsThread.join();
+			gameActionsThread.join(2 * 1000);
+			if (gameActionsThread.isAlive()) {
+				System.err.println("Game thread join timeout. stopping it.");
+				for (StackTraceElement stackElm : gameActionsThread.getStackTrace())
+					System.err.println(stackElm);
+				gameActionsThread.stop();
+				gameActionsThread.join();
+			}
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
