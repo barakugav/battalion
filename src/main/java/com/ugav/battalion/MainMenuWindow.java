@@ -261,7 +261,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 	}
 
 	private static Pair<Level, Iter<Action>> getAnimatedBackgroundGame(Globals globals) {
-		Level level = globals.levelSerializer.levelRead("level/animated01.xml");
+		Level level = globals.levelSerializer.levelRead("level/animated/animated01.xml");
 		List<Action> actions = new ArrayList<>();
 		actions.add(new Action.UnitMove(Cell.of(2, 3),
 				ListInt.of(Cell.of(3, 3), Cell.of(4, 3), Cell.of(5, 3), Cell.of(5, 4), Cell.of(5, 5), Cell.of(5, 6))));
