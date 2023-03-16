@@ -22,10 +22,14 @@ public class Unit extends Entity implements IUnit {
 	private final Unit transportedUnit; /* valid only if type.canTransportUnits */
 	private boolean repairing;
 
-	private Unit(Game game, Type type, Team team, Unit transportedUnit) {
+	private Unit(Game game, Type type, Team team, Unit transportedUnit, int health, boolean active, boolean reparing) {
 		super(game, team);
 		this.type = type;
-		health = type.health;
+		if (!(0 < health && health <= type.health))
+			throw new IllegalArgumentException();
+		this.health = health;
+		setActive(active);
+		this.repairing = reparing;
 
 		if (type.transportUnits ^ (transportedUnit != null && transportedUnit.type.category == Unit.Category.Land))
 			throw new IllegalArgumentException();
@@ -35,13 +39,14 @@ public class Unit extends Entity implements IUnit {
 	static Unit valueOf(Game game, UnitDesc desc, int initPos) {
 		Unit unit;
 		if (!desc.type.transportUnits) {
-			unit = new Unit(game, desc.type, desc.team, null);
+			unit = new Unit(game, desc.type, desc.team, null, desc.health, desc.active, desc.repairing);
 
 		} else {
 			UnitDesc transportedUnit = desc.getTransportedUnit();
 			if (transportedUnit.type.transportUnits || desc.team != transportedUnit.team)
 				throw new IllegalArgumentException();
-			unit = newTrasportUnit(game, desc.type, new Unit(game, transportedUnit.type, transportedUnit.team, null));
+			unit = newTrasportUnit(game, desc.type, valueOf(game, transportedUnit, initPos), desc.health, desc.active,
+					desc.repairing);
 		}
 		unit.setPos(initPos);
 		return unit;
@@ -50,23 +55,26 @@ public class Unit extends Entity implements IUnit {
 	static Unit copyOf(Game game, Unit unit) {
 		Unit copy;
 		if (!unit.type.transportUnits) {
-			copy = new Unit(game, unit.type, unit.getTeam(), null);
+			copy = new Unit(game, unit.type, unit.getTeam(), null, unit.health, unit.isActive(), unit.repairing);
 		} else {
 			Unit transportedUnit = unit.getTransportedUnit();
 			if (transportedUnit.type.transportUnits || unit.getTeam() != transportedUnit.getTeam())
 				throw new IllegalArgumentException();
-			copy = newTrasportUnit(game, unit.getType(), copyOf(game, transportedUnit));
+			copy = newTrasportUnit(game, unit.getType(), copyOf(game, transportedUnit), unit.health, unit.isActive(),
+					unit.repairing);
 		}
 		copy.pos = unit.pos;
-		copy.health = unit.health;
-		copy.setActive(unit.isActive());
 		return copy;
 	}
 
 	static Unit newTrasportUnit(Game game, Type type, Unit unit) {
+		return newTrasportUnit(game, type, unit, type.health, false, false);
+	}
+
+	static Unit newTrasportUnit(Game game, Type type, Unit unit, int health, boolean active, boolean reparing) {
 		if (!type.transportUnits || unit.type.category != Unit.Category.Land)
 			throw new IllegalArgumentException();
-		return new Unit(game, type, unit.getTeam(), unit);
+		return new Unit(game, type, unit.getTeam(), unit, health, active, reparing);
 	}
 
 	@Override

@@ -107,7 +107,7 @@ public class Building extends Entity implements IBuilding {
 	private static final int CONQUER_DURATION_FROM_NONE = 3;
 	private static final int CONQUER_DURATION_FROM_OTHER = 4;
 
-	Building(Game game, Type type, Team team, int pos) {
+	private Building(Game game, Type type, Team team, int pos, boolean active) {
 		super(game, team);
 		this.type = Objects.requireNonNull(type);
 		this.pos = pos;
@@ -116,12 +116,11 @@ public class Building extends Entity implements IBuilding {
 	}
 
 	public static Building valueOf(Game game, BuildingDesc desc, int pos) {
-		return new Building(game, desc.type, desc.team, pos);
+		return new Building(game, desc.type, desc.team, pos, desc.active);
 	}
 
 	public static Building copyOf(Game game, Building building) {
-		Building copy = new Building(game, building.type, building.getTeam(), building.pos);
-		copy.setActive(building.isActive());
+		Building copy = new Building(game, building.type, building.getTeam(), building.pos, building.isActive());
 		copy.conquerTeam = building.conquerTeam;
 		copy.conquerProgress = building.conquerProgress;
 		return copy;
