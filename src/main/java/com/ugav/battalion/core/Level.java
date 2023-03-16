@@ -6,29 +6,40 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.ugav.battalion.core.Unit.Type;
-import com.ugav.battalion.util.Iter;
 
 public class Level {
 
-	private final Cell.Array<TileDesc> tiles;
+	private final Cell.Array<Terrain> terrains;
+	private final Cell.Array<BuildingDesc> buildings;
+	private final Cell.Array<UnitDesc> units;
 	private final Map<Team, Integer> startingMoney;
 
-	Level(Cell.Array<TileDesc> tiles, Map<Team, Integer> startingMoney) {
-		int width = tiles.width(), height = tiles.height();
-		this.tiles = Cell.Array.fromFunc(width, height, cell -> tiles.at(cell));
+	Level(Cell.Array<Terrain> terrains, Cell.Array<BuildingDesc> buildings, Cell.Array<UnitDesc> units,
+			Map<Team, Integer> startingMoney) {
+		this.terrains = Cell.Array.copyOf(terrains);
+		this.buildings = Cell.Array.copyOf(buildings);
+		this.units = Cell.Array.copyOf(units);
 		this.startingMoney = Collections.unmodifiableMap(new HashMap<>(startingMoney));
 	}
 
 	public int width() {
-		return tiles.width();
+		return terrains.width();
 	}
 
 	public int height() {
-		return tiles.height();
+		return terrains.height();
 	}
 
-	public TileDesc at(int cell) {
-		return tiles.at(cell);
+	public Terrain terrain(int cell) {
+		return terrains.at(cell);
+	}
+
+	public BuildingDesc building(int cell) {
+		return buildings.at(cell);
+	}
+
+	public UnitDesc unit(int cell) {
+		return units.at(cell);
 	}
 
 	public int getStartingMoney(Team team) {
@@ -37,84 +48,23 @@ public class Level {
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if (o == this)
+	public boolean equals(Object other) {
+		if (other == this)
 			return true;
-		if (!(o instanceof Level))
+		if (!(other instanceof Level))
 			return false;
-		Level other = (Level) o;
+		Level o = (Level) other;
 
-		if (width() != other.width() || height() != other.height())
+		if (width() != o.width() || height() != o.height())
 			return false;
 
-		for (Iter.Int it = Cell.Iter2D.of(width(), height()); it.hasNext();) {
-			int cell = it.next();
-			if (!Objects.equals(at(cell), other.at(cell)))
-				return false;
-		}
-		return true;
+		return terrains.equals(o.terrains) && buildings.equals(o.buildings) && units.equals(o.units)
+				&& startingMoney.equals(o.startingMoney);
 	}
 
 	@Override
 	public int hashCode() {
-		int hash = 1;
-		for (Iter.Int it = Cell.Iter2D.of(width(), height()); it.hasNext();)
-			hash = 31 * hash + Objects.hashCode(at(it.next()));
-		return hash;
-	}
-
-	public static class TileDesc {
-		public final Terrain terrain;
-		public final BuildingDesc building;
-		public final UnitDesc unit;
-
-		TileDesc(Terrain terrain, BuildingDesc building, UnitDesc unit) {
-			this.terrain = Objects.requireNonNull(terrain);
-			this.building = building;
-			this.unit = unit;
-		}
-
-		public static TileDesc of(Terrain terrain, BuildingDesc building, UnitDesc unit) {
-			return new TileDesc(terrain, building, unit);
-		}
-
-		public boolean hasUnit() {
-			return unit != null;
-		}
-
-		public UnitDesc getUnit() {
-			return unit;
-		}
-
-		public boolean hasBuilding() {
-			return building != null;
-		}
-
-		public BuildingDesc getBuilding() {
-			return building;
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if (o == this)
-				return true;
-			if (!(o instanceof TileDesc))
-				return false;
-			TileDesc other = (TileDesc) o;
-
-			return Objects.equals(terrain, other.terrain) && Objects.equals(building, other.building)
-					&& Objects.equals(unit, other.unit);
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hash(terrain, building, unit);
-		}
-
-		@Override
-		public String toString() {
-			return "(" + terrain + ", " + building + ", " + unit + ")";
-		}
+		return Objects.hash(terrains, buildings, units, startingMoney);
 	}
 
 	public static class BuildingDesc implements IBuilding {

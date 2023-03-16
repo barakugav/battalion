@@ -55,13 +55,13 @@ public class Game {
 
 	private Game(Level level) {
 		int w = level.width(), h = level.height();
-		terrains = Cell.Array.fromFunc(w, h, cell -> level.at(cell).terrain);
+		terrains = Cell.Array.fromFunc(w, h, cell -> level.terrain(cell));
 		units = Cell.Array.fromFunc(w, h, pos -> {
-			UnitDesc desc = level.at(pos).unit;
+			UnitDesc desc = level.unit(pos);
 			return desc != null ? Unit.valueOf(this, desc, pos) : null;
 		});
 		buildings = Cell.Array.fromFunc(w, h, pos -> {
-			BuildingDesc desc = level.at(pos).building;
+			BuildingDesc desc = level.building(pos);
 			return desc != null ? Building.valueOf(this, desc, pos) : null;
 		});
 

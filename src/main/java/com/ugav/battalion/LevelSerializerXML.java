@@ -26,7 +26,6 @@ import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Level.BuildingDesc;
-import com.ugav.battalion.core.Level.TileDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.LevelBuilder;
 import com.ugav.battalion.core.Team;
@@ -76,22 +75,23 @@ class LevelSerializerXML implements LevelSerializer {
 			Element tilesElm = dom.createElement("tiles");
 			for (Iter.Int it = Cell.Iter2D.of(level.width(), level.height()); it.hasNext();) {
 				int cell = it.next();
-				TileDesc tile = level.at(cell);
+
 				Element tileElm = dom.createElement("tile");
 				addValueChild(dom, tileElm, "x", Integer.toString(Cell.x(cell)));
 				addValueChild(dom, tileElm, "y", Integer.toString(Cell.y(cell)));
 
-				addValueChild(dom, tileElm, "terrain", tile.terrain);
+				addValueChild(dom, tileElm, "terrain", level.terrain(cell));
 
-				if (tile.building != null) {
+				BuildingDesc building = level.building(cell);
+				if (building != null) {
 					Element buildingElm = dom.createElement("building");
-					addValueChild(dom, buildingElm, "type", tile.building.type);
-					addValueChild(dom, buildingElm, "team", teamWrite(tile.building.team));
+					addValueChild(dom, buildingElm, "type", building.type);
+					addValueChild(dom, buildingElm, "team", teamWrite(building.team));
 					tileElm.appendChild(buildingElm);
 				}
 
-				if (tile.unit != null) {
-					UnitDesc unit = tile.unit;
+				UnitDesc unit = level.unit(cell);
+				if (unit != null) {
 					Element unitElm = dom.createElement("unit");
 					addValueChild(dom, unitElm, "type", unit.type);
 					addValueChild(dom, unitElm, "team", teamWrite(unit.team));
@@ -195,6 +195,7 @@ class LevelSerializerXML implements LevelSerializer {
 				int x = Integer.parseInt(childData(tileElm, "x"));
 				int y = Integer.parseInt(childData(tileElm, "y"));
 				Terrain terrain = Terrain.valueOf(childData(tileElm, "terrain"));
+				builder.setTerrain(Cell.of(x, y), terrain);
 
 				BuildingDesc building = null;
 				Element buildingElm = childElmMaybeNull(tileElm, "building");
@@ -203,6 +204,7 @@ class LevelSerializerXML implements LevelSerializer {
 					String team = childData(buildingElm, "team");
 					building = BuildingDesc.of(Building.Type.valueOf(type), teamRead(team));
 				}
+				builder.setBuilding(Cell.of(x, y), building);
 
 				UnitDesc unit = null;
 				Element unitElm = childElmMaybeNull(tileElm, "unit");
@@ -223,8 +225,7 @@ class LevelSerializerXML implements LevelSerializer {
 						unit = UnitDesc.transporter(type, transportedUnit);
 					}
 				}
-
-				builder.setTile(Cell.of(x, y), terrain, building, unit);
+				builder.setUnit(Cell.of(x, y), unit);
 			}
 
 			return builder.buildLevel();

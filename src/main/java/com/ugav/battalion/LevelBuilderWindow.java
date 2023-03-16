@@ -32,7 +32,6 @@ import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Cell;
 import com.ugav.battalion.core.Level;
 import com.ugav.battalion.core.Level.BuildingDesc;
-import com.ugav.battalion.core.Level.TileDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.core.LevelBuilder;
 import com.ugav.battalion.core.Team;
@@ -432,52 +431,31 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 		private void cellClicked(int cell) {
 			Object selectedObj = menu.selectedButton.entity;
 
-			TileDesc tile = builder.at(cell);
 			if (selectedObj instanceof Terrain.Category terrainc) {
 				List<Terrain> terrains = terrainc.getTerrains();
-				int oldTerrainIdx = terrains.indexOf(tile.terrain); /* might be -1 */
+				int oldTerrainIdx = terrains.indexOf(builder.terrain(cell)); /* might be -1 */
 				Terrain terrain = terrains.get((oldTerrainIdx + 1) % terrains.size());
 
-				BuildingDesc building = null;
-				if (tile.hasBuilding()) {
-					BuildingDesc oldBuilding = tile.building;
-					if (oldBuilding.type.canBuildOn(terrain))
-						building = oldBuilding;
-				}
-
-				UnitDesc unit = null;
-				if (tile.hasUnit()) {
-					UnitDesc oldUnit = tile.unit;
-					if (oldUnit.type.canStandOn(terrain))
-						unit = oldUnit;
-				}
-
-				builder.setTile(cell, terrain, building, unit);
+				builder.setTerrain(cell, terrain);
 
 			} else if (selectedObj instanceof BuildingDesc building) {
-				building = BuildingDesc.copyOf(building);
-				if (building.type.canBuildOn(tile.terrain))
-					builder.setTile(cell, tile.terrain, building, tile.unit);
+				builder.setBuilding(cell, BuildingDesc.copyOf(building));
 				// TODO else user message
 
 			} else if (selectedObj instanceof UnitDesc unit) {
 				unit = UnitDesc.copyOf(unit);
-				UnitDesc oldUnit;
-				if (tile.hasUnit() && (oldUnit = tile.getUnit()).team == unit.team && oldUnit.type.transportUnits
+				UnitDesc oldUnit = builder.unit(cell);
+				if (oldUnit != null && oldUnit.team == unit.team && oldUnit.type.transportUnits
 						&& !unit.type.transportUnits && unit.type.category == Category.Land)
-					builder.setTile(cell, tile.terrain, tile.building, UnitDesc.transporter(oldUnit.type, unit));
-
-				else if (unit.type.canStandOn(tile.terrain))
-					builder.setTile(cell, tile.terrain, tile.building, unit);
+					unit = UnitDesc.transporter(oldUnit.type, unit);
+				builder.setUnit(cell, unit);
 				// TODO else user message
 
 			} else if (selectedObj == SideMenu.removeBuildingObj) {
-				if (tile.hasBuilding())
-					builder.setTile(cell, tile.terrain, null, tile.unit);
+				builder.setBuilding(cell, null);
 
 			} else if (selectedObj == SideMenu.removeUnitObj) {
-				if (tile.hasUnit())
-					builder.setTile(cell, tile.terrain, tile.building, null);
+				builder.setUnit(cell, null);
 
 			} else {
 				throw new IllegalArgumentException("Unknown menu selected object: " + selectedObj);
@@ -486,7 +464,7 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 
 		@Override
 		Terrain getTerrain(int cell) {
-			return builder.at(cell).terrain;
+			return builder.terrain(cell);
 		}
 
 		private class EntityLayer
@@ -533,21 +511,21 @@ class LevelBuilderWindow extends JPanel implements Clearable {
 				}
 
 				void tileUpdate() {
-					TileDesc tile = builder.at(pos);
-
-					if (buildingComp != null && tile.building != buildingComp.building()) {
+					BuildingDesc building = builder.building(pos);
+					if (buildingComp != null && building != buildingComp.building()) {
 						comps.remove(buildingComp.building()).clear();
 						buildingComp = null;
 					}
-					if (tile.building != null && buildingComp == null)
-						comps.put(tile.building, buildingComp = new BuildingComp(ArenaPanel.this, pos, tile.building));
+					if (building != null && buildingComp == null)
+						comps.put(building, buildingComp = new BuildingComp(ArenaPanel.this, pos, building));
 
-					if (unitComp != null && tile.unit != unitComp.unit()) {
+					UnitDesc unit = builder.unit(pos);
+					if (unitComp != null && unit != unitComp.unit()) {
 						comps.remove(unitComp.unit()).clear();
 						unitComp = null;
 					}
-					if (tile.unit != null && unitComp == null)
-						comps.put(tile.unit, unitComp = new UnitComp(ArenaPanel.this, pos, tile.unit));
+					if (unit != null && unitComp == null)
+						comps.put(unit, unitComp = new UnitComp(ArenaPanel.this, pos, unit));
 				}
 
 			}

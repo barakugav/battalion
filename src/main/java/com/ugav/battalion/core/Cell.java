@@ -2,6 +2,7 @@ package com.ugav.battalion.core;
 
 import java.util.BitSet;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 
@@ -268,6 +269,14 @@ public class Cell {
 			return arr;
 		}
 
+		public static <T> Array<T> copyOf(Array<T> a) {
+			Array<T> arr = new Array<>(a.width(), a.height());
+			for (int x = 0; x < a.width(); x++)
+				for (int y = 0; y < a.height(); y++)
+					arr.set(x, y, a.at(x, y));
+			return arr;
+		}
+
 		public int width() {
 			return arr.length;
 		}
@@ -300,6 +309,32 @@ public class Cell {
 				for (int y = 0; y < h; y++)
 					arr[x][y] = at(x, y);
 			return arr;
+		}
+
+		@Override
+		public boolean equals(Object other) {
+			if (other == this)
+				return true;
+			if (!(other instanceof Array<?>))
+				return false;
+			Array<?> o = (Array<?>) other;
+
+			if (width() != o.width() || height() != o.height())
+				return false;
+			for (int x = 0; x < width(); x++)
+				for (int y = 0; y < height(); y++)
+					if (!Objects.equals(at(x, y), o.at(x, y)))
+						return false;
+			return true;
+		}
+
+		@Override
+		public int hashCode() {
+			int hash = 1;
+			for (int x = 0; x < width(); x++)
+				for (int y = 0; y < height(); y++)
+					hash = 31 * hash + Objects.hashCode(at(x, y));
+			return hash;
 		}
 
 	}

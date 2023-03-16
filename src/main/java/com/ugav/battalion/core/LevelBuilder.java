@@ -6,7 +6,6 @@ import java.util.Objects;
 import java.util.function.IntFunction;
 
 import com.ugav.battalion.core.Level.BuildingDesc;
-import com.ugav.battalion.core.Level.TileDesc;
 import com.ugav.battalion.core.Level.UnitDesc;
 import com.ugav.battalion.util.Event;
 import com.ugav.battalion.util.Iter;
@@ -14,7 +13,9 @@ import com.ugav.battalion.util.ListInt;
 
 public class LevelBuilder {
 
-	private Cell.Array<TileDesc> tiles;
+	private Cell.Array<Terrain> terrains;
+	private Cell.Array<BuildingDesc> buildings;
+	private Cell.Array<UnitDesc> units;
 	private final Map<Team, Integer> startingMoney;
 	public final Event.Notifier<TileChange> onTileChange = new Event.Notifier<>();
 	public final Event.Notifier<LevelReset> onResetChange = new Event.Notifier<>();
@@ -32,44 +33,75 @@ public class LevelBuilder {
 	public void reset(int width, int height) {
 		if (width < 0 || height < 0)
 			throw new IllegalArgumentException();
-		tiles = Cell.Array.fromFunc(width, height, p -> TileDesc.of(Terrain.FlatLand1, null, null));
+		terrains = Cell.Array.fromFunc(width, height, p -> Terrain.FlatLand1);
+		buildings = Cell.Array.of(width, height);
+		units = Cell.Array.of(width, height);
 		startingMoney.clear();
 		onResetChange.notify(new LevelReset(this));
 	}
 
 	public void reset(Level level) {
 		int width = level.width(), height = level.height();
-		tiles = Cell.Array.fromFunc(width, height, pos -> Objects.requireNonNull(level.at(pos)));
+		terrains = Cell.Array.fromFunc(width, height, pos -> Objects.requireNonNull(level.terrain(pos)));
+		buildings = Cell.Array.fromFunc(width, height, pos -> level.building(pos));
+		units = Cell.Array.fromFunc(width, height, pos -> level.unit(pos));
 		startingMoney.clear();
 		onResetChange.notify(new LevelReset(this));
 	}
 
-	public TileDesc at(int cell) {
-		return tiles.at(cell);
+	public int width() {
+		return terrains.width();
 	}
 
-	public LevelBuilder setTile(int cell, TileDesc tile) {
-		String errStr = checkValidTile(cell, tile);
+	public int height() {
+		return terrains.height();
+	}
+
+	public Terrain terrain(int cell) {
+		return terrains.at(cell);
+	}
+
+	public BuildingDesc building(int cell) {
+		return buildings.at(cell);
+	}
+
+	public UnitDesc unit(int cell) {
+		return units.at(cell);
+	}
+
+	public void setTerrain(int cell, Terrain terrain) {
+		BuildingDesc building = this.building(cell);
+		if (building != null && !building.type.canBuildOn(terrain))
+			building = null;
+
+		UnitDesc unit = this.unit(cell);
+		if (unit != null && !unit.type.canStandOn(terrain))
+			unit = null;
+
+		String errStr = checkValidTile(cell, terrain, building, unit);
 		if (errStr != null) {
 			/* TODO: message to user */
 			System.err.println("Can't set tile: " + errStr);
 		} else {
-			tiles.set(cell, tile);
+			terrains.set(cell, terrain);
+			units.set(cell, unit);
+			buildings.set(cell, building);
 			onTileChange.notify(new TileChange(this, cell));
 		}
-		return this;
 	}
 
-	public LevelBuilder setTile(int cell, Terrain terrain, BuildingDesc buiding, UnitDesc unit) {
-		return setTile(cell, TileDesc.of(terrain, buiding, unit));
+	public void setBuilding(int cell, BuildingDesc building) {
+		if (building == null || building.type.canBuildOn(terrain(cell))) {
+			buildings.set(cell, building);
+			onTileChange.notify(new TileChange(this, cell));
+		}
 	}
 
-	public int width() {
-		return tiles.width();
-	}
-
-	public int height() {
-		return tiles.height();
+	public void setUnit(int cell, UnitDesc unit) {
+		if (unit == null || unit.type.canStandOn(terrain(cell))) {
+			units.set(cell, unit);
+			onTileChange.notify(new TileChange(this, cell));
+		}
 	}
 
 	public void setStartingMoney(Team team, int money) {
@@ -79,24 +111,22 @@ public class LevelBuilder {
 	public Level buildLevel() {
 		for (Iter.Int it = Cell.Iter2D.of(width(), height()); it.hasNext();) {
 			int cell = it.next();
-			String errStr = checkValidTile(cell, at(cell));
+			String errStr = checkValidTile(cell, terrain(cell), building(cell), unit(cell));
 			if (errStr != null)
 				throw new IllegalStateException("Can't build level, error at " + cell + ": " + errStr);
 		}
-		return new Level(tiles, startingMoney);
+		return new Level(terrains, buildings, units, startingMoney);
 	}
 
-	private String checkValidTile(int cell, TileDesc tile) {
+	private String checkValidTile(int cell, Terrain terrain, BuildingDesc building, UnitDesc unit) {
 		if (!Cell.isInRect(cell, width() - 1, height() - 1))
 			return "out of bound";
-		if (tile.hasBuilding())
-			if (!tile.building.type.canBuildOn(tile.terrain))
-				return "building can't stand on terrain";
-		if (tile.hasUnit())
-			if (!tile.unit.type.canStandOn(tile.terrain))
-				return "unit can't stand on terrain";
+		if (building != null && !building.type.canBuildOn(terrain))
+			return "building can't stand on terrain";
+		if (unit != null && !unit.type.canStandOn(terrain))
+			return "unit can't stand on terrain";
 
-		IntFunction<Terrain> terrain = p -> cell == p ? tile.terrain : tiles.at(p).terrain;
+		IntFunction<Terrain> getTerrain = p -> cell == p ? terrain : this.terrain(p);
 		ListInt checkBridge = new ListInt.Array();
 		checkBridge.add(cell);
 		for (Direction dir : Direction.values()) {
@@ -107,8 +137,8 @@ public class LevelBuilder {
 
 		for (Iter.Int it = checkBridge.iterator(); it.hasNext();) {
 			int bridgePos = it.next();
-			if (terrain.apply(bridgePos).isBridge())
-				if (Terrain.isBridgeVertical(bridgePos, terrain, width(), height()) == null)
+			if (getTerrain.apply(bridgePos).isBridge())
+				if (Terrain.isBridgeVertical(bridgePos, getTerrain, width(), height()) == null)
 					return "illegal bridge, can't determine orientation";
 		}
 		return null;
