@@ -214,7 +214,7 @@ class LevelSerializerXML implements LevelSerializer {
 						Element transportedUnitElm = childElm(unitElm, "transportedUnit");
 						Unit.Type transportedUnitType = Unit.Type.valueOf(transportedUnitElm.getAttribute("type"));
 						Team transportedUnitTeam = teamRead(transportedUnitElm.getAttribute("team"));
-						int transportedUnitHealth = Integer.parseInt(unitElm.getAttribute("health"));
+						int transportedUnitHealth = Integer.parseInt(transportedUnitElm.getAttribute("health"));
 						if (transportedUnitType.transportUnits)
 							throw new IllegalArgumentException();
 						UnitDesc transportedUnit = UnitDesc.of(transportedUnitType, transportedUnitTeam,
