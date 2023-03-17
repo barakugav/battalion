@@ -555,6 +555,7 @@ class Images {
 			terrains.put(Terrain.Category.Hiils, loadImg("img/gui/minimap_land.png"));
 			terrains.put(Terrain.Category.Mountain, loadImg("img/gui/minimap_extreme_land.png"));
 			terrains.put(Terrain.Category.Water, loadImg("img/gui/minimap_water.png"));
+			terrains.put(Terrain.Category.WaterShallow, loadImg("img/gui/minimap_water.png"));
 			terrains.put(Terrain.Category.Shore, loadImg("img/gui/minimap_shore.png"));
 			terrains.put(Terrain.Category.Road, loadImg("img/gui/minimap_road.png"));
 			terrains.put(Terrain.Category.BridgeLow, loadImg("img/gui/minimap_road.png"));
