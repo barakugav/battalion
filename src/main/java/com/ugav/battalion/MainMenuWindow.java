@@ -68,6 +68,7 @@ class MainMenuWindow extends JLayeredPane implements Clearable {
 				int x = (container.width - compSize.width) / 2;
 				int y = (container.height - compSize.height) / 2;
 				comp.setBounds(x, y, compSize.width, compSize.height);
+				comp.revalidate();
 			}
 		};
 
