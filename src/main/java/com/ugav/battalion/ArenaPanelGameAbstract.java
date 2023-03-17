@@ -298,6 +298,9 @@ abstract class ArenaPanelGameAbstract extends
 				/* Draw unit */
 				super.paintComponent(g);
 
+				if (calcAlpha() == 0)
+					return;
+
 				/* Draw health bar */
 				if (unit().getHealth() != 0 && unit().getHealth() != unit().type.health) {
 					double health = (double) unit().getHealth() / unit().type.health;
@@ -339,14 +342,14 @@ abstract class ArenaPanelGameAbstract extends
 				if (unit().getTeam() == game.getTurn() && !unit().isActive())
 					img = Utils.imgDarken(img, .7f);
 
-				float alpha0 = Math.max(calcBaseAlpha(), alpha);
+				float alpha0 = calcAlpha();
 				if (alpha0 != 1.0)
 					img = Utils.imgTransparent(img, alpha0);
 
 				return img;
 			}
 
-			float calcBaseAlpha() {
+			float calcAlpha() {
 				final Team playerTeam = Team.Red;
 
 				float baseAlpha;
@@ -358,7 +361,8 @@ abstract class ArenaPanelGameAbstract extends
 					baseAlpha = .5f;
 				else
 					baseAlpha = 0f;
-				return Math.min(baseAlpha, baseAlphaMax);
+				baseAlpha = Math.min(baseAlpha, baseAlphaMax);
+				return Math.max(baseAlpha, alpha);
 			}
 
 			@Override
