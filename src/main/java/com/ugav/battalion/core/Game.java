@@ -482,7 +482,7 @@ public class Game {
 
 	private Unit unitTransport(Unit transportedUnit, Unit.Type transportType) {
 		if (!transportedUnit.canTransported(transportType))
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException(transportedUnit.toString());
 
 		Team team = transportedUnit.getTeam();
 		moneyChange(team, -transportType.price);

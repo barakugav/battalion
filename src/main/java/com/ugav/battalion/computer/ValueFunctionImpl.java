@@ -45,8 +45,6 @@ class ValueFunctionImpl implements GameTreeAlg.ValueFunction<Action, GameImpl.No
 			return position.game.getWinner() == us ? Double.MAX_VALUE : -Double.MAX_VALUE;
 		Game plansPosition = (history != null ? history : position).game;
 		AttackPlans attackPlans = attackPlansCache.getOrCompute(plansPosition, AttackPlans::new);
-		if (action instanceof Action.UnitTransportFinish)
-			System.out.println();
 		double actionEval = new ActionEvaluator(attackPlans, position, us).evaluate();
 		double[] positionEvals = new PositionEvaluator(position).evaluate();
 		return actionEval + evalFromTeamEvals(us, positionEvals);

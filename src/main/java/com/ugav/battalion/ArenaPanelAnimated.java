@@ -1,19 +1,19 @@
 package com.ugav.battalion;
 
+import java.util.Iterator;
 import java.util.Objects;
 
 import com.ugav.battalion.core.Action;
 import com.ugav.battalion.core.Game;
-import com.ugav.battalion.util.Iter;
 
 class ArenaPanelAnimated extends ArenaPanelGameAbstract {
 
-	private final Iter<Action> actions;
+	private final Iterator<Action> actions;
 	private final GameActionsThread gameActionsThread = new GameActionsThread();
 
 	private static final long serialVersionUID = 1L;
 
-	ArenaPanelAnimated(Globals globals, Game game, Iter<Action> actions) {
+	ArenaPanelAnimated(Globals globals, Game game, Iterator<Action> actions) {
 		super(game, globals);
 		this.actions = Objects.requireNonNull(actions);
 

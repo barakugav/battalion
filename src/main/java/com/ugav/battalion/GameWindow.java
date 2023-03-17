@@ -158,6 +158,7 @@ class GameWindow extends JPanel implements Clearable {
 		gameActionsThread.actions.add(action);
 	}
 
+	@SuppressWarnings("removal")
 	@Override
 	public void clear() {
 		gameActionsThread.setRunning(false);
