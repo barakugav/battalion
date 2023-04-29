@@ -98,6 +98,14 @@ interface Animation {
 
 	}
 
+	static Direction calcOrientation(Position source, Position target) {
+		Direction orientation = null;
+		for (Direction dir : Direction.values())
+			if (orientation == null || Position.dist(source, target, orientation) < Position.dist(source, target, dir))
+				orientation = dir;
+		return orientation;
+	}
+
 	static class Attack implements Animation, ArenaComp {
 		private final ArenaPanelGameAbstract arena;
 		private final UnitComp comp;
@@ -115,17 +123,8 @@ interface Animation {
 		@Override
 		public void beforeFirst() {
 			comp.isAnimated = true;
-
 			basePos = comp.pos;
-
-			Direction orientation = null;
-			Position targetPos = Position.fromCell(target);
-			for (Direction dir : Direction.values())
-				if (orientation == null
-						|| Position.dist(comp.pos, targetPos, orientation) < Position.dist(comp.pos, targetPos, dir))
-					orientation = dir;
-			comp.orientation = orientation;
-
+			comp.orientation = calcOrientation(comp.pos, Position.fromCell(target));
 			arena.entityLayer.comps.put(this, this);
 		}
 
@@ -410,6 +409,25 @@ interface Animation {
 		}
 	}
 
+	static class Delay implements Animation {
+
+		int duration;
+
+		Delay(int duration) {
+			if (duration < 1)
+				throw new IllegalArgumentException();
+			this.duration = duration;
+		}
+
+		@Override
+		public boolean animationStep() {
+			if (duration <= 0)
+				throw new NoSuchElementException();
+			return --duration > 0;
+		}
+
+	}
+
 	static class MapMove implements Animation {
 
 		private final ArenaPanelGameAbstract arena;
@@ -655,6 +673,17 @@ interface Animation {
 			@Override
 			public String toString() {
 				return Arrays.toString(animations);
+			}
+		};
+	}
+
+	static Animation ofSingleStep(Runnable runnable) {
+		return new Animation() {
+
+			@Override
+			public boolean animationStep() {
+				runnable.run();
+				return false;
 			}
 		};
 	}

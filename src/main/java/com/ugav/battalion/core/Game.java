@@ -52,6 +52,7 @@ public class Game {
 	public final Event.Notifier<TeamEliminateEvent> onTeamElimination = new Event.Notifier<>();
 	public final Event.Notifier<GameEnd> onGameEnd = new Event.Notifier<>();
 	public final Event.Notifier<ActionEvent> onAction = new Event.Notifier<>();
+	public final Event.Notifier<Event> onActionEnd = new Event.Notifier<>();
 
 	private Game(Level level) {
 		int w = level.width(), h = level.height();
@@ -254,6 +255,7 @@ public class Game {
 			} else {
 				throw new IllegalArgumentException(Objects.toString(action0));
 			}
+			onActionEnd.notify(new Event(this));
 		} catch (GameEndException e) {
 			onGameEnd.notify(new GameEnd(this, getWinner()));
 		}
@@ -350,15 +352,15 @@ public class Game {
 	}
 
 	private void move(Unit unit, ListInt path) {
-		path = calcRealPath(unit, path);
-		if (path.isEmpty() || !isMoveValid(unit, path))
-			throw new IllegalStateException(Cell.toString(path));
-		move0(unit, path);
+		ListInt realPath = calcRealPath(unit, path);
+		if (realPath.isEmpty() || !isMoveValid(unit, realPath))
+			throw new IllegalStateException(Cell.toString(realPath));
+		move0(unit, realPath, path);
 		unit.setActive(false);
 	}
 
-	private void move0(Unit unit, ListInt path) {
-		beforeUnitMove.notify(new UnitMove(this, unit, path));
+	private void move0(Unit unit, ListInt path, ListInt plannedPath) {
+		beforeUnitMove.notify(new UnitMove(this, unit, path, plannedPath));
 		int source = unit.getPos();
 		int destination = path.last();
 		removeUnit(unit);
@@ -400,7 +402,7 @@ public class Game {
 			throw new IllegalStateException();
 
 		if (!realPath.isEmpty())
-			move0(attacker, realPath);
+			move0(attacker, realPath, path);
 		if (realPath.size() == path.size())
 			attack(attacker, target);
 		attacker.setActive(false);
@@ -642,11 +644,13 @@ public class Game {
 
 		public final Unit unit;
 		public final ListInt path;
+		public final ListInt plannedPath;
 
-		public UnitMove(Game source, Unit unit, ListInt path) {
+		public UnitMove(Game source, Unit unit, ListInt path, ListInt plannedPath) {
 			super(Objects.requireNonNull(source));
 			this.unit = Objects.requireNonNull(unit);
 			this.path = path.copy().unmodifiableView();
+			this.plannedPath = plannedPath.copy().unmodifiableView();
 		}
 
 	}

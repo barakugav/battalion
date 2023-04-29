@@ -10,6 +10,7 @@ import java.util.List;
 import com.ugav.battalion.Animation.MapMove.Manager.MapPosRange;
 import com.ugav.battalion.core.Building;
 import com.ugav.battalion.core.Cell;
+import com.ugav.battalion.core.Direction;
 import com.ugav.battalion.core.Game;
 import com.ugav.battalion.core.Team;
 import com.ugav.battalion.core.Terrain;
@@ -92,6 +93,12 @@ abstract class ArenaPanelGameAbstract extends
 
 				UnitComp comp = (UnitComp) comps.get(e.unit);
 				Animation animation = new Animation.UnitMove(comp, animationPath);
+				if (e.path.size() < e.plannedPath.size()) {
+					int lastMove = e.path.size() - 1;
+					Direction lastOrientation = Cell.diffDir(e.path.get(lastMove), e.plannedPath.get(lastMove + 1));
+					Animation orientation = Animation.ofSingleStep(() -> comp.orientation = lastOrientation);
+					animation = Animation.sequence(animation, orientation);
+				}
 				animation = appearDisappearAnimationWrap(comp, animation);
 				animation = Animation.sequence(createMapCenterAnimation(e.unit), animation);
 				animationTask.runAndWait(animation);
@@ -100,7 +107,11 @@ abstract class ArenaPanelGameAbstract extends
 				int target = e.target.getPos();
 				UnitComp comp = (UnitComp) comps.get(e.attacker);
 				Animation animation = new Animation.Attack(ArenaPanelGameAbstract.this, comp, target);
+				animation = Animation.sequence(new Animation.Delay(4), animation);
 				animation = appearDisappearAnimationWrap(comp, animation);
+				Animation orientation = Animation.ofSingleStep(
+						() -> comp.orientation = Animation.calcOrientation(comp.pos, Position.fromCell(target)));
+				animation = Animation.sequence(orientation, animation);
 				animation = makeSureAnimationIsVisible(animation, ListInt.of(e.attacker.getPos(), target));
 				animationTask.runAndWait(animation);
 			});
@@ -128,6 +139,10 @@ abstract class ArenaPanelGameAbstract extends
 					animations.add(new Animation.BuildingExplosion(ArenaPanelGameAbstract.this, comp));
 				}
 				animationTask.runAndWait(Animation.parallel(animations.toArray(n -> new Animation[n])));
+			});
+			register.register(game.onActionEnd, e -> {
+				Animation animation = new Animation.Delay(10);
+				animationTask.runAndWait(animation);
 			});
 
 			tickTaskManager.addTask(100, gestureTask);
