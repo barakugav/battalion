@@ -1,4 +1,7 @@
 bin/
+target/
 *.bak
 .project
 .classpath
+.vscode
+.settings
